@@ -1,6 +1,7 @@
 package files
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,5 +73,17 @@ func TestListingBoundsAndMissingFile(t *testing.T) {
 	}
 	if _, err := b.Resolve(strings.Repeat("a", 32769)); err == nil {
 		t.Fatal("unbounded path")
+	}
+	for i := 0; i <= MaxEntries; i++ {
+		if err := os.WriteFile(filepath.Join(root, fmt.Sprintf("cue-%04d.wav", i)), nil, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	listing, err := b.Browse(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !listing.Truncated || len(listing.Entries) != MaxEntries {
+		t.Fatalf("large listing returned %d entries, truncated=%v", len(listing.Entries), listing.Truncated)
 	}
 }

@@ -103,7 +103,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release create "$RELEASE_TAG" dist/smartstage-* dist/toolchain-* dist/native-enumeration-* \
+          gh release create "$RELEASE_TAG" dist/smartstage-* dist/toolchain-* dist/native-enumeration-* dist/native-harness-*.smoke.json \
             --verify-tag --prerelease --title "Smart Stage $RELEASE_TAG" --notes-file docs/release-notes.md
   verify-install:
     needs: publish

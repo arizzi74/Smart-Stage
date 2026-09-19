@@ -25,6 +25,12 @@ try:
         result = run('--inspect',media/name)[0]
         assert result['kind'] == kind and result['hasAudio'] is audio and 2.5 < result['duration'] < 3.5, result
     run('--inspect',media/'damaged.mp4',success=False)
+    # A real native source with an unavailable output must fail rather than
+    # silently routing to a default speaker or an unrelated display.
+    for name,option in [("Opening – café's tone.wav",'--audio'), ('silent-1080p.mp4','--display')]:
+        events = run('--file',media/name,option,'smartstage-output-that-does-not-exist','--exit-after','5s')
+        assert any(e['kind'] in ('error','device-lost') for e in events), events
+        assert not any(e['kind']=='playing' for e in events), events
     if devices['audio']:
         endpoint = next((a for a in devices['audio'] if not a['default']),devices['audio'][0])
         events = run('--file',media/"Opening – café's tone.wav",'--audio',endpoint['id'],'--stop-playing-after','500ms','--exit-after','10s')
