@@ -1,0 +1,84 @@
+{
+  "runId": "35476510349",
+  "applicationCommit": "67a10d2225a862cc3f5049f95756cc71b3d6c886",
+  "workflowCommit": "67a10d2225a862cc3f5049f95756cc71b3d6c886",
+  "method": "GC heap values and vmmap sizes are rounded by their tools. Before/after snapshots and continuous resource samples are separate observations. Counts/trends describe this workload; they do not establish resource stability or physical A/V behavior.",
+  "targets": [
+    {
+      "target": "darwin-amd64",
+      "cycles": 2226,
+      "elapsedSeconds": 1200.1001650110002,
+      "completed": true,
+      "firstSample": {
+        "seconds": 0.43,
+        "cycles": 1,
+        "residentBytes": 34373632
+      },
+      "lastSample": {
+        "seconds": 1200.09,
+        "cycles": 2226,
+        "residentBytes": 44937216
+      },
+      "goGCCollections": 50,
+      "goLiveHeapMiBRounded": {
+        "first": 0,
+        "final": 1,
+        "max": 1
+      },
+      "before": {
+        "mallocAllocationCount": 22602,
+        "mallocAllocatedBytesRounded": 3768320.0,
+        "physicalFootprintBytesRounded": 16882073.6
+      },
+      "after": {
+        "mallocAllocationCount": 55699,
+        "mallocAllocatedBytesRounded": 7294976.0,
+        "physicalFootprintBytesRounded": 26214400.0
+      },
+      "mallocChange": {
+        "allocationCount": 33097,
+        "bytesRounded": 3526656.0,
+        "allocationsPerCycle": 14.86837376460018,
+        "bytesPerCycleRounded": 1584.301886792453
+      }
+    },
+    {
+      "target": "darwin-arm64",
+      "cycles": 2279,
+      "elapsedSeconds": 1200.4192258750002,
+      "completed": true,
+      "firstSample": {
+        "seconds": 0.23,
+        "cycles": 1,
+        "residentBytes": 50954240
+      },
+      "lastSample": {
+        "seconds": 1200.41,
+        "cycles": 2279,
+        "residentBytes": 62636032
+      },
+      "goGCCollections": 48,
+      "goLiveHeapMiBRounded": {
+        "first": 0,
+        "final": 1,
+        "max": 1
+      },
+      "before": {
+        "mallocAllocationCount": 22921,
+        "mallocAllocatedBytesRounded": 3469312.0,
+        "physicalFootprintBytesRounded": 21705523.2
+      },
+      "after": {
+        "mallocAllocationCount": 56392,
+        "mallocAllocatedBytesRounded": 7068672.0,
+        "physicalFootprintBytesRounded": 27577548.8
+      },
+      "mallocChange": {
+        "allocationCount": 33471,
+        "bytesRounded": 3599360.0,
+        "allocationsPerCycle": 14.686704695041685,
+        "bytesPerCycleRounded": 1579.3593681439227
+      }
+    }
+  ]
+}

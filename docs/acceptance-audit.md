@@ -77,7 +77,8 @@ completed all four two-hour loops/restart checks at `20bcf35`. Its
 [resource traces](soak-results.md) show continuing Mac RSS growth and higher
 Windows handle counts. Completed published-preview diagnostics show native
 Mac allocations increasing with a reported live Go heap of about 1 MiB.
-The Mac cleanup candidate and Windows handle attribution are being measured.
+The Mac cleanup candidate did not reduce retained allocations. Native heap
+attribution and Windows handle diagnostics are running.
 Stability is not established. Each run remains evidence for its own source
 and cannot establish the correctness of later changes.
 

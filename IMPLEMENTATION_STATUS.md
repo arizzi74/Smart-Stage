@@ -83,9 +83,10 @@ at commit `20bcf35` completed all four two-hour loops and restart checks. Its
 higher Windows handle counts. The preview 3 results also show continuing Mac
 growth. Completed 20-minute profiles show native malloc allocations increasing
 while the reported live Go heap remains around 1 MiB. A Mac autorelease-pool
-change at `67a10d2` passed all four native build/smoke checks and is undergoing
-a comparable memory profile; Windows per-type handle/idle diagnostics are also
-running. Stability remains under investigation. None verifies physical A/V
+change at `67a10d2` passed all four native build/smoke checks but did not reduce
+retained allocations in a comparable 20-minute profile. Native heap attribution
+and Windows per-type handle/idle diagnostics are running. Stability remains
+under investigation. None verifies physical A/V
 drift or Windows audio routing.
 
 See `docs/release-verification.md` for exact environments/evidence and the

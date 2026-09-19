@@ -163,7 +163,8 @@ These are **unverified**, not assumed passed:
   increased Windows handle counts; stability remains under investigation.
   Preview 3 also shows continued Mac growth. A completed published-binary
   profile points to native allocations while live Go heap remains around 1 MiB;
-  a Mac cleanup candidate and Windows handle attribution are being measured.
+  a Mac pool-boundary candidate did not reduce that retention. Native heap
+  attribution and Windows handle diagnostics are being collected.
   Even a passing CI result cannot establish physical A/V drift or routed sound.
 - Production signing/notarization and the bare-executable permission workflow.
 

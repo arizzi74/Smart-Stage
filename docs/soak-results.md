@@ -130,6 +130,22 @@ retained playback state, queued event data and the screen result survive through
 their existing strong references.
 
 [Run 35476510349](https://github.com/arizzi74/Smart-Stage/actions/runs/35476510349)
-is running the same 20-minute diagnostic on both Mac architectures. The source
-change is a hypothesis under test, not yet evidence that resource growth is
-fixed. Published preview 3 remains unchanged.
+completed the same 20-minute diagnostic on both Mac architectures. **The pool
+change did not reduce the retained allocation growth.** Playback/state checks
+passed, but native malloc counts still rose by roughly 15 allocations per cycle:
+
+| Target | Cycles | Native malloc allocations before → after | Increase per cycle | Native allocated KiB before → after |
+| --- | ---: | ---: | ---: | ---: |
+| Mac AMD64 | 2,226 | 22,602 → 55,699 | 14.87 | 3,680 → 7,124 |
+| Mac ARM64 | 2,279 | 22,921 → 56,392 | 14.69 | 3,388 → 6,903 |
+
+Live Go heap again ended at a reported 1 MiB. Raw candidate reports and parsed
+results are retained in
+[`verification/memory-profile-67a10d2/`](verification/memory-profile-67a10d2/).
+Published preview 3 remains unchanged; no fixed-memory claim is justified.
+
+[Heap attribution run 35477482621](https://github.com/arizzi74/Smart-Stage/actions/runs/35477482621)
+uses the same application source with debug symbols, `MallocStackLogging=1`,
+and before/after `heap -sortBySize -noContent` summaries over five minutes.
+This diagnostic aims to identify retained object classes/allocation sites.
+Its instrumented memory use must not be treated as a release stability result.
