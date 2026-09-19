@@ -5,6 +5,7 @@ Does not establish physical speaker routing, visible stage content or LAN phone
 compatibility. Pairing keys and cookies are never written to test records.
 """
 import http.cookiejar
+from collections import deque
 import json
 import os
 from pathlib import Path
@@ -24,6 +25,23 @@ root = Path(__file__).resolve().parent.parent
 records = []
 soak_seconds = int(sys.argv[2]) if len(sys.argv)>2 else 0
 assert soak_seconds >= 0, 'Soak duration must be nonnegative'
+memory_profile = os.environ.get('SMARTSTAGE_MEMORY_PROFILE') == '1'
+
+def native_memory_snapshot(pid, phase):
+    if not memory_profile:
+        return
+    if sys.platform == 'darwin':
+        commands = [('vmmap', ['vmmap','-summary',str(pid)]), ('threads', ['ps','-M','-p',str(pid)])]
+    else:
+        commands = [('process', ['pwsh','-NoLogo','-NoProfile','-NonInteractive','-Command',
+            "Get-Process -Id "+str(pid)+" | Select-Object Id,HandleCount,@{Name='Threads';Expression={$_.Threads.Count}},PrivateMemorySize64,VirtualMemorySize64 | ConvertTo-Json"])]
+    for name, command in commands:
+        destination = Path(exe+f'.memory-{phase}-{name}.txt')
+        try:
+            result = subprocess.run(command,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=20)
+            destination.write_text(f'Exit code: {result.returncode}\n'+result.stdout)
+        except (OSError,subprocess.TimeoutExpired) as error:
+            destination.write_text(f'Diagnostic unavailable: {type(error).__name__}\n')
 
 def save_records():
     destination = Path(exe+'.http-smoke.json')
@@ -52,7 +70,8 @@ def resources(pid):
         counters = Counters(); counters.cb=ctypes.sizeof(counters); handles=wintypes.DWORD()
         if not kernel.K32GetProcessMemoryInfo(handle,ctypes.byref(counters),counters.cb): raise ctypes.WinError(ctypes.get_last_error())
         if not kernel.GetProcessHandleCount(handle,ctypes.byref(handles)): raise ctypes.WinError(ctypes.get_last_error())
-        return {'residentBytes':counters.WorkingSetSize,'handles':handles.value}
+        return {'residentBytes':counters.WorkingSetSize,'peakResidentBytes':counters.PeakWorkingSetSize,
+                'pagefileUsageBytes':counters.PagefileUsage,'handles':handles.value}
     finally: kernel.CloseHandle(handle)
 
 def wait_for(predicate, seconds=45):
@@ -65,6 +84,7 @@ def wait_for(predicate, seconds=45):
 
 with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
     process = None
+    stderr_thread = None
     try:
         for restart in range(2):
             with socket.socket() as sock:
@@ -74,13 +94,32 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8',
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name=='nt' else 0)
             lines = queue.Queue()
-            def read_stdout():
-                for line in process.stdout: lines.put(line)
+            def read_stdout(stream=process.stdout):
+                for line in stream: lines.put(line)
             threading.Thread(target=read_stdout,daemon=True).start()
+            stderr_tail = deque(maxlen=100)
+            stderr_lock = threading.Lock()
+            # Drain stderr even during long runs. Save only Go GC/scavenger lines
+            # when profiling; launch keys/cookies and arbitrary memory contents
+            # are never copied to the diagnostic files.
+            def read_stderr(stream=process.stderr, phase=restart):
+                trace = open(exe+f'.gctrace-{phase}.txt','w') if memory_profile else None
+                try:
+                    for line in stream:
+                        with stderr_lock: stderr_tail.append(line[-4096:])
+                        if trace and (line.startswith('gc ') or line.startswith('scav ')):
+                            trace.write(line); trace.flush()
+                finally:
+                    if trace: trace.close()
+            stderr_thread = threading.Thread(target=read_stderr,daemon=True)
+            stderr_thread.start()
             keys = {}
             end=time.monotonic()+20
             while len(keys)<2 and time.monotonic()<end:
-                if process.poll() is not None: raise AssertionError('Application startup failed: '+process.stderr.read())
+                if process.poll() is not None:
+                    stderr_thread.join(timeout=2)
+                    with stderr_lock: details=''.join(stderr_tail)
+                    raise AssertionError('Application startup failed: '+details)
                 try: line=lines.get(timeout=.2)
                 except queue.Empty: continue
                 for role in ('Admin','Command'):
@@ -147,6 +186,7 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                 if soak_seconds:
                     playable=[c for c in saved['cues'] if (not c['path'].endswith('.mp4') or display) and (c['path'].endswith('silent-1080p.mp4') or audio)]
                     assert playable, 'No real runner output for soak'
+                    native_memory_snapshot(process.pid, 'before')
                     start=time.monotonic();next_sample=start;cycles=0;samples=[]
                     # Retain incomplete results if a later cycle fails. Checkpoint
                     # before/throughout the loop so a killed job still has evidence.
@@ -181,6 +221,7 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                     sample_resources()
                     soak.update(elapsedSeconds=time.monotonic()-start,completed=True)
                     save_records()
+                    native_memory_snapshot(process.pid, 'after')
             # Exercise shutdown during newly requested or still-running startup
             # validation. Native objects must drain before framework teardown.
             validation = admin('POST','/api/validate',{},expected=(202,503))
@@ -188,8 +229,10 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
             process.send_signal(signal.CTRL_BREAK_EVENT if os.name=='nt' else signal.SIGINT)
             process.wait(timeout=15)
             assert process.returncode==0, f'Unclean application shutdown: {process.returncode}'
+            stderr_thread.join(timeout=2)
             process=None
         print('Real application HTTP/native smoke test passed; physical routing remains unverified.')
     finally:
         if process is not None and process.poll() is None: process.kill();process.wait()
+        if stderr_thread is not None: stderr_thread.join(timeout=2)
         save_records()

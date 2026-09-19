@@ -1,0 +1,59 @@
+name: Published native memory profile
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/memory-profile.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  profile:
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            os: darwin
+            arch: arm64
+          - runner: macos-15-intel
+            os: darwin
+            arch: amd64
+          - runner: windows-2025
+            os: windows
+            arch: amd64
+          - runner: windows-11-arm
+            os: windows
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    env:
+      SMARTSTAGE_VERSION: v0.1.0-preview.3
+      SMARTSTAGE_INSTALL_DIR: ${{ github.workspace }}/dist/profile-bin
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install exact published Mac executable
+        if: runner.os == 'macOS'
+        shell: bash
+        run: sh install.sh
+      - name: Install exact published Windows executable
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: '& ./install.ps1'
+      - name: Repeat native transitions with GC and OS memory diagnostics
+        shell: bash
+        env:
+          GODEBUG: gctrace=1,scavtrace=1
+          SMARTSTAGE_MEMORY_PROFILE: '1'
+        run: |
+          suffix=''
+          if [[ '${{ matrix.os }}' == windows ]]; then suffix=.exe; fi
+          python3 scripts/application-smoke.py "$SMARTSTAGE_INSTALL_DIR/smartstage$suffix" 1200
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: memory-profile-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            dist/profile-bin/*.http-smoke.json
+            dist/profile-bin/*.gctrace-*.txt
+            dist/profile-bin/*.memory-*.txt
+          if-no-files-found: warn
