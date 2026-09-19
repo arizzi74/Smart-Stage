@@ -19,6 +19,22 @@ blackout, the two-hour soak or latency targets. macOS builds are ad-hoc signed,
 not Developer ID signed or notarized. Windows executables are not Authenticode
 signed. See `docs/release-verification.md` for the exact evidence and limitations.
 
-Download the executable matching your OS and architecture, or use the installer
-instructions in README. No Go, Node, Python, media player or extra runtime is
-required to run Smart Stage.
+Install on macOS (Apple Silicon or Intel):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
+```
+
+Install in Windows PowerShell (ARM64 or AMD64):
+
+```powershell
+irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | iex
+```
+
+The installer selects your architecture and verifies the executable's SHA-256.
+Run `smartstage` afterward (open a new login terminal on Mac, or use the full
+path printed by its installer). Alternatively, download the matching executable
+below. No Go, Node, Python, media player or extra runtime is required.
+
+[First-show setup](https://github.com/arizzi74/Smart-Stage#first-show) ·
+[Build and verification details](https://github.com/arizzi74/Smart-Stage/blob/main/docs/release-verification.md)
