@@ -1,0 +1,8 @@
+{
+  "name": "smartstage-browser-checks",
+  "private": true,
+  "description": "Development-only browser checks; never shipped or needed by Smart Stage",
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}
