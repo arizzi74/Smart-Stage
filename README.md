@@ -145,3 +145,5 @@ Browser tests use development-only Playwright 1.63.0/Chromium:
 Read [architecture](docs/architecture.md), [decisions](docs/decisions.md),
 [API](docs/api.md), [media compatibility](docs/media-compatibility.md), and
 [release verification/event checklist](docs/release-verification.md).
+The [acceptance audit](docs/acceptance-audit.md) maps specification requirements
+to actual evidence and identifies the open physical checks.

@@ -59,5 +59,6 @@ It uses commit `20bcf35`, before the preview 2 shutdown change. Its result must
 be inspected, not assumed. It cannot verify physical A/V drift.
 
 See `docs/release-verification.md` for exact environments/evidence and the
-remaining checklist. Local final release files are downloaded under
+remaining checklist, and `docs/acceptance-audit.md` for a specification-wide
+evidence audit. Local final release files are downloaded under
 `dist/releases/v0.1.0-preview.2/`; local cross-build outputs are under `dist/`.
