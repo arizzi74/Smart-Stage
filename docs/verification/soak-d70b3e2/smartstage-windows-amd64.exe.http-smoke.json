@@ -1,0 +1,749 @@
+[
+  {
+    "cuesConfigured": 4,
+    "cuesNativelyPlayedAndStopped": 1,
+    "audioEndpoints": 0,
+    "displays": 1,
+    "physicalRoutingVerified": false
+  },
+  {
+    "soak": {
+      "requestedSeconds": 7200,
+      "elapsedSeconds": 7200.078,
+      "cycles": 17756,
+      "samples": [
+        {
+          "seconds": 0.12,
+          "cycles": 1,
+          "residentBytes": 65355776,
+          "handles": 559
+        },
+        {
+          "seconds": 60.44,
+          "cycles": 150,
+          "residentBytes": 107446272,
+          "handles": 577
+        },
+        {
+          "seconds": 120.84,
+          "cycles": 299,
+          "residentBytes": 109084672,
+          "handles": 580
+        },
+        {
+          "seconds": 181.06,
+          "cycles": 449,
+          "residentBytes": 108556288,
+          "handles": 579
+        },
+        {
+          "seconds": 241.45,
+          "cycles": 596,
+          "residentBytes": 107020288,
+          "handles": 579
+        },
+        {
+          "seconds": 301.5,
+          "cycles": 747,
+          "residentBytes": 95907840,
+          "handles": 576
+        },
+        {
+          "seconds": 361.98,
+          "cycles": 898,
+          "residentBytes": 97136640,
+          "handles": 578
+        },
+        {
+          "seconds": 421.98,
+          "cycles": 1046,
+          "residentBytes": 97677312,
+          "handles": 578
+        },
+        {
+          "seconds": 482.36,
+          "cycles": 1193,
+          "residentBytes": 96845824,
+          "handles": 576
+        },
+        {
+          "seconds": 542.45,
+          "cycles": 1340,
+          "residentBytes": 96849920,
+          "handles": 576
+        },
+        {
+          "seconds": 602.7,
+          "cycles": 1488,
+          "residentBytes": 95907840,
+          "handles": 578
+        },
+        {
+          "seconds": 662.92,
+          "cycles": 1637,
+          "residentBytes": 95625216,
+          "handles": 576
+        },
+        {
+          "seconds": 722.98,
+          "cycles": 1786,
+          "residentBytes": 96858112,
+          "handles": 573
+        },
+        {
+          "seconds": 783.02,
+          "cycles": 1934,
+          "residentBytes": 97189888,
+          "handles": 573
+        },
+        {
+          "seconds": 843.47,
+          "cycles": 2083,
+          "residentBytes": 95088640,
+          "handles": 573
+        },
+        {
+          "seconds": 903.52,
+          "cycles": 2232,
+          "residentBytes": 96034816,
+          "handles": 585
+        },
+        {
+          "seconds": 963.55,
+          "cycles": 2379,
+          "residentBytes": 95535104,
+          "handles": 585
+        },
+        {
+          "seconds": 1023.91,
+          "cycles": 2528,
+          "residentBytes": 97746944,
+          "handles": 591
+        },
+        {
+          "seconds": 1084.34,
+          "cycles": 2678,
+          "residentBytes": 97435648,
+          "handles": 589
+        },
+        {
+          "seconds": 1144.64,
+          "cycles": 2826,
+          "residentBytes": 93798400,
+          "handles": 589
+        },
+        {
+          "seconds": 1205.0,
+          "cycles": 2974,
+          "residentBytes": 93663232,
+          "handles": 589
+        },
+        {
+          "seconds": 1265.05,
+          "cycles": 3124,
+          "residentBytes": 96075776,
+          "handles": 589
+        },
+        {
+          "seconds": 1325.16,
+          "cycles": 3271,
+          "residentBytes": 93319168,
+          "handles": 585
+        },
+        {
+          "seconds": 1385.31,
+          "cycles": 3419,
+          "residentBytes": 93097984,
+          "handles": 584
+        },
+        {
+          "seconds": 1445.73,
+          "cycles": 3566,
+          "residentBytes": 96260096,
+          "handles": 586
+        },
+        {
+          "seconds": 1505.78,
+          "cycles": 3716,
+          "residentBytes": 97497088,
+          "handles": 586
+        },
+        {
+          "seconds": 1565.83,
+          "cycles": 3866,
+          "residentBytes": 97660928,
+          "handles": 586
+        },
+        {
+          "seconds": 1626.17,
+          "cycles": 4012,
+          "residentBytes": 99065856,
+          "handles": 583
+        },
+        {
+          "seconds": 1686.19,
+          "cycles": 4161,
+          "residentBytes": 95907840,
+          "handles": 583
+        },
+        {
+          "seconds": 1746.25,
+          "cycles": 4311,
+          "residentBytes": 95846400,
+          "handles": 583
+        },
+        {
+          "seconds": 1806.69,
+          "cycles": 4460,
+          "residentBytes": 97771520,
+          "handles": 583
+        },
+        {
+          "seconds": 1866.95,
+          "cycles": 4608,
+          "residentBytes": 96591872,
+          "handles": 583
+        },
+        {
+          "seconds": 1927.12,
+          "cycles": 4757,
+          "residentBytes": 98557952,
+          "handles": 591
+        },
+        {
+          "seconds": 1987.22,
+          "cycles": 4907,
+          "residentBytes": 94715904,
+          "handles": 597
+        },
+        {
+          "seconds": 2047.58,
+          "cycles": 5059,
+          "residentBytes": 98791424,
+          "handles": 597
+        },
+        {
+          "seconds": 2107.62,
+          "cycles": 5206,
+          "residentBytes": 98299904,
+          "handles": 597
+        },
+        {
+          "seconds": 2167.91,
+          "cycles": 5356,
+          "residentBytes": 98914304,
+          "handles": 597
+        },
+        {
+          "seconds": 2227.92,
+          "cycles": 5505,
+          "residentBytes": 98516992,
+          "handles": 593
+        },
+        {
+          "seconds": 2288.3,
+          "cycles": 5655,
+          "residentBytes": 97501184,
+          "handles": 590
+        },
+        {
+          "seconds": 2348.38,
+          "cycles": 5804,
+          "residentBytes": 97431552,
+          "handles": 590
+        },
+        {
+          "seconds": 2408.77,
+          "cycles": 5956,
+          "residentBytes": 96399360,
+          "handles": 590
+        },
+        {
+          "seconds": 2469.02,
+          "cycles": 6108,
+          "residentBytes": 97353728,
+          "handles": 590
+        },
+        {
+          "seconds": 2529.14,
+          "cycles": 6256,
+          "residentBytes": 94580736,
+          "handles": 590
+        },
+        {
+          "seconds": 2589.66,
+          "cycles": 6404,
+          "residentBytes": 94863360,
+          "handles": 597
+        },
+        {
+          "seconds": 2649.91,
+          "cycles": 6553,
+          "residentBytes": 99176448,
+          "handles": 599
+        },
+        {
+          "seconds": 2710.12,
+          "cycles": 6703,
+          "residentBytes": 98635776,
+          "handles": 599
+        },
+        {
+          "seconds": 2770.12,
+          "cycles": 6851,
+          "residentBytes": 100024320,
+          "handles": 599
+        },
+        {
+          "seconds": 2830.19,
+          "cycles": 7003,
+          "residentBytes": 98930688,
+          "handles": 596
+        },
+        {
+          "seconds": 2890.64,
+          "cycles": 7125,
+          "residentBytes": 102322176,
+          "handles": 604
+        },
+        {
+          "seconds": 2950.7,
+          "cycles": 7256,
+          "residentBytes": 102825984,
+          "handles": 613
+        },
+        {
+          "seconds": 3010.75,
+          "cycles": 7404,
+          "residentBytes": 103690240,
+          "handles": 613
+        },
+        {
+          "seconds": 3070.98,
+          "cycles": 7554,
+          "residentBytes": 100560896,
+          "handles": 613
+        },
+        {
+          "seconds": 3131.19,
+          "cycles": 7700,
+          "residentBytes": 97075200,
+          "handles": 613
+        },
+        {
+          "seconds": 3191.58,
+          "cycles": 7846,
+          "residentBytes": 98734080,
+          "handles": 613
+        },
+        {
+          "seconds": 3251.8,
+          "cycles": 7994,
+          "residentBytes": 98852864,
+          "handles": 613
+        },
+        {
+          "seconds": 3311.98,
+          "cycles": 8144,
+          "residentBytes": 99123200,
+          "handles": 610
+        },
+        {
+          "seconds": 3372.09,
+          "cycles": 8296,
+          "residentBytes": 95420416,
+          "handles": 612
+        },
+        {
+          "seconds": 3432.25,
+          "cycles": 8443,
+          "residentBytes": 97169408,
+          "handles": 609
+        },
+        {
+          "seconds": 3492.62,
+          "cycles": 8590,
+          "residentBytes": 97349632,
+          "handles": 602
+        },
+        {
+          "seconds": 3552.81,
+          "cycles": 8736,
+          "residentBytes": 99397632,
+          "handles": 604
+        },
+        {
+          "seconds": 3612.84,
+          "cycles": 8883,
+          "residentBytes": 99045376,
+          "handles": 599
+        },
+        {
+          "seconds": 3673.23,
+          "cycles": 9032,
+          "residentBytes": 94576640,
+          "handles": 599
+        },
+        {
+          "seconds": 3733.27,
+          "cycles": 9181,
+          "residentBytes": 93413376,
+          "handles": 601
+        },
+        {
+          "seconds": 3793.56,
+          "cycles": 9332,
+          "residentBytes": 96325632,
+          "handles": 601
+        },
+        {
+          "seconds": 3854.06,
+          "cycles": 9482,
+          "residentBytes": 99442688,
+          "handles": 598
+        },
+        {
+          "seconds": 3914.2,
+          "cycles": 9629,
+          "residentBytes": 99590144,
+          "handles": 598
+        },
+        {
+          "seconds": 3974.44,
+          "cycles": 9779,
+          "residentBytes": 98570240,
+          "handles": 598
+        },
+        {
+          "seconds": 4034.53,
+          "cycles": 9928,
+          "residentBytes": 98422784,
+          "handles": 594
+        },
+        {
+          "seconds": 4094.61,
+          "cycles": 10079,
+          "residentBytes": 99024896,
+          "handles": 595
+        },
+        {
+          "seconds": 4154.64,
+          "cycles": 10229,
+          "residentBytes": 99192832,
+          "handles": 592
+        },
+        {
+          "seconds": 4214.78,
+          "cycles": 10377,
+          "residentBytes": 97038336,
+          "handles": 592
+        },
+        {
+          "seconds": 4274.86,
+          "cycles": 10524,
+          "residentBytes": 98299904,
+          "handles": 594
+        },
+        {
+          "seconds": 4335.22,
+          "cycles": 10672,
+          "residentBytes": 97370112,
+          "handles": 594
+        },
+        {
+          "seconds": 4395.45,
+          "cycles": 10824,
+          "residentBytes": 96555008,
+          "handles": 594
+        },
+        {
+          "seconds": 4455.55,
+          "cycles": 10971,
+          "residentBytes": 97030144,
+          "handles": 592
+        },
+        {
+          "seconds": 4515.66,
+          "cycles": 11120,
+          "residentBytes": 96931840,
+          "handles": 592
+        },
+        {
+          "seconds": 4576.03,
+          "cycles": 11268,
+          "residentBytes": 97701888,
+          "handles": 592
+        },
+        {
+          "seconds": 4636.06,
+          "cycles": 11417,
+          "residentBytes": 94810112,
+          "handles": 598
+        },
+        {
+          "seconds": 4696.38,
+          "cycles": 11563,
+          "residentBytes": 98586624,
+          "handles": 600
+        },
+        {
+          "seconds": 4756.44,
+          "cycles": 11708,
+          "residentBytes": 98512896,
+          "handles": 600
+        },
+        {
+          "seconds": 4816.72,
+          "cycles": 11855,
+          "residentBytes": 98287616,
+          "handles": 602
+        },
+        {
+          "seconds": 4876.73,
+          "cycles": 12005,
+          "residentBytes": 98365440,
+          "handles": 602
+        },
+        {
+          "seconds": 4936.75,
+          "cycles": 12154,
+          "residentBytes": 98164736,
+          "handles": 596
+        },
+        {
+          "seconds": 4997.14,
+          "cycles": 12305,
+          "residentBytes": 97624064,
+          "handles": 595
+        },
+        {
+          "seconds": 5057.39,
+          "cycles": 12456,
+          "residentBytes": 97746944,
+          "handles": 597
+        },
+        {
+          "seconds": 5117.69,
+          "cycles": 12604,
+          "residentBytes": 97128448,
+          "handles": 597
+        },
+        {
+          "seconds": 5178.02,
+          "cycles": 12756,
+          "residentBytes": 97054720,
+          "handles": 595
+        },
+        {
+          "seconds": 5238.19,
+          "cycles": 12905,
+          "residentBytes": 98025472,
+          "handles": 595
+        },
+        {
+          "seconds": 5298.55,
+          "cycles": 13055,
+          "residentBytes": 97644544,
+          "handles": 595
+        },
+        {
+          "seconds": 5358.63,
+          "cycles": 13199,
+          "residentBytes": 97546240,
+          "handles": 595
+        },
+        {
+          "seconds": 5418.86,
+          "cycles": 13349,
+          "residentBytes": 97984512,
+          "handles": 597
+        },
+        {
+          "seconds": 5478.97,
+          "cycles": 13496,
+          "residentBytes": 97169408,
+          "handles": 597
+        },
+        {
+          "seconds": 5539.38,
+          "cycles": 13648,
+          "residentBytes": 99401728,
+          "handles": 601
+        },
+        {
+          "seconds": 5599.56,
+          "cycles": 13802,
+          "residentBytes": 100986880,
+          "handles": 603
+        },
+        {
+          "seconds": 5659.64,
+          "cycles": 13951,
+          "residentBytes": 100626432,
+          "handles": 603
+        },
+        {
+          "seconds": 5719.88,
+          "cycles": 14098,
+          "residentBytes": 99274752,
+          "handles": 603
+        },
+        {
+          "seconds": 5780.22,
+          "cycles": 14248,
+          "residentBytes": 97456128,
+          "handles": 603
+        },
+        {
+          "seconds": 5840.23,
+          "cycles": 14396,
+          "residentBytes": 98054144,
+          "handles": 599
+        },
+        {
+          "seconds": 5900.41,
+          "cycles": 14542,
+          "residentBytes": 97386496,
+          "handles": 597
+        },
+        {
+          "seconds": 5960.66,
+          "cycles": 14692,
+          "residentBytes": 96944128,
+          "handles": 594
+        },
+        {
+          "seconds": 6020.91,
+          "cycles": 14843,
+          "residentBytes": 99278848,
+          "handles": 600
+        },
+        {
+          "seconds": 6081.08,
+          "cycles": 14989,
+          "residentBytes": 99012608,
+          "handles": 600
+        },
+        {
+          "seconds": 6141.38,
+          "cycles": 15138,
+          "residentBytes": 97579008,
+          "handles": 602
+        },
+        {
+          "seconds": 6201.45,
+          "cycles": 15287,
+          "residentBytes": 97632256,
+          "handles": 601
+        },
+        {
+          "seconds": 6261.81,
+          "cycles": 15438,
+          "residentBytes": 94429184,
+          "handles": 592
+        },
+        {
+          "seconds": 6322.22,
+          "cycles": 15584,
+          "residentBytes": 94076928,
+          "handles": 592
+        },
+        {
+          "seconds": 6382.48,
+          "cycles": 15734,
+          "residentBytes": 94257152,
+          "handles": 590
+        },
+        {
+          "seconds": 6442.58,
+          "cycles": 15881,
+          "residentBytes": 96280576,
+          "handles": 596
+        },
+        {
+          "seconds": 6502.61,
+          "cycles": 16030,
+          "residentBytes": 99291136,
+          "handles": 595
+        },
+        {
+          "seconds": 6562.78,
+          "cycles": 16177,
+          "residentBytes": 99594240,
+          "handles": 595
+        },
+        {
+          "seconds": 6622.94,
+          "cycles": 16327,
+          "residentBytes": 99725312,
+          "handles": 597
+        },
+        {
+          "seconds": 6683.42,
+          "cycles": 16478,
+          "residentBytes": 98152448,
+          "handles": 594
+        },
+        {
+          "seconds": 6743.45,
+          "cycles": 16627,
+          "residentBytes": 94720000,
+          "handles": 590
+        },
+        {
+          "seconds": 6803.7,
+          "cycles": 16775,
+          "residentBytes": 96505856,
+          "handles": 598
+        },
+        {
+          "seconds": 6863.88,
+          "cycles": 16924,
+          "residentBytes": 99778560,
+          "handles": 602
+        },
+        {
+          "seconds": 6924.06,
+          "cycles": 17070,
+          "residentBytes": 97251328,
+          "handles": 600
+        },
+        {
+          "seconds": 6984.45,
+          "cycles": 17223,
+          "residentBytes": 97775616,
+          "handles": 600
+        },
+        {
+          "seconds": 7044.8,
+          "cycles": 17370,
+          "residentBytes": 97882112,
+          "handles": 597
+        },
+        {
+          "seconds": 7104.8,
+          "cycles": 17520,
+          "residentBytes": 97685504,
+          "handles": 597
+        },
+        {
+          "seconds": 7165.09,
+          "cycles": 17670,
+          "residentBytes": 94617600,
+          "handles": 597
+        },
+        {
+          "seconds": 7200.08,
+          "cycles": 17756,
+          "residentBytes": 98177024,
+          "handles": 597
+        }
+      ],
+      "physicalRoutingOrAVDriftVerified": false
+    }
+  },
+  {
+    "restart": "saved labels/order restored; silent and stage disabled",
+    "instanceChanged": true
+  }
+]

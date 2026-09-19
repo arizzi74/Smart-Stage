@@ -74,14 +74,19 @@ and compiled, but Windows audio playback remains unverified on real hardware.
 Physical non-default audio routing, projector/second-monitor blackout, hotplug/
 window relocation, mixed DPI, phones on real LANs, timing targets, clean-machine
 acceptance, production signing/notarization and full physical two-hour soak.
-A two-hour native CI soak of the exact preview 3 source, commit `d70b3e2`, is
-running in [`35471045100`](https://github.com/arizzi74/Smart-Stage/actions/runs/35471045100).
+A two-hour native CI soak of the exact preview 3 source, commit `d70b3e2`,
+completed all four loops and restart checks in
+[`35471045100`](https://github.com/arizzi74/Smart-Stage/actions/runs/35471045100).
 The earlier [`35468888430`](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
 at commit `20bcf35` completed all four two-hour loops and restart checks. Its
 [resource analysis](docs/soak-results.md) shows continuing Mac RSS growth and
-higher Windows handle counts. Stability remains under investigation; a separate
-diagnostic run is profiling the published preview's memory. The exact preview 3
-soak result is pending. None verifies physical A/V drift or Windows audio routing.
+higher Windows handle counts. The preview 3 results also show continuing Mac
+growth. Completed 20-minute profiles show native malloc allocations increasing
+while the reported live Go heap remains around 1 MiB. A Mac autorelease-pool
+change at `67a10d2` passed all four native build/smoke checks and is undergoing
+a comparable memory profile; Windows per-type handle/idle diagnostics are also
+running. Stability remains under investigation. None verifies physical A/V
+drift or Windows audio routing.
 
 See `docs/release-verification.md` for exact environments/evidence and the
 remaining checklist, and `docs/acceptance-audit.md` for a specification-wide

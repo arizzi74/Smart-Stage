@@ -52,8 +52,32 @@ python docs/verification/analyze-soak.py \
 ## Preview 3: `d70b3e2`
 
 The exact-source [two-hour run 35471045100](https://github.com/arizzi74/Smart-Stage/actions/runs/35471045100)
-is still running. The Mac native bridge is unchanged from the earlier baseline,
-but the later application must retain its own result and source attribution.
+completed successfully on all four targets, with 121 resource samples each and
+successful saved-show restart checks. These are results for release source
+`d70b3e297e0e121efc6f0800b1ffe7afe5a871d1`. The Mac native bridge is unchanged
+from the earlier baseline, but this later application retains its own evidence.
+
+| Target | Completed cycles | Elapsed seconds | RSS first → final / sampled max (MiB) | Windows handles first → final / sampled max | RSS trend after minute 15 (MiB/hour) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Mac AMD64 | 13,085 | 7,200.26 | 32.9 → 56.9 / 56.9 | — | +8.76 |
+| Mac ARM64 | 13,737 | 7,200.22 | 49.2 → 76.5 / 76.6 | — | +7.72 |
+| Windows AMD64 | 17,756 | 7,200.08 | 62.3 → 93.6 / 104.0 | 559 → 597 / 613 | +0.47 |
+| Windows ARM64 | 18,018 | 7,200.08 | 67.7 → 66.0 / 80.0 | 570 → 592 / 603 | −2.05 |
+
+![Preview 3 full two-hour resource traces](verification/soak-d70b3e2/resource-trends.png)
+
+Both Mac traces again show continued resident-memory growth. Windows traces
+fluctuate after startup: handle trends after minute 15 are +4.53/hour (AMD64)
+and +0.71/hour (ARM64), with final 15-minute ranges of 590–602 and 590–600.
+These observations do not establish stability beyond this workload and duration.
+The earlier run's different Windows trends should not be merged into this run
+or interpreted as a measured application improvement; their Windows audio
+change was not exercised by runners without audio endpoints.
+
+Raw reports, numerical summary and plots are in
+[`verification/soak-d70b3e2/`](verification/soak-d70b3e2/). Regenerate them using
+the earlier analysis command with directory `soak-d70b3e2`, run `35471045100`
+and commit `d70b3e297e0e121efc6f0800b1ffe7afe5a871d1`.
 
 [Diagnostic run 35475182913](https://github.com/arizzi74/Smart-Stage/actions/runs/35475182913)
 completed 20 minutes of native transitions against each of the four **published**

@@ -7,7 +7,7 @@ extra application runtime is needed on the event computer.
 
 **Preview:** built and exercised through real OS APIs on all four target runners.
 Physical routing, visible projector blackout, hotplug, latency, clean-machine
-acceptance and the two-hour soak remain unverified. Windows CI has no audio
+acceptance and resource stability remain unverified. Windows CI has no audio
 endpoints; Mac CI uses virtual/null audio. Read [verification](docs/release-verification.md)
 and [implementation status](IMPLEMENTATION_STATUS.md). This is not an accepted
 production release.

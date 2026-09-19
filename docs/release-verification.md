@@ -156,14 +156,15 @@ These are **unverified**, not assumed passed:
   folders and missing drives.
 - A two-hour native soak measuring resources, callback/handle growth, frozen
   windows and audiovisual drift. [Preview 3 soak 35471045100](https://github.com/arizzi74/Smart-Stage/actions/runs/35471045100)
-  is running a two-hour native transition/STOP/resource test at release commit
-  `d70b3e2`. The earlier [run 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
+  completed all four two-hour native transition/STOP loops and restart checks
+  at release commit `d70b3e2`. The earlier [run 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
   at `20bcf35` completed all four two-hour loops and restart checks. Its
   [resource analysis](soak-results.md) shows continuing Mac RSS growth and
   increased Windows handle counts; stability remains under investigation.
-  The exact preview 3 result and additional memory diagnostics are pending.
-  Even a passing CI
-  result cannot establish physical A/V drift or routed sound.
+  Preview 3 also shows continued Mac growth. A completed published-binary
+  profile points to native allocations while live Go heap remains around 1 MiB;
+  a Mac cleanup candidate and Windows handle attribution are being measured.
+  Even a passing CI result cannot establish physical A/V drift or routed sound.
 - Production signing/notarization and the bare-executable permission workflow.
 
 Windows 11 is the intended validation baseline. Mac deployment target 12.0 is

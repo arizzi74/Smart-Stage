@@ -69,14 +69,17 @@ These are the specification's eleven steps, not a substitute scenario.
 ## Outstanding measurements and long-running evidence
 
 The two-hour [preview 3 soak 35471045100](https://github.com/arizzi74/Smart-Stage/actions/runs/35471045100)
-is running at exact release commit `d70b3e2`. It repeats native transitions/STOP
-and collects resident memory plus Windows handle counts. Completion and resource
-trend analysis are pending. The earlier [soak 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
+completed all four two-hour loops/restart checks at exact release commit
+`d70b3e2`. Its resource traces show continued Mac resident-memory growth;
+Windows memory and handles fluctuate after startup. The earlier
+[soak 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
 completed all four two-hour loops/restart checks at `20bcf35`. Its
 [resource traces](soak-results.md) show continuing Mac RSS growth and higher
-Windows handle counts. Stability is not established; memory diagnostics of the
-published preview are running. The earlier run remains evidence for its own
-source and cannot establish the correctness of later changes.
+Windows handle counts. Completed published-preview diagnostics show native
+Mac allocations increasing with a reported live Go heap of about 1 MiB.
+The Mac cleanup candidate and Windows handle attribution are being measured.
+Stability is not established. Each run remains evidence for its own source
+and cannot establish the correctness of later changes.
 
 No measured claim is made for server-received STOP to physical silence/black
 (target 200 ms), tap to visible controller stopped state (target 500 ms), cue
