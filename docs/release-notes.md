@@ -4,6 +4,10 @@ Native AVFoundation/Media Foundation host playback, embedded Admin and Command
 interfaces, paired LAN access, manual cue playlists, output selection, persistent
 blackout, atomic local persistence and one-command installers are implemented.
 
+This preview also drains outstanding native inspection before framework
+shutdown and bounds interactive inspection requests. Shutdown during media
+validation is included in the native application checks.
+
 The attached executables embed the web interfaces and native bridges. They
 require only supported OS libraries at runtime. Each has an individual SHA-256
 checksum and an import audit. Native and application smoke records are attached.

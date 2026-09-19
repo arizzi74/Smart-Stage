@@ -5,6 +5,15 @@ real native APIs but cannot verify what a human sees or hears on event hardware.
 
 ## Recorded evidence
 
+[Preview 1](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.1)
+was published by [tag run 35468638944](https://github.com/arizzi74/Smart-Stage/actions/runs/35468638944)
+after all four native build/test jobs passed. That run subsequently found a Mac
+installer shell parsing bug. After correcting the installer,
+[run 35468948308](https://github.com/arizzi74/Smart-Stage/actions/runs/35468948308)
+passed the actual `curl | sh` / `irm | iex` installation, version and HTTP startup
+checks on all four runners. Hosted runners contain development tools; these
+checks are not clean-machine evidence.
+
 [GitHub run 35467862752](https://github.com/arizzi74/Smart-Stage/actions/runs/35467862752),
 commit `7c3d57f`, passed all four builds, import audits, native smoke tests,
 target-OS shared tests and application HTTP/native smoke tests.

@@ -1,39 +1,59 @@
 # Smart Stage implementation status
 
-Specification: `SMART_STAGE_CODEX_PROMPT.md` version 1.0. This is an incomplete
-implementation, not a validated release.
+The application is implemented and a four-target **preview** is published.
+The full specification's physical acceptance is still incomplete; the project
+is not declared production-ready or complete.
 
-## Environment
+Repository: https://github.com/arizzi74/Smart-Stage
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.1
 
-Development host: Ubuntu 22.04, Linux ARM64, Go 1.26.5. No Windows interactive
-desktop, Apple SDK, macOS runtime, physical audio endpoints, or stage monitors
-are available on this host.
+## Implemented
 
-## Milestones
+- Compiled-in AVFoundation/AppKit/Core Audio backend on macOS and Media
+  Foundation/EVR/Win32 backend on Windows; real native harness and media fixtures.
+- Routed single-timeline playback, persistent native black stage, STOP/end/error
+  handling, output enumeration, hotplug handling, Escape and power assertions.
+- Go coordinator with generations, stop epochs, latest-only native/load mailboxes,
+  bounded request idempotency and SSE subscribers. Atomic per-user persistence,
+  backup, corruption diagnostics and native process lock.
+- Embedded responsive Admin/Command pages, host filesystem browsing/inspection,
+  cue CRUD/labels/order/revisions, separate output controls and stage enablement.
+- LAN startup URLs/address refresh, admin/command pairing, session/CSRF/Origin/
+  Host enforcement, bounds, path restrictions and command-role path redaction.
+- Reproducible matching-OS builds, import audits, checksums, release automation,
+  per-user curl/irm installers and operating/API/architecture documentation.
 
-1. Native feasibility — real Media Foundation/AVFoundation bridge implementations
-   and native harness committed. Windows AMD64/ARM64 cross-builds and OS-only PE
-   import audits pass. Both macOS targets compiled on GitHub runners; startup
-   exposed a JSON boolean encoding bug, now corrected and awaiting re-run.
-   Native opening, routing and blackout acceptance are not yet established.
-2. Core — implemented: generation/epoch coordinator, bounded idempotency and
-   subscriber mailboxes, async inspection, optimistic playlist revisions,
-   canonical read-only browsing, atomic persistence/backup and process lock.
-   Go race tests pass on Linux ARM64.
-3. Web — implemented: embedded responsive Admin/Command pages, LAN discovery,
-   pairing and roles, CSRF/Origin/Host checks, filesystem browser, playlist and
-   output editing. HTTP authorization, redaction, malformed-request and SSE
-   reconnect tests pass on Linux ARM64. Browser/native app end-to-end tests next.
-4. Reliability — in progress; native device loss and window behavior require
-   physical verification. Both Windows native runner smoke tests pass. Mac
-   native smoke tests have passed; an ARM64 run exposed an overly short
-   start-to-STOP test timer, now replaced with STOP after the playing event.
-5. Release — pending; physical acceptance and clean-machine verification require
-   Windows 11 and both macOS architectures.
+## Built and automatically tested
 
-Repository: https://github.com/arizzi74/Smart-Stage. User additionally requested
-Windows ARM64 binaries, GitHub releases and curl/irm installers. CI builds all
-four targets. Release/installer publication remains pending the application.
+All four: macOS ARM64/AMD64, Windows ARM64/AMD64. Windows ARM64 was added by
+explicit user request. Tagged workflow `35468638944` passed builds, dependency
+checks, native media checks and real-application HTTP/native smoke tests before
+publishing `v0.1.0-preview.1`. The initial Mac installer check exposed a shell
+variable parsing issue, fixed on `main`; installer run
+[`35468948308`](https://github.com/arizzi74/Smart-Stage/actions/runs/35468948308)
+then passed on all four platforms using the published binaries. Each installed
+binary reported its version and served the Command page.
 
-No successful native playback, physical routing, latency, soak, or clean-machine
-result has yet been recorded. Builds do not establish those capabilities.
+- Mac CI: all four fixture cues played/stopped through actual AVFoundation, on
+  virtual/null audio devices and one virtual display; saved-show restart passed.
+- Windows CI: all four formats natively inspected; silent video played/stopped
+  on a Hyper-V display; restart passed. Runners have **no audio render endpoints**,
+  so Windows audio renderer playback/routing is still unverified.
+- Native natural completion and stage-enabled persistence are checked through
+  native events. No CI assertion proves physical black pixels or actual sound.
+- Linux ARM64: `go test -race ./...`, `go vet ./...`, Chromium browser checks.
+  Shared tests also passed on the four target OS runners. Browser checks cover
+  widths 320/390/768/844/1280, STOP usability, escaping and reconnect semantics.
+
+## Still open
+
+Physical non-default audio routing, projector/second-monitor blackout, hotplug/
+window relocation, mixed DPI, phones on real LANs, timing targets, clean-machine
+acceptance, production signing/notarization and full physical two-hour soak.
+A two-hour native CI soak is running separately in
+[`35468888430`](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430).
+Its result must be inspected, not assumed. It cannot verify physical A/V drift.
+
+See `docs/release-verification.md` for exact environments/evidence and the
+remaining checklist. Local final release files are downloaded under
+`dist/releases/v0.1.0-preview.1/`; local cross-build outputs are under `dist/`.
