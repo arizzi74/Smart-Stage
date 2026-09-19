@@ -1,0 +1,47 @@
+name: Candidate Mac native memory profile
+on:
+  push:
+    branches: [main]
+    paths:
+      - internal/platform/bridge_darwin.m
+      - .github/workflows/macos-memory-profile.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  profile:
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: amd64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.26.5'
+          cache: false
+      - name: Build candidate and inspect native imports
+        shell: bash
+        run: bash scripts/build.sh darwin '${{ matrix.arch }}'
+      - name: Repeat native transitions with GC and OS memory diagnostics
+        shell: bash
+        env:
+          GODEBUG: gctrace=1,scavtrace=1
+          SMARTSTAGE_MEMORY_PROFILE: '1'
+        run: python3 scripts/application-smoke.py './dist/smartstage-darwin-${{ matrix.arch }}' 1200
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: candidate-memory-profile-darwin-${{ matrix.arch }}
+          path: |
+            dist/smartstage-*.http-smoke.json
+            dist/smartstage-*.gctrace-*.txt
+            dist/smartstage-*.memory-*.txt
+            dist/toolchain-*.txt
+          if-no-files-found: warn

@@ -29,6 +29,15 @@ static AudioObjectPropertyListenerBlock audioListener;
 static void stopCurrent(void);
 static void checkDevices(void);
 
+// Go calls and AVFoundation callbacks do not necessarily arrive as AppKit
+// events. Bound their temporary Objective-C objects to each main-queue task
+// instead of depending on the application event loop's autorelease pool.
+static void onMain(void (^work)(void)) {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        @autoreleasepool { work(); }
+    });
+}
+
 // Coalesce pending controls so STOP cannot sit behind a burst of UI blocks.
 // The newest accepted generation supersedes every earlier pending command.
 static void enqueueControl(uint64_t gen, void (^command)(void)) {
@@ -37,7 +46,7 @@ static void enqueueControl(uint64_t gen, void (^command)(void)) {
     latestCommand = [command copy];
     BOOL wake = !commandScheduled; commandScheduled = YES;
     pthread_mutex_unlock(&commandMutex);
-    if (wake) dispatch_async(dispatch_get_main_queue(), ^{
+    if (wake) onMain(^{
         pthread_mutex_lock(&commandMutex);
         void (^next)(void) = latestCommand;
         latestCommand = nil; commandScheduled = NO;
@@ -63,14 +72,16 @@ static double seconds(CMTime time) {
 // Every event is emitted from the main queue; the Go poller only takes this lock
 // while copying a bounded queue entry, never during media or filesystem work.
 static void emit(uint64_t gen, NSString *kind, NSString *message, double position, double duration) {
-    NSDictionary *value = @{@"generation": @(gen), @"kind": kind, @"message": message ?: @"",
-        @"position": @(position), @"duration": @(duration), @"stageEnabled": jbool(stageEnabled)};
-    NSData *data = [NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];
-    if (!data) return;
-    pthread_mutex_lock(&eventMutex);
-    if (events.count >= 256) [events removeObjectAtIndex:0];
-    [events addObject:data];
-    pthread_mutex_unlock(&eventMutex);
+    @autoreleasepool {
+        NSDictionary *value = @{@"generation": @(gen), @"kind": kind, @"message": message ?: @"",
+            @"position": @(position), @"duration": @(duration), @"stageEnabled": jbool(stageEnabled)};
+        NSData *data = [NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];
+        if (!data) return;
+        pthread_mutex_lock(&eventMutex);
+        if (events.count >= 256) [events removeObjectAtIndex:0];
+        [events addObject:data];
+        pthread_mutex_unlock(&eventMutex);
+    }
 }
 static NSString *audioString(AudioDeviceID device, AudioObjectPropertySelector selector) {
     AudioObjectPropertyAddress address = {selector, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain};
@@ -257,23 +268,25 @@ static void failPlayback(SSPlayback *p, NSString *message) {
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
     (void)keyPath; (void)object; (void)change; (void)context;
     __weak SSPlayback *weakSelf = self;
-    dispatch_async(dispatch_get_main_queue(), ^{ [weakSelf ready]; });
+    onMain(^{ [weakSelf ready]; });
 }
 @end
 
 static void checkDevices(void) {
-    BOOL lostDisplay = stageEnabled;
-    if (stageEnabled) for (NSScreen *s in NSScreen.screens)
-        if ([displayID(s) isEqual:stageDisplayID]) { lostDisplay = NO; break; }
-    BOOL lostAudio = active.audioID.length > 0;
-    if (lostAudio) for (NSDictionary *d in audioDevices())
-        if ([d[@"id"] isEqual:active.audioID]) { lostAudio = NO; break; }
-    if (lostDisplay || lostAudio) {
-        uint64_t g = atomic_fetch_add(&currentGeneration, 1);
-        stopCurrent(); if (lostDisplay) disableStage();
-        emit(g, @"device-lost", lostDisplay ? @"Stage display disconnected; select and enable it again" : @"Audio output disconnected; playback stopped", 0, 0);
+    @autoreleasepool {
+        BOOL lostDisplay = stageEnabled;
+        if (stageEnabled) for (NSScreen *s in NSScreen.screens)
+            if ([displayID(s) isEqual:stageDisplayID]) { lostDisplay = NO; break; }
+        BOOL lostAudio = active.audioID.length > 0;
+        if (lostAudio) for (NSDictionary *d in audioDevices())
+            if ([d[@"id"] isEqual:active.audioID]) { lostAudio = NO; break; }
+        if (lostDisplay || lostAudio) {
+            uint64_t g = atomic_fetch_add(&currentGeneration, 1);
+            stopCurrent(); if (lostDisplay) disableStage();
+            emit(g, @"device-lost", lostDisplay ? @"Stage display disconnected; select and enable it again" : @"Audio output disconnected; playback stopped", 0, 0);
+        }
+        emit(atomic_load(&currentGeneration), @"devices", nil, 0, 0);
     }
-    emit(atomic_load(&currentGeneration), @"devices", nil, 0, 0);
 }
 static void beginPlayback(uint64_t gen, NSString *path, NSString *audio, NSString *display, BOOL video) {
     if (gen != atomic_load(&currentGeneration)) return;
@@ -283,7 +296,7 @@ static void beginPlayback(uint64_t gen, NSString *path, NSString *audio, NSStrin
     p.asset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:path] options:@{AVURLAssetPreferPreciseDurationAndTimingKey:@YES}];
     __weak SSPlayback *weakP = p;
     [p.asset loadValuesAsynchronouslyForKeys:@[@"playable", @"tracks", @"duration"] completionHandler:^{
-        dispatch_async(dispatch_get_main_queue(), ^{
+        onMain(^{
             SSPlayback *current = weakP;
             if (!current || active != current || gen != atomic_load(&currentGeneration)) return;
             NSError *error = nil;
@@ -315,18 +328,24 @@ static void beginPlayback(uint64_t gen, NSString *path, NSString *audio, NSStrin
             if (video) [videoLayer addObserver:current forKeyPath:@"readyForDisplay" options:NSKeyValueObservingOptionNew context:NULL];
             current.observing = YES;
             current.timeObserver = [current.player addPeriodicTimeObserverForInterval:CMTimeMake(1,4) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
-                SSPlayback *playing = weakP;
-                if (playing && active == playing && gen == atomic_load(&currentGeneration))
-                    emit(gen, @"progress", nil, seconds(time), seconds(playing.item.duration));
+                @autoreleasepool {
+                    SSPlayback *playing = weakP;
+                    if (playing && active == playing && gen == atomic_load(&currentGeneration))
+                        emit(gen, @"progress", nil, seconds(time), seconds(playing.item.duration));
+                }
             }];
             current.endObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:current.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
-                (void)note;
-                SSPlayback *finished = weakP;
-                if (finished && active == finished && gen == atomic_load(&currentGeneration)) { stopCurrent(); emit(gen, @"ended", nil, 0, 0); }
+                @autoreleasepool {
+                    (void)note;
+                    SSPlayback *finished = weakP;
+                    if (finished && active == finished && gen == atomic_load(&currentGeneration)) { stopCurrent(); emit(gen, @"ended", nil, 0, 0); }
+                }
             }];
             current.failureObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemFailedToPlayToEndTimeNotification object:current.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
-                NSError *reason = note.userInfo[AVPlayerItemFailedToPlayToEndTimeErrorKey];
-                failPlayback(weakP, reason.localizedDescription ?: @"Native playback failed");
+                @autoreleasepool {
+                    NSError *reason = note.userInfo[AVPlayerItemFailedToPlayToEndTimeErrorKey];
+                    failPlayback(weakP, reason.localizedDescription ?: @"Native playback failed");
+                }
             }];
             [current ready];
         });
@@ -366,7 +385,7 @@ void ss_run(void) {
 }
 void ss_quit(void) {
     atomic_store(&shuttingDown, true); atomic_fetch_add(&currentGeneration, 1);
-    dispatch_async(dispatch_get_main_queue(), ^{
+    onMain(^{
         disableStage(); [NSApp stop:nil];
         NSEvent *wake = [NSEvent otherEventWithType:NSEventTypeApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil subtype:0 data1:0 data2:0];
         [NSApp postEvent:wake atStart:NO];
@@ -390,7 +409,11 @@ char *ss_devices(void) {
         if (atomic_load(&shuttingDown)) return errorJSON(@"Native backend is closed");
         NSArray *audio = audioDevices();
         __block NSArray *screens;
-        dispatch_sync(dispatch_get_main_queue(), ^{ screens = displays(); });
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            // The caller's pool belongs to its Go thread. The strong __block
+            // result survives this main-thread pool until JSON is copied out.
+            @autoreleasepool { screens = displays(); }
+        });
         return json(@{@"audio": audio, @"displays": screens});
     }
 }
