@@ -63,7 +63,10 @@ remains part of acceptance testing.
    same, without auto-advance. Enable/Disable stage output are separate actions.
 
 Example addresses are not hard-coded. Multiple interfaces are listed with their
-names; select the reachable network. Guest Wi-Fi isolation can prevent access;
+names, including IPv4 link-local addresses on networks without DHCP; select the
+reachable network. IPv6 URLs require a global or unique-local address; scoped
+IPv6 link-local URLs are not advertised to remote browsers.
+Guest Wi-Fi isolation can prevent access;
 firewall/local-network permissions may need approval. HTTP is **not encrypted**:
 use a trusted LAN, without internet port forwarding. Pairing/CSRF do not protect
 against a network eavesdropper.

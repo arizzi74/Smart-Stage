@@ -46,8 +46,9 @@ and require an enable action or new video cue. Primary/only-display permission
 is explicitly acknowledged in Outputs and stored with that selection. A device
 loss requires re-selection/save, even after the endpoint returns.
 
-Limits: 500 cues, 1,000 listed entries per folder, 64 SSE clients, 128 sessions,
-16 concurrent ordinary HTTP operations and 4,096 accepted idempotency records.
+Limits: 500 cues, 1,000 listed entries per folder, 256 accepted TCP connections,
+64 SSE clients, 128 sessions, 16 concurrent ordinary HTTP operations and 4,096
+accepted idempotency records.
 STOP bypasses ordinary-operation admission. These bound memory/work without
 adding another service. No drag-and-drop is necessary because accessible Up/Down
 controls meet the ordering requirement.

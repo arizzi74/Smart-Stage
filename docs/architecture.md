@@ -80,9 +80,14 @@ boundary against a hostile local process racing replacement of ancestor paths.
 
 Pairing/session/CSRF secrets have 192 random bits. Sessions expire after 24
 hours, with HttpOnly and SameSite=Strict cookies. Host and Origin are validated.
-HTTP on the trusted LAN does not encrypt traffic. At most 128 sessions, 64 SSE
-streams and 16 ordinary concurrent operations are admitted; STOP bypasses the
-ordinary-operation limit. JSON, paths, labels, cue counts and listings are bounded.
+HTTP on the trusted LAN does not encrypt traffic. At most 128 sessions, 256
+accepted TCP connections, 64 SSE streams and 16 ordinary concurrent operations
+are admitted; STOP bypasses the ordinary-operation limit. The TCP cap includes
+idle keep-alive connections and requests still sending their headers. Excess
+connections wait in the OS listen backlog. Header/read/idle timeouts release
+stalled connections; a network or connection-exhaustion attack can still prevent
+remote commands, so local Escape remains the emergency control. JSON, paths,
+labels, cue counts and listings are bounded.
 
 SSE supplies full snapshots and ten-second heartbeats. One notification slot
 per subscriber and stream write deadlines isolate slow clients. The controller

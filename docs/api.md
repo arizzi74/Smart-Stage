@@ -100,6 +100,10 @@ Errors: `{"error":{"code":"...","message":"..."}}`.
 | 500 | `save_failed`, `internal_error`, `stream_unavailable` |
 | 503 | `busy`, `overloaded`, `unavailable` |
 
+Maximum 256 accepted TCP connections (including idle connections), 64 SSE
+streams and 16 ordinary concurrent operations. Excess TCP connections wait in
+the OS backlog; STOP bypasses the ordinary-operation limit.
+
 Maximum 500 cues, labels 512 UTF-8 bytes, paths 32,768 bytes, saved configuration
 4 MiB, headers 16 KiB. HTML labels/paths are written as text, never injected
 markup. There is no media streaming, arbitrary-path PLAY, upload or download API.

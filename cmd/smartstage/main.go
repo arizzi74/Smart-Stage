@@ -112,7 +112,7 @@ func main() {
 		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer cancel()
 		serveError := make(chan error, 1)
-		go func() { serveError <- server.Serve(listener) }()
+		go func() { serveError <- server.Serve(httpapi.BoundConnections(listener)) }()
 		fmt.Printf("Smart Stage %s\n", version)
 		printAddresses(addresses, *bind, *advertise, *port)
 		adminKey, commandKey := authentication.Keys()
