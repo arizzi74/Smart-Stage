@@ -27,6 +27,7 @@ static void stopCurrent(void);
 static void checkDevices(void);
 
 static char *copyString(NSString *s) { return strdup(s.UTF8String ?: ""); }
+static NSNumber *jbool(BOOL value) { return value ? @YES : @NO; }
 static char *json(id value) {
     NSData *data = [NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];
     if (!data) return strdup("{\"error\":\"Cannot encode native result\"}");
@@ -43,7 +44,7 @@ static double seconds(CMTime time) {
 // while copying a bounded queue entry, never during media or filesystem work.
 static void emit(uint64_t gen, NSString *kind, NSString *message, double position, double duration) {
     NSDictionary *value = @{@"generation": @(gen), @"kind": kind, @"message": message ?: @"",
-        @"position": @(position), @"duration": @(duration), @"stageEnabled": @(stageEnabled)};
+        @"position": @(position), @"duration": @(duration), @"stageEnabled": jbool(stageEnabled)};
     NSData *data = [NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];
     if (!data) return;
     pthread_mutex_lock(&eventMutex);
@@ -80,7 +81,7 @@ static NSArray *audioDevices(void) {
         if (!channels) continue;
         NSString *uid = audioString(ids[i], kAudioDevicePropertyDeviceUID);
         if (!uid.length) continue;
-        [result addObject:@{@"id": uid, @"name": audioString(ids[i], kAudioObjectPropertyName), @"default": @(ids[i] == defaultID)}];
+        [result addObject:@{@"id": uid, @"name": audioString(ids[i], kAudioObjectPropertyName), @"default": jbool(ids[i] == defaultID)}];
     }
     free(ids); return result;
 }
@@ -99,7 +100,7 @@ static NSArray *displays(void) {
         [result addObject:@{@"id": displayID(screen), @"name": screen.localizedName,
             @"x": @(bounds.origin.x), @"y": @(bounds.origin.y),
             @"width": @(CGDisplayPixelsWide(number)), @"height": @(CGDisplayPixelsHigh(number)),
-            @"primary": @(number == CGMainDisplayID()), @"mirrored": @(CGDisplayIsInMirrorSet(number))}];
+            @"primary": jbool(number == CGMainDisplayID()), @"mirrored": jbool(CGDisplayIsInMirrorSet(number))}];
     }
     return result;
 }
@@ -133,6 +134,7 @@ static NSArray *displays(void) {
 @property(nonatomic) BOOL video;
 @property(nonatomic) BOOL observing;
 @property(nonatomic) BOOL playingReported;
+@property(nonatomic) BOOL startRequested;
 @property(nonatomic, strong) id timeObserver;
 @property(nonatomic, strong) id endObserver;
 @property(nonatomic, strong) id failureObserver;
@@ -215,7 +217,8 @@ static void failPlayback(SSPlayback *p, NSString *message) {
         failPlayback(self, self.item.error.localizedDescription ?: @"Native decoder could not prepare this file"); return;
     }
     if (self.item.status != AVPlayerItemStatusReadyToPlay) return;
-    if (self.player.timeControlStatus == AVPlayerTimeControlStatusPaused) {
+    if (!self.startRequested) {
+        self.startRequested = YES;
         self.player.muted = NO;
         [self.player play];
     }
@@ -406,7 +409,7 @@ char *ss_inspect(const char *path) {
             if ([type isEqual:AVMediaTypeAudio]) audio = YES; else video = YES;
         }
         if (!audio && !video) return errorJSON(@"No audio or video track");
-        return json(@{@"kind": video ? @"video" : @"audio", @"hasAudio": @(audio), @"hasVideo": @(video), @"duration": @(seconds(asset.duration))});
+        return json(@{@"kind": video ? @"video" : @"audio", @"hasAudio": jbool(audio), @"hasVideo": jbool(video), @"duration": @(seconds(asset.duration))});
     }
 }
 void ss_start(uint64_t gen, const char *path, const char *audio, const char *display, int video) {

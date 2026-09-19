@@ -26,6 +26,11 @@ type native struct {
 	inspect chan struct{}
 }
 
+// Package initialization runs on the initial process thread. Lock before main
+// performs any work that could otherwise migrate its goroutine (Cocoa requires
+// the original main thread, not merely an arbitrary locked thread).
+func init() { runtime.LockOSThread() }
+
 // Run must be called from main. Cocoa and the Win32 window/message loop remain
 // on that OS thread for the entire process lifetime.
 func Run(app func(playback.Backend) error) error {

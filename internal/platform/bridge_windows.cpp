@@ -2,6 +2,7 @@
 
 #include "bridge.h"
 #include <windows.h>
+#include <initguid.h>
 #include <mfapi.h>
 #include <mfidl.h>
 #include <mfreadwrite.h>
@@ -81,6 +82,7 @@ constexpr UINT commandMessage = WM_APP+1, readyMessage = WM_APP+2, deviceMessage
 HWND controlWindow = nullptr, stageWindow = nullptr, videoWindow = nullptr;
 std::atomic<uint64_t> generation{0};
 std::atomic<bool> quitting{false};
+std::atomic<bool> cleanupQuitting{false};
 bool stageEnabled = false;
 std::string stageDisplay;
 std::mutex eventMutex;
@@ -308,8 +310,8 @@ void cleanupLoop() {
     for (;;) {
         std::unique_ptr<Playback> p;
         { std::unique_lock<std::mutex> lock(cleanupMutex);
-          cleanupCV.wait(lock, [] { return quitting.load() || !retired.empty(); });
-          if (retired.empty() && quitting.load()) return;
+          cleanupCV.wait(lock, [] { return cleanupQuitting.load() || !retired.empty(); });
+          if (retired.empty() && cleanupQuitting.load()) return;
           p = std::move(retired.front()); retired.pop_front(); }
         p.reset(); // Shutdown can block; never do it on the UI/STOP path.
     }
@@ -369,7 +371,7 @@ void checkDevices() {
         catch (...) { lostAudio = true; }
     }
     if (lostDisplay || lostAudio) {
-        uint64_t g = generation.load(); stopCurrent();
+        uint64_t g = generation.fetch_add(1); stopCurrent();
         if (lostDisplay) disableStage();
         emit(g, "error", lostDisplay ? "Stage display disconnected; select and enable it again" : "Audio output disconnected; playback stopped");
     }
@@ -423,9 +425,9 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     if (msg == WM_TIMER) { tick(); return 0; }
     if (msg == deviceMessage || msg == WM_DISPLAYCHANGE || msg == WM_DEVICECHANGE) { checkDevices(); return 0; }
     if (msg == WM_KEYDOWN && wp == VK_ESCAPE) {
-        stopCurrent(); emit(generation.load(), "escape"); return 0;
+        uint64_t g = generation.fetch_add(1); stopCurrent(); emit(g, "escape"); return 0;
     }
-    if (msg == WM_CLOSE && hwnd != controlWindow) { stopCurrent(); emit(generation.load(), "escape"); return 0; }
+    if (msg == WM_CLOSE && hwnd != controlWindow) { uint64_t g = generation.fetch_add(1); stopCurrent(); emit(g, "escape"); return 0; }
     if (msg == WM_SETCURSOR && hwnd != controlWindow) { SetCursor(nullptr); return TRUE; }
     if (msg == WM_ERASEBKGND) { RECT r; GetClientRect(hwnd,&r); FillRect((HDC)wp,&r,(HBRUSH)GetStockObject(BLACK_BRUSH)); return TRUE; }
     if (msg == WM_PAINT) {
@@ -477,7 +479,7 @@ extern "C" void ss_run() {
         if (msg.message == readyMessage) retire(std::unique_ptr<Playback>((Playback*)msg.lParam));
         else delete (Request*)msg.lParam;
     }
-    cleanupCV.notify_all(); if (cleaner.joinable()) cleaner.join();
+    cleanupQuitting.store(true); cleanupCV.notify_all(); if (cleaner.joinable()) cleaner.join();
     DestroyWindow(stageWindow); DestroyWindow(controlWindow);
     if (notificationEnumerator.p) { notificationEnumerator.p->Release(); notificationEnumerator.p = nullptr; }
     MFShutdown(); CoUninitialize();
@@ -495,12 +497,14 @@ extern "C" char *ss_devices() {
         check(apartment.hr, "Initialize enumeration COM");
         std::ostringstream s; s << "{\"audio\":["; bool first = true;
         for (const auto &a : audioDevices()) {
-            if (!first) s << ','; first = false;
+            if (!first) s << ',';
+            first = false;
             s << "{\"id\":" << quote(a.id) << ",\"name\":" << quote(a.name) << ",\"default\":" << (a.isDefault?"true":"false") << "}";
         }
         s << "],\"displays\":["; first = true;
         for (const auto &m : monitors()) {
-            if (!first) s << ','; first = false;
+            if (!first) s << ',';
+            first = false;
             s << "{\"id\":" << quote(m.id) << ",\"name\":" << quote(m.name)
               << ",\"x\":" << m.rect.left << ",\"y\":" << m.rect.top
               << ",\"width\":" << m.rect.right-m.rect.left << ",\"height\":" << m.rect.bottom-m.rect.top
