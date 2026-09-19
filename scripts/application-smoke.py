@@ -23,6 +23,13 @@ exe = str(Path(sys.argv[1]).resolve())
 root = Path(__file__).resolve().parent.parent
 records = []
 soak_seconds = int(sys.argv[2]) if len(sys.argv)>2 else 0
+assert soak_seconds >= 0, 'Soak duration must be nonnegative'
+
+def save_records():
+    destination = Path(exe+'.http-smoke.json')
+    temporary = destination.with_name(destination.name+'.tmp')
+    temporary.write_text(json.dumps(records,indent=2))
+    temporary.replace(destination)
 
 def resources(pid):
     if os.name != 'nt':
@@ -141,6 +148,17 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                     playable=[c for c in saved['cues'] if (not c['path'].endswith('.mp4') or display) and (c['path'].endswith('silent-1080p.mp4') or audio)]
                     assert playable, 'No real runner output for soak'
                     start=time.monotonic();next_sample=start;cycles=0;samples=[]
+                    # Retain incomplete results if a later cycle fails. Checkpoint
+                    # before/throughout the loop so a killed job still has evidence.
+                    soak={'requestedSeconds':soak_seconds,'elapsedSeconds':0,'cycles':0,
+                          'completed':False,'samples':samples,'physicalRoutingOrAVDriftVerified':False}
+                    records.append({'soak':soak})
+                    save_records()
+                    def sample_resources():
+                        sample={'seconds':round(time.monotonic()-start,2),'cycles':cycles,**resources(process.pid)}
+                        samples.append(sample)
+                        save_records()
+                        print('Native soak resource sample: '+json.dumps(sample),flush=True)
                     while time.monotonic()-start<soak_seconds:
                         cue=playable[cycles%len(playable)]
                         current=command('GET','/api/state')['state']
@@ -156,11 +174,13 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                         after=command('GET','/api/state')['state']
                         assert after['state']=='stopped' and not after['activeCueId'], 'Late native callback revived media'
                         cycles+=1
+                        soak.update(elapsedSeconds=time.monotonic()-start,cycles=cycles)
                         if time.monotonic()>=next_sample:
-                            samples.append({'seconds':round(time.monotonic()-start,2),'cycles':cycles,**resources(process.pid)})
+                            sample_resources()
                             next_sample=time.monotonic()+60
-                    samples.append({'seconds':round(time.monotonic()-start,2),'cycles':cycles,**resources(process.pid)})
-                    records.append({'soak':{'requestedSeconds':soak_seconds,'elapsedSeconds':time.monotonic()-start,'cycles':cycles,'samples':samples,'physicalRoutingOrAVDriftVerified':False}})
+                    sample_resources()
+                    soak.update(elapsedSeconds=time.monotonic()-start,completed=True)
+                    save_records()
             # Exercise shutdown during newly requested or still-running startup
             # validation. Native objects must drain before framework teardown.
             validation = admin('POST','/api/validate',{},expected=(202,503))
@@ -172,4 +192,4 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
         print('Real application HTTP/native smoke test passed; physical routing remains unverified.')
     finally:
         if process is not None and process.poll() is None: process.kill();process.wait()
-        Path(exe+'.http-smoke.json').write_text(json.dumps(records,indent=2))
+        save_records()

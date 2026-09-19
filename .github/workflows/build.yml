@@ -78,7 +78,7 @@ jobs:
           "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix" --version
           "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix" --list > "dist/native-enumeration-${{ matrix.os }}-${{ matrix.arch }}.json"
           python3 scripts/native-smoke.py "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix"
-          python3 scripts/application-smoke.py "./dist/smartstage-${{ matrix.os }}-${{ matrix.arch }}$suffix"
+          python3 scripts/application-smoke.py "./dist/smartstage-${{ matrix.os }}-${{ matrix.arch }}$suffix" 10
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
