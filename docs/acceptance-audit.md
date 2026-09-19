@@ -17,6 +17,12 @@ also passed against all four published preview 3 executables. Test source is
 non-loopback host HTTP address, without a synthetic server. The browser runs
 on each hosted machine, so this does not establish phone/Wi-Fi compatibility.
 
+[Windows capability run 35473613211](https://github.com/arizzi74/Smart-Stage/actions/runs/35473613211)
+confirmed both Windows audio services running but no installed sound devices or
+native audio endpoints on either runner architecture. The published preview's
+silent-video/restart checks passed in those same environments; Windows audio
+playback still needs machines with real render endpoints.
+
 ## Product and implementation requirements
 
 | Specification | Implementation and inspected evidence | Remaining proof |

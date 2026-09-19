@@ -58,6 +58,9 @@ and compiled, but Windows audio playback remains unverified on real hardware.
 - Windows CI: all four formats natively inspected; silent video played/stopped
   on a Hyper-V display; restart passed. Runners have **no audio render endpoints**,
   so Windows audio renderer playback/routing is still unverified.
+  [Capability checks](https://github.com/arizzi74/Smart-Stage/actions/runs/35473613211)
+  confirmed running Windows audio services but no installed sound devices on
+  either runner. They tested the published preview without changing OS settings.
 - Native natural completion and stage-enabled persistence are checked through
   native events. No CI assertion proves physical black pixels or actual sound.
 - Unavailable audio/display IDs cause native errors without a playing event on

@@ -35,6 +35,19 @@ and reported persistent stage-enabled state. Native status is not
 evidence of physically black pixels or routed sound. Mac ARM64 selected the
 non-default Null endpoint; this is native routing to a virtual device only.
 
+[Windows capability run 35473613211](https://github.com/arizzi74/Smart-Stage/actions/runs/35473613211)
+clarifies the audio limitation on both runner architectures. `Audiosrv` and
+`AudioEndpointBuilder` were **Running**, startup mode **Auto**, exit code 0.
+`Win32_SoundDevice` and the Media/AudioEndpoint PnP lists were empty. On the same
+machines, the installed preview 3 executable reported zero audio endpoints and
+passed silent-video playback/STOP plus restart checks. No service/device settings
+were changed and no audio driver was installed. These runners lack an installed
+sound device; this is not evidence of successful Windows audio-renderer playback.
+Recorded OSes: Windows Server 2025 Datacenter build 26100 on AMD64 and Windows 11
+Enterprise build 26200 on ARM64. The `windows-audio-amd64`/`windows-audio-arm64`
+artifacts contain the capability and application reports; local copies are in
+`dist/ci-evidence/windows-audio-502f759/`.
+
 Toolchains: Go 1.26.5; Macs used Xcode 16.4 (16F6), Apple Clang 17.0.0
 (clang-1700.0.13.5), SDK 15.5, deployment target 12.0. Windows used LLVM-MinGW
 20260908 UCRT / Clang 23.1.1. Full toolchain/import, native harness and application
