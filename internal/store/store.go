@@ -8,10 +8,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"smartstage/internal/model"
 )
+
+const maxConfigBytes = 4 * 1024 * 1024
 
 type Store struct {
 	mu   sync.Mutex
@@ -37,9 +40,9 @@ func Open(dir string) (*Store, model.Config, error) {
 		s.Close()
 		return nil, model.Config{}, err
 	}
-	data, err := io.ReadAll(io.LimitReader(f, 4*1024*1024+1))
+	data, err := io.ReadAll(io.LimitReader(f, maxConfigBytes+1))
 	f.Close()
-	if err == nil && len(data) > 4*1024*1024 {
+	if err == nil && len(data) > maxConfigBytes {
 		err = errors.New("configuration exceeds 4 MiB")
 	}
 	var config model.Config
@@ -74,7 +77,7 @@ func validate(c model.Config) error {
 	}
 	ids := map[string]bool{}
 	for _, cue := range c.Cues {
-		if cue.ID == "" || len(cue.ID) > 128 || ids[cue.ID] || cue.Label == "" || len(cue.Label) > 512 || !filepath.IsAbs(cue.Path) || len(cue.Path) > 32768 {
+		if cue.ID == "" || len(cue.ID) > 128 || ids[cue.ID] || strings.TrimSpace(cue.Label) == "" || len(cue.Label) > 512 || strings.ContainsAny(cue.Label, "\x00\r\n") || !filepath.IsAbs(cue.Path) || len(cue.Path) > 32768 {
 			return errors.New("invalid cue identity, label or source path")
 		}
 		ids[cue.ID] = true
@@ -96,6 +99,11 @@ func (s *Store) Save(config model.Config) error {
 		return err
 	}
 	data = append(data, '\n')
+	// A successful save must remain readable on the next launch, including any
+	// derived native validation cache. Check before replacing the backup too.
+	if len(data) > maxConfigBytes {
+		return errors.New("configuration exceeds 4 MiB")
+	}
 	if len(s.good) > 0 {
 		if err := s.write("state.json.bak", s.good); err != nil {
 			return fmt.Errorf("save backup: %w", err)

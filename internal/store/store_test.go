@@ -76,3 +76,50 @@ func TestInvalidSaveDoesNotReplaceGoodState(t *testing.T) {
 		t.Fatal("failed save changed state")
 	}
 }
+
+func TestOversizedCacheCannotMakeSavedShowUnreadable(t *testing.T) {
+	dir := t.TempDir()
+	s, config, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+	config.Cues = []model.Cue{{ID: "one", Label: "Opening", Path: filepath.Join(dir, "opening.wav")}}
+	if err := s.Save(config); err != nil {
+		t.Fatal(err)
+	}
+	before, err := os.ReadFile(filepath.Join(dir, "state.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	config.Cues[0].Cache.Reason = strings.Repeat("x", maxConfigBytes)
+	if err := s.Save(config); err == nil || !strings.Contains(err.Error(), "4 MiB") {
+		t.Fatalf("oversized save returned %v", err)
+	}
+	after, err := os.ReadFile(filepath.Join(dir, "state.json"))
+	if err != nil || string(after) != string(before) {
+		t.Fatalf("rejected save changed the show: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "state.json.bak")); !os.IsNotExist(err) {
+		t.Fatalf("rejected save changed the backup: %v", err)
+	}
+	_ = s.Close()
+	reopened, restored, err := Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	if len(restored.Cues) != 1 || restored.Cues[0].Label != "Opening" || restored.Cues[0].Cache.Reason != "" {
+		t.Fatal("original show was not restored after rejected oversized save")
+	}
+}
+
+func TestInvalidStoredLabelsAreRejected(t *testing.T) {
+	config := model.DefaultConfig()
+	for _, label := range []string{" \t ", "line\nbreak", "nul\x00label"} {
+		config.Cues = []model.Cue{{ID: "one", Label: label, Path: filepath.Join(t.TempDir(), "tone.wav")}}
+		if err := validate(config); err == nil {
+			t.Fatalf("invalid stored label %q admitted", label)
+		}
+	}
+}
