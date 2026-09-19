@@ -158,8 +158,11 @@ These are **unverified**, not assumed passed:
   windows and audiovisual drift. [Preview 3 soak 35471045100](https://github.com/arizzi74/Smart-Stage/actions/runs/35471045100)
   is running a two-hour native transition/STOP/resource test at release commit
   `d70b3e2`. The earlier [run 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
-  at `20bcf35` is also running; its results apply to that earlier source only.
-  Results and resource analysis are pending. Even a passing CI
+  at `20bcf35` completed all four two-hour loops and restart checks. Its
+  [resource analysis](soak-results.md) shows continuing Mac RSS growth and
+  increased Windows handle counts; stability remains under investigation.
+  The exact preview 3 result and additional memory diagnostics are pending.
+  Even a passing CI
   result cannot establish physical A/V drift or routed sound.
 - Production signing/notarization and the bare-executable permission workflow.
 

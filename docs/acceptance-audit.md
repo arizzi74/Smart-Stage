@@ -72,7 +72,10 @@ The two-hour [preview 3 soak 35471045100](https://github.com/arizzi74/Smart-Stag
 is running at exact release commit `d70b3e2`. It repeats native transitions/STOP
 and collects resident memory plus Windows handle counts. Completion and resource
 trend analysis are pending. The earlier [soak 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
-is also still running at `20bcf35`; its evidence must remain tied to that earlier
+completed all four two-hour loops/restart checks at `20bcf35`. Its
+[resource traces](soak-results.md) show continuing Mac RSS growth and higher
+Windows handle counts. Stability is not established; memory diagnostics of the
+published preview are running. The earlier run remains evidence for its own
 source and cannot establish the correctness of later changes.
 
 No measured claim is made for server-received STOP to physical silence/black

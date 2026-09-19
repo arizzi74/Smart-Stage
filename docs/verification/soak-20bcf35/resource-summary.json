@@ -1,0 +1,146 @@
+{
+  "runId": "35468888430",
+  "sourceCommit": "20bcf3544ecfa7245a35098565ff564684e4e990",
+  "matplotlib": "3.10.9",
+  "method": "All samples retained. Ordinary least-squares trend excludes the first 15 minutes. Descriptive statistics only; these do not prove absence of leaks or physical A/V correctness.",
+  "targets": [
+    {
+      "target": "darwin-amd64",
+      "sourceFile": "docs/verification/soak-20bcf35/smartstage-darwin-amd64.http-smoke.json",
+      "repeatReportPresent": true,
+      "requestedSeconds": 7200,
+      "elapsedSeconds": 7200.117599902,
+      "cycles": 13528,
+      "samples": 121,
+      "requestedDurationCovered": true,
+      "atLeastTwoHoursCovered": true,
+      "explicitCompletionFlag": null,
+      "physicalRoutingOrAVDriftVerified": false,
+      "residentMiB": {
+        "first": 33.19140625,
+        "final": 57.37109375,
+        "sampledMin": 33.19140625,
+        "sampledMax": 57.37109375,
+        "changeFirstToFinal": 24.1796875,
+        "slopePerHourAfter15Minutes": 9.056838194899587,
+        "medianMinutes15to30": 42.921875,
+        "medianFinal15Minutes": 56.373046875,
+        "final15MinutesRange": [
+          55.44921875,
+          57.37109375
+        ]
+      },
+      "handles": null
+    },
+    {
+      "target": "darwin-arm64",
+      "sourceFile": "docs/verification/soak-20bcf35/smartstage-darwin-arm64.http-smoke.json",
+      "repeatReportPresent": true,
+      "requestedSeconds": 7200,
+      "elapsedSeconds": 7200.365646040999,
+      "cycles": 13611,
+      "samples": 121,
+      "requestedDurationCovered": true,
+      "atLeastTwoHoursCovered": true,
+      "explicitCompletionFlag": null,
+      "physicalRoutingOrAVDriftVerified": false,
+      "residentMiB": {
+        "first": 49.21875,
+        "final": 75.796875,
+        "sampledMin": 49.21875,
+        "sampledMax": 76.15625,
+        "changeFirstToFinal": 26.578125,
+        "slopePerHourAfter15Minutes": 9.950240311982213,
+        "medianMinutes15to30": 60.171875,
+        "medianFinal15Minutes": 75.5390625,
+        "final15MinutesRange": [
+          73.9375,
+          76.15625
+        ]
+      },
+      "handles": null
+    },
+    {
+      "target": "windows-amd64",
+      "sourceFile": "docs/verification/soak-20bcf35/smartstage-windows-amd64.exe.http-smoke.json",
+      "repeatReportPresent": true,
+      "requestedSeconds": 7200,
+      "elapsedSeconds": 7200.407,
+      "cycles": 17203,
+      "samples": 121,
+      "requestedDurationCovered": true,
+      "atLeastTwoHoursCovered": true,
+      "explicitCompletionFlag": null,
+      "physicalRoutingOrAVDriftVerified": false,
+      "residentMiB": {
+        "first": 55.97265625,
+        "final": 92.0390625,
+        "sampledMin": 55.97265625,
+        "sampledMax": 105.48828125,
+        "changeFirstToFinal": 36.06640625,
+        "slopePerHourAfter15Minutes": -0.14117257746213546,
+        "medianMinutes15to30": 93.94921875,
+        "medianFinal15Minutes": 92.443359375,
+        "final15MinutesRange": [
+          88.69921875,
+          94.17578125
+        ]
+      },
+      "handles": {
+        "first": 565.0,
+        "final": 616.0,
+        "sampledMin": 565.0,
+        "sampledMax": 616.0,
+        "changeFirstToFinal": 51.0,
+        "slopePerHourAfter15Minutes": 10.462247411312728,
+        "medianMinutes15to30": 592.0,
+        "medianFinal15Minutes": 601.5,
+        "final15MinutesRange": [
+          592.0,
+          616.0
+        ]
+      }
+    },
+    {
+      "target": "windows-arm64",
+      "sourceFile": "docs/verification/soak-20bcf35/smartstage-windows-arm64.exe.http-smoke.json",
+      "repeatReportPresent": true,
+      "requestedSeconds": 7200,
+      "elapsedSeconds": 7200.155131,
+      "cycles": 18322,
+      "samples": 121,
+      "requestedDurationCovered": true,
+      "atLeastTwoHoursCovered": true,
+      "explicitCompletionFlag": null,
+      "physicalRoutingOrAVDriftVerified": false,
+      "residentMiB": {
+        "first": 69.44140625,
+        "final": 67.1484375,
+        "sampledMin": 59.4609375,
+        "sampledMax": 79.984375,
+        "changeFirstToFinal": -2.29296875,
+        "slopePerHourAfter15Minutes": 0.3038503608545425,
+        "medianMinutes15to30": 64.93359375,
+        "medianFinal15Minutes": 67.193359375,
+        "final15MinutesRange": [
+          59.4609375,
+          76.375
+        ]
+      },
+      "handles": {
+        "first": 566.0,
+        "final": 604.0,
+        "sampledMin": 566.0,
+        "sampledMax": 613.0,
+        "changeFirstToFinal": 38.0,
+        "slopePerHourAfter15Minutes": 11.394227130805888,
+        "medianMinutes15to30": 585.0,
+        "medianFinal15Minutes": 603.0,
+        "final15MinutesRange": [
+          601.0,
+          613.0
+        ]
+      }
+    }
+  ]
+}

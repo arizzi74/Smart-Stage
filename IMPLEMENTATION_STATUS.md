@@ -77,9 +77,11 @@ acceptance, production signing/notarization and full physical two-hour soak.
 A two-hour native CI soak of the exact preview 3 source, commit `d70b3e2`, is
 running in [`35471045100`](https://github.com/arizzi74/Smart-Stage/actions/runs/35471045100).
 The earlier [`35468888430`](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
-at commit `20bcf35` is also still running and is separate evidence. Results and
-resource trends must be inspected, not assumed. Neither verifies physical A/V
-drift or Windows audio routing.
+at commit `20bcf35` completed all four two-hour loops and restart checks. Its
+[resource analysis](docs/soak-results.md) shows continuing Mac RSS growth and
+higher Windows handle counts. Stability remains under investigation; a separate
+diagnostic run is profiling the published preview's memory. The exact preview 3
+soak result is pending. None verifies physical A/V drift or Windows audio routing.
 
 See `docs/release-verification.md` for exact environments/evidence and the
 remaining checklist, and `docs/acceptance-audit.md` for a specification-wide
