@@ -373,7 +373,7 @@ void checkDevices() {
     if (lostDisplay || lostAudio) {
         uint64_t g = generation.fetch_add(1); stopCurrent();
         if (lostDisplay) disableStage();
-        emit(g, "error", lostDisplay ? "Stage display disconnected; select and enable it again" : "Audio output disconnected; playback stopped");
+        emit(g, "device-lost", lostDisplay ? "Stage display disconnected; select and enable it again" : "Audio output disconnected; playback stopped");
     }
     emit(generation.load(), "devices");
 }
@@ -536,6 +536,11 @@ extern "C" char *ss_inspect(const char *path) {
             check(decoded->SetGUID(MF_MT_SUBTYPE, major == MFMediaType_Audio ? MFAudioFormat_PCM : MFVideoFormat_RGB32), "Set decoded sample format");
             check(reader->SetCurrentMediaType(i, nullptr, decoded.p), "Prepare native decoder");
             check(reader->SetStreamSelection(i, TRUE), "Select inspection track");
+            // A deselected track is not buffered while another track is read.
+            // Rewind before each independent decoder probe in a multi-track file.
+            PROPVARIANT origin; PropVariantInit(&origin); origin.vt = VT_I8; origin.hVal.QuadPart = 0;
+            HRESULT seek = reader->SetCurrentPosition(GUID_NULL, origin); PropVariantClear(&origin);
+            check(seek, "Rewind native inspection track");
             bool gotSample = false;
             for (int attempts=0; attempts<64 && !gotSample; ++attempts) {
                 Com<IMFSample> sample; DWORD flags = 0; LONGLONG timestamp = 0;

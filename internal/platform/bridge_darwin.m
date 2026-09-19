@@ -251,7 +251,7 @@ static void checkDevices(void) {
     if (lostDisplay || lostAudio) {
         uint64_t g = atomic_fetch_add(&currentGeneration, 1);
         stopCurrent(); if (lostDisplay) disableStage();
-        emit(g, @"error", lostDisplay ? @"Stage display disconnected; select and enable it again" : @"Audio output disconnected; playback stopped", 0, 0);
+        emit(g, @"device-lost", lostDisplay ? @"Stage display disconnected; select and enable it again" : @"Audio output disconnected; playback stopped", 0, 0);
     }
     emit(atomic_load(&currentGeneration), @"devices", nil, 0, 0);
 }
