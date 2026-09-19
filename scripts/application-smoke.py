@@ -34,6 +34,8 @@ def native_memory_snapshot(pid, phase):
         return
     if sys.platform == 'darwin':
         commands = [('vmmap', ['vmmap','-summary',str(pid)]), ('threads', ['ps','-M','-p',str(pid)])]
+        if os.environ.get('SMARTSTAGE_HEAP_PROFILE') == '1':
+            commands.append(('heap', ['heap','-sortBySize','-noContent',str(pid)]))
     else:
         commands = [('process', ['pwsh','-NoLogo','-NoProfile','-NonInteractive','-Command',
             "Get-Process -Id "+str(pid)+" | Select-Object Id,HandleCount,@{Name='Threads';Expression={$_.Threads.Count}},PrivateMemorySize64,VirtualMemorySize64 | ConvertTo-Json"])]
