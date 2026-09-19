@@ -34,10 +34,18 @@ func TestRootsCanonicalContainmentAndUnicode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if list.Path != root || list.Parent != "" || len(list.Entries) != 1 || list.Entries[0].Name != name {
+	canonicalRoot, err := filepath.EvalSymlinks(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if list.Path != canonicalRoot || list.Parent != "" || len(list.Entries) != 1 || list.Entries[0].Name != name {
 		t.Fatalf("bad restricted listing: %+v", list)
 	}
-	if p, _, err := b.File(path); err != nil || p != path {
+	canonicalFile, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p, _, err := b.File(path); err != nil || p != canonicalFile {
 		t.Fatalf("unicode file: %s %v", p, err)
 	}
 	link := filepath.Join(root, "escape")
