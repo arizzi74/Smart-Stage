@@ -160,6 +160,9 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                             next_sample=time.monotonic()+60
                     samples.append({'seconds':round(time.monotonic()-start,2),'cycles':cycles,**resources(process.pid)})
                     records.append({'soak':{'requestedSeconds':soak_seconds,'elapsedSeconds':time.monotonic()-start,'cycles':cycles,'samples':samples,'physicalRoutingOrAVDriftVerified':False}})
+            # Exercise shutdown with validation just accepted. Native objects
+            # must be drained before Media Foundation/AppKit teardown.
+            admin('POST','/api/validate',{},expected=202)
             process.send_signal(signal.CTRL_BREAK_EVENT if os.name=='nt' else signal.SIGINT)
             process.wait(timeout=15)
             assert process.returncode==0, f'Unclean application shutdown: {process.returncode}'

@@ -20,10 +20,14 @@ import (
 )
 
 type native struct {
-	events  chan playback.Event
-	done    chan struct{}
-	once    sync.Once
-	inspect chan struct{}
+	events   chan playback.Event
+	done     chan struct{}
+	pollDone chan struct{}
+	once     sync.Once
+	inspect  chan struct{}
+	lifeMu   sync.Mutex
+	closed   bool
+	work     sync.WaitGroup
 }
 
 // Package initialization runs on the initial process thread. Lock before main
@@ -39,7 +43,7 @@ func Run(app func(playback.Backend) error) error {
 	if err := readError(C.ss_init()); err != nil {
 		return err
 	}
-	n := &native{events: make(chan playback.Event, 128), done: make(chan struct{}), inspect: make(chan struct{}, 1)}
+	n := &native{events: make(chan playback.Event, 128), done: make(chan struct{}), pollDone: make(chan struct{}), inspect: make(chan struct{}, 1)}
 	result := make(chan error, 1)
 	go n.poll()
 	go func() { result <- app(n); _ = n.Close() }()
@@ -77,6 +81,10 @@ func decode(p *C.char, target any) error {
 }
 
 func (n *native) Devices(ctx context.Context) (d playback.Devices, err error) {
+	if err = n.begin(); err != nil {
+		return
+	}
+	defer n.work.Done()
 	if err = ctx.Err(); err != nil {
 		return
 	}
@@ -85,13 +93,18 @@ func (n *native) Devices(ctx context.Context) (d playback.Devices, err error) {
 }
 
 func (n *native) Inspect(ctx context.Context, path string) (playback.Media, error) {
+	if err := n.begin(); err != nil {
+		return playback.Media{}, err
+	}
 	// A slow filesystem/decoder occupies at most one native inspector. A cancelled
 	// caller returns immediately; its worker releases the slot after native exit.
 	select {
 	case n.inspect <- struct{}{}:
 	case <-ctx.Done():
+		n.work.Done()
 		return playback.Media{}, ctx.Err()
 	case <-n.done:
+		n.work.Done()
 		return playback.Media{}, errors.New("backend closed")
 	}
 	type reply struct {
@@ -100,6 +113,7 @@ func (n *native) Inspect(ctx context.Context, path string) (playback.Media, erro
 	}
 	out := make(chan reply, 1)
 	go func() {
+		defer n.work.Done()
 		defer func() { <-n.inspect }()
 		p := C.CString(path)
 		defer C.free(unsafe.Pointer(p))
@@ -118,6 +132,10 @@ func (n *native) Inspect(ctx context.Context, path string) (playback.Media, erro
 }
 
 func (n *native) Start(s playback.Start) error {
+	if err := n.begin(); err != nil {
+		return err
+	}
+	defer n.work.Done()
 	path, audio, display := C.CString(s.Path), C.CString(s.AudioID), C.CString(s.DisplayID)
 	defer C.free(unsafe.Pointer(path))
 	defer C.free(unsafe.Pointer(audio))
@@ -129,8 +147,19 @@ func (n *native) Start(s playback.Start) error {
 	C.ss_start(C.uint64_t(s.Generation), path, audio, display, v)
 	return nil
 }
-func (n *native) Stop(g uint64) error { C.ss_stop(C.uint64_t(g)); return nil }
+func (n *native) Stop(g uint64) error {
+	if err := n.begin(); err != nil {
+		return err
+	}
+	defer n.work.Done()
+	C.ss_stop(C.uint64_t(g))
+	return nil
+}
 func (n *native) Stage(g uint64, id string, enabled bool) error {
+	if err := n.begin(); err != nil {
+		return err
+	}
+	defer n.work.Done()
 	p := C.CString(id)
 	defer C.free(unsafe.Pointer(p))
 	v := C.int(0)
@@ -142,10 +171,31 @@ func (n *native) Stage(g uint64, id string, enabled bool) error {
 }
 func (n *native) Events() <-chan playback.Event { return n.events }
 func (n *native) Close() error {
-	n.once.Do(func() { close(n.done); C.ss_quit() })
+	n.once.Do(func() {
+		n.lifeMu.Lock()
+		n.closed = true
+		close(n.done)
+		n.lifeMu.Unlock()
+		// Keep the native event loop/framework alive until inspectors and device
+		// calls release their OS objects. A cancelled caller may have returned
+		// before its underlying native operation finished.
+		n.work.Wait()
+		<-n.pollDone
+		C.ss_quit()
+	})
+	return nil
+}
+func (n *native) begin() error {
+	n.lifeMu.Lock()
+	defer n.lifeMu.Unlock()
+	if n.closed {
+		return errors.New("native backend is closed")
+	}
+	n.work.Add(1)
 	return nil
 }
 func (n *native) poll() {
+	defer close(n.pollDone)
 	defer close(n.events)
 	ticker := time.NewTicker(10 * time.Millisecond)
 	defer ticker.Stop()
