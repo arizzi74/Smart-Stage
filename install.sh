@@ -2,7 +2,7 @@
 # Smart Stage macOS installer. Run as your normal user; no sudo is needed.
 set -eu
 repo='arizzi74/Smart-Stage'
-version=${SMARTSTAGE_VERSION:-v0.1.0-preview.2}
+version=${SMARTSTAGE_VERSION:-v0.1.0-preview.3}
 case "$version" in ''|*[!a-zA-Z0-9._-]*) echo 'Invalid SMARTSTAGE_VERSION' >&2; exit 1;; esac
 if [ "$(uname -s)" != Darwin ]; then echo 'This installer supports macOS. Use install.ps1 on Windows.' >&2; exit 1; fi
 case "$(uname -m)" in
