@@ -1,0 +1,76 @@
+name: Build and test native targets
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  shared:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.26.5'
+          cache: false
+      - run: go test -race ./...
+      - run: go vet ./...
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            os: darwin
+            arch: arm64
+          - runner: macos-15-intel
+            os: darwin
+            arch: amd64
+          - runner: windows-2025
+            os: windows
+            arch: amd64
+            toolchain: x86_64
+            sha256: 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa9263c9c5c3ad34b6
+          - runner: windows-11-arm
+            os: windows
+            arch: arm64
+            toolchain: aarch64
+            sha256: 7fe35f60407473c420ac72b25137f54385b0affd2c42efd507c0062fc626ab56
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.26.5'
+          cache: false
+      - name: Install pinned native Windows build toolchain
+        if: matrix.os == 'windows'
+        shell: pwsh
+        env:
+          TOOLCHAIN_ARCH: ${{ matrix.toolchain }}
+          TOOLCHAIN_SHA256: ${{ matrix.sha256 }}
+        run: |
+          $name = "llvm-mingw-20260908-ucrt-$env:TOOLCHAIN_ARCH"
+          $archive = Join-Path $env:RUNNER_TEMP "$name.zip"
+          Invoke-WebRequest "https://github.com/mstorsjo/llvm-mingw/releases/download/20260908/$name.zip" -OutFile $archive
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:TOOLCHAIN_SHA256) { throw 'Toolchain checksum mismatch' }
+          Expand-Archive $archive -DestinationPath $env:RUNNER_TEMP
+          Join-Path $env:RUNNER_TEMP "$name/bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+      - name: Build and inspect native imports
+        shell: bash
+        run: bash scripts/build.sh '${{ matrix.os }}' '${{ matrix.arch }}'
+      - name: Native executable startup
+        shell: bash
+        run: |
+          suffix=''
+          if [[ '${{ matrix.os }}' == windows ]]; then suffix=.exe; fi
+          "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix" --version
+          "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix" --list > "dist/native-enumeration-${{ matrix.os }}-${{ matrix.arch }}.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: native-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/
+          if-no-files-found: error
