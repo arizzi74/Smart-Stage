@@ -29,6 +29,7 @@ func main() {
 	audio := flag.String("audio", "default", "concrete endpoint ID, or default resolved once at start")
 	display := flag.String("display", "", "stable display ID from --list")
 	stopAfter := flag.Duration("stop-after", 0, "automatically issue STOP after this duration; leave black window open")
+	stopPlayingAfter := flag.Duration("stop-playing-after", 0, "issue STOP this long after native playback reports playing")
 	exitAfter := flag.Duration("exit-after", 0, "exit after this duration (automated native smoke testing)")
 	showVersion := flag.Bool("version", false, "print build information")
 	flag.Parse()
@@ -140,6 +141,11 @@ func main() {
 					return fmt.Errorf("native event stream closed")
 				}
 				_ = printJSON(e)
+				if e.Kind == "playing" && *stopPlayingAfter > 0 {
+					t := time.NewTimer(*stopPlayingAfter)
+					defer t.Stop()
+					stopC = t.C
+				}
 				if e.Kind == "escape" {
 					stop()
 				}

@@ -16,9 +16,18 @@ are available on this host.
    import audits pass. Both macOS targets compiled on GitHub runners; startup
    exposed a JSON boolean encoding bug, now corrected and awaiting re-run.
    Native opening, routing and blackout acceptance are not yet established.
-2. Core — in progress: canonical read-only browsing and atomic persistence.
-3. Web — pending.
-4. Reliability — pending.
+2. Core — implemented: generation/epoch coordinator, bounded idempotency and
+   subscriber mailboxes, async inspection, optimistic playlist revisions,
+   canonical read-only browsing, atomic persistence/backup and process lock.
+   Go race tests pass on Linux ARM64.
+3. Web — implemented: embedded responsive Admin/Command pages, LAN discovery,
+   pairing and roles, CSRF/Origin/Host checks, filesystem browser, playlist and
+   output editing. HTTP authorization, redaction, malformed-request and SSE
+   reconnect tests pass on Linux ARM64. Browser/native app end-to-end tests next.
+4. Reliability — in progress; native device loss and window behavior require
+   physical verification. Both Windows native runner smoke tests pass. Mac
+   native smoke tests have passed; an ARM64 run exposed an overly short
+   start-to-STOP test timer, now replaced with STOP after the playing event.
 5. Release — pending; physical acceptance and clean-machine verification require
    Windows 11 and both macOS architectures.
 

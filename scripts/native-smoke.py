@@ -27,7 +27,7 @@ try:
     run('--inspect',media/'damaged.mp4',success=False)
     if devices['audio']:
         endpoint = next((a for a in devices['audio'] if not a['default']),devices['audio'][0])
-        events = run('--file',media/"Opening – café's tone.wav",'--audio',endpoint['id'],'--stop-after','1500ms','--exit-after','2500ms')
+        events = run('--file',media/"Opening – café's tone.wav",'--audio',endpoint['id'],'--stop-playing-after','500ms','--exit-after','10s')
         assert any(e['kind']=='playing' for e in events), events
         assert any(e['kind']=='stopped' for e in events), events
         stopped = next(i for i,e in enumerate(events) if e['kind']=='stopped')

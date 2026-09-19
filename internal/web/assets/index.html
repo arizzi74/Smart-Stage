@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#111519">
+  <title>Smart Stage</title>
+  <link rel="stylesheet" href="/assets/style.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body>
+  <header class="transport">
+    <div class="identity"><span class="mark" aria-hidden="true">S<span>•</span></span><div><strong>Smart Stage</strong><div id="connection" role="status">Connecting…</div></div></div>
+    <div class="now"><span id="play-state">Stopped</span><strong id="current-cue">Ready when you are</strong><span id="time">0:00</span></div>
+    <button id="stop" class="stop" type="button">STOP<span>Silence + blackout</span></button>
+  </header>
+  <main>
+    <div class="page-title"><div><p class="eyebrow">HOST PLAYBACK · LAN CONTROL</p><h1 id="page-heading">Show control</h1></div><div class="page-actions"><a id="other-page" href="/admin">Admin</a><button id="logout" class="quiet" type="button">Log out</button></div></div>
+    <p id="notice" class="notice" role="status" aria-live="polite"></p>
+    <p id="playback-error" class="error" role="alert" hidden></p>
+    <section id="command-view" aria-label="Manual cue list"><div id="cue-grid" class="cue-grid"></div><p id="empty-cues" class="empty" hidden>Your show is empty. Add cues in Admin to get started.</p></section>
+    <div id="admin-view" hidden>
+      <nav class="section-nav" aria-label="Admin sections"><a href="#playlist-section">Playlist</a><a href="#files-section">Host files</a><a href="#outputs-section">Outputs</a><a href="#status-section">Status</a></nav>
+      <div class="admin-grid">
+        <section id="playlist-section" class="panel wide"><div class="panel-heading"><div><p class="eyebrow">YOUR SHOW</p><h2>Playlist</h2></div><div class="row"><button id="reload-playlist" class="quiet" type="button">Reload</button><button id="validate" type="button">Validate all cues</button></div></div><p class="hint">Each cue starts on a deliberate press. Edits save automatically. Use the arrows to reorder.</p><p id="playlist-revision" class="hint"></p><div id="playlist"></div></section>
+        <section id="files-section" class="panel wide"><div class="panel-heading"><div><p class="eyebrow">ON THE HOST COMPUTER</p><h2>Host files</h2></div><button id="add-files" class="accent" type="button" disabled>Add selected (0)</button></div><p class="hint">Files stay in place on the host. Select several files to add separate cues.</p><form id="browse-form" class="row"><label class="sr-only" for="host-path">Host directory path</label><input id="host-path" placeholder="Host directory path" autocomplete="off"><button type="submit">Go</button></form><label class="root-picker">Locations <select id="roots" aria-label="Host locations"></select></label><nav id="breadcrumbs" class="breadcrumbs" aria-label="Host folder breadcrumbs"></nav><p id="file-message" class="hint"></p><div id="file-list" class="file-list"></div></section>
+        <section id="outputs-section" class="panel"><div class="panel-heading"><div><p class="eyebrow">WHERE THE SHOW GOES</p><h2>Outputs</h2></div><button id="refresh-devices" class="quiet" type="button">Refresh</button></div><label>Audio output<select id="audio-output"></select></label><p class="hint">Used for music and every video soundtrack. System default is resolved separately for each new cue.</p><label>Stage display<select id="display-output"></select></label><p id="display-warning" class="hint"></p><label class="check"><input id="allow-primary" type="checkbox">I understand this will cover the primary or only display.</label><button id="save-outputs" class="accent" type="button">Save outputs</button><p id="stage-state">Stage output disabled</p><div class="row"><button id="enable-stage" type="button">Enable stage output</button><button id="disable-stage" type="button">Disable stage output</button></div><p class="hint">STOP keeps an enabled stage black. Disable closes the stage window. Audio works without a stage display.</p></section>
+        <section id="status-section" class="panel"><p class="eyebrow">HOST STATUS</p><h2>Status</h2><dl id="status-details"></dl><p class="hint">Escape stops when the stage window has focus. Ctrl+C in the host terminal exits Smart Stage.</p><div class="network-note"><strong>Trusted LAN only</strong><p>HTTP traffic is not encrypted. Pairing protects control access, but cannot protect against someone listening on the network. Keep the host and controllers on a trusted network.</p></div></section>
+      </div>
+    </div>
+    <footer>One cue at a time. Playback stays on the host.</footer>
+  </main>
+  <dialog id="pairing"><form id="pair-form"><p class="eyebrow">CONNECT TO YOUR STAGE</p><h2>Pair this browser</h2><p>Enter the pairing key printed in the host terminal. Admin and Command use separate keys.</p><label>Pairing key<input id="pair-key" type="password" autocomplete="off" required maxlength="256"></label><p id="pair-error" class="error" role="alert"></p><button class="accent" type="submit">Pair browser</button><p class="hint">Use only on a trusted LAN. This HTTP connection is not encrypted.</p></form></dialog>
+</body>
+</html>
