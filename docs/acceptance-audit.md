@@ -5,8 +5,8 @@ the specification to current implementation and evidence. An automated result
 is credited only for what it observes; native events do not prove physical
 sound, black pixels, routing or timing.
 
-Native/application evidence: [run 35470802633](https://github.com/arizzi74/Smart-Stage/actions/runs/35470802633),
-commit `d1f5c16`, passed all four OS/architecture jobs. Linux Go race/vet also
+Native/application evidence: [preview 3 tag run 35471043955](https://github.com/arizzi74/Smart-Stage/actions/runs/35471043955),
+commit `d70b3e2`, passed all four OS/architecture jobs. Linux Go race/vet also
 passed. Publication/installation evidence for the currently published preview
 is in [release verification](release-verification.md). That document records
 the exact runner OS, compiler, SDK and available outputs.
@@ -56,11 +56,12 @@ These are the specification's eleven steps, not a substitute scenario.
 
 ## Outstanding measurements and long-running evidence
 
-The two-hour [native CI soak 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
-is still running at commit `20bcf35`. It repeats native transitions/STOP and
-collects resident memory plus Windows handle counts. Completion and resource
-trend analysis are pending. This earlier commit does not contain subsequent
-shutdown/network fixes; do not attribute its result to later binaries.
+The two-hour [preview 3 soak 35471045100](https://github.com/arizzi74/Smart-Stage/actions/runs/35471045100)
+is running at exact release commit `d70b3e2`. It repeats native transitions/STOP
+and collects resident memory plus Windows handle counts. Completion and resource
+trend analysis are pending. The earlier [soak 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
+is also still running at `20bcf35`; its evidence must remain tied to that earlier
+source and cannot establish the correctness of later changes.
 
 No measured claim is made for server-received STOP to physical silence/black
 (target 200 ms), tap to visible controller stopped state (target 500 ms), cue

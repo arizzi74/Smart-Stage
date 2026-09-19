@@ -5,27 +5,21 @@ real native APIs but cannot verify what a human sees or hears on event hardware.
 
 ## Recorded evidence
 
-[Preview 2](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.2),
-commit `58230a9`, passed [tag run 35469479616](https://github.com/arizzi74/Smart-Stage/actions/runs/35469479616):
+[Preview 3](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.3),
+commit `d70b3e2`, passed [tag run 35471043955](https://github.com/arizzi74/Smart-Stage/actions/runs/35471043955):
 Go race/vet checks, all four native builds/import audits/media checks, real
 application HTTP/native checks including shutdown during validation, release
 publication, then curl/irm installation and HTTP startup on all four platforms.
-Downloaded executable checksums and architecture headers were independently
-verified in `dist/releases/v0.1.0-preview.2/`. Runner output availability and
+Downloaded executable checksums, architecture headers, module version and VCS
+commit were independently verified in `dist/releases/v0.1.0-preview.3/`.
+Runtime version/commit output is also recorded by the four installer jobs.
+Runner output availability and
 coverage match the table below.
 
-[Preview 1](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.1)
-was published by [tag run 35468638944](https://github.com/arizzi74/Smart-Stage/actions/runs/35468638944)
-after all four native build/test jobs passed. That run subsequently found a Mac
-installer shell parsing bug. After correcting the installer,
-[run 35468948308](https://github.com/arizzi74/Smart-Stage/actions/runs/35468948308)
+[Default installer run 35471309014](https://github.com/arizzi74/Smart-Stage/actions/runs/35471309014)
 passed the actual `curl | sh` / `irm | iex` installation, version and HTTP startup
 checks on all four runners. Hosted runners contain development tools; these
 checks are not clean-machine evidence.
-
-[GitHub run 35467862752](https://github.com/arizzi74/Smart-Stage/actions/runs/35467862752),
-commit `7c3d57f`, passed all four builds, import audits, native smoke tests,
-target-OS shared tests and application HTTP/native smoke tests.
 
 | Target | Runner environment / output availability | Actual application smoke coverage |
 | --- | --- | --- |
@@ -35,15 +29,16 @@ target-OS shared tests and application HTTP/native smoke tests.
 | Windows ARM64 | `windows-11-arm` hosted runner; **no audio endpoints**; 1024×768 Hyper-V display | Same silent-video application checks; audio-renderer playback skipped. |
 
 All targets natively inspected WAV, MP3, 1080p H.264/AAC MP4 and silent H.264 MP4,
-and rejected damaged media. Harness tests additionally checked native natural
-completion and reported persistent stage-enabled state. Native status is not
+and rejected damaged media. Harness tests additionally rejected unavailable
+audio/display IDs without reporting playing, checked native natural completion
+and reported persistent stage-enabled state. Native status is not
 evidence of physically black pixels or routed sound. Mac ARM64 selected the
 non-default Null endpoint; this is native routing to a virtual device only.
 
 Toolchains: Go 1.26.5; Macs used Xcode 16.4 (16F6), Apple Clang 17.0.0
 (clang-1700.0.13.5), SDK 15.5, deployment target 12.0. Windows used LLVM-MinGW
-20260908 UCRT / Clang 23.1.1. Full records, imports and smoke JSON accompany
-build artifacts. The final tag run repeats these checks for the release commit.
+20260908 UCRT / Clang 23.1.1. Full toolchain/import, native harness and application
+smoke records accompany the published preview 3 executables.
 
 Local development: Ubuntu 22.04.5 ARM64; Windows cross-builds also succeed.
 PE audits found only OS libraries (19 AMD64 imports, 18 ARM64 imports).
@@ -55,7 +50,10 @@ OS/plugin load: clean-machine testing remains mandatory.
 generation cancellation, epochs, duplicate/conflicting IDs, multiple controllers,
 revision conflicts, active-source protection, persistence/corruption/backup/lock,
 canonical roots, roles, CSRF/Origin/Host, malformed bodies, path redaction,
-overload-independent STOP and authoritative SSE reconnects.
+overload-independent STOP and authoritative SSE reconnects. New coverage checks
+the TCP cap and shutdown, IPv4 link-local discovery, actual listing truncation,
+rejection of oversized saves without losing the show/backup, invalid stored
+labels and refusal to start an unsupported/no-cgo backend.
 
 Chromium browser checks use a **synthetic HTTP fixture**, separate from native
 tests. They passed at widths 320/390/768/844/1280: pairing, four wrapped labels,
@@ -101,9 +99,11 @@ These are **unverified**, not assumed passed:
   validation/filesystem work under event conditions; inaccessible/protected
   folders and missing drives.
 - A two-hour native soak measuring resources, callback/handle growth, frozen
-  windows and audiovisual drift. [CI run 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
-  is running a two-hour native transition/STOP/resource test at commit `20bcf35`,
-  before the preview 2 shutdown fix; results are pending. Even a passing CI
+  windows and audiovisual drift. [Preview 3 soak 35471045100](https://github.com/arizzi74/Smart-Stage/actions/runs/35471045100)
+  is running a two-hour native transition/STOP/resource test at release commit
+  `d70b3e2`. The earlier [run 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
+  at `20bcf35` is also running; its results apply to that earlier source only.
+  Results and resource analysis are pending. Even a passing CI
   result cannot establish physical A/V drift or routed sound.
 - Production signing/notarization and the bare-executable permission workflow.
 

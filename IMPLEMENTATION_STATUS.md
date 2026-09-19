@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.2
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.3
 
 ## Implemented
 
@@ -27,15 +27,21 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.2
 
 All four: macOS ARM64/AMD64, Windows ARM64/AMD64. Windows ARM64 was added by
 explicit user request. Tagged workflow
-[`35469479616`](https://github.com/arizzi74/Smart-Stage/actions/runs/35469479616)
+[`35471043955`](https://github.com/arizzi74/Smart-Stage/actions/runs/35471043955)
 passed builds, dependency checks, native media checks and real-application
-HTTP/native smoke tests, published `v0.1.0-preview.2`, and then verified curl/irm
+HTTP/native smoke tests, published `v0.1.0-preview.3`, and then verified curl/irm
 installation on all four platforms. Each installed binary reported its version
 and served the Command page. Downloaded release files also passed SHA-256 and
-executable architecture checks locally.
+executable architecture, module version and source commit checks locally.
+Default installer run
+[`35471309014`](https://github.com/arizzi74/Smart-Stage/actions/runs/35471309014)
+also passed on all four platforms after switching the defaults to preview 3.
 
-Preview 2 includes draining native inspection before framework shutdown, a
-bounded interactive-inspection timeout, and a shutdown-during-validation check.
+The current release includes draining native inspection before framework
+shutdown, a bounded inspection timeout, IPv4 link-local discovery, a 256 TCP
+connection cap, and a save-time configuration size limit. Windows STOP now uses
+per-stream channel volume instead of shared session mute; this is implemented
+and compiled, but Windows audio playback remains unverified on real hardware.
 
 - Mac CI: all four fixture cues played/stopped through actual AVFoundation, on
   virtual/null audio devices and one virtual display; saved-show restart passed.
@@ -44,6 +50,8 @@ bounded interactive-inspection timeout, and a shutdown-during-validation check.
   so Windows audio renderer playback/routing is still unverified.
 - Native natural completion and stage-enabled persistence are checked through
   native events. No CI assertion proves physical black pixels or actual sound.
+- Unavailable audio/display IDs cause native errors without a playing event on
+  all four targets. Detailed harness records are attached to preview 3.
 - Linux ARM64: `go test -race ./...`, `go vet ./...`, Chromium browser checks.
   Shared tests also passed on the four target OS runners. Browser checks cover
   widths 320/390/768/844/1280, STOP usability, escaping and reconnect semantics.
@@ -53,12 +61,14 @@ bounded interactive-inspection timeout, and a shutdown-during-validation check.
 Physical non-default audio routing, projector/second-monitor blackout, hotplug/
 window relocation, mixed DPI, phones on real LANs, timing targets, clean-machine
 acceptance, production signing/notarization and full physical two-hour soak.
-A two-hour native CI soak is running separately in
-[`35468888430`](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430).
-It uses commit `20bcf35`, before the preview 2 shutdown change. Its result must
-be inspected, not assumed. It cannot verify physical A/V drift.
+A two-hour native CI soak of the exact preview 3 source, commit `d70b3e2`, is
+running in [`35471045100`](https://github.com/arizzi74/Smart-Stage/actions/runs/35471045100).
+The earlier [`35468888430`](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
+at commit `20bcf35` is also still running and is separate evidence. Results and
+resource trends must be inspected, not assumed. Neither verifies physical A/V
+drift or Windows audio routing.
 
 See `docs/release-verification.md` for exact environments/evidence and the
 remaining checklist, and `docs/acceptance-audit.md` for a specification-wide
 evidence audit. Local final release files are downloaded under
-`dist/releases/v0.1.0-preview.2/`; local cross-build outputs are under `dist/`.
+`dist/releases/v0.1.0-preview.3/`; local cross-build outputs are under `dist/`.
