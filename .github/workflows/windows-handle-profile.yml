@@ -1,0 +1,59 @@
+name: Published Windows handle profile
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/windows-handle-profile.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  profile:
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            arch: amd64
+            handle: handle64.exe
+          - runner: windows-11-arm
+            arch: arm64
+            handle: handle64a.exe
+    runs-on: ${{ matrix.runner }}
+    env:
+      SMARTSTAGE_VERSION: v0.1.0-preview.3
+      SMARTSTAGE_INSTALL_DIR: ${{ github.workspace }}/dist/handle-profile-bin
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install exact published executable
+        shell: pwsh
+        run: '& ./install.ps1'
+      - name: Verify Microsoft Handle 5.0 diagnostic tool
+        shell: pwsh
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'Handle.zip'
+          Invoke-WebRequest https://download.sysinternals.com/files/Handle.zip -OutFile $archive
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne '279aaf8eccb6f79147f4dcc6ba091fb895c4cb8b199a0dd186a4c76bc519d2cd') { throw 'Handle checksum mismatch' }
+          $directory = Join-Path $env:RUNNER_TEMP 'smartstage-handle'
+          Expand-Archive $archive -DestinationPath $directory
+          $tool = Join-Path $directory '${{ matrix.handle }}'
+          $signature = Get-AuthenticodeSignature $tool
+          if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation') { throw 'Handle Microsoft signature verification failed' }
+          "SMARTSTAGE_HANDLE_TOOL=$tool" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $signature | Select-Object Path,Status,@{Name='Signer';Expression={$_.SignerCertificate.Subject}} | ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $env:SMARTSTAGE_INSTALL_DIR 'diagnostic-tool.json')
+      - name: Profile native transitions and stopped idle handles
+        shell: bash
+        env:
+          GODEBUG: gctrace=1,scavtrace=1
+          SMARTSTAGE_MEMORY_PROFILE: '1'
+          SMARTSTAGE_PROFILE_IDLE_SECONDS: '120'
+        run: python3 scripts/application-smoke.py "$SMARTSTAGE_INSTALL_DIR/smartstage.exe" 1200
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: windows-handle-profile-${{ matrix.arch }}
+          path: |
+            dist/handle-profile-bin/*.json
+            dist/handle-profile-bin/*.gctrace-*.txt
+            dist/handle-profile-bin/*.memory-*.txt
+          if-no-files-found: warn

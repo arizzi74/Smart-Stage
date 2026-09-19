@@ -26,6 +26,8 @@ records = []
 soak_seconds = int(sys.argv[2]) if len(sys.argv)>2 else 0
 assert soak_seconds >= 0, 'Soak duration must be nonnegative'
 memory_profile = os.environ.get('SMARTSTAGE_MEMORY_PROFILE') == '1'
+profile_idle_seconds = int(os.environ.get('SMARTSTAGE_PROFILE_IDLE_SECONDS', '0')) if memory_profile else 0
+assert 0 <= profile_idle_seconds <= 600, 'Profile idle duration must be between 0 and 600 seconds'
 
 def native_memory_snapshot(pid, phase):
     if not memory_profile:
@@ -35,6 +37,10 @@ def native_memory_snapshot(pid, phase):
     else:
         commands = [('process', ['pwsh','-NoLogo','-NoProfile','-NonInteractive','-Command',
             "Get-Process -Id "+str(pid)+" | Select-Object Id,HandleCount,@{Name='Threads';Expression={$_.Threads.Count}},PrivateMemorySize64,VirtualMemorySize64 | ConvertTo-Json"])]
+        handle_tool = os.environ.get('SMARTSTAGE_HANDLE_TOOL')
+        if handle_tool:
+            # Summary counts only: no handle names, memory contents or mutation.
+            commands.append(('handles', [handle_tool, '-accepteula', '-nobanner', '-s', '-p', str(pid)]))
     for name, command in commands:
         destination = Path(exe+f'.memory-{phase}-{name}.txt')
         try:
@@ -222,6 +228,23 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                     soak.update(elapsedSeconds=time.monotonic()-start,completed=True)
                     save_records()
                     native_memory_snapshot(process.pid, 'after')
+                    if profile_idle_seconds:
+                        idle_start = time.monotonic()
+                        idle = {'requestedSeconds':profile_idle_seconds,'elapsedSeconds':0,
+                                'completed':False,'samples':[]}
+                        records.append({'stoppedIdle':idle})
+                        while True:
+                            state = command('GET','/api/state')['state']
+                            assert state['state']=='stopped' and not state['activeCueId'], 'Idle playback revived'
+                            elapsed = time.monotonic()-idle_start
+                            sample = {'seconds':round(elapsed,2),**resources(process.pid)}
+                            idle['samples'].append(sample)
+                            idle.update(elapsedSeconds=elapsed,completed=elapsed>=profile_idle_seconds)
+                            save_records()
+                            print('Stopped idle resource sample: '+json.dumps(sample),flush=True)
+                            if idle['completed']: break
+                            time.sleep(min(60,profile_idle_seconds-elapsed))
+                        native_memory_snapshot(process.pid, 'idle')
             # Exercise shutdown during newly requested or still-running startup
             # validation. Native objects must drain before framework teardown.
             validation = admin('POST','/api/validate',{},expected=(202,503))
