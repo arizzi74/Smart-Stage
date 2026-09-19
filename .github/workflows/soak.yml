@@ -1,6 +1,8 @@
 name: Native two-hour soak
 on:
   workflow_dispatch:
+  push:
+    branches: ['soak/**']
 permissions:
   contents: read
 jobs:
