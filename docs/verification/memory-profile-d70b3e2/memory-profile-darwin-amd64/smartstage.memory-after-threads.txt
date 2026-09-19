@@ -1,0 +1,22 @@
+Exit code: 0
+USER     PID   TT   %CPU STAT PRI     STIME     UTIME COMMAND
+runner  5090   ??    0.0 S    20T   0:08.35   0:13.79 /Users/runner/work/Smart-Stage/Smart-Stage/dist/profile-bin/smartstage --port 49170 --bind 127.0.0.1 --config-dir /var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/smartstage-native-http-vg4fme2z --media-root /Users/runner/work/Smart-Stage/Smart-Stage/testdata/media
+        5090         0.0 S    20T   0:18.50   0:02.65 
+        5090         0.0 S    20T   0:00.00   0:00.00 
+        5090         0.0 S    20T   0:00.00   0:00.00 
+        5090         0.0 S    20T   0:07.07   0:02.84 
+        5090         0.0 S    20T   0:00.00   0:00.00 
+        5090         0.0 S    20T   0:03.58   0:02.76 
+        5090         0.0 S    19T   0:00.04   0:00.02 
+        5090         0.0 S    20R   0:00.00   0:00.00 
+        5090         0.0 S    20T   0:06.13   0:02.51 
+        5090         0.0 S    20T   0:02.23   0:00.88 
+        5090         0.0 S    20T   0:06.07   0:02.43 
+        5090         0.0 S    20T   0:02.60   0:01.05 
+        5090         0.0 S    20T   0:00.00   0:00.00 
+        5090         0.0 S    20T   0:00.00   0:00.00 
+        5090         0.0 S    20T   0:03.78   0:02.91 
+        5090         0.0 S    20T   0:03.80   0:02.90 
+        5090         0.0 S    20T   0:00.20   0:00.20 
+        5090         0.0 S    20T   0:06.32   0:02.63 
+        5090         0.0 S    20T   0:04.50   0:01.78 

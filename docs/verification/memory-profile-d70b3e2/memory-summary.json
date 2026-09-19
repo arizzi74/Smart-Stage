@@ -1,0 +1,168 @@
+{
+  "runId": "35475182913",
+  "applicationCommit": "d70b3e297e0e121efc6f0800b1ffe7afe5a871d1",
+  "workflowCommit": "34927b483f3c4fce7f3291a5457274e82990858f",
+  "method": "GC heap values and vmmap sizes are rounded by their tools. Before/after snapshots and continuous resource samples are separate observations. Counts/trends describe this workload; they do not establish resource stability or physical A/V behavior.",
+  "targets": [
+    {
+      "target": "darwin-amd64",
+      "cycles": 2145,
+      "elapsedSeconds": 1200.415722152,
+      "completed": true,
+      "firstSample": {
+        "seconds": 0.35,
+        "cycles": 1,
+        "residentBytes": 34332672
+      },
+      "lastSample": {
+        "seconds": 1200.41,
+        "cycles": 2145,
+        "residentBytes": 45137920
+      },
+      "goGCCollections": 48,
+      "goLiveHeapMiBRounded": {
+        "first": 0,
+        "final": 1,
+        "max": 1
+      },
+      "before": {
+        "mallocAllocationCount": 22568,
+        "mallocAllocatedBytesRounded": 3780608.0,
+        "physicalFootprintBytesRounded": 16882073.6
+      },
+      "after": {
+        "mallocAllocationCount": 54651,
+        "mallocAllocatedBytesRounded": 7249920.0,
+        "physicalFootprintBytesRounded": 26109542.4
+      },
+      "mallocChange": {
+        "allocationCount": 32083,
+        "bytesRounded": 3469312.0,
+        "allocationsPerCycle": 14.957109557109558,
+        "bytesPerCycleRounded": 1617.3948717948717
+      }
+    },
+    {
+      "target": "darwin-arm64",
+      "cycles": 2268,
+      "elapsedSeconds": 1200.1036384579998,
+      "completed": true,
+      "firstSample": {
+        "seconds": 0.25,
+        "cycles": 1,
+        "residentBytes": 53411840
+      },
+      "lastSample": {
+        "seconds": 1200.08,
+        "cycles": 2268,
+        "residentBytes": 65519616
+      },
+      "goGCCollections": 48,
+      "goLiveHeapMiBRounded": {
+        "first": 0,
+        "final": 1,
+        "max": 1
+      },
+      "before": {
+        "mallocAllocationCount": 22923,
+        "mallocAllocatedBytesRounded": 3489792.0,
+        "physicalFootprintBytesRounded": 29150412.8
+      },
+      "after": {
+        "mallocAllocationCount": 56561,
+        "mallocAllocatedBytesRounded": 7089152.0,
+        "physicalFootprintBytesRounded": 35966156.8
+      },
+      "mallocChange": {
+        "allocationCount": 33638,
+        "bytesRounded": 3599360.0,
+        "allocationsPerCycle": 14.831569664902998,
+        "bytesPerCycleRounded": 1587.0194003527338
+      }
+    },
+    {
+      "target": "windows-amd64",
+      "cycles": 3027,
+      "elapsedSeconds": 1200.0,
+      "completed": true,
+      "firstSample": {
+        "seconds": 0.12,
+        "cycles": 1,
+        "residentBytes": 64782336,
+        "peakResidentBytes": 163790848,
+        "pagefileUsageBytes": 80842752,
+        "handles": 556
+      },
+      "lastSample": {
+        "seconds": 1200.0,
+        "cycles": 3027,
+        "residentBytes": 94208000,
+        "peakResidentBytes": 184373248,
+        "pagefileUsageBytes": 131219456,
+        "handles": 571
+      },
+      "goGCCollections": 83,
+      "goLiveHeapMiBRounded": {
+        "first": 0,
+        "final": 1,
+        "max": 1
+      },
+      "before": {
+        "Id": 5520,
+        "HandleCount": 552,
+        "Threads": 24,
+        "PrivateMemorySize64": 80584704,
+        "VirtualMemorySize64": 5743173632
+      },
+      "after": {
+        "Id": 5520,
+        "HandleCount": 571,
+        "Threads": 21,
+        "PrivateMemorySize64": 131219456,
+        "VirtualMemorySize64": 5795549184
+      }
+    },
+    {
+      "target": "windows-arm64",
+      "cycles": 3032,
+      "elapsedSeconds": 1200.3291871,
+      "completed": true,
+      "firstSample": {
+        "seconds": 0.21,
+        "cycles": 1,
+        "residentBytes": 66682880,
+        "peakResidentBytes": 170205184,
+        "pagefileUsageBytes": 77733888,
+        "handles": 556
+      },
+      "lastSample": {
+        "seconds": 1200.33,
+        "cycles": 3032,
+        "residentBytes": 76902400,
+        "peakResidentBytes": 182423552,
+        "pagefileUsageBytes": 104161280,
+        "handles": 604
+      },
+      "goGCCollections": 85,
+      "goLiveHeapMiBRounded": {
+        "first": 0,
+        "final": 1,
+        "max": 1
+      },
+      "before": {
+        "Id": 8012,
+        "HandleCount": 554,
+        "Threads": 24,
+        "PrivateMemorySize64": 77713408,
+        "VirtualMemorySize64": 5902663680
+      },
+      "after": {
+        "Id": 8012,
+        "HandleCount": 604,
+        "Threads": 25,
+        "PrivateMemorySize64": 87257088,
+        "VirtualMemorySize64": 5905166336
+      }
+    }
+  ]
+}

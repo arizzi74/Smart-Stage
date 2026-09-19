@@ -1,0 +1,77 @@
+Exit code: 0
+Process:         smartstage [5090]
+Path:            /Users/USER/*/smartstage
+Load Address:    0x1064f2000
+Identifier:      smartstage
+Version:         0
+Code Type:       X86-64
+Platform:        macOS
+Parent Process:  Python [5089]
+Target Type:     live task
+
+Date/Time:       2026-09-19 23:26:47.289 +0000
+Launch Time:     2026-09-19 23:06:38.746 +0000
+OS Version:      macOS 15.7.9 (24G830)
+Report Version:  7
+Analysis Tool:   /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/vmmap
+Analysis Tool Version:  Xcode 16.4 (16F6)
+
+Physical footprint:         24.9M
+Physical footprint (peak):  26.4M
+Idle exit:                  untracked
+----
+
+ReadOnly portion of Libraries: Total=684.5M resident=288.1M(42%) swapped_out_or_unallocated=396.4M(58%)
+Writable regions: Total=771.4M written=22.5M(3%) resident=22.7M(3%) swapped_out=0K(0%) unallocated=748.7M(97%)
+
+                                VIRTUAL RESIDENT    DIRTY  SWAPPED VOLATILE   NONVOL    EMPTY   REGION 
+REGION TYPE                        SIZE     SIZE     SIZE     SIZE     SIZE     SIZE     SIZE    COUNT (non-coalesced) 
+===========                     ======= ========    =====  ======= ========   ======    =====  ======= 
+Activity Tracing                   256K      36K      36K       0K       0K      36K       0K        1 
+ColorSync                          236K     180K     180K       0K       0K       0K       0K       27 
+CoreGraphics                        12K       8K       8K       0K       0K       0K       0K        2 
+Foundation                          16K       4K       4K       0K       0K       0K       0K        1 
+IOAccelerator                       28K      28K      28K       0K       0K       0K       0K        3 
+IOKit                               72K      72K      72K       0K       0K       0K       0K        2 
+IOSurface                           32K       0K       0K       0K       0K       0K       0K        2 
+Kernel Alloc Once                    8K       8K       8K       0K       0K       0K       0K        1 
+MALLOC                              16K       8K       8K       0K       0K       0K       0K        1 
+MALLOC (empty)                    10.2M     412K     412K       0K       0K       0K       0K        6 
+MALLOC guard page                   32K       0K       0K       0K       0K       0K       0K        8 
+MALLOC metadata                    140K     100K     100K       0K       0K       0K       0K       11 
+MALLOC_LARGE                      1500K    1484K    1484K       0K       0K       0K       0K        9         see MALLOC ZONE table below
+MALLOC_LARGE (empty)              3460K    3460K    3460K       0K       0K       0K       0K       11         see MALLOC ZONE table below
+MALLOC_NANO                      512.0M    3948K    3884K       0K       0K       0K       0K        1         see MALLOC ZONE table below
+MALLOC_SMALL                      40.0M    2808K    2808K       0K       0K       0K       0K        5         see MALLOC ZONE table below
+MALLOC_TINY                       8192K    1316K    1316K       0K       0K       0K       0K        8         see MALLOC ZONE table below
+STACK GUARD                       56.2M       0K       0K       0K       0K       0K       0K       48 
+Stack                            114.4M    1284K    1044K       0K       0K       0K       0K       48 
+VM_ALLOCATE                        1.2G    8092K    7120K       0K       0K       0K       0K       38 
+__CTF                               824      824       0K       0K       0K       0K       0K        1 
+__DATA                            42.4M    6816K    1586K       0K       0K       0K       0K      498 
+__DATA_CONST                      57.2M    32.7M    1288K       0K       0K       0K       0K      520 
+__DATA_DIRTY                      1142K    1138K     468K       0K       0K       0K       0K      159 
+__FONT_DATA                        2352     2352       0K       0K       0K       0K       0K        1 
+__LINKEDIT                       163.2M    12.7M       0K       0K       0K       0K       0K        9 
+__OBJC_RO                         61.3M    53.5M       0K       0K       0K       0K       0K        1 
+__OBJC_RW                         2396K    1904K      20K       0K       0K       0K       0K        2 
+__TEXT                           521.3M   275.4M       0K       0K       0K       0K       0K      531 
+__TPRO_CONST                         16       16       16       0K       0K       0K       0K        2 
+mapped file                       66.6M    2116K       0K       0K       0K       0K       0K       21 
+shared memory                      800K     112K     112K       0K       0K       0K       0K       18 
+unused but dirty shlib __DATA       70K      70K      70K       0K       0K       0K       0K      108 
+===========                     ======= ========    =====  ======= ========   ======    =====  ======= 
+TOTAL                              2.8G   408.9M    24.9M       0K       0K      36K       0K     2104 
+
+                                                VIRTUAL   RESIDENT      DIRTY    SWAPPED ALLOCATION      BYTES DIRTY+SWAP          REGION
+MALLOC ZONE                                        SIZE       SIZE       SIZE       SIZE      COUNT  ALLOCATED  FRAG SIZE  % FRAG   COUNT
+===========                                     =======  =========  =========  =========  =========  =========  =========  ======  ======
+DefaultMallocZone_0x108ba3000                    512.0M      3948K      3884K         0K      51554      3305K       579K     15%       1
+MallocHelperZone_0x108b91000                      37.5M      5520K      5520K         0K       2751      3748K      1772K     33%      17
+QuartzCore_0x1519bb000                            12.0M        88K        88K         0K        344        28K        60K     69%       5
+caulk::audio_buffer_resource_0x6000009b8278       10.0M       196K       196K         0K          2        176       196K    100%       2
+caulk::global_page_cache_0x6000009ac688            176K       176K       176K         0K          0         0K       176K    100%       4
+caulk::realtime_safe_resource_0x6000009acd08        48K        48K        48K         0K          0         0K        48K    100%       1
+===========                                     =======  =========  =========  =========  =========  =========  =========  ======  ======
+TOTAL                                            571.7M      9976K      9912K         0K      54651      7080K      2832K     29%      30
+

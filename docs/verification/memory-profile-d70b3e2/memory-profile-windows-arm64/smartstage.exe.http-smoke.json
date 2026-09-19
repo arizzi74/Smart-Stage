@@ -1,0 +1,192 @@
+[
+  {
+    "cuesConfigured": 4,
+    "cuesNativelyPlayedAndStopped": 1,
+    "audioEndpoints": 0,
+    "displays": 1,
+    "physicalRoutingVerified": false
+  },
+  {
+    "soak": {
+      "requestedSeconds": 1200,
+      "elapsedSeconds": 1200.3291871,
+      "cycles": 3032,
+      "completed": true,
+      "samples": [
+        {
+          "seconds": 0.21,
+          "cycles": 1,
+          "residentBytes": 66682880,
+          "peakResidentBytes": 170205184,
+          "pagefileUsageBytes": 77733888,
+          "handles": 556
+        },
+        {
+          "seconds": 60.58,
+          "cycles": 153,
+          "residentBytes": 81137664,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 91574272,
+          "handles": 586
+        },
+        {
+          "seconds": 120.97,
+          "cycles": 304,
+          "residentBytes": 72036352,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 89612288,
+          "handles": 594
+        },
+        {
+          "seconds": 181.09,
+          "cycles": 457,
+          "residentBytes": 63037440,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 87126016,
+          "handles": 596
+        },
+        {
+          "seconds": 241.18,
+          "cycles": 609,
+          "residentBytes": 66486272,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 90836992,
+          "handles": 593
+        },
+        {
+          "seconds": 301.3,
+          "cycles": 762,
+          "residentBytes": 61726720,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 87363584,
+          "handles": 589
+        },
+        {
+          "seconds": 361.44,
+          "cycles": 914,
+          "residentBytes": 63787008,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 89366528,
+          "handles": 588
+        },
+        {
+          "seconds": 421.53,
+          "cycles": 1065,
+          "residentBytes": 63852544,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 90185728,
+          "handles": 588
+        },
+        {
+          "seconds": 481.88,
+          "cycles": 1217,
+          "residentBytes": 64667648,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 91512832,
+          "handles": 583
+        },
+        {
+          "seconds": 541.9,
+          "cycles": 1368,
+          "residentBytes": 66056192,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 90890240,
+          "handles": 587
+        },
+        {
+          "seconds": 601.99,
+          "cycles": 1520,
+          "residentBytes": 62922752,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 87314432,
+          "handles": 586
+        },
+        {
+          "seconds": 662.17,
+          "cycles": 1672,
+          "residentBytes": 61599744,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 87502848,
+          "handles": 583
+        },
+        {
+          "seconds": 722.6,
+          "cycles": 1824,
+          "residentBytes": 60194816,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 87175168,
+          "handles": 582
+        },
+        {
+          "seconds": 782.6,
+          "cycles": 1976,
+          "residentBytes": 59875328,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 87089152,
+          "handles": 584
+        },
+        {
+          "seconds": 842.73,
+          "cycles": 2128,
+          "residentBytes": 59789312,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 86990848,
+          "handles": 578
+        },
+        {
+          "seconds": 903.05,
+          "cycles": 2280,
+          "residentBytes": 63586304,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 90820608,
+          "handles": 578
+        },
+        {
+          "seconds": 963.09,
+          "cycles": 2432,
+          "residentBytes": 65757184,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 91254784,
+          "handles": 592
+        },
+        {
+          "seconds": 1023.34,
+          "cycles": 2584,
+          "residentBytes": 65421312,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 90959872,
+          "handles": 595
+        },
+        {
+          "seconds": 1083.65,
+          "cycles": 2737,
+          "residentBytes": 61489152,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 87097344,
+          "handles": 604
+        },
+        {
+          "seconds": 1144.06,
+          "cycles": 2890,
+          "residentBytes": 75558912,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 102977536,
+          "handles": 604
+        },
+        {
+          "seconds": 1200.33,
+          "cycles": 3032,
+          "residentBytes": 76902400,
+          "peakResidentBytes": 182423552,
+          "pagefileUsageBytes": 104161280,
+          "handles": 604
+        }
+      ],
+      "physicalRoutingOrAVDriftVerified": false
+    }
+  },
+  {
+    "restart": "saved labels/order restored; silent and stage disabled",
+    "instanceChanged": true
+  }
+]
