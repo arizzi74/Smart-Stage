@@ -38,7 +38,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     env:
       SMARTSTAGE_VERSION: ${{ inputs.version }}
-      SMARTSTAGE_INSTALL_DIR: ${{ runner.temp }}/smartstage-browser-bin
+      SMARTSTAGE_INSTALL_DIR: ${{ github.workspace }}/dist/browser-installed
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Install published macOS executable
