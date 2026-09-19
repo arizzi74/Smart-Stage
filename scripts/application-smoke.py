@@ -89,7 +89,8 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                     try: response=opener.open(req,timeout=10)
                     except urllib.error.HTTPError as error: response=error
                     value=json.loads(response.read())
-                    assert response.status==expected,(method,path,response.status,value)
+                    statuses = expected if isinstance(expected, tuple) else (expected,)
+                    assert response.status in statuses,(method,path,response.status,value)
                     return value
                 token=call('POST','/api/pair',{'key':key})['csrfToken']
                 return call
@@ -160,9 +161,10 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                             next_sample=time.monotonic()+60
                     samples.append({'seconds':round(time.monotonic()-start,2),'cycles':cycles,**resources(process.pid)})
                     records.append({'soak':{'requestedSeconds':soak_seconds,'elapsedSeconds':time.monotonic()-start,'cycles':cycles,'samples':samples,'physicalRoutingOrAVDriftVerified':False}})
-            # Exercise shutdown with validation just accepted. Native objects
-            # must be drained before Media Foundation/AppKit teardown.
-            admin('POST','/api/validate',{},expected=202)
+            # Exercise shutdown during newly requested or still-running startup
+            # validation. Native objects must drain before framework teardown.
+            validation = admin('POST','/api/validate',{},expected=(202,503))
+            if 'error' in validation: assert validation['error']['code']=='busy', validation
             process.send_signal(signal.CTRL_BREAK_EVENT if os.name=='nt' else signal.SIGINT)
             process.wait(timeout=15)
             assert process.returncode==0, f'Unclean application shutdown: {process.returncode}'
