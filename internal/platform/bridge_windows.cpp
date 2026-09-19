@@ -185,7 +185,8 @@ struct Playback {
     Com<IMFMediaSource> source;
     Com<IMFMediaSession> session;
     Com<IMFVideoDisplayControl> display;
-    Com<IMFSimpleAudioVolume> volume;
+    Com<IMFAudioStreamVolume> streamVolume;
+    std::vector<float> silence;
     Com<IMFPresentationClock> clock;
     std::string error;
     ~Playback() {
@@ -209,13 +210,24 @@ void black() {
     if (videoWindow) ShowWindow(videoWindow, SW_HIDE);
     if (stageWindow && stageEnabled) RedrawWindow(stageWindow, nullptr, nullptr, RDW_INVALIDATE | RDW_ERASE | RDW_UPDATENOW);
 }
-void stopCurrent() {
+std::string stopCurrent() {
     black();
+    std::string error;
     if (active) {
-        if (active->volume) active->volume->SetMute(TRUE);
-        if (active->session) active->session->Stop();
+        // Session-wide mute affects subsequent renderers in the process's
+        // default audio session. Silence only this retiring stream instead.
+        if (active->streamVolume && !active->silence.empty()) {
+            HRESULT hr = active->streamVolume->SetAllVolumes((UINT32)active->silence.size(), active->silence.data());
+            if (FAILED(hr)) error = failure(hr, "Silence audio stream");
+        }
+        if (active->session) {
+            HRESULT hr = active->session->Stop();
+            if (FAILED(hr) && hr != MF_E_INVALIDREQUEST && active->playing && error.empty())
+                error = failure(hr, "Stop media session");
+        }
         retire(std::move(active));
     }
+    return error;
 }
 bool enableStage(const std::string &id) {
     auto list = monitors();
@@ -343,8 +355,22 @@ void tick() {
                     active->display->SetVideoPosition(nullptr, &rect);
                 } else { stopCurrent(); emit(g, "error", failure(hr, "Configure stage renderer")); return; }
             }
-            hr = MFGetService(active->session.p, MR_POLICY_VOLUME_SERVICE, __uuidof(IMFSimpleAudioVolume), (void**)active->volume.out());
-            if (active->hasAudio && FAILED(hr)) { stopCurrent(); emit(g, "error", failure(hr, "Acquire audio silence control")); return; }
+            if (active->hasAudio) {
+                hr = MFGetService(active->session.p, MR_STREAM_VOLUME_SERVICE, __uuidof(IMFAudioStreamVolume), (void**)active->streamVolume.out());
+                if (FAILED(hr)) { stopCurrent(); emit(g, "error", failure(hr, "Acquire audio stream silence control")); return; }
+                UINT32 channels = 0;
+                hr = active->streamVolume->GetChannelCount(&channels);
+                if (FAILED(hr) || channels == 0 || channels > 64) {
+                    stopCurrent(); emit(g, "error", "Cannot prepare bounded per-stream audio silence control"); return;
+                }
+                // Prepare/check the stream control before any samples play;
+                // STOP then needs no allocation. Leave the user's session and
+                // endpoint mixer mute/volume settings unchanged.
+                active->silence.assign(channels, 1.0f);
+                hr = active->streamVolume->SetAllVolumes(channels, active->silence.data());
+                std::fill(active->silence.begin(), active->silence.end(), 0.0f);
+                if (FAILED(hr)) { stopCurrent(); emit(g, "error", failure(hr, "Initialize audio stream volume")); return; }
+            }
             Com<IMFClock> clock;
             if (SUCCEEDED(active->session->GetClock(clock.out()))) clock->QueryInterface(__uuidof(IMFPresentationClock), (void**)active->clock.out());
             PROPVARIANT start; PropVariantInit(&start); start.vt = VT_I8; start.hVal.QuadPart = 0;
@@ -409,7 +435,11 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         { std::lock_guard<std::mutex> lock(commandMutex); r = std::move(latestCommand); commandScheduled = false; }
         if (!r) return 0;
         if (r->gen != generation.load()) return 0;
-        stopCurrent();
+        std::string stopError = stopCurrent();
+        if (!stopError.empty()) {
+            if (r->kind == Request::Stage && !r->enabled) disableStage();
+            emit(r->gen, "error", stopError); return 0;
+        }
         if (r->kind == Request::Stop) { emit(r->gen, "stopped"); return 0; }
         if (r->kind == Request::Stage) {
             if (r->enabled && !enableStage(r->display)) { emit(r->gen, "error", "Selected stage display is unavailable"); return 0; }

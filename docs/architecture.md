@@ -21,6 +21,8 @@ crosses apartments. A latest-only source-loader mailbox prepares Media Session
 topologies off the UI thread. A separate worker shuts down retired sources and
 sessions. A nonblocking native event poll advances playback. Audio and video
 use one session clock; audio renderer endpoint ID is set before activation.
+STOP zeros the retiring renderer's per-stream channel volumes, then stops its
+session. It does not change the shared audio-session or endpoint mixer state.
 
 macOS uses AVPlayer/AVPlayerItem/AVPlayerLayer, asynchronous asset loading and
 Core Audio endpoint UIDs. `audioOutputDeviceUniqueID` pins each cue's route.

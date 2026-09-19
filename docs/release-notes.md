@@ -6,6 +6,8 @@ blackout, atomic local persistence and one-command installers are implemented.
 
 This preview includes IPv4 link-local LAN discovery, a total HTTP connection
 cap, and a save-time size check that prevents writing a show too large to reopen.
+Windows STOP now silences its own audio stream without muting the shared audio
+session used by following cues. Physical Windows audio testing is still pending.
 Outstanding native inspection drains before framework shutdown. Native checks
 also cover unavailable output IDs and shutdown during media validation.
 

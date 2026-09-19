@@ -20,6 +20,17 @@ References checked against official documentation:
 - [IMFMediaEngineEx methods](https://learn.microsoft.com/en-us/windows/win32/api/mfmediaengine/nn-mfmediaengine-imfmediaengineex)
 - [Audio renderer endpoint attribute](https://learn.microsoft.com/en-us/windows/win32/medfound/mf-audio-renderer-attribute-endpoint-id-attribute)
 
+Windows STOP uses `IMFAudioStreamVolume` through `MR_STREAM_VOLUME_SERVICE`.
+The default SAR audio session is shared by the process, so using session-wide
+mute risks carrying STOP's mute state into later cues. Per-stream zero channel
+volumes silence only the retiring renderer and preserve the operator's mixer
+settings. Channel counts and volume control are checked before playback, with
+storage prepared in advance. This correction follows source/API review; physical
+Windows audio verification is still pending.
+
+- [SAR audio sessions and volume scope](https://learn.microsoft.com/en-us/windows/win32/medfound/streaming-audio-renderer)
+- [IMFAudioStreamVolume](https://learn.microsoft.com/en-us/windows/win32/api/mfidl/nn-mfidl-imfaudiostreamvolume)
+
 macOS uses AVPlayer/AVPlayerLayer, AppKit and Core Audio. Each cue uses an
 explicit audio-device UID, including cues whose preference is system default.
 The main process thread runs AppKit; background work never pumps a substitute
