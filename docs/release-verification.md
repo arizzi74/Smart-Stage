@@ -5,6 +5,15 @@ real native APIs but cannot verify what a human sees or hears on event hardware.
 
 ## Recorded evidence
 
+[Preview 2](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.2),
+commit `58230a9`, passed [tag run 35469479616](https://github.com/arizzi74/Smart-Stage/actions/runs/35469479616):
+Go race/vet checks, all four native builds/import audits/media checks, real
+application HTTP/native checks including shutdown during validation, release
+publication, then curl/irm installation and HTTP startup on all four platforms.
+Downloaded executable checksums and architecture headers were independently
+verified in `dist/releases/v0.1.0-preview.2/`. Runner output availability and
+coverage match the table below.
+
 [Preview 1](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.1)
 was published by [tag run 35468638944](https://github.com/arizzi74/Smart-Stage/actions/runs/35468638944)
 after all four native build/test jobs passed. That run subsequently found a Mac
@@ -92,7 +101,10 @@ These are **unverified**, not assumed passed:
   validation/filesystem work under event conditions; inaccessible/protected
   folders and missing drives.
 - A two-hour native soak measuring resources, callback/handle growth, frozen
-  windows and audiovisual drift.
+  windows and audiovisual drift. [CI run 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
+  is running a two-hour native transition/STOP/resource test at commit `20bcf35`,
+  before the preview 2 shutdown fix; results are pending. Even a passing CI
+  result cannot establish physical A/V drift or routed sound.
 - Production signing/notarization and the bare-executable permission workflow.
 
 Windows 11 is the intended validation baseline. Mac deployment target 12.0 is

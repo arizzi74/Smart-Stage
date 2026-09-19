@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.1
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.2
 
 ## Implemented
 
@@ -26,13 +26,16 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.1
 ## Built and automatically tested
 
 All four: macOS ARM64/AMD64, Windows ARM64/AMD64. Windows ARM64 was added by
-explicit user request. Tagged workflow `35468638944` passed builds, dependency
-checks, native media checks and real-application HTTP/native smoke tests before
-publishing `v0.1.0-preview.1`. The initial Mac installer check exposed a shell
-variable parsing issue, fixed on `main`; installer run
-[`35468948308`](https://github.com/arizzi74/Smart-Stage/actions/runs/35468948308)
-then passed on all four platforms using the published binaries. Each installed
-binary reported its version and served the Command page.
+explicit user request. Tagged workflow
+[`35469479616`](https://github.com/arizzi74/Smart-Stage/actions/runs/35469479616)
+passed builds, dependency checks, native media checks and real-application
+HTTP/native smoke tests, published `v0.1.0-preview.2`, and then verified curl/irm
+installation on all four platforms. Each installed binary reported its version
+and served the Command page. Downloaded release files also passed SHA-256 and
+executable architecture checks locally.
+
+Preview 2 includes draining native inspection before framework shutdown, a
+bounded interactive-inspection timeout, and a shutdown-during-validation check.
 
 - Mac CI: all four fixture cues played/stopped through actual AVFoundation, on
   virtual/null audio devices and one virtual display; saved-show restart passed.
@@ -52,8 +55,9 @@ window relocation, mixed DPI, phones on real LANs, timing targets, clean-machine
 acceptance, production signing/notarization and full physical two-hour soak.
 A two-hour native CI soak is running separately in
 [`35468888430`](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430).
-Its result must be inspected, not assumed. It cannot verify physical A/V drift.
+It uses commit `20bcf35`, before the preview 2 shutdown change. Its result must
+be inspected, not assumed. It cannot verify physical A/V drift.
 
 See `docs/release-verification.md` for exact environments/evidence and the
 remaining checklist. Local final release files are downloaded under
-`dist/releases/v0.1.0-preview.1/`; local cross-build outputs are under `dist/`.
+`dist/releases/v0.1.0-preview.2/`; local cross-build outputs are under `dist/`.
