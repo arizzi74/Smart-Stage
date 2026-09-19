@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
     tags: ['v*']
-    paths-ignore: ['docs/**', 'README.md', 'IMPLEMENTATION_STATUS.md', 'install.sh', 'install.ps1', '.github/workflows/install.yml', '.github/workflows/soak.yml', '.github/workflows/browser-native.yml', 'scripts/browser-native-smoke.cjs', 'scripts/browser/**']
+    paths-ignore: ['docs/**', 'README.md', 'IMPLEMENTATION_STATUS.md', 'install.sh', 'install.ps1', '.github/workflows/install.yml', '.github/workflows/soak.yml', '.github/workflows/browser-native.yml', '.github/workflows/windows-audio.yml', 'scripts/browser-native-smoke.cjs', 'scripts/browser/**']
   pull_request:
   workflow_dispatch:
 permissions:

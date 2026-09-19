@@ -1,0 +1,51 @@
+name: Windows audio capability check
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/windows-audio.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audio:
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            arch: amd64
+          - runner: windows-11-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    env:
+      SMARTSTAGE_INSTALL_DIR: ${{ github.workspace }}/dist/audio-check-bin
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Record actual audio services and installed devices without changing them
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/windows-audio | Out-Null
+          $record = [ordered]@{
+            os = Get-CimInstance Win32_OperatingSystem | Select-Object Caption, Version, BuildNumber
+            services = @(Get-CimInstance Win32_Service -Filter "Name='Audiosrv' OR Name='AudioEndpointBuilder'" | Select-Object Name, State, StartMode, ExitCode)
+            soundDevices = @(Get-CimInstance Win32_SoundDevice | Select-Object Name, Manufacturer, Status, ConfigManagerErrorCode)
+            audioPnP = @(Get-CimInstance Win32_PnPEntity -Filter "PNPClass='AudioEndpoint' OR PNPClass='MEDIA'" | Select-Object Name, PNPClass, Status, ConfigManagerErrorCode)
+            settingsChanged = $false
+          }
+          $record | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 dist/windows-audio/capabilities-${{ matrix.arch }}.json
+          $record | ConvertTo-Json -Depth 6
+      - name: Install published executable
+        shell: pwsh
+        run: '& ./install.ps1'
+      - name: Exercise native playback with this runner's actual endpoints
+        shell: bash
+        run: python3 scripts/application-smoke.py "$SMARTSTAGE_INSTALL_DIR/smartstage.exe"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: windows-audio-${{ matrix.arch }}
+          path: |
+            dist/windows-audio/*.json
+            dist/audio-check-bin/*.http-smoke.json
+          if-no-files-found: warn
