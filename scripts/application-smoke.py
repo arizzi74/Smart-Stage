@@ -22,6 +22,31 @@ import urllib.request
 exe = str(Path(sys.argv[1]).resolve())
 root = Path(__file__).resolve().parent.parent
 records = []
+soak_seconds = int(sys.argv[2]) if len(sys.argv)>2 else 0
+
+def resources(pid):
+    if os.name != 'nt':
+        rss = int(subprocess.check_output(['ps','-o','rss=','-p',str(pid)],text=True).strip())*1024
+        return {'residentBytes':rss}
+    import ctypes
+    from ctypes import wintypes
+    class Counters(ctypes.Structure):
+        _fields_ = [('cb',wintypes.DWORD),('PageFaultCount',wintypes.DWORD),
+                    *[(name,ctypes.c_size_t) for name in ('PeakWorkingSetSize','WorkingSetSize','QuotaPeakPagedPoolUsage','QuotaPagedPoolUsage','QuotaPeakNonPagedPoolUsage','QuotaNonPagedPoolUsage','PagefileUsage','PeakPagefileUsage')]]
+    kernel = ctypes.WinDLL('kernel32',use_last_error=True)
+    kernel.OpenProcess.argtypes = [wintypes.DWORD,wintypes.BOOL,wintypes.DWORD]
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel.K32GetProcessMemoryInfo.argtypes = [wintypes.HANDLE,ctypes.c_void_p,wintypes.DWORD]
+    kernel.GetProcessHandleCount.argtypes = [wintypes.HANDLE,ctypes.POINTER(wintypes.DWORD)]
+    handle = kernel.OpenProcess(0x400|0x10,False,pid)
+    if not handle: raise ctypes.WinError(ctypes.get_last_error())
+    try:
+        counters = Counters(); counters.cb=ctypes.sizeof(counters); handles=wintypes.DWORD()
+        if not kernel.K32GetProcessMemoryInfo(handle,ctypes.byref(counters),counters.cb): raise ctypes.WinError(ctypes.get_last_error())
+        if not kernel.GetProcessHandleCount(handle,ctypes.byref(handles)): raise ctypes.WinError(ctypes.get_last_error())
+        return {'residentBytes':counters.WorkingSetSize,'handles':handles.value}
+    finally: kernel.CloseHandle(handle)
 
 def wait_for(predicate, seconds=45):
     end = time.monotonic()+seconds
@@ -111,6 +136,30 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                     played+=1
                 previous_instance=ready['instanceId']
                 records.append({'cuesConfigured':4,'cuesNativelyPlayedAndStopped':played,'audioEndpoints':len(outputs['audio']),'displays':len(outputs['displays']),'physicalRoutingVerified':False})
+                if soak_seconds:
+                    playable=[c for c in saved['cues'] if (not c['path'].endswith('.mp4') or display) and (c['path'].endswith('silent-1080p.mp4') or audio)]
+                    assert playable, 'No real runner output for soak'
+                    start=time.monotonic();next_sample=start;cycles=0;samples=[]
+                    while time.monotonic()-start<soak_seconds:
+                        cue=playable[cycles%len(playable)]
+                        current=command('GET','/api/state')['state']
+                        command('POST','/api/play',{'requestId':f'soak-play-{cycles}','instanceId':current['instanceId'],'stopEpoch':current['stopEpoch'],'cueId':cue['id']},expected=202)
+                        if cycles%10:
+                            wait_for(playing)
+                        else:
+                            replacement=playable[(cycles+1)%len(playable)]
+                            command('POST','/api/play',{'requestId':f'soak-replace-{cycles}','instanceId':current['instanceId'],'stopEpoch':current['stopEpoch'],'cueId':replacement['id']},expected=202)
+                        command('POST','/api/stop',{'requestId':f'soak-stop-{cycles}'},expected=202)
+                        wait_for(lambda:command('GET','/api/state')['state']['state']=='stopped')
+                        time.sleep(.1)
+                        after=command('GET','/api/state')['state']
+                        assert after['state']=='stopped' and not after['activeCueId'], 'Late native callback revived media'
+                        cycles+=1
+                        if time.monotonic()>=next_sample:
+                            samples.append({'seconds':round(time.monotonic()-start,2),'cycles':cycles,**resources(process.pid)})
+                            next_sample=time.monotonic()+60
+                    samples.append({'seconds':round(time.monotonic()-start,2),'cycles':cycles,**resources(process.pid)})
+                    records.append({'soak':{'requestedSeconds':soak_seconds,'elapsedSeconds':time.monotonic()-start,'cycles':cycles,'samples':samples,'physicalRoutingOrAVDriftVerified':False}})
             process.send_signal(signal.CTRL_BREAK_EVENT if os.name=='nt' else signal.SIGINT)
             process.wait(timeout=15)
             assert process.returncode==0, f'Unclean application shutdown: {process.returncode}'

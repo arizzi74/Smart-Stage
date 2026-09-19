@@ -10,6 +10,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"smartstage/internal/files"
 	"smartstage/internal/identity"
@@ -348,6 +349,8 @@ func (s *Service) inspect(ctx context.Context, path string) model.Validation {
 	return v
 }
 func (s *Service) InspectFile(ctx context.Context, path string) model.Validation {
+	ctx, cancel := context.WithTimeout(ctx, 35*time.Second)
+	defer cancel()
 	return s.inspect(ctx, path)
 }
 
