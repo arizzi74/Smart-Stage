@@ -20,7 +20,9 @@
         Write-Host "Downloading Smart Stage $version for Windows $arch..."
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
         Invoke-WebRequest -UseBasicParsing "$base/$asset" -OutFile $download
-        $checksum = (Invoke-WebRequest -UseBasicParsing "$base/$asset.sha256").Content
+        $checksumFile = Join-Path $tempDir 'checksum.txt'
+        Invoke-WebRequest -UseBasicParsing "$base/$asset.sha256" -OutFile $checksumFile
+        $checksum = Get-Content -LiteralPath $checksumFile -Raw
         $expected = ($checksum.Trim() -split '\s+')[0].ToLowerInvariant()
         $actual = (Get-FileHash -Algorithm SHA256 $download).Hash.ToLowerInvariant()
         if ($expected -notmatch '^[0-9a-f]{64}$' -or $actual -ne $expected) { throw 'Checksum mismatch; nothing was installed.' }
