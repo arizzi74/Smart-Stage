@@ -347,11 +347,22 @@ func (s *Service) inspect(ctx context.Context, path string) model.Validation {
 	}
 	return v
 }
+func (s *Service) InspectFile(ctx context.Context, path string) model.Validation {
+	return s.inspect(ctx, path)
+}
+
 func (s *Service) prepare(job loadJob) {
 	// Filesystem access and decoder preparation run here, never on the command
 	// mutex, HTTP STOP path, or native UI event loop.
 	path, info, err := s.files.File(job.cue.Path)
 	cache := job.cue.Cache
+	if err != nil {
+		cache.Status = "error"
+		if errors.Is(err, os.ErrNotExist) {
+			cache.Status = "missing"
+		}
+		cache.Reason = err.Error()
+	}
 	if err == nil && (cache.Status != "ready" || info.Size() != cache.Size || info.ModTime().UnixNano() != cache.Modified) {
 		cache = s.inspect(job.ctx, path)
 		if cache.Status != "ready" {
@@ -441,6 +452,12 @@ func (s *Service) nativeEvent(e playback.Event) {
 		s.changedLocked()
 		return
 	}
+	// A local emergency STOP, like an HTTP STOP, has no stale-generation
+	// precondition. It must still stop a concurrently accepted controller PLAY.
+	if e.Kind == "escape" {
+		s.stopLocked()
+		return
+	}
 	if e.Generation != s.state.Generation {
 		return
 	}
@@ -476,9 +493,6 @@ func (s *Service) nativeEvent(e playback.Event) {
 			s.state.OutputFault = true
 		}
 		s.failLocked(e.Message)
-		return
-	case "escape":
-		s.stopLocked()
 		return
 	default:
 		return

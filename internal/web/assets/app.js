@@ -4,6 +4,8 @@ const adminPage = location.pathname === '/admin';
 let state = null, role = '', csrf = '', online = false, source = null, lastSeen = 0;
 let playlist = null, devices = null, fileSelection = new Set(), fileEntries = [];
 let playlistBusy = false, refreshing = false, renderedOrder = '', playlistRefresh = false;
+let controlSequence = 0;
+let validationSignature = '', validationRefresh = false;
 const cueButtons = new Map(), playlistRows = new Map();
 
 function element(tag, text, className) {
@@ -103,9 +105,14 @@ function applyState(next) {
     for (const c of next.cues) {
       const row = playlistRows.get(c.id);
       if (row) {
-        row.validation.textContent = `${c.kind || 'Unknown type'} · ${c.duration ? clock(c.duration) : 'Duration unknown'} · ${c.validation}`;
+        const reason = playlist?.cues.find(item => item.id === c.id)?.cache.reason;
+        row.validation.textContent = `${c.kind || 'Unknown type'} · ${c.duration ? clock(c.duration) : 'Duration unknown'} · ${c.validation}${reason ? ` · ${reason}` : ''}`;
         row.remove.disabled = c.id === next.activeCueId;
       }
+    }
+    const signature = next.cues.map(c => `${c.id}:${c.validation}`).join('|');
+    if (playlist && signature !== validationSignature && !validationRefresh) {
+      validationSignature = signature; void refreshValidationDetails();
     }
     const details = $('status-details'); details.replaceChildren();
     for (const [label, value] of [
@@ -142,14 +149,16 @@ function renderCues() {
 async function trigger(cueId) {
   if (!online || Date.now() - lastSeen > 18000 || !state) { connection(false); notify('Disconnected: PLAY was not sent. Reconnect before triggering a cue.', true); return; }
   const request = { requestId: requestID(), instanceId: state.instanceId, stopEpoch: state.stopEpoch, cueId };
-  try { await api('POST', '/api/play', request); notify('Cue accepted. Waiting for native playback.'); await refreshState(); }
-  catch (error) { notify(error.message, true); await refreshState(); }
+  const sequence = ++controlSequence;
+  try { await api('POST', '/api/play', request); if (sequence === controlSequence) notify('Cue accepted. Check host playback status.'); await refreshState(); }
+  catch (error) { if (sequence === controlSequence) notify(error.message, true); await refreshState(); }
 }
 $('stop').addEventListener('click', async () => {
   if (!csrf) { showPair(); return; }
+  const sequence = ++controlSequence;
   notify('Sending STOP…');
-  try { await api('POST', '/api/stop', { requestId: requestID() }); notify('STOP accepted by host. Check the playback status for native completion.'); await refreshState(); }
-  catch (error) { notify(`STOP is unconfirmed. ${error.message}`, true); }
+  try { await api('POST', '/api/stop', { requestId: requestID() }); if (sequence === controlSequence) notify('STOP accepted by host. Check the playback status for native completion.'); await refreshState(); }
+  catch (error) { if (sequence === controlSequence) notify(`STOP is unconfirmed. ${error.message}`, true); }
 });
 $('pairing').addEventListener('cancel', event => event.preventDefault());
 $('pair-form').addEventListener('submit', async event => {
@@ -170,6 +179,21 @@ async function loadPlaylist() {
   try { playlist = await api('GET', '/api/playlist'); renderPlaylist(); }
   catch (error) { notify(error.message, true); }
   finally { playlistRefresh = false; }
+}
+async function refreshValidationDetails() {
+  validationRefresh = true;
+  try {
+    const current = await api('GET', '/api/playlist');
+    if (playlist && current.playlistRevision === playlist.playlistRevision) {
+      for (const cue of current.cues) {
+        const existing = playlist.cues.find(c => c.id === cue.id);
+        if (existing) existing.cache = cue.cache;
+        const row = playlistRows.get(cue.id);
+        if (row) row.validation.textContent = `${cue.cache.media.kind || 'Unknown type'} · ${cue.cache.media.duration ? clock(cue.cache.media.duration) : 'Duration unknown'} · ${cue.cache.status}${cue.cache.reason ? ` · ${cue.cache.reason}` : ''}`;
+      }
+    }
+  } catch (error) { notify(error.message, true); }
+  finally { validationRefresh = false; }
 }
 function cueEdits() { return playlist.cues.map(({ id, label, path }) => ({ id, label, path })); }
 async function savePlaylist(cues) {
@@ -223,7 +247,15 @@ async function browse(path = '') {
         check.addEventListener('change', () => { if (check.checked) fileSelection.add(entry.path); else fileSelection.delete(entry.path); updateSelected(); });
         const info = element('div', undefined, 'file-name');
         info.append(element('span', entry.name), element('div', `${(entry.size / 1024 / 1024).toFixed(2)} MB · ${new Date(entry.modified / 1e6).toLocaleDateString()}`, 'file-details'));
-        row.append(check, info);
+        const inspect = button('Inspect', async () => {
+          inspect.disabled = true;
+          try {
+            const result = await api('POST', '/api/inspect', { path: entry.path });
+            info.lastChild.textContent = `${result.media.kind || 'Unknown type'} · ${result.media.duration ? clock(result.media.duration) : 'Duration unknown'} · ${result.status}${result.reason ? ` · ${result.reason}` : ''}`;
+          } catch (error) { info.lastChild.textContent = error.message; }
+          finally { inspect.disabled = false; }
+        });
+        row.append(check, info, inspect);
       }
       $('file-list').append(row);
     }

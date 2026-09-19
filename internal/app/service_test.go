@@ -250,6 +250,23 @@ func TestNativeFailureProcessInstanceAndCommandRedaction(t *testing.T) {
 		t.Fatal("native error hidden or private path leaked")
 	}
 }
+func TestLocalEscapeStopsAConcurrentlyAcceptedNewGeneration(t *testing.T) {
+	s, _, _ := setup(t, true)
+	a, err := play(s, "a", "before-escape")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := play(s, "b", "during-escape"); err != nil {
+		t.Fatal(err)
+	}
+	epoch := s.Snapshot(false).StopEpoch
+	s.nativeEvent(playback.Event{Kind: "escape", Generation: a.Generation})
+	state := s.Snapshot(false)
+	if state.ActiveCueID != "" || state.StopEpoch != epoch+1 || state.State != "stopping" {
+		t.Fatalf("emergency STOP was lost: %+v", state)
+	}
+}
+
 func TestTwoControllersLatestAcceptedCueWins(t *testing.T) {
 	s, _, _ := setup(t, true)
 	var wg sync.WaitGroup

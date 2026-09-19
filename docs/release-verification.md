@@ -1,0 +1,105 @@
+# Release verification
+
+Status: **preview; physical/clean-machine acceptance incomplete**. CI executes
+real native APIs but cannot verify what a human sees or hears on event hardware.
+
+## Recorded evidence
+
+[GitHub run 35467862752](https://github.com/arizzi74/Smart-Stage/actions/runs/35467862752),
+commit `7c3d57f`, passed all four builds, import audits, native smoke tests,
+target-OS shared tests and application HTTP/native smoke tests.
+
+| Target | Runner environment / output availability | Actual application smoke coverage |
+| --- | --- | --- |
+| macOS ARM64 | macOS 15.7.9 (24G830); Apple virtual and Null Audio endpoints; one 1024×768 virtual display | Four cues configured/reordered, all four natively played/stopped, restart restores show while stopped/stage-disabled |
+| macOS AMD64 | macOS 15.7.9 (24G830); Null Audio endpoint; one 1920×1080 virtual display | Same four-cue playback/STOP and restart checks |
+| Windows AMD64 | `windows-2025` hosted runner; **no audio endpoints**; 1024×768 Hyper-V display | Four cues configured/reordered; silent video natively played/stopped; restart checked. Audio-renderer playback was skipped, not verified. |
+| Windows ARM64 | `windows-11-arm` hosted runner; **no audio endpoints**; 1024×768 Hyper-V display | Same silent-video application checks; audio-renderer playback skipped. |
+
+All targets natively inspected WAV, MP3, 1080p H.264/AAC MP4 and silent H.264 MP4,
+and rejected damaged media. Harness tests additionally checked native natural
+completion and reported persistent stage-enabled state. Native status is not
+evidence of physically black pixels or routed sound. Mac ARM64 selected the
+non-default Null endpoint; this is native routing to a virtual device only.
+
+Toolchains: Go 1.26.5; Macs used Xcode 16.4 (16F6), Apple Clang 17.0.0
+(clang-1700.0.13.5), SDK 15.5, deployment target 12.0. Windows used LLVM-MinGW
+20260908 UCRT / Clang 23.1.1. Full records, imports and smoke JSON accompany
+build artifacts. The final tag run repeats these checks for the release commit.
+
+Local development: Ubuntu 22.04.5 ARM64; Windows cross-builds also succeed.
+PE audits found only OS libraries (19 AMD64 imports, 18 ARM64 imports).
+Mac `otool -L` audits likewise allow only OS frameworks/libraries. Compiler
+support is linked into Windows executables. Audits cannot prove every eventual
+OS/plugin load: clean-machine testing remains mandatory.
+
+`go test -race ./...` and `go vet ./...` pass on Linux ARM64. Coverage includes
+generation cancellation, epochs, duplicate/conflicting IDs, multiple controllers,
+revision conflicts, active-source protection, persistence/corruption/backup/lock,
+canonical roots, roles, CSRF/Origin/Host, malformed bodies, path redaction,
+overload-independent STOP and authoritative SSE reconnects.
+
+Chromium browser checks use a **synthetic HTTP fixture**, separate from native
+tests. They passed at widths 320/390/768/844/1280: pairing, four wrapped labels,
+escaping, visible STOP, STOP during pending PLAY, failed offline STOP,
+server-authoritative highlighting, reconnect without replay, gap refresh and
+Admin layout. Screenshots/results: `dist/browser-checks/`.
+
+## Reproduce
+
+```sh
+go test -race ./...
+go vet ./...
+bash scripts/build.sh darwin arm64
+bash scripts/build.sh darwin amd64
+bash scripts/build.sh windows amd64
+bash scripts/build.sh windows arm64
+python3 scripts/native-smoke.py dist/native-harness-darwin-arm64
+python3 scripts/application-smoke.py dist/smartstage-darwin-arm64
+NODE_PATH=/path/to/playwright/node_modules node scripts/browser-smoke.cjs
+```
+
+Use matching OS runners normally. Windows Linux cross-builds are additional
+compile/import checks. Go/native SDKs/Python/Playwright are development-only.
+`DEBUG=1` retains symbols; `VERSION=...` and Git commit identify the build.
+`scripts/audit-dependencies.py` saves and checks PE imports/`otool -L` output.
+SHA-256 files describe executable bytes after Mac ad-hoc signing.
+
+## Remaining acceptance work
+
+These are **unverified**, not assumed passed:
+
+- Clean Windows 11 AMD64/ARM64 and both Mac architectures without Go, compilers,
+  developer SDKs, players, extra runtimes or application libraries.
+- Physical non-default audio output for audio and video soundtracks; second
+  display; extended/mirrored layouts, negative coordinates, mixed DPI/rotation.
+- Actual silence/black pixels during loading/STOP/end/error/replacement. No
+  physical STOP latency (target 200 ms server-to-silence/black) or controller
+  latency (target 500 ms tap-to-stopped) has been measured. Bluetooth buffering
+  and hard real-time behavior are not guaranteed.
+- Audio/display unplug/replug, system-default changes during playback, no
+  fallback, no visible window relocation and explicit re-selection on return.
+- Actual phones/tablets on a LAN; sleeping/reconnecting or slow controllers;
+  validation/filesystem work under event conditions; inaccessible/protected
+  folders and missing drives.
+- A two-hour native soak measuring resources, callback/handle growth, frozen
+  windows and audiovisual drift.
+- Production signing/notarization and the bare-executable permission workflow.
+
+Windows 11 is the intended validation baseline. Mac deployment target 12.0 is
+not a physically established minimum; CI ran macOS 15.7.9. Do not infer support
+for every older OS revision. Mac binaries are ad-hoc signed, not Developer ID
+signed/notarized. Windows binaries are not Authenticode signed. Standard OS
+prompts can appear; use documented per-app approval, never disable OS security
+globally. If protected-folder/local-network permissions need bundle metadata on
+real machines, record that constraint before claiming bare-executable support.
+
+## Event preparation
+
+Rehearse exact files and outputs. Use extended desktop for independent stage
+projection. Check physical blackout and a reachable STOP control. Verify trusted
+LAN reachability, guest-network isolation, firewall and local-network permissions;
+do not configure internet port forwarding. Prepare power, notifications, locks,
+forced sleep and display arrangement. Native power assertions cannot suppress
+OS dialogs/forced sleep. Keep a recovery procedure: application crash, OS failure,
+disconnected projector or power loss can expose the desktop. Quit closes stage.

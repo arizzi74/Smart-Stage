@@ -8,7 +8,7 @@ session clock. The endpoint ID attribute is set before renderer activation;
 the endpoint-role attribute is never set.
 
 The preferred newer APIs were evaluated first. `MediaPlayer.AudioDevice` has
-explicit routing, but the available Go-compatible GNU toolchain does not ship
+explicit routing, but the selected Go-compatible LLVM-MinGW toolchain does not ship
 the C++/WinRT projection required for a small maintainable integration. The
 documented `IMFMediaEngineEx` surface provides an endpoint **role**, not an
 arbitrary endpoint ID. The specification's allowed Media Session fallback
@@ -32,3 +32,27 @@ is claimed as supported.
 
 Linux is a development/test host, not a playback target. Unsupported builds
 fail explicitly; no fake backend is linked as a production fallback.
+
+## Product details
+
+The user additionally requested Windows ARM64 builds, pushing commits to
+`arizzi74/Smart-Stage`, GitHub binary publication and curl/irm installers. Those
+extend packaging only; playback semantics remain unchanged. Preview publication
+is explicitly labelled incomplete acceptance until physical checks pass.
+
+All successful cue edits auto-save; derived metadata is a cache and is refreshed
+on startup rather than trusted across processes. Output changes disarm the stage
+and require an enable action or new video cue. Primary/only-display permission
+is explicitly acknowledged in Outputs and stored with that selection. A device
+loss requires re-selection/save, even after the endpoint returns.
+
+Limits: 500 cues, 1,000 listed entries per folder, 64 SSE clients, 128 sessions,
+16 concurrent ordinary HTTP operations and 4,096 accepted idempotency records.
+STOP bypasses ordinary-operation admission. These bound memory/work without
+adding another service. No drag-and-drop is necessary because accessible Up/Down
+controls meet the ordering requirement.
+
+The installers choose native OS architecture, verify release checksums and
+install per user without elevation. Their default is the explicitly named
+preview version; `SMARTSTAGE_VERSION` can select a different release. They do
+not disable Gatekeeper/SmartScreen, firewalls or OS permissions.

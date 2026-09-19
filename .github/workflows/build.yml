@@ -2,6 +2,7 @@ name: Build and test native targets
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 permissions:
@@ -60,6 +61,8 @@ jobs:
           Join-Path $env:RUNNER_TEMP "$name/bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
       - name: Build and inspect native imports
         shell: bash
+        env:
+          VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'dev' }}
         run: bash scripts/build.sh '${{ matrix.os }}' '${{ matrix.arch }}'
       - name: Shared tests on target OS
         shell: bash
@@ -81,3 +84,23 @@ jobs:
           name: native-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/
           if-no-files-found: error
+  publish:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [shared, native]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: native-*
+          merge-multiple: true
+          path: dist
+      - name: Publish verified builds as a preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$RELEASE_TAG" dist/smartstage-* dist/toolchain-* dist/native-enumeration-* \
+            --verify-tag --prerelease --title "Smart Stage $RELEASE_TAG" --notes-file docs/release-notes.md

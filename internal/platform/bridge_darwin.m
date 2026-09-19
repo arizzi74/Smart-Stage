@@ -14,6 +14,9 @@
 static _Atomic(uint64_t) currentGeneration;
 static _Atomic(bool) shuttingDown;
 static pthread_mutex_t eventMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t commandMutex = PTHREAD_MUTEX_INITIALIZER;
+static void (^latestCommand)(void);
+static BOOL commandScheduled;
 static NSMutableArray<NSData *> *events;
 static NSWindow *stageWindow;
 static CALayer *blackOverlay;
@@ -25,6 +28,23 @@ static id screenObserver;
 static AudioObjectPropertyListenerBlock audioListener;
 static void stopCurrent(void);
 static void checkDevices(void);
+
+// Coalesce pending controls so STOP cannot sit behind a burst of UI blocks.
+// The newest accepted generation supersedes every earlier pending command.
+static void enqueueControl(uint64_t gen, void (^command)(void)) {
+    pthread_mutex_lock(&commandMutex);
+    atomic_store(&currentGeneration, gen);
+    latestCommand = [command copy];
+    BOOL wake = !commandScheduled; commandScheduled = YES;
+    pthread_mutex_unlock(&commandMutex);
+    if (wake) dispatch_async(dispatch_get_main_queue(), ^{
+        pthread_mutex_lock(&commandMutex);
+        void (^next)(void) = latestCommand;
+        latestCommand = nil; commandScheduled = NO;
+        pthread_mutex_unlock(&commandMutex);
+        if (next) next();
+    });
+}
 
 static char *copyString(NSString *s) { return strdup(s.UTF8String ?: ""); }
 static NSNumber *jbool(BOOL value) { return value ? @YES : @NO; }
@@ -415,13 +435,11 @@ char *ss_inspect(const char *path) {
 void ss_start(uint64_t gen, const char *path, const char *audio, const char *display, int video) {
     @autoreleasepool {
         NSString *file = [NSString stringWithUTF8String:path], *output = [NSString stringWithUTF8String:audio], *screen = [NSString stringWithUTF8String:display];
-        atomic_store(&currentGeneration, gen);
-        dispatch_async(dispatch_get_main_queue(), ^{ beginPlayback(gen, file, output, screen, video != 0); });
+        enqueueControl(gen, ^{ beginPlayback(gen, file, output, screen, video != 0); });
     }
 }
 void ss_stop(uint64_t gen) {
-    atomic_store(&currentGeneration, gen);
-    dispatch_async(dispatch_get_main_queue(), ^{
+    enqueueControl(gen, ^{
         if (gen != atomic_load(&currentGeneration)) return;
         stopCurrent(); emit(gen, @"stopped", nil, 0, 0);
     });
@@ -429,8 +447,7 @@ void ss_stop(uint64_t gen) {
 void ss_stage(uint64_t gen, const char *display, int enabled) {
     @autoreleasepool {
         NSString *identity = [NSString stringWithUTF8String:display];
-        atomic_store(&currentGeneration, gen);
-        dispatch_async(dispatch_get_main_queue(), ^{
+        enqueueControl(gen, ^{
             if (gen != atomic_load(&currentGeneration)) return;
             stopCurrent();
             if (enabled && !enableStage(identity)) { emit(gen, @"error", @"Selected stage display is unavailable", 0, 0); return; }

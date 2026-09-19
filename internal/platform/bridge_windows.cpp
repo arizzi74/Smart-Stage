@@ -174,10 +174,13 @@ struct Request {
     bool video = false, enabled = false;
     HWND target = nullptr;
 };
+std::mutex commandMutex;
+std::unique_ptr<Request> latestCommand;
+bool commandScheduled = false;
 struct Playback {
     uint64_t gen = 0;
     std::string audio;
-    bool video = false, playing = false;
+    bool video = false, playing = false, hasAudio = false;
     double duration = 0;
     Com<IMFMediaSource> source;
     Com<IMFMediaSession> session;
@@ -284,6 +287,7 @@ std::unique_ptr<Playback> prepare(const Request &r) {
             addBranch(*p, topology.p, pd.p, sd.p, sink.p);
         }
         if (!audio && !p->video) throw std::string("No supported audio or video track");
+        p->hasAudio = audio;
         if (r.gen != generation.load()) return p;
         check(MFCreateMediaSession(nullptr, p->session.out()), "Create media session");
         check(p->session->SetTopology(0, topology.p), "Prepare native decoders");
@@ -339,7 +343,8 @@ void tick() {
                     active->display->SetVideoPosition(nullptr, &rect);
                 } else { stopCurrent(); emit(g, "error", failure(hr, "Configure stage renderer")); return; }
             }
-            MFGetService(active->session.p, MR_POLICY_VOLUME_SERVICE, __uuidof(IMFSimpleAudioVolume), (void**)active->volume.out());
+            hr = MFGetService(active->session.p, MR_POLICY_VOLUME_SERVICE, __uuidof(IMFSimpleAudioVolume), (void**)active->volume.out());
+            if (active->hasAudio && FAILED(hr)) { stopCurrent(); emit(g, "error", failure(hr, "Acquire audio silence control")); return; }
             Com<IMFClock> clock;
             if (SUCCEEDED(active->session->GetClock(clock.out()))) clock->QueryInterface(__uuidof(IMFPresentationClock), (void**)active->clock.out());
             PROPVARIANT start; PropVariantInit(&start); start.vt = VT_I8; start.hVal.QuadPart = 0;
@@ -400,7 +405,9 @@ DeviceNotifications *notifications = nullptr;
 
 LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     if (msg == commandMessage) {
-        std::unique_ptr<Request> r((Request*)lp);
+        std::unique_ptr<Request> r;
+        { std::lock_guard<std::mutex> lock(commandMutex); r = std::move(latestCommand); commandScheduled = false; }
+        if (!r) return 0;
         if (r->gen != generation.load()) return 0;
         stopCurrent();
         if (r->kind == Request::Stop) { emit(r->gen, "stopped"); return 0; }
@@ -422,7 +429,12 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         if (!p->error.empty()) { emit(p->gen, "error", p->error); retire(std::move(p)); return 0; }
         active = std::move(p); return 0;
     }
-    if (msg == WM_TIMER) { tick(); return 0; }
+    if (msg == WM_TIMER) {
+        // A fallback for a failed wake PostMessage; control admission is a
+        // single latest-command slot, never an unbounded OS message backlog.
+        SendMessageW(controlWindow, commandMessage, 0, 0);
+        tick(); return 0;
+    }
     if (msg == deviceMessage || msg == WM_DISPLAYCHANGE || msg == WM_DEVICECHANGE) { checkDevices(); return 0; }
     if (msg == WM_KEYDOWN && wp == VK_ESCAPE) {
         uint64_t g = generation.fetch_add(1); stopCurrent(); emit(g, "escape"); return 0;
@@ -440,8 +452,11 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     return DefWindowProcW(hwnd, msg, wp, lp);
 }
 void submit(Request *r) {
-    generation.store(r->gen);
-    if (!PostMessageW(controlWindow, commandMessage, 0, (LPARAM)r)) delete r;
+    bool wake = false;
+    { std::lock_guard<std::mutex> lock(commandMutex);
+      generation.store(r->gen); latestCommand.reset(r);
+      if (!commandScheduled) { commandScheduled = true; wake = true; } }
+    if (wake) PostMessageW(controlWindow, commandMessage, 0, 0);
 }
 } // namespace
 
@@ -477,8 +492,8 @@ extern "C" void ss_run() {
     // Drain completed loads/commands before releasing HWND targets.
     while (PeekMessageW(&msg, controlWindow, commandMessage, readyMessage, PM_REMOVE)) {
         if (msg.message == readyMessage) retire(std::unique_ptr<Playback>((Playback*)msg.lParam));
-        else delete (Request*)msg.lParam;
     }
+    { std::lock_guard<std::mutex> lock(commandMutex); latestCommand.reset(); }
     cleanupQuitting.store(true); cleanupCV.notify_all(); if (cleaner.joinable()) cleaner.join();
     DestroyWindow(stageWindow); DestroyWindow(controlWindow);
     if (notificationEnumerator.p) { notificationEnumerator.p->Release(); notificationEnumerator.p = nullptr; }

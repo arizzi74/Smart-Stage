@@ -264,6 +264,14 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		writeJSON(w, 200, devices)
+	case "POST /api/inspect":
+		var body struct {
+			Path string `json:"path"`
+		}
+		if !decode(w, r, &body) {
+			return
+		}
+		writeJSON(w, 200, a.app.InspectFile(r.Context(), body.Path))
 	case "PUT /api/outputs":
 		var body model.Outputs
 		if !decode(w, r, &body) {
