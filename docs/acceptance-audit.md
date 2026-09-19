@@ -11,6 +11,12 @@ passed. Publication/installation evidence for the currently published preview
 is in [release verification](release-verification.md). That document records
 the exact runner OS, compiler, SDK and available outputs.
 
+[Real browser run 35472402760](https://github.com/arizzi74/Smart-Stage/actions/runs/35472402760)
+also passed against all four published preview 3 executables. Test source is
+`983cdef`; browser interactions reach the actual app/native backend over a
+non-loopback host HTTP address, without a synthetic server. The browser runs
+on each hosted machine, so this does not establish phone/Wi-Fi compatibility.
+
 ## Product and implementation requirements
 
 | Specification | Implementation and inspected evidence | Remaining proof |
@@ -43,12 +49,12 @@ These are the specification's eleven steps, not a substitute scenario.
 | Step | Current evidence / status |
 | --- | --- |
 | 1. Run on clean supported machines | **Pending**. Hosted runner installs pass but runners contain development tools. |
-| 2. Actual LAN URLs and separate keys | Keys and native HTTP startup checked; LAN discovery has unit coverage. Physical LAN URLs/reachability pending. |
-| 3. Pair Admin and browse host filesystem | Actual application HTTP checks pass; browser interaction uses a separate synthetic fixture. Physical browser-to-host check pending. |
-| 4. Add two audio/two video cues, labels and order | Actual native application HTTP checks pass on all four runners. |
+| 2. Actual LAN URLs and separate keys | Real browser pairs using separate launch keys at a printed non-loopback host IPv4 URL on all four runners; LAN discovery has unit coverage. Physical remote LAN reachability pending. |
+| 3. Pair Admin and browse host filesystem | Real browser interacts with each published native application and selects actual host files. Physical remote browser-to-host check pending. |
+| 4. Add two audio/two video cues, labels and order | Real Admin browser and separate actual application HTTP checks pass on all four runners. |
 | 5. Non-default audio and second display | **Pending physical hardware**. Only Mac ARM64 has a tested non-default virtual endpoint. |
 | 6. Pair a phone/tablet on the same LAN | **Pending**. Desktop Chromium and HTTP sessions are insufficient proof. |
-| 7. Four ordered labelled buttons and continuously visible STOP | Browser checks pass at the listed sizes. Physical mobile browsers pending. |
+| 7. Four ordered labelled buttons and continuously visible STOP | Real Command browser checks pass at 390×844 on all four native hosts; synthetic layout checks cover the other listed sizes. Physical mobile browsers pending. |
 | 8. Each cue on chosen physical speakers/display | Mac virtual playback passes all four cues; Windows silent-video playback only. **Physical routing pending on both OSes**. |
 | 9. STOP during audio/video/loading, no restart, silence/blackout | State/race/native events pass available checks. Physical output and latency pending. |
 | 10. Natural end without advance, silent/black | Native completion/stage-enabled events pass. Physical sound/pixels pending. |

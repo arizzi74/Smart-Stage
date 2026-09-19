@@ -61,6 +61,26 @@ escaping, visible STOP, STOP during pending PLAY, failed offline STOP,
 server-authoritative highlighting, reconnect without replay, gap refresh and
 Admin layout. Screenshots/results: `dist/browser-checks/`.
 
+An additional [real browser run 35472402760](https://github.com/arizzi74/Smart-Stage/actions/runs/35472402760)
+passed on all four targets against the **published preview 3 executables**.
+Test source: `983cdef`; application source: `d70b3e2`. Playwright 1.63.0 and
+Chromium 153.0.8010.12 opened separate Admin/Command sessions at an actual
+non-loopback host IPv4 address over plain HTTP (`isSecureContext === false`).
+Admin selected four real host files, saved four labels/reordered cue IDs and
+selected native outputs. Command displayed the saved order, sent one PLAY per
+tap, and received actual native playing/STOP/natural-completion state. The test
+checked Command path redaction/access restrictions, no media transfer/elements,
+and visible STOP at 390×844. Admin was exercised at 1280×900.
+
+Both Macs natively played/stopped all four cues. Both Windows runners played
+silent video, then requested audio and verified a visible missing-output error
+with STOP recovery. Windows audio playback was not verified. Node versions were
+22.23.2 on both Macs/Windows AMD64 and 24.21.0 on Windows ARM64; Node ran in each
+runner's native architecture. The browser ran on the host, so this is not a
+physical phone/Wi-Fi test. These screenshots show browser UI, not native output
+pixels. Local evidence: `dist/ci-evidence/browser-983cdef/`; each job also exposes
+its `browser-native-<os>-<arch>` artifact with result JSON and screenshots.
+
 ## Reproduce
 
 ```sh
@@ -73,6 +93,9 @@ bash scripts/build.sh windows arm64
 python3 scripts/native-smoke.py dist/native-harness-darwin-arm64
 python3 scripts/application-smoke.py dist/smartstage-darwin-arm64
 NODE_PATH=/path/to/playwright/node_modules node scripts/browser-smoke.cjs
+npm ci --prefix scripts/browser --ignore-scripts --no-audit --no-fund
+node scripts/browser/node_modules/playwright/cli.js install chromium
+node scripts/browser-native-smoke.cjs dist/smartstage-darwin-arm64
 ```
 
 Use matching OS runners normally. Windows Linux cross-builds are additional

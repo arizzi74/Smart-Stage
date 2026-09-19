@@ -37,6 +37,16 @@ Default installer run
 [`35471309014`](https://github.com/arizzi74/Smart-Stage/actions/runs/35471309014)
 also passed on all four platforms after switching the defaults to preview 3.
 
+Real browser run
+[`35472402760`](https://github.com/arizzi74/Smart-Stage/actions/runs/35472402760)
+also passed against the four published preview 3 binaries. Chromium paired
+separate Admin/Command sessions over a real non-loopback HTTP address, selected
+four host files, saved labels/order, selected outputs and controlled native
+PLAY/STOP/natural completion. No media was sent to the browser. Mac runners
+played all four cues; Windows played silent video and showed a recoverable
+missing-audio-output error. Screenshots/results were inspected. The browser
+ran on each host, not on a physical phone across Wi-Fi.
+
 The current release includes draining native inspection before framework
 shutdown, a bounded inspection timeout, IPv4 link-local discovery, a 256 TCP
 connection cap, and a save-time configuration size limit. Windows STOP now uses

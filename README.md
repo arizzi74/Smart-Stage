@@ -139,7 +139,20 @@ Use the matching Windows `.exe`/paths there. Harness commands: `stop`, `play`,
 `enable`, `disable`, `quit`. `--stop-after`, `--stop-playing-after` and
 `--exit-after` accept Go durations. The harness always uses real native APIs.
 
-Browser tests use development-only Playwright 1.63.0/Chromium:
+Browser tests use development-only Playwright 1.63.0/Chromium. On a supported
+native host, exercise the actual executable through Admin and Command:
+
+```sh
+npm ci --prefix scripts/browser --ignore-scripts --no-audit --no-fund
+node scripts/browser/node_modules/playwright/cli.js install chromium
+node scripts/browser-native-smoke.cjs dist/smartstage-darwin-arm64
+```
+
+Use the matching executable path/architecture on Windows or Intel Mac. This
+uses a real non-loopback host address and native playback; it saves browser
+screenshots and a result under `dist/browser-native/`. It does not establish
+physical routing or phone/LAN compatibility. The separate synthetic browser
+fixture covers timing/reconnect/layout cases:
 `NODE_PATH=/path/to/node_modules node scripts/browser-smoke.cjs`.
 
 Read [architecture](docs/architecture.md), [decisions](docs/decisions.md),
