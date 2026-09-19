@@ -1,0 +1,53 @@
+name: Verify published installers
+on:
+  push:
+    branches: [main]
+    paths: ['install.sh', 'install.ps1', '.github/workflows/install.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [macos-15, macos-15-intel, windows-2025, windows-11-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Install published release with curl
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          SMARTSTAGE_INSTALL_DIR: ${{ runner.temp }}/smartstage-installed
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
+          "$SMARTSTAGE_INSTALL_DIR/smartstage" --version
+          "$SMARTSTAGE_INSTALL_DIR/smartstage" --port 18787 --bind 127.0.0.1 --config-dir "$RUNNER_TEMP/installed-config" > "$RUNNER_TEMP/installed.log" 2>&1 &
+          app_pid=$!
+          trap 'kill -INT "$app_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl -fsS http://127.0.0.1:18787/command -o "$RUNNER_TEMP/command.html"; then break; fi
+            sleep 1
+          done
+          grep -q 'Smart Stage' "$RUNNER_TEMP/command.html"
+          kill -INT "$app_pid"
+          wait "$app_pid"
+      - name: Install published release with irm
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          SMARTSTAGE_INSTALL_DIR: ${{ runner.temp }}/smartstage-installed
+        run: |
+          irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | iex
+          $exe = Join-Path $env:SMARTSTAGE_INSTALL_DIR 'smartstage.exe'
+          & $exe --version
+          if ($LASTEXITCODE -ne 0) { throw 'Installed binary did not start' }
+          $config = Join-Path $env:RUNNER_TEMP 'installed-config'
+          $appProcess = Start-Process -FilePath $exe -ArgumentList "--port 18787 --bind 127.0.0.1 --config-dir `"$config`"" -PassThru -RedirectStandardOutput (Join-Path $env:RUNNER_TEMP 'installed.log') -RedirectStandardError (Join-Path $env:RUNNER_TEMP 'installed-error.log')
+          try {
+            $ok = $false
+            for ($attempt=0; $attempt -lt 30; $attempt++) {
+              try { $page = (Invoke-WebRequest http://127.0.0.1:18787/command).Content; $ok = $page -match 'Smart Stage'; if ($ok) { break } } catch { Start-Sleep -Seconds 1 }
+            }
+            if (-not $ok) { throw 'Installed application did not serve Command' }
+          } finally { Stop-Process -Id $appProcess.Id -ErrorAction SilentlyContinue }

@@ -19,7 +19,7 @@ temporary=$(mktemp -d "$install_dir/.smartstage-install.XXXXXX")
 trap 'rm -rf "$temporary"' EXIT HUP INT TERM
 asset="smartstage-darwin-$arch"
 base="https://github.com/$repo/releases/download/$version"
-echo "Downloading Smart Stage $version for macOS $arch…"
+echo "Downloading Smart Stage ${version} for macOS ${arch}..."
 curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location "$base/$asset" -o "$temporary/$asset"
 curl --proto '=https' --tlsv1.2 --fail --silent --show-error --location "$base/$asset.sha256" -o "$temporary/checksum"
 expected=$(awk 'NR==1 {print $1}' "$temporary/checksum")

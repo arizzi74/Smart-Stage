@@ -3,6 +3,7 @@ on:
   push:
     branches: [main]
     tags: ['v*']
+    paths-ignore: ['docs/**', 'README.md', 'IMPLEMENTATION_STATUS.md', 'install.sh', 'install.ps1', '.github/workflows/install.yml', '.github/workflows/soak.yml']
   pull_request:
   workflow_dispatch:
 permissions:
