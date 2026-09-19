@@ -81,6 +81,17 @@ physical phone/Wi-Fi test. These screenshots show browser UI, not native output
 pixels. Local evidence: `dist/ci-evidence/browser-983cdef/`; each job also exposes
 its `browser-native-<os>-<arch>` artifact with result JSON and screenshots.
 
+[Repeat/reporting run 35472755329](https://github.com/arizzi74/Smart-Stage/actions/runs/35472755329)
+at test commit `ead78c6` passed Go race/vet and all four native jobs. Main CI now
+includes ten seconds of repeated native PLAY/replacement/STOP before the saved
+show restart check. Downloaded reports contain completed runs of 10.13–10.59
+seconds, 19/20 cycles on Mac AMD64/ARM64 and 24/26 cycles on Windows AMD64/ARM64,
+with initial/final resident-memory samples and Windows handle counts. This is
+a short regression check, not long-running stability proof. The test script
+now checkpoints incomplete reports and prints resource samples every minute;
+it retains evidence if a future repeat loop fails or is interrupted. Neither
+already-running two-hour job uses this later reporting change.
+
 ## Reproduce
 
 ```sh
@@ -97,6 +108,15 @@ npm ci --prefix scripts/browser --ignore-scripts --no-audit --no-fund
 node scripts/browser/node_modules/playwright/cli.js install chromium
 node scripts/browser-native-smoke.cjs dist/smartstage-darwin-arm64
 ```
+
+For repeated native transitions, add a duration in seconds to
+`scripts/application-smoke.py`, for example
+`python3 scripts/application-smoke.py dist/smartstage-darwin-arm64 7200`.
+The adjacent `.http-smoke.json` records requested/elapsed time, completed cycles
+and resource samples; current scripts mark the repeat loop `completed` only
+after its full duration. Check the process/workflow result and subsequent
+restart result too. A partial report or ten-second CI run cannot establish the
+two-hour requirement.
 
 Use matching OS runners normally. Windows Linux cross-builds are additional
 compile/import checks. Go/native SDKs/Python/Playwright are development-only.
