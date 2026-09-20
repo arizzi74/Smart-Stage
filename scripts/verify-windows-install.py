@@ -131,6 +131,16 @@ def native_windows(pid):
     return windows
 
 
+def post_escape(hwnd):
+    """Deliver Escape to this app's HWND, without global keyboard injection."""
+    user = ctypes.WinDLL('user32', use_last_error=True)
+    user.PostMessageW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+    user.PostMessageW.restype = wintypes.BOOL
+    # Repeat count one, Escape scan code one; key-up carries previous/up bits.
+    for message, flags in ((0x0100, 0x00010001), (0x0101, 0xC0010001)):
+        assert user.PostMessageW(hwnd, message, 0x1B, flags), f'Could not post native Escape: {ctypes.get_last_error()}'
+
+
 def fixture_script(source, directory):
     assert source.count(DOWNLOAD_LINE) == 1
     adapter = (
@@ -328,7 +338,7 @@ def main():
             until(lambda: listening(8787), 'Installer did not start Admin')
             pid = network.socket_owner(8787)
             admin = network.Client(8787).authenticate()
-            state = admin.request('GET', '/api/state')
+            state = admin.request('GET', '/api/state')['state']
             report.update(appPID=pid, instanceID=state['instanceId'])
             assert not listening(8788), 'Default gateway mode unexpectedly opened the LAN listener'
             update = admin.request('GET', '/api/update')
@@ -346,6 +356,23 @@ def main():
                 report['nativeWindows'] = windows
                 children = until(lambda: psjson(args.powershell, f"@(Get-CimInstance Win32_Process -Filter \"Name='msedgewebview2.exe'\" | Where-Object ParentProcessId -eq {pid} | Select-Object ProcessId,ParentProcessId,ExecutablePath)"), 'No WebView2 child process belongs to the installed application')
                 report['webView2Children'] = children
+                assert len(windows) == 1, 'Installed app has multiple visible Admin windows'
+                before_escape = admin.request('GET', '/api/state')['state']
+                post_escape(windows[0]['hwnd'])
+
+                def emergency_observed():
+                    current = admin.request('GET', '/api/state')['state']
+                    if current['stopEpoch'] > before_escape['stopEpoch'] and not current['stageEnabled']:
+                        return current
+                    return None
+
+                after_escape = until(emergency_observed, 'Native Admin Escape did not reach the Go emergency-stop handler')
+                assert after_escape['instanceId'] == before_escape['instanceId']
+                report.update(nativeEscapeReachedEmergencyStop=True,
+                              nativeEscapeMethod='WM_KEYDOWN/WM_KEYUP posted to the installed app Admin HWND; observed through authenticated HTTP state',
+                              nativeEscapeStopEpochBefore=before_escape['stopEpoch'],
+                              nativeEscapeStopEpochAfter=after_escape['stopEpoch'],
+                              nativeEscapeStageDisabled=not after_escape['stageEnabled'])
             install(args.powershell, adapted, work, version, failure='Smart Stage is running')
             assert executable.read_bytes() == binary and network.socket_owner(8787) == pid
             report['runningAppRefusedWithoutReplacement'] = True

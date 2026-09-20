@@ -17,10 +17,15 @@ import (
 )
 
 var desktopQuitRequests = make(chan struct{}, 1)
+var desktopEmergencyRequests = make(chan struct{}, 1)
 
-func DesktopQuitRequests() <-chan struct{} { return desktopQuitRequests }
+func DesktopQuitRequests() <-chan struct{}      { return desktopQuitRequests }
+func DesktopEmergencyRequests() <-chan struct{} { return desktopEmergencyRequests }
 
 func pollDesktopQuit() {
+	if len(desktopEmergencyRequests) < cap(desktopEmergencyRequests) && C.ss_desktop_poll_emergency_request() != 0 {
+		desktopEmergencyRequests <- struct{}{}
+	}
 	if len(desktopQuitRequests) < cap(desktopQuitRequests) && C.ss_desktop_poll_quit_request() != 0 {
 		desktopQuitRequests <- struct{}{}
 	}

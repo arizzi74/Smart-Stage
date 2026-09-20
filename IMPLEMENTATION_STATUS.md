@@ -36,29 +36,32 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.16
   backup, corruption diagnostics and native process lock.
 - Embedded responsive Admin/Command pages, native media selection/inspection,
   cue CRUD/labels/order/revisions, separate output controls and stage enablement.
-- Localhost-only Admin with a dedicated Mac app window or system-browser launch
-  for standalone Mac/Windows, and a local session;
+- Localhost-only Admin with dedicated Mac and Windows app windows, or a
+  system-browser launch for standalone Mac, and a local session;
   separate LAN remote listener with an eight-digit per-launch token in its URL,
   Admin QR code/address selection, session/CSRF/Origin/Host enforcement and
   command-role path redaction.
 - Reproducible matching-OS builds, import audits, checksums, release automation,
   four portable ZIP downloads containing one executable each, and operating/API/
-  architecture documentation. A Mac-only curl installer verifies and installs
-  the icon-bearing app bundle, removes quarantine only from that app, and opens
-  Admin. Windows retains direct ZIP downloads.
+  architecture documentation. The Mac curl installer verifies and installs
+  the icon-bearing app bundle and removes quarantine only from that app. The
+  Windows irm installer detects native ARM64/AMD64, checks the archive, installs
+  per user with Desktop/Start menu shortcuts, and checks Microsoft WebView2.
 - Embedded Windows executable icons and optional Mac Finder apps with the same
   artwork; Finder starts the bundled executable without Terminal and opens local
   Admin. The Mac app has a visible Dock icon and standard application menu with
   Quit (Command-Q); its status menu also provides Admin, log access and graceful
-  Quit. Standalone command-line launches retain their existing behavior.
+  Quit. Windows uses the GUI subsystem, retained taskbar window, tray menu,
+  original-file Explorer drops, native chooser, and graceful Quit. Its embedded
+  Microsoft loader uses the separately serviced Evergreen WebView2 runtime.
 - Automatic startup updates from the published GitHub releases, with matching
   architecture, checksum and native executable validation. Installation reserves
   playback, preserves the saved show, restarts without autoplay and rolls back
   failed startup. Periodic checks defer installation until the next launch;
   Admin also offers an update action while playback and stage output are stopped.
 
-- Admin omits the Host files browser. Mac Finder/Dock file-open events and
-  Choose Media append original file references
+- Admin omits the Host files browser. Finder/Dock and Explorer drops, plus
+  Choose Media, append original file references
   atomically without copying or autoplay, respecting configured media roots.
   Filesystem identity handles actual Unicode/case aliases without broadening roots.
 - Remote connection settings start collapsed while the link, QR and status stay
@@ -72,12 +75,17 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.16
 - Authenticated Admin Quit requests graceful shutdown. The open page waits and
   reconnects after relaunch; fresh page presence suppresses another automatic
   browser launch, and a new host instance refreshes the interface once. Native
-  Mac app actions instead restore one retained native Admin window. Suspended
+  Mac and Windows app actions instead restore one retained native Admin window. Suspended
   external browser tabs may not be detected.
 - Bundled Mac Admin uses the system WKWebView and accepts native Finder file
   drops and chooser selections, preserving original file paths. Closing the
   window hides it without interrupting playback; Dock/Open Admin restores it.
-  External-browser Finder drops still offer chooser or Dock guidance.
+  External-browser file drops offer platform-appropriate native chooser guidance.
+- Windows Admin uses a separate COM STA and DirectComposition while Media
+  Foundation keeps its existing MTA. The WebView has no privileged script bridge;
+  normal loopback sessions, CSRF and SSE remain in use. Second launches reuse the
+  same process/window; hidden windows retain drafts. Normal Quit cleans up the
+  private WebView profile, including while a media dialog is open.
 - Optional Screen Wake Lock with truthful status, opt-in and release/reacquire
   handling. The public HTTPS gateway enables this browser API; Local LAN HTTP cannot use it;
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.

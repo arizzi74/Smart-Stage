@@ -24,6 +24,7 @@ import (
 	"smartstage/internal/browseropen"
 	"smartstage/internal/files"
 	"smartstage/internal/httpapi"
+	"smartstage/internal/identity"
 	"smartstage/internal/lan"
 	"smartstage/internal/platform"
 	"smartstage/internal/playback"
@@ -326,6 +327,10 @@ func main() {
 		defer ticker.Stop()
 		for {
 			select {
+			case <-platform.DesktopEmergencyRequests():
+				if _, err := service.EmergencyStop(app.StopRequest{RequestID: identity.New()}); err != nil {
+					slog.Error("Native Admin emergency stop failed", "error", err)
+				}
 			case <-platform.DesktopQuitRequests():
 				cancel()
 			case <-platform.DesktopAdminRequests():

@@ -87,9 +87,15 @@ preserve its state. Saved Local LAN mode shows firewall instructions outside the
 collapsed settings after restart. Gateway-mode installer/updater behavior remains
 unchanged: no firewall authorization or open LAN listener by default.
 
+Preview 17 adds a Windows GUI-subsystem executable with a retained WebView2
+Admin window, native file drops/chooser and taskbar/tray controls. Its irm
+installer supplies the matching executable and checks the Microsoft runtime.
+Original media and per-user show data remain in place.
+
 The native release workflow verifies ZIP contents/permissions and runs the
-extracted binary before publication. Startup must serve local Admin and report
-that the operating system accepted the automatic browser launch. Default gateway
+extracted binary before publication. Startup must serve local Admin. Standalone
+Mac launches must report an accepted system-browser hand-off; Windows must show
+a responsive dedicated Admin HWND with its icon and must not dispatch a browser. Default gateway
 startup must leave the LAN port closed; an explicit LAN restart must preserve the
 show and reject private routes on the remote listener. Published-archive checksum/extraction/startup
 and native browser checks run for the explicit new release tag. These checks do

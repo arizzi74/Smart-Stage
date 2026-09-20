@@ -81,6 +81,7 @@ std::wstring identity = L"SmartStageAdmin-default", adminURL, origin, logPath;
 std::wstring directory, loaderPath;
 std::wstring errorText = L"Starting Smart Stage…";
 std::atomic<bool> ready{false}, stopping{false}, showPending{false}, adminRequested{false}, quitRequested{false}, chooserScheduled{false};
+std::atomic<bool> emergencyRequested{false};
 std::thread uiThread;
 std::once_flag startOnce;
 std::mutex initMutex, tasksMutex, filesMutex;
@@ -347,6 +348,11 @@ void configureWebView() {
     check(composition->add_CursorChanged(cursor.p,&token),"Track Admin cursor");
     auto accelerator=callback<ICoreWebView2AcceleratorKeyPressedEventHandler,ICoreWebView2Controller*,ICoreWebView2AcceleratorKeyPressedEventArgs*>([](auto*,auto* args) {
         COREWEBVIEW2_KEY_EVENT_KIND kind{}; UINT key=0; args->get_KeyEventKind(&kind); args->get_VirtualKey(&key);
+        if(kind==COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN && key==VK_ESCAPE) {
+            COREWEBVIEW2_PHYSICAL_KEY_STATUS status{};args->get_PhysicalKeyStatus(&status);
+            if(!status.WasKeyDown)emergencyRequested.store(true);
+            args->put_Handled(TRUE);return S_OK;
+        }
         if((kind==COREWEBVIEW2_KEY_EVENT_KIND_KEY_DOWN || kind==COREWEBVIEW2_KEY_EVENT_KIND_SYSTEM_KEY_DOWN) && (GetKeyState(VK_CONTROL)&0x8000)) {
             if(key=='O') { args->put_Handled(TRUE); PostMessageW(control.load(),WM_COMMAND,chooseID,0); }
             if(key=='Q') { args->put_Handled(TRUE); PostMessageW(control.load(),WM_COMMAND,quitID,0); }
@@ -453,9 +459,15 @@ void command(UINT id) {
     }
 }
 void drainTasks() {
-    std::deque<std::function<void()>> pending;
-    { std::lock_guard<std::mutex> lock(tasksMutex); pending.swap(tasks); }
-    for(auto& fn:pending) { if(stopping.load())break; try { fn(); } catch(const std::string& error) {showError(error);} catch(...) {showError("Native Admin operation failed.");} }
+    // Process one task per message. The file chooser enters a nested message
+    // pump; moving the whole queue into a local batch would strand all later
+    // tasks until that dialog closed, even while their wake messages ran.
+    std::function<void()> fn;
+    { std::lock_guard<std::mutex> lock(tasksMutex);
+      if(stopping.load() || tasks.empty())return;
+      fn=std::move(tasks.front());tasks.pop_front();
+      if(!tasks.empty())PostMessageW(control.load(),wakeMessage,0,0); }
+    try { fn(); } catch(const std::string& error) {showError(error);} catch(...) {showError("Native Admin operation failed.");}
 }
 void shutdownUI();
 LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
@@ -472,6 +484,10 @@ LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
             return 0;
         }
         if(message==WM_COMMAND) { command(LOWORD(wp));return 0; }
+        if(message==WM_KEYDOWN && hwnd==window && wp==VK_ESCAPE) {
+            if(!(lp & (LPARAM(1)<<30)))emergencyRequested.store(true);
+            return 0;
+        }
         if(message==WM_CLOSE && hwnd==window) { ShowWindow(window,SW_HIDE);if(controller)controller->put_IsVisible(FALSE);fprintf(stderr,"Hid native Admin window\n");return 0; }
         if(message==WM_QUERYENDSESSION) { quitRequested.store(true);return TRUE; }
         if(message==WM_SIZE && hwnd==window) { resize();return 0; }
@@ -576,6 +592,7 @@ extern "C" int ss_desktop_reopen(const char* key) {
     AllowSetForegroundWindow(pid);return PostMessageW(peer,WM_COMMAND,desktop::openID,0)!=FALSE;
 }
 extern "C" int ss_desktop_poll_quit_request() {return desktop::quitRequested.exchange(false)?1:0;}
+extern "C" int ss_desktop_poll_emergency_request() {return desktop::emergencyRequested.exchange(false)?1:0;}
 extern "C" void ss_desktop_admin(const char* value) {
     auto url=desktop::wide(value);if(!desktop::validAdmin(url))return;
     desktop::post([url]{desktop::adminURL=url;desktop::origin=url.substr(0,url.size()-6);desktop::ready.store(true);desktop::addTray();if(desktop::showPending.load())desktop::showWindow();});

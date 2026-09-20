@@ -50,6 +50,7 @@ void ss_desktop_identity(const char *key);
 void ss_desktop_log_path(const char *path);
 int ss_desktop_reopen(const char *key);
 int ss_desktop_poll_quit_request(void);
+int ss_desktop_poll_emergency_request(void);
 void ss_windows_desktop_shutdown(void);
 #endif
 #ifdef __cplusplus

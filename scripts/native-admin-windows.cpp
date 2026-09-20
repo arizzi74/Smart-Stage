@@ -91,6 +91,10 @@ int main() {
         ss_desktop_show_admin();ss_desktop_show_admin();wait([&]{return IsWindowVisible(original)!=FALSE;},"Reopen did not restore Admin");
         require(ui([&]{return desktop::window==original&&desktop::webview.p==web;}),"Reopen replaced Admin or its WebView");
         require(js(L"window.__probeDraft==='preserved' && document.getElementById('gateway-url').value==='https://unsaved.example/smartstage' && document.getElementById('remote-connection-settings').open && online")=="true","Reopen lost unsaved UI or its connection");passed("reopenKeptSameWindowAndWebView");passed("unsavedUIAndLiveConnectionPreserved");
+        ui([]{SendMessageW(desktop::window,WM_KEYDOWN,VK_ESCAPE,1);});
+        require(ss_desktop_poll_emergency_request()==1 && ss_desktop_poll_emergency_request()==0,"Native Admin Escape did not queue exactly one emergency request");
+        ui([]{SendMessageW(desktop::window,WM_KEYDOWN,VK_ESCAPE,(LPARAM(1)<<30)|1);});
+        require(ss_desktop_poll_emergency_request()==0,"Held Escape repeated emergency requests");passed("nativeAdminEscapePolledWithoutJavaScript");
         require(!ss_desktop_files_pending(),"Native queue was not empty before drop");
         std::wstring firstPath=first,secondPath=second;
         ui([&]{
