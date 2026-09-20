@@ -1,6 +1,6 @@
 # Mac physical test
 
-Use the published **v0.1.0-preview.12** on the Mac that will run the show.
+Use the published **v0.1.0-preview.13** on the Mac that will run the show.
 The available physical test machine is an **Apple Silicon Mac**; its macOS
 version is not yet recorded. An external audio output and a second
 monitor/projector are available. Use the **darwin/arm64** release. Windows physical checks remain pending. This is a procedure and result
@@ -39,38 +39,53 @@ Install the architecture-matched app with its icon, suppressing automatic launch
 so that this test can use its own saved-show directory:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | SMARTSTAGE_NO_LAUNCH=1 sh
+curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | SMARTSTAGE_VERSION=v0.1.0-preview.13 SMARTSTAGE_NO_LAUNCH=1 sh
 ```
 
 The installer verifies the app ZIP, installs into `~/Applications`, and removes
 quarantine only from Smart Stage. Its per-app firewall rule can require an
 administrator authorization prompt. It requires no additional runtime. For this
-isolated physical test, run the bundled executable from Terminal:
+isolated physical test, record the version and launch the actual app bundle with
+its own saved-show directory:
 
 ```sh
 "$HOME/Applications/Smart Stage.app/Contents/MacOS/smartstage" --version
-"$HOME/Applications/Smart Stage.app/Contents/MacOS/smartstage" --config-dir "$HOME/Library/Application Support/SmartStage-Physical-Test"
+open -n -a "$HOME/Applications/Smart Stage.app" --args --config-dir "$HOME/Library/Application Support/SmartStage-Physical-Test" --no-auto-update
 ```
 
-Record the complete version line. Keep Terminal running. The separate test
+Record the complete version line. You can close Terminal after launch; the app
+runs independently and should show its icon in the Dock. The separate test
 configuration preserves the normal Smart Stage show's saved data. Stop any other
 Smart Stage instance first so local Admin port 8787 and remote-control port 8788
-are available. Admin opens automatically at `http://127.0.0.1:8787/admin` and is
-accessible only on the Mac itself.
+are available, including before repeating the launch command. The
+`--no-auto-update` flag keeps this test on the recorded version. Admin opens
+automatically in **Smart Stage's own window**, using
+`http://127.0.0.1:8787/admin`; it remains accessible only on the Mac itself.
 
-Opening the app in Finder starts the normal configuration without Terminal; use
-its Dock icon → Quit to close it. Use the Terminal
-command above for this isolated test. Direct [Apple Silicon standalone ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.12/smartstage-darwin-arm64.zip)
-downloads also remain available, but browser-downloaded files may require
+Closing the Admin window or pressing Command-W hides it and keeps the app
+running. Click the Dock icon or choose **Open Admin** from Smart Stage's menu bar
+control to restore the same window. **Quit Smart Stage** in Admin, the app menu,
+or the Dock stops playback and exits. After quitting, repeat the `open` command
+above to return to this isolated show. Opening the app directly in Finder after
+quitting instead starts its normal configuration.
+
+A direct [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.13/smartstage-darwin-arm64.app.zip)
+is an alternative download. Use the app bundle for these
+window and Finder-drop checks; the standalone executable opens a system-browser
+Admin page. Browser-downloaded files may require
 **Privacy & Security → Open Anyway**. Mac builds remain ad-hoc signed rather than
 Developer ID signed/notarized; record any security or local-network prompt and
 whether launch succeeds. No developer tools are required.
 
 ## First pass: routing, STOP and restart
 
-1. Confirm **Admin opens automatically on this Mac** in the system browser.
-   Browse the Mac's files, add the four cues, give each a custom label and change
-   their order. Native validation should finish without sound or video playback.
+1. Confirm **Admin opens automatically in Smart Stage's own window**, with no
+   new system-browser tab or Terminal window. Drag the four files from Finder
+   onto **Drop Finder files here** in Playlist. Verify all four cues appear,
+   their displayed source paths point to the original folders, and those files
+   stay in place without a copied media library. Give each cue a custom label
+   and change their order. Native validation should finish without sound or
+   video playback.
 2. In Outputs, select the intended external audio device and second display,
    then Save outputs. Enable stage output: the selected screen should turn
    black while the Mac's control screen remains usable.
@@ -96,10 +111,11 @@ whether launch succeeds. No developer tools are required.
    loading scenario as **not tested**.
 8. Allow audio and video cues to end naturally. Nothing should advance to the
    next cue; sound should be silent and an enabled stage should remain black.
-9. Exit with Ctrl+C in Terminal, then repeat the same start command. Verify the
-   labels, order and output choices return, but playback stays stopped and the
-   stage stays disabled. Scan the new QR code; the previous launch's remote URL
-   should no longer grant control.
+9. Start a cue, then use **Quit Smart Stage** in Admin. Confirm sound stops, the
+   stage and Admin windows close, and the app exits. Repeat the same `open`
+   command above. Verify the labels, order and output choices return, but
+   playback stays stopped and the stage stays disabled. Scan the new QR code;
+   the previous launch's remote URL should no longer grant control.
 
 For the first report, record pass/fail/not tested for each step and describe any
 unexpected sound or visible frame. Observing a stopped label alone does not
@@ -107,6 +123,18 @@ establish physical silence or blackout.
 
 ## Follow-up checks after the first pass
 
+- While a longer cue plays, close the Admin window with its close button, then
+  click the Dock icon. Playback should continue and the same Admin window should
+  return with the current show state, without opening a browser tab or duplicate
+  window. Repeat with Command-W while Admin has focus and with **Open Admin**
+  from the menu bar control. Use STOP after checking continued playback.
+- Add another file using **Choose files on this Mac…**, another by dropping it
+  onto the Dock icon, and another by dragging a row from **Host files** into
+  Playlist. Each should retain its original source path and leave playback
+  stopped. Confirm native drop feedback appears, and try a filename containing
+  spaces and Unicode. Check Command-A/C/V in a cue-label field and **Copy link**
+  for sharing the remote URL. Record a cancelled chooser separately from a
+  failed import; cancellation should add nothing.
 - During playback, disconnect the selected external audio device and separately
   the second display. Playback should stop and report the loss, without moving
   sound to another speaker or video to the control screen. Reconnection must
@@ -149,6 +177,10 @@ Stage display / connection / extended or mirrored:
 Phone or tablet / OS / browser / LAN connection:
 Media tested:
 Launch and permission prompts:
+Dedicated Admin window / Dock icon / Terminal closed:
+Finder, Dock, chooser and Host files additions / original paths preserved:
+Close hides / same-window Dock and menu reopening / Quit exits:
+Copy link / Command-A/C/V:
 First-pass steps 1–9 (pass / fail / not tested, with observations):
 Output disconnect / default-device changes:
 Phone sleep / reconnect / concurrent controls:

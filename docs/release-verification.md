@@ -47,6 +47,14 @@ six seconds before dispatching a browser URL. Native Dock/menu/import actions us
 the same policy. A fully suspended browser tab may not be detected, and exact-tab
 selection is not guaranteed. Older already-open pages need one manual refresh.
 
+Preview 13 gives the Mac app one retained AppKit Admin window containing the
+system WKWebView. Dock/menu actions restore that window; closing it hides the
+interface while playback continues. Native Finder drops use the specific drag
+session's file URLs and the existing original-path validation/save flow. The
+web view loads real loopback Admin assets and keeps session/Origin/CSRF checks,
+with no privileged JavaScript filesystem bridge. Standalone Mac and Windows
+executables retain the external-browser interface.
+
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin and report
 that the operating system accepted the automatic browser launch; the separate
