@@ -101,10 +101,31 @@ Windows Go live heap also ended at 1 MiB. Separate process snapshots showed
 threads on ARM64. Snapshots are taken separately from the continuous RSS/handle
 samples. The increased handle count therefore cannot simply be explained by
 more live threads. [Run 35476607468](https://github.com/arizzi74/Smart-Stage/actions/runs/35476607468)
-is collecting per-type handle counts and two minutes of stopped idle samples
+completed per-type handle counts and two minutes of stopped idle samples
 against the same published executables, using Microsoft's signed
 [Handle 5.0](https://learn.microsoft.com/en-us/sysinternals/downloads/handle)
 diagnostic tool in summary mode. It does not close or modify application handles.
+
+| Target | Total handles before → after 20 minutes → after two idle minutes | Event handles | Thread handles | I/O completion handles | File handles |
+| --- | --- | --- | --- | --- | --- |
+| Windows AMD64 | 548 → 579 → 558 | 90 → 107 → 98 | 27 → 37 → 29 | 16 → 20 → 16 | 20 → 20 → 20 |
+| Windows ARM64 | 558 → 591 → 569 | 92 → 110 → 100 | 28 → 38 → 31 | 17 → 21 → 16 | 19 → 19 → 19 |
+
+Both loops completed at least 1,200 seconds (2,782/3,012 cycles). During stopped
+idle, resident memory fell from 93.8 to 43.0 MiB on AMD64 and 59.3 to 29.5 MiB
+on ARM64; those values are the initial/final idle samples, not the separate
+end-of-loop samples. Live thread counts fell from 21 to 14 and 25 to 17;
+open thread handles are a different count. Registry-key, semaphore and section
+counts were unchanged across all three handle snapshots. Total handles ended
+10/11 above the initial snapshots, so full return to initial counts was not
+observed. These data show substantial delayed cleanup and no per-cycle file
+handle growth in this workload. They do not identify the owner of every retained
+handle or prove that all workloads are leak-free. No Windows code change was
+made from these observations.
+
+Raw per-type counts, signed-tool provenance, process/GC reports and the parsed
+summary are retained in
+[`verification/windows-handles-d70b3e2/`](verification/windows-handles-d70b3e2/).
 
 Raw GC traces, OS summaries, application reports and the parsed numerical
 summary are retained in

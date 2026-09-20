@@ -1,0 +1,21 @@
+Exit code: 0
+Handle type summary:
+  ALPC Port       : 12
+  Desktop         : 1
+  Directory       : 2
+  EtwRegistration : 263
+  Event           : 110
+  File            : 19
+  IoCompletion    : 21
+  IRTimer         : 32
+  Key             : 27
+  Mutant          : 6
+  SchedulerSharedData: 1
+  Section         : 4
+  Semaphore       : 14
+  Thread          : 38
+  Timer           : 1
+  TpWorkerFactory : 5
+  WaitCompletionPacket: 33
+  WindowStation   : 2
+Total handles: 591

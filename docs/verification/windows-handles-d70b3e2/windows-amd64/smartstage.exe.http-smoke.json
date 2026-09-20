@@ -1,0 +1,222 @@
+[
+  {
+    "cuesConfigured": 4,
+    "cuesNativelyPlayedAndStopped": 1,
+    "audioEndpoints": 0,
+    "displays": 1,
+    "physicalRoutingVerified": false
+  },
+  {
+    "soak": {
+      "requestedSeconds": 1200,
+      "elapsedSeconds": 1200.468,
+      "cycles": 2782,
+      "completed": true,
+      "samples": [
+        {
+          "seconds": 0.23,
+          "cycles": 1,
+          "residentBytes": 61612032,
+          "peakResidentBytes": 163667968,
+          "pagefileUsageBytes": 77586432,
+          "handles": 552
+        },
+        {
+          "seconds": 60.47,
+          "cycles": 147,
+          "residentBytes": 105385984,
+          "peakResidentBytes": 186896384,
+          "pagefileUsageBytes": 123736064,
+          "handles": 558
+        },
+        {
+          "seconds": 120.67,
+          "cycles": 295,
+          "residentBytes": 109547520,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 128086016,
+          "handles": 567
+        },
+        {
+          "seconds": 180.89,
+          "cycles": 439,
+          "residentBytes": 108097536,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 128323584,
+          "handles": 566
+        },
+        {
+          "seconds": 241.05,
+          "cycles": 580,
+          "residentBytes": 107446272,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 127918080,
+          "handles": 566
+        },
+        {
+          "seconds": 301.05,
+          "cycles": 726,
+          "residentBytes": 95875072,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 128323584,
+          "handles": 561
+        },
+        {
+          "seconds": 361.17,
+          "cycles": 856,
+          "residentBytes": 96321536,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 128516096,
+          "handles": 563
+        },
+        {
+          "seconds": 421.34,
+          "cycles": 999,
+          "residentBytes": 97980416,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 128659456,
+          "handles": 583
+        },
+        {
+          "seconds": 481.62,
+          "cycles": 1144,
+          "residentBytes": 98164736,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 127991808,
+          "handles": 582
+        },
+        {
+          "seconds": 541.89,
+          "cycles": 1292,
+          "residentBytes": 98951168,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 129228800,
+          "handles": 581
+        },
+        {
+          "seconds": 601.97,
+          "cycles": 1433,
+          "residentBytes": 99041280,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 131076096,
+          "handles": 584
+        },
+        {
+          "seconds": 662.17,
+          "cycles": 1574,
+          "residentBytes": 99086336,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 130613248,
+          "handles": 585
+        },
+        {
+          "seconds": 722.41,
+          "cycles": 1712,
+          "residentBytes": 99377152,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 130826240,
+          "handles": 588
+        },
+        {
+          "seconds": 782.5,
+          "cycles": 1848,
+          "residentBytes": 99139584,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 131031040,
+          "handles": 588
+        },
+        {
+          "seconds": 842.66,
+          "cycles": 1980,
+          "residentBytes": 99246080,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 130867200,
+          "handles": 588
+        },
+        {
+          "seconds": 902.92,
+          "cycles": 2122,
+          "residentBytes": 95432704,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 131104768,
+          "handles": 585
+        },
+        {
+          "seconds": 963.33,
+          "cycles": 2237,
+          "residentBytes": 90054656,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 122494976,
+          "handles": 581
+        },
+        {
+          "seconds": 1023.75,
+          "cycles": 2373,
+          "residentBytes": 99225600,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 130981888,
+          "handles": 580
+        },
+        {
+          "seconds": 1084.22,
+          "cycles": 2508,
+          "residentBytes": 98488320,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 130318336,
+          "handles": 580
+        },
+        {
+          "seconds": 1144.55,
+          "cycles": 2644,
+          "residentBytes": 97095680,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 129916928,
+          "handles": 577
+        },
+        {
+          "seconds": 1200.47,
+          "cycles": 2782,
+          "residentBytes": 98332672,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 131227648,
+          "handles": 579
+        }
+      ],
+      "physicalRoutingOrAVDriftVerified": false
+    }
+  },
+  {
+    "stoppedIdle": {
+      "requestedSeconds": 120,
+      "elapsedSeconds": 120.01599999999985,
+      "completed": true,
+      "samples": [
+        {
+          "seconds": 0.02,
+          "residentBytes": 98332672,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 131227648,
+          "handles": 579
+        },
+        {
+          "seconds": 60.02,
+          "residentBytes": 55730176,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 87883776,
+          "handles": 563
+        },
+        {
+          "seconds": 120.02,
+          "residentBytes": 45084672,
+          "peakResidentBytes": 190103552,
+          "pagefileUsageBytes": 87207936,
+          "handles": 558
+        }
+      ]
+    }
+  },
+  {
+    "restart": "saved labels/order restored; silent and stage disabled",
+    "instanceChanged": true
+  }
+]

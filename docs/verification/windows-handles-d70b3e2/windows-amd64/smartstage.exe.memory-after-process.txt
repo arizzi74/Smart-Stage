@@ -1,0 +1,8 @@
+Exit code: 0
+{
+  "Id": 1832,
+  "HandleCount": 579,
+  "Threads": 21,
+  "PrivateMemorySize64": 131227648,
+  "VirtualMemorySize64": 5795287040
+}

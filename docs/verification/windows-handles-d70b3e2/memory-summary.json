@@ -1,0 +1,304 @@
+{
+  "runId": "35476607468",
+  "applicationCommit": "d70b3e297e0e121efc6f0800b1ffe7afe5a871d1",
+  "workflowCommit": "0321af16378fa48638c7ec2f594362f4f497b7ed",
+  "method": "GC heap values and vmmap sizes are rounded by their tools. Before/after snapshots and continuous resource samples are separate observations. Counts/trends describe this workload; they do not establish resource stability or physical A/V behavior.",
+  "targets": [
+    {
+      "target": "windows-amd64",
+      "cycles": 2782,
+      "elapsedSeconds": 1200.468,
+      "completed": true,
+      "firstSample": {
+        "seconds": 0.23,
+        "cycles": 1,
+        "residentBytes": 61612032,
+        "peakResidentBytes": 163667968,
+        "pagefileUsageBytes": 77586432,
+        "handles": 552
+      },
+      "lastSample": {
+        "seconds": 1200.47,
+        "cycles": 2782,
+        "residentBytes": 98332672,
+        "peakResidentBytes": 190103552,
+        "pagefileUsageBytes": 131227648,
+        "handles": 579
+      },
+      "goGCCollections": 79,
+      "goLiveHeapMiBRounded": {
+        "first": 0,
+        "final": 1,
+        "max": 1
+      },
+      "before": {
+        "Id": 1832,
+        "HandleCount": 548,
+        "Threads": 24,
+        "PrivateMemorySize64": 77598720,
+        "VirtualMemorySize64": 5742907392,
+        "handleTypeSnapshot": {
+          "total": 548,
+          "counts": {
+            "Exit code": 0,
+            "ALPC Port": 14,
+            "Desktop": 1,
+            "Directory": 2,
+            "EtwRegistration": 258,
+            "Event": 90,
+            "File": 20,
+            "IoCompletion": 16,
+            "IRTimer": 30,
+            "Key": 24,
+            "Mutant": 6,
+            "SchedulerSharedData": 1,
+            "Section": 5,
+            "Semaphore": 14,
+            "Thread": 27,
+            "Timer": 1,
+            "TpWorkerFactory": 5,
+            "WaitCompletionPacket": 32,
+            "WindowStation": 2
+          }
+        }
+      },
+      "after": {
+        "Id": 1832,
+        "HandleCount": 579,
+        "Threads": 21,
+        "PrivateMemorySize64": 131227648,
+        "VirtualMemorySize64": 5795287040,
+        "handleTypeSnapshot": {
+          "total": 579,
+          "counts": {
+            "Exit code": 0,
+            "ALPC Port": 11,
+            "Desktop": 1,
+            "Directory": 2,
+            "EtwRegistration": 259,
+            "Event": 107,
+            "File": 20,
+            "IoCompletion": 20,
+            "IRTimer": 32,
+            "Key": 24,
+            "Mutant": 6,
+            "SchedulerSharedData": 1,
+            "Section": 5,
+            "Semaphore": 14,
+            "Thread": 37,
+            "TpWorkerFactory": 5,
+            "WaitCompletionPacket": 33,
+            "WindowStation": 2
+          }
+        }
+      },
+      "idle": {
+        "Id": 1832,
+        "HandleCount": 558,
+        "Threads": 14,
+        "PrivateMemorySize64": 87207936,
+        "VirtualMemorySize64": 5720838144,
+        "handleTypeSnapshot": {
+          "total": 558,
+          "counts": {
+            "Exit code": 0,
+            "ALPC Port": 11,
+            "Desktop": 1,
+            "Directory": 2,
+            "EtwRegistration": 259,
+            "Event": 98,
+            "File": 20,
+            "IoCompletion": 16,
+            "IRTimer": 32,
+            "Key": 24,
+            "Mutant": 6,
+            "SchedulerSharedData": 1,
+            "Section": 5,
+            "Semaphore": 14,
+            "Thread": 29,
+            "TpWorkerFactory": 5,
+            "WaitCompletionPacket": 33,
+            "WindowStation": 2
+          }
+        }
+      },
+      "stoppedIdle": {
+        "requestedSeconds": 120,
+        "elapsedSeconds": 120.01599999999985,
+        "completed": true,
+        "samples": [
+          {
+            "seconds": 0.02,
+            "residentBytes": 98332672,
+            "peakResidentBytes": 190103552,
+            "pagefileUsageBytes": 131227648,
+            "handles": 579
+          },
+          {
+            "seconds": 60.02,
+            "residentBytes": 55730176,
+            "peakResidentBytes": 190103552,
+            "pagefileUsageBytes": 87883776,
+            "handles": 563
+          },
+          {
+            "seconds": 120.02,
+            "residentBytes": 45084672,
+            "peakResidentBytes": 190103552,
+            "pagefileUsageBytes": 87207936,
+            "handles": 558
+          }
+        ]
+      }
+    },
+    {
+      "target": "windows-arm64",
+      "cycles": 3012,
+      "elapsedSeconds": 1200.2489686,
+      "completed": true,
+      "firstSample": {
+        "seconds": 0.21,
+        "cycles": 1,
+        "residentBytes": 69849088,
+        "peakResidentBytes": 173142016,
+        "pagefileUsageBytes": 81235968,
+        "handles": 558
+      },
+      "lastSample": {
+        "seconds": 1200.25,
+        "cycles": 3012,
+        "residentBytes": 73965568,
+        "peakResidentBytes": 181207040,
+        "pagefileUsageBytes": 99348480,
+        "handles": 591
+      },
+      "goGCCollections": 85,
+      "goLiveHeapMiBRounded": {
+        "first": 0,
+        "final": 1,
+        "max": 1
+      },
+      "before": {
+        "Id": 10176,
+        "HandleCount": 558,
+        "Threads": 24,
+        "PrivateMemorySize64": 81211392,
+        "VirtualMemorySize64": 5919703040,
+        "handleTypeSnapshot": {
+          "total": 558,
+          "counts": {
+            "Exit code": 0,
+            "ALPC Port": 14,
+            "Desktop": 1,
+            "Directory": 2,
+            "EtwRegistration": 263,
+            "Event": 92,
+            "File": 19,
+            "IoCompletion": 17,
+            "IRTimer": 30,
+            "Key": 27,
+            "Mutant": 6,
+            "SchedulerSharedData": 1,
+            "Section": 4,
+            "Semaphore": 14,
+            "Thread": 28,
+            "Timer": 1,
+            "TpWorkerFactory": 5,
+            "WaitCompletionPacket": 32,
+            "WindowStation": 2
+          }
+        }
+      },
+      "after": {
+        "Id": 10176,
+        "HandleCount": 591,
+        "Threads": 25,
+        "PrivateMemorySize64": 87547904,
+        "VirtualMemorySize64": 5926400000,
+        "handleTypeSnapshot": {
+          "total": 591,
+          "counts": {
+            "Exit code": 0,
+            "ALPC Port": 12,
+            "Desktop": 1,
+            "Directory": 2,
+            "EtwRegistration": 263,
+            "Event": 110,
+            "File": 19,
+            "IoCompletion": 21,
+            "IRTimer": 32,
+            "Key": 27,
+            "Mutant": 6,
+            "SchedulerSharedData": 1,
+            "Section": 4,
+            "Semaphore": 14,
+            "Thread": 38,
+            "Timer": 1,
+            "TpWorkerFactory": 5,
+            "WaitCompletionPacket": 33,
+            "WindowStation": 2
+          }
+        }
+      },
+      "idle": {
+        "Id": 10176,
+        "HandleCount": 569,
+        "Threads": 17,
+        "PrivateMemorySize64": 59383808,
+        "VirtualMemorySize64": 5884456960,
+        "handleTypeSnapshot": {
+          "total": 569,
+          "counts": {
+            "Exit code": 0,
+            "ALPC Port": 12,
+            "Desktop": 1,
+            "Directory": 2,
+            "EtwRegistration": 263,
+            "Event": 100,
+            "File": 19,
+            "IoCompletion": 16,
+            "IRTimer": 32,
+            "Key": 27,
+            "Mutant": 6,
+            "SchedulerSharedData": 1,
+            "Section": 4,
+            "Semaphore": 14,
+            "Thread": 31,
+            "Timer": 1,
+            "TpWorkerFactory": 5,
+            "WaitCompletionPacket": 33,
+            "WindowStation": 2
+          }
+        }
+      },
+      "stoppedIdle": {
+        "requestedSeconds": 120,
+        "elapsedSeconds": 120.00336169999991,
+        "completed": true,
+        "samples": [
+          {
+            "seconds": 0.0,
+            "residentBytes": 62185472,
+            "peakResidentBytes": 181207040,
+            "pagefileUsageBytes": 87547904,
+            "handles": 591
+          },
+          {
+            "seconds": 60.0,
+            "residentBytes": 33935360,
+            "peakResidentBytes": 181207040,
+            "pagefileUsageBytes": 59756544,
+            "handles": 575
+          },
+          {
+            "seconds": 120.0,
+            "residentBytes": 30908416,
+            "peakResidentBytes": 181207040,
+            "pagefileUsageBytes": 59383808,
+            "handles": 569
+          }
+        ]
+      }
+    }
+  ]
+}

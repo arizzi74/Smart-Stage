@@ -52,6 +52,18 @@ for path in sorted(args.input.rglob('*.http-smoke.json')):
             data = process.read_text(encoding='utf-8-sig')
             assert data.startswith('Exit code: 0\n'), process
             report[phase] = json.loads(data.split('\n',1)[1])
+        handles = Path(prefix+f'.memory-{phase}-handles.txt')
+        if handles.exists():
+            content = handles.read_text()
+            assert content.startswith('Exit code: 0\n'), handles
+            counts = {name.strip():int(count) for name, count in
+                      re.findall(r'^ *([A-Za-z][A-Za-z0-9 ]*?):\s*(\d+)\s*$', content, re.MULTILINE)}
+            total = counts.pop('Total handles')
+            assert sum(counts.values()) == total, handles
+            report[phase]['handleTypeSnapshot'] = {'total':total,'counts':counts}
+    idle = next((record['stoppedIdle'] for record in records if 'stoppedIdle' in record), None)
+    if idle is not None:
+        report['stoppedIdle'] = idle
     if 'darwin' in target[0]:
         before, after = report['before'], report['after']
         count = after['mallocAllocationCount']-before['mallocAllocationCount']
