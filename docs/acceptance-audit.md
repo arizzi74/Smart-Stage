@@ -9,7 +9,7 @@ The user has an **Apple Silicon Mac only**, an external audio output and a
 second monitor/projector available for physical testing. Its macOS version,
 exact output models and observations are not yet recorded.
 The [Mac physical procedure](macos-physical-test.md)
-uses preview 7 and a separate test configuration; it does not mark any physical
+uses preview 8 and a separate test configuration; it does not mark any physical
 check passed. Windows physical acceptance remains pending.
 
 The later user request supersedes the original networking/distribution design:
@@ -37,7 +37,25 @@ to quit. This is a positive operational report, not a completed physical test
 matrix. Physical output observations remain pending. The requested correction
 adds a regular Dock icon and standard Quit while preserving Terminal-free launch.
 
-Current release: preview 7, commit `7ca8c06`. It adds no-Terminal Mac app launch
+Current release: preview 8, source `00f0c659dc01fc94432b4394e703e6b68f2a53b0`, implements
+the Dock correction. [Native/browser run 35508597483](https://github.com/arizzi74/Smart-Stage/actions/runs/35508597483)
+passed shared checks and all four target builds. Both Mac runners independently
+observed the core as a regular application with its expected bundle identity
+and matching registered icon artwork; the rendered icon comparison had zero
+mean channel difference. Same-process Admin reopen and standard Quit passed,
+with exit code 0 and both listeners closed. This establishes Dock eligibility
+and the real Quit handler's behavior, not a Dock screenshot, menu click or
+keyboard shortcut. [Tagged run 35508890135](https://github.com/arizzi74/Smart-Stage/actions/runs/35508890135)
+passed all 16 jobs, including four native builds, publication, four fresh ZIP
+download/startup checks, four published browser checks and both Mac installers.
+All six independently downloaded archives matched the published checksums,
+architectures and clean source revision. Both Mac architectures also passed
+[default-install run 35509117225](https://github.com/arizzi74/Smart-Stage/actions/runs/35509117225)
+at installer source `1c42f555ec6dd5a8de7a00fea7f228d05bb5e725`, selecting preview 8
+without a version override. Scope and raw evidence are retained in
+[release verification](release-verification.md).
+
+Previous release: preview 7, commit `7ca8c06`. It adds no-Terminal Mac app launch
 and a scoped, administrator-authorized firewall allowance. Both Mac Finder
 checks and all four native release builds passed in
 [run 35503933513](https://github.com/arizzi74/Smart-Stage/actions/runs/35503933513).
@@ -89,6 +107,7 @@ the physical scenario or measure physical latency.
 | --- | --- | --- |
 | §§2–3: one host process, native playback, embedded offline web interfaces, no external runtime/player | `cmd/smartstage`, `internal/web/embed.go`, both compiled-in bridges; four executable import audits allow OS libraries only | Clean machines without developer tools or extra media runtimes; physical host playback |
 | §3: release architectures, metadata, stripped builds, checksums | `scripts/build.sh`, four native CI jobs and published Mac ARM64/AMD64 + Windows ARM64/AMD64 assets; downloaded headers/hashes checked | Physically established minimum OS versions; signing/notarization workflow |
+| Later request: visible Mac app icon and Quit without Terminal | Preview 8 Finder launch uses regular activation policy, explicit bundled artwork and standard application menu; native checks observe matching registered icon and graceful standard Quit while preserving local Admin and logs | User observation of the Dock icon and direct Dock/menu/Command-Q interaction on the physical Mac |
 | §4: AVFoundation/AppKit/Core Audio on main thread, per-player routing | `bridge_darwin.m`, initial-thread lock in `platform_native.go`; four fixture cues natively play/stop on both Mac runners, including one non-default virtual endpoint | Real non-default speaker and video soundtrack routing; second screen |
 | §4: Windows native renderer, explicit endpoint, one timeline and compiled-in COM bridge | `bridge_windows.cpp`; documented Media Session/EVR fallback and common MTA; all four cue playback/STOP events and restart passed with a signed virtual endpoint on both Windows architectures. Six signal/STOP/replay cycles were observed on each architecture, with session signal on the selected endpoint | Strict isolation assertion failed on shared driver meters; physical sound, STOP and independent output isolation remain unverified |
 | §4: bounded bridge, ownership and orderly shutdown | C ABI ownership in `bridge.h`; capped native queues, latest command/load slots, Go inspection drain; shutdown-during-validation native smoke and four completed two-hour workloads/restarts at exact preview 4 source | Broader native heap/handle bounds, physical audio workloads and difficult OS/driver shutdown conditions |

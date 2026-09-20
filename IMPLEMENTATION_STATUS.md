@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.7
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.8
 
 ## Implemented
 
@@ -29,9 +29,32 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.7
   Admin. Windows retains direct ZIP downloads.
 - Embedded Windows executable icons and optional Mac Finder apps with the same
   artwork; Finder starts the bundled executable without Terminal and opens local
-  Admin. The Mac menu bar provides Admin, log access and graceful Quit.
+  Admin. The Mac app has a visible Dock icon and standard application menu with
+  Quit (Command-Q); its status menu also provides Admin, log access and graceful
+  Quit. Standalone command-line launches retain their existing behavior.
 
 ## Built and automatically tested
+
+Preview 8 is source `00f0c659dc01fc94432b4394e703e6b68f2a53b0`.
+[Native/browser run 35508597483](https://github.com/arizzi74/Smart-Stage/actions/runs/35508597483)
+passed shared checks and all four target builds. On both Macs an independent
+AppKit observer found the running core registered with the expected bundle
+identity, regular activation policy and matching icon artwork. The rendered
+128-pixel RGBA images had zero mean channel difference. Terminal-free launch,
+log redirection, same-process Admin reopen and the standard Quit event also
+passed; Quit returned exit code 0 and closed both HTTP listeners. These checks
+establish Dock eligibility and matching registered artwork, without claiming a
+Dock screenshot, menu click or keyboard-shortcut test.
+[Tagged run 35508890135](https://github.com/arizzi74/Smart-Stage/actions/runs/35508890135)
+passed all 16 jobs: shared checks, four native builds, publication of 36 assets,
+four fresh ZIP downloads/startups, four published browser checks and both Mac
+installers. All six independently downloaded ZIPs match their checksums,
+architectures and clean source metadata. After the installer default changed
+to preview 8 at `1c42f55`, both Mac architectures passed
+[default-install run 35509117225](https://github.com/arizzi74/Smart-Stage/actions/runs/35509117225).
+The unversioned public installer bytes also match the checked source and select
+preview 8. Recorded evidence is in
+[release verification](docs/release-verification.md).
 
 Preview 7 is source `7ca8c0685ed237849406fbf2371d44a9c500ce8d`. The Mac app
 runs without Terminal, saves logs and provides Admin/Quit in the menu bar.
@@ -161,6 +184,13 @@ and compiled, but Windows audio playback remains unverified on real hardware.
 
 ## Still open
 
+The user reported that preview 7 now works after the firewall change, followed
+by the missing-icon complaint addressed in preview 8. This is a positive
+operational report; the structured phone, audio and display test matrix remains
+incomplete. The [Mac physical procedure](docs/macos-physical-test.md) now targets
+preview 8 on the available Apple Silicon Mac with external audio and a second
+monitor/projector.
+
 Physical non-default audio routing, projector/second-monitor blackout, hotplug/
 window relocation, mixed DPI, phones on real LANs, timing targets, clean-machine
 acceptance, production signing/notarization and full physical two-hour soak.
@@ -193,4 +223,4 @@ None verifies physical A/V drift or independent physical audio routing.
 See `docs/release-verification.md` for exact environments/evidence and the
 remaining checklist, and `docs/acceptance-audit.md` for a specification-wide
 evidence audit. Local final release files are downloaded under
-`dist/releases/v0.1.0-preview.6/`; local cross-build outputs are under `dist/`.
+`dist/releases/v0.1.0-preview.8/`; local cross-build outputs are under `dist/`.

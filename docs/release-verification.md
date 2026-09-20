@@ -19,6 +19,13 @@ firewall, and repairs an existing blocked bundle rule. Global firewall settings
 and other applications' rules are preserved. Historical release and installer
 results below remain evidence for their named older versions.
 
+Preview 8 changes the Finder app to a regular Mac application with a Dock icon
+and standard application menu, including Quit Smart Stage (Command-Q). The
+status menu remains available, and clicking the Dock icon reopens local Admin.
+Launch still uses one core process without Terminal and sends output to
+`~/Library/Logs/Smart Stage/smartstage.log`. Direct command-line execution keeps
+its existing lifecycle.
+
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin and report
 that the operating system accepted the automatic browser launch; the separate
@@ -27,6 +34,52 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+[Preview 8](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.8)
+is source `00f0c659dc01fc94432b4394e703e6b68f2a53b0`.
+[Native/browser run 35508597483](https://github.com/arizzi74/Smart-Stage/actions/runs/35508597483)
+passed shared race/vet and all four native build, application, icon and browser
+checks. Both Mac checks launched the app through Finder and independently
+queried the core process through `NSRunningApplication`: the expected bundle
+identity and regular activation policy were observed, and the registered icon
+and bundled ICNS rendered to identical 128-pixel RGBA images (mean absolute
+channel difference 0). The checks also observed no Terminal or controlling TTY,
+stdout/stderr redirected to the app log, Admin reopen with the same core PID,
+and standard Quit returning exit code 0 with the process and both HTTP listeners
+closed.
+
+This is evidence of Dock eligibility and matching registered artwork. It does
+not capture the Dock's displayed pixels or synthesize a Dock-menu click or
+Command-Q. The standard Quit AppleEvent exercises the same application
+termination handler and its deferred native/Go cleanup. The user's report that
+preview 7 now works, followed by the missing-icon complaint, remains a positive
+operational observation rather than a completed physical acceptance matrix.
+The [physical procedure](macos-physical-test.md) now targets preview 8.
+
+[Tagged run 35508890135](https://github.com/arizzi74/Smart-Stage/actions/runs/35508890135)
+completed all 16 jobs successfully: shared race/vet, four native builds and
+application/icon checks, publication of 36 assets, four fresh ZIP downloads and
+startup checks, four real browser/native control checks, and both published Mac
+app installers. The installed Mac apps repeat the runtime icon, regular-policy,
+reopen and graceful Quit checks, alongside quarantine, replacement and scoped
+firewall-rule preservation checks. Independent downloads of all four portable
+ZIPs and both Mac app ZIPs matched SHA-256 checksums, architecture and clean
+source metadata. The app cores match the standalone executable bytes. Native
+icon reports on both architectures observed the expected application name and
+bundle identity, mean pixel difference 0 and standard Quit exit code 0. Evidence
+and scope are retained in
+[`verification/release-preview8/`](verification/release-preview8/).
+
+The installer default changed to preview 8 at
+`1c42f555ec6dd5a8de7a00fea7f228d05bb5e725`.
+[Default-install run 35509117225](https://github.com/arizzi74/Smart-Stage/actions/runs/35509117225)
+passed on Apple Silicon and Intel using that immutable installer source without
+a release override. Separately, the unversioned public `main/install.sh` URL
+was fetched without a cache-busting query on 20 September 2026 at 11:54:54 UTC;
+its bytes matched the checked source, selected preview 8 and had SHA-256
+`764bc7eaba66f7f2500528934cebcf84d8c33e997f48eacffd68bb73110d6ff4`.
+The `installer-default-*.json` and `public-bootstrap-verification.json` records
+separate native installation evidence from the mutable public entry-point check.
 
 [Preview 7](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.7)
 is source `7ca8c0685ed237849406fbf2371d44a9c500ce8d`.
