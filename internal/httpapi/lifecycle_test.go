@@ -82,7 +82,7 @@ func TestNativeChooserCapabilityAndUnavailableHost(t *testing.T) {
 	for _, enabled := range []bool{false, true} {
 		available.Store(enabled)
 		for _, route := range []struct{ method, path, body string }{
-			{"POST", "/api/local-session", "{}"}, {"GET", "/api/state", ""},
+			{"POST", "/api/local-session", "{}"}, {"GET", "/api/state", ""}, {"POST", "/api/admin-presence", "{}"},
 		} {
 			w := request(api, route.method, route.path, route.body, admin, "http://127.0.0.1:8787")
 			var reply struct{ Capabilities map[string]bool }
@@ -172,8 +172,8 @@ func TestAdminPresenceNeedsExplicitPageHeartbeatAndExpires(t *testing.T) {
 		t.Fatal("Session/state probes were counted as a live Admin page")
 	}
 	w := request(api, "POST", "/api/admin-presence", "{}", admin, "http://127.0.0.1:8787")
-	var reply map[string]bool
-	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &reply) != nil || !reply["present"] || !api.HasAdminPresence() {
+	var reply struct{ Present bool }
+	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &reply) != nil || !reply.Present || !api.HasAdminPresence() {
 		t.Fatal("Admin page heartbeat was not recorded")
 	}
 	api.mu.Lock()
@@ -193,31 +193,50 @@ func TestOnlyActiveAdminSSECountsAsPresence(t *testing.T) {
 				api = NewCommand(service, authentication, web.Handler(), []string{"127.0.0.1"}, 8787)
 				session, _ = authentication.PairCommand(authentication.CommandToken(), "remote")
 			}
-			finished := make(chan struct{})
+			if role == "admin" {
+				if w := request(api, "POST", "/api/admin-presence", "{}", session, "http://127.0.0.1:8787"); w.Code != 200 || !api.HasAdminPresence() {
+					t.Fatal("Initial page heartbeat before SSE was not recorded")
+				}
+			}
+			finished := make(chan struct{}, 2)
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				defer close(finished)
+				defer func() { finished <- struct{}{} }()
 				api.ServeHTTP(w, r)
 			}))
 			defer server.Close()
-			r, _ := http.NewRequest("GET", server.URL+"/api/events", nil)
-			r.Host = "127.0.0.1:8787"
-			r.AddCookie(&http.Cookie{Name: api.cookieName, Value: session.ID})
-			response, err := server.Client().Do(r)
-			if err != nil {
-				t.Fatal(err)
+			var responses []*http.Response
+			for range 2 {
+				r, _ := http.NewRequest("GET", server.URL+"/api/events", nil)
+				r.Host = "127.0.0.1:8787"
+				r.AddCookie(&http.Cookie{Name: api.cookieName, Value: session.ID})
+				response, err := server.Client().Do(r)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer response.Body.Close()
+				responses = append(responses, response)
+				if response.StatusCode != 200 || api.HasAdminPresence() != (role == "admin") {
+					t.Fatal("Active SSE had incorrect Admin presence")
+				}
 			}
-			if response.StatusCode != 200 || api.HasAdminPresence() != (role == "admin") {
+			for i, response := range responses {
 				response.Body.Close()
-				t.Fatal("Active SSE had incorrect Admin presence")
-			}
-			response.Body.Close()
-			select {
-			case <-finished:
-			case <-time.After(2 * time.Second):
-				t.Fatal("SSE did not end after disconnect")
+				select {
+				case <-finished:
+				case <-time.After(2 * time.Second):
+					t.Fatal("SSE did not end after disconnect")
+				}
+				if i == 0 && api.HasAdminPresence() != (role == "admin") {
+					t.Fatal("Disconnecting one SSE invalidated the other live Admin stream")
+				}
 			}
 			if api.HasAdminPresence() {
-				t.Fatal("Disconnected SSE still counted as Admin presence")
+				t.Fatal("The last disconnected SSE left stale heartbeat presence")
+			}
+			if role == "admin" {
+				if w := request(api, "POST", "/api/admin-presence", "{}", session, "http://127.0.0.1:8787"); w.Code != 200 || !api.HasAdminPresence() {
+					t.Fatal("A subsequent fresh page heartbeat did not restore presence")
+				}
 			}
 		})
 	}

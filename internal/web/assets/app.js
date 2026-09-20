@@ -85,7 +85,13 @@ async function connectLocalAdmin() {
 async function sendAdminPresence(force = false) {
   if (!adminPage || role !== 'admin' || !csrf || presenceBusy || quitBusy || reloadingAdmin || (!online && !force)) return;
   presenceBusy = true;
-  try { await api('POST', '/api/admin-presence', {}); }
+  try {
+    const result = await api('POST', '/api/admin-presence', {});
+    if (result.capabilities && !appClosed && !quitBusy && !reloadingAdmin) {
+      adminCapabilities = result.capabilities;
+      renderEditAvailability();
+    }
+  }
   catch { /* Presence is a best-effort hint, not a playback command. */ }
   finally { presenceBusy = false; }
 }

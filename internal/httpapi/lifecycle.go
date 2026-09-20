@@ -62,7 +62,9 @@ func (a *API) lifecycleRequest(w http.ResponseWriter, r *http.Request) {
 		a.mu.Lock()
 		a.adminSeen = time.Now()
 		a.mu.Unlock()
-		writeJSON(w, http.StatusOK, map[string]bool{"present": true})
+		reply := map[string]any{"present": true}
+		a.addCapabilities(reply)
+		writeJSON(w, http.StatusOK, reply)
 		return
 	}
 	if r.URL.Path == "/api/choose-files" {

@@ -21,6 +21,9 @@ Compact host browsing, hidden-file control, cue colors, Stage on/off, Escape and
 Keep awake behavior from preview 11 are retained. The HTTP LAN remote still
 cannot use the standard HTTPS-only screen wake-lock API.
 
+After upgrading from preview 11 or earlier, refresh an already open Admin tab
+once to load these new controls. Subsequent relaunches refresh it automatically.
+
 Automatic updates continue to install on launch, before playback. Existing
 preview 10 and later installations can update on their next launch. Saved shows and output
 preferences are preserved; no playback starts automatically. The Mac updater

@@ -16,7 +16,7 @@ const assert = require('node:assert/strict');
   let stateGets = 0, holdPlay = false, remoteGets = 0, links = [], sessionCounter = 0;
   let updateGets = 0, updateGetDelay = 0, failUpdateCheck = false, restarting = false;
   let hiddenListingDelay = 0;
-  let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: true };
+  let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: false };
   let update = { currentVersion: 'v0.1.0-preview.8', latestVersion: 'v0.1.0-preview.9', phase: 'available', available: true, canInstall: true, message: 'A new version is available.', releaseURL: 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', checkedAt: new Date().toISOString() };
   const labels = ['Opening music', 'Welcome video with a deliberately long label that must wrap clearly', "Café's interlude", '<img src=x onerror="window.__xss=true">'];
   const state = { instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
@@ -56,7 +56,7 @@ const assert = require('node:assert/strict');
       assert.equal(req.headers['x-csrf-token'], 'test-csrf');
       assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
       assert.deepEqual(body, {});
-      if (url.pathname === '/api/admin-presence') { reply({ present: true }); return; }
+      if (url.pathname === '/api/admin-presence') { reply({ present: true, capabilities: adminCapabilities }); return; }
       if (url.pathname === '/api/choose-files') { assert(adminCapabilities.chooseFiles); reply({ choosing: true }, 202); return; }
       reply({ quitting: true }, 202);
       setTimeout(() => { restarting = true; for (const client of clients) client.end(); }, 25);
@@ -228,7 +228,12 @@ const assert = require('node:assert/strict');
     assert.equal(await admin.locator('#audio-output option').count(), 2);
     await untilPresence();
     async function untilPresence() { await admin.waitForFunction(() => !document.getElementById('quit-app').disabled); assert(requests.some(r => r.path === '/api/admin-presence' && r.listenerRole === 'admin'), 'Admin establishes authenticated presence'); }
-    assert.equal(await admin.locator('#choose-files').isVisible(), true, 'Mac native picker is offered only when the host advertises it');
+    assert.equal(await admin.locator('#choose-files').isVisible(), false, 'the native picker stays hidden until the desktop host is ready');
+    const documentsBeforeChooserReady = adminDocumentLoads;
+    adminCapabilities = { chooseFiles: true };
+    await admin.evaluate(() => sendAdminPresence(true));
+    await admin.locator('#choose-files').waitFor({ state: 'visible' });
+    assert.equal(adminDocumentLoads, documentsBeforeChooserReady, 'a presence response refreshes native picker readiness without reloading Admin');
     await admin.locator('#choose-files').click();
     await admin.waitForFunction(() => document.getElementById('file-drop-message').textContent.includes('Mac dialog'));
     assert.equal(requests.filter(r => r.path === '/api/choose-files').length, 1);

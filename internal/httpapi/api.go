@@ -513,6 +513,11 @@ func (a *API) events(w http.ResponseWriter, r *http.Request, session auth.Sessio
 		defer func() {
 			a.mu.Lock()
 			a.adminEvents--
+			if a.adminEvents == 0 {
+				// A page that just closed must not suppress a native reopen
+				// for the remainder of its heartbeat lease.
+				a.adminSeen = time.Time{}
+			}
 			a.mu.Unlock()
 		}()
 	}
