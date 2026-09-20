@@ -9,17 +9,17 @@ on:
         description: 'Published release to verify'
         required: true
         type: string
-        default: 'v0.1.0-preview.10'
+        default: 'v0.1.0-preview.11'
       fixture-run:
         description: 'Tagged build run containing the older-version fixtures'
         required: true
         type: string
-        default: '35512155124'
+        default: '35515606727'
       fixture-source:
         description: 'Expected source commit of the published release and fixtures'
         required: true
         type: string
-        default: '3c8492f036840f64612cef12045bd718a96c9d81'
+        default: '9e7919547038372adaa8b7a3b028817928df62a0'
   workflow_call:
     inputs:
       version:
@@ -54,13 +54,13 @@ jobs:
         with:
           name: update-fixture-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/update-fixture
-          run-id: ${{ inputs.fixture-run || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '35512155124') || github.run_id }}
+          run-id: ${{ inputs.fixture-run || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '35515606727') || github.run_id }}
           github-token: ${{ github.token }}
       - name: Exercise real automatic discovery, replacement and restart
         shell: bash
         env:
-          RELEASE_VERSION: ${{ inputs.version || 'v0.1.0-preview.10' }}
-          FIXTURE_SOURCE: ${{ inputs.fixture-source || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '3c8492f036840f64612cef12045bd718a96c9d81') || github.sha }}
+          RELEASE_VERSION: ${{ inputs.version || 'v0.1.0-preview.11' }}
+          FIXTURE_SOURCE: ${{ inputs.fixture-source || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '9e7919547038372adaa8b7a3b028817928df62a0') || github.sha }}
           SMARTSTAGE_SKIP_FIREWALL: '1'
         run: |
           python3 scripts/verify-auto-update.py --version "$RELEASE_VERSION" \

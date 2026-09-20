@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.10
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.11
 
 ## Implemented
 
@@ -37,6 +37,17 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.10
   playback, preserves the saved show, restarts without autoplay and rolls back
   failed startup. Periodic checks defer installation until the next launch;
   Admin also offers an update action while playback and stage output are stopped.
+
+- Compact host file browsing with dot-prefixed names hidden by default; Show
+  hidden is optional. Host file rows can be dragged into the playlist. Mac
+  Finder/Dock file-open events and Choose Media append original file references
+  atomically without copying or autoplay, respecting configured media roots.
+  Filesystem identity handles actual Unicode/case aliases without broadening roots.
+- Compact remote Stage/Disconnect controls, Escape stop-and-close behavior in
+  native app/stage and connected browser pages, and persisted per-cue colors.
+- Optional Screen Wake Lock with truthful status, opt-in and release/reacquire
+  handling. The default HTTP LAN remote cannot use this HTTPS-only browser API;
+  device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
 

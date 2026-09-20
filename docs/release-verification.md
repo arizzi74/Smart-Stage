@@ -33,6 +33,12 @@ launch, and saved shows remain outside the replaced application. Restart begins
 stopped with stage output disabled. Admin shows update status and an optional
 update action; existing releases need one manual upgrade to acquire the updater.
 
+Preview 11 adds compact hidden-file browsing, original-path Finder/Dock imports,
+per-cue colors, compact remote Stage/Disconnect controls and Escape stage-off.
+Mac media-root checks compare filesystem identity when actual Unicode/case aliases
+use different spellings. Wake Lock reports its real state when supported; the
+ordinary HTTP LAN page reports Needs HTTPS and does not promise to prevent sleep.
+
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin and report
 that the operating system accepted the automatic browser launch; the separate

@@ -23,7 +23,7 @@ Open Terminal, paste this command, and press Return:
 curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
 ```
 
-The installer detects Apple Silicon or Intel, downloads the matching preview 10
+The installer detects Apple Silicon or Intel, downloads the matching preview 11
 app ZIP, verifies its SHA-256 checksum, and installs **Smart Stage.app** with its
 icon into `~/Applications`. It removes `com.apple.quarantine` only from that app
 and its contents, then launches it. Copying the app needs no administrator
@@ -51,9 +51,9 @@ It checks GitHub, downloads the correct version for your computer, verifies the
 checksum, installs it and restarts. Admin reopens automatically. Saved shows
 and output preferences stay in place; playback never resumes automatically.
 
-Install preview 10 once using the Mac command above or the matching Windows ZIP
-below to enable future automatic updates. Older releases cannot add the updater
-to themselves.
+Install the current release once using the Mac command above or the matching
+Windows ZIP below to enable automatic updates. Previews before 10 need this
+manual upgrade; preview 10 and later can update on launch.
 
 Playback and editing wait while a startup update is checked or prepared. If the
 network is unavailable, the initial check times out after ten seconds and you
@@ -86,15 +86,15 @@ executable, including both browser interfaces and native playback.
 
 | Computer | Download |
 | --- | --- |
-| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-arm64.zip) |
-| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-amd64.zip) |
-| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-windows-arm64.zip) |
-| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-windows-amd64.zip) |
+| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.11/smartstage-darwin-arm64.zip) |
+| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.11/smartstage-darwin-amd64.zip) |
+| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.11/smartstage-windows-arm64.zip) |
+| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.11/smartstage-windows-amd64.zip) |
 
-[Release notes and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.10).
+[Release notes and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.11).
 Windows executables include the Smart Stage icon. Mac app bundles with the icon
-are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-arm64.app.zip)
-and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-amd64.app.zip).
+are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.11/smartstage-darwin-arm64.app.zip)
+and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.11/smartstage-darwin-amd64.app.zip).
 Each app bundle includes the same core executable plus its Finder launcher and
 icon. Opening `Smart Stage.app` runs it without Terminal and opens Admin. The
 standalone ZIPs above contain only `smartstage` (Mac) or `smartstage.exe` (Windows).
@@ -258,7 +258,7 @@ bash scripts/build.sh windows arm64
 ```
 
 Build on matching OS runners normally. `DEBUG=1` retains symbols;
-`VERSION=v0.1.0-preview.10` sets metadata. Output:
+`VERSION=v0.1.0-preview.11` sets metadata. Output:
 `dist/smartstage-<os>-<arch>.zip`, the raw build executable and engineering
 harness `dist/native-harness-<os>-<arch>[.exe]`, with adjacent checksums, import
 audits and toolchain records. Published application downloads are ZIPs. Apple system frameworks remain dynamic; Windows compiler

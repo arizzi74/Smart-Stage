@@ -1,6 +1,6 @@
 # Mac physical test
 
-Use the published **v0.1.0-preview.10** on the Mac that will run the show.
+Use the published **v0.1.0-preview.11** on the Mac that will run the show.
 The available physical test machine is an **Apple Silicon Mac**; its macOS
 version is not yet recorded. An external audio output and a second
 monitor/projector are available. Use the **darwin/arm64** release. Windows physical checks remain pending. This is a procedure and result
@@ -60,7 +60,7 @@ accessible only on the Mac itself.
 
 Opening the app in Finder starts the normal configuration without Terminal; use
 its Dock icon → Quit to close it. Use the Terminal
-command above for this isolated test. Direct [Apple Silicon standalone ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-arm64.zip)
+command above for this isolated test. Direct [Apple Silicon standalone ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.11/smartstage-darwin-arm64.zip)
 downloads also remain available, but browser-downloaded files may require
 **Privacy & Security → Open Anyway**. Mac builds remain ad-hoc signed rather than
 Developer ID signed/notarized; record any security or local-network prompt and
@@ -118,8 +118,10 @@ establish physical silence or blackout.
   sleep and a Wi-Fi disconnect/reconnect. Playback should continue through a
   controller disconnection; reconnect must not replay old PLAY
   commands. An unacknowledged STOP must not be displayed as confirmed.
-- Exercise Escape while the stage window has keyboard focus. It should stop
-  and blacken the stage without closing it. Separately check inaccessible media,
+- Exercise Escape while the stage window or connected Admin page has keyboard
+  focus. It should stop playback and close the stage window. Check the remote
+  Stage on/off control as well; STOP should still retain an enabled black stage.
+  Separately check inaccessible media,
   alternate display arrangements/scaling and idle-sleep behavior.
 - Run a two-hour rehearsal with repeated cue starts, replacements and STOP,
   including longer synchronized A/V material. Record resource usage in Activity
