@@ -59,7 +59,10 @@ def windows_icon(executable, source):
         for i in range(count):
             actual = struct.unpack_from("<BBBBHHIH", group, 6 + 14 * i)
             expected = struct.unpack_from("<BBBBHHII", original, 6 + 16 * i)
-            assert actual[:7] == expected[:7], "Embedded icon dimensions differ"
+            # Pillow leaves PNG planes unspecified (0); windres correctly
+            # normalizes that field to one plane in RT_GROUP_ICON.
+            assert expected[4] in (0, 1) and actual[4] == 1
+            assert actual[:4] + actual[5:7] == expected[:4] + expected[5:7], "Embedded icon dimensions differ"
             assert resource(actual[7], 3) == original[expected[7]:expected[7] + expected[6]], "Embedded icon pixels differ"
             sizes.append(actual[0] or 256)
     finally:
@@ -83,6 +86,13 @@ def windows_icon(executable, source):
 
 
 def finder_launch(bundle):
+    import ctypes
+    import os
+
+    libproc = ctypes.CDLL("/usr/lib/libproc.dylib")
+    libproc.proc_pidpath.argtypes = [ctypes.c_int, ctypes.c_void_p, ctypes.c_uint32]
+    libproc.proc_pidpath.restype = ctypes.c_int
+    expected_executable = (bundle / "Contents/MacOS/smartstage").resolve()
     # This deliberately uses the real default user configuration. Opt in only
     # on an ephemeral CI runner, never silently start an operator's saved show.
     with socket.socket() as probe:
@@ -90,6 +100,7 @@ def finder_launch(bundle):
             raise RuntimeError("Finder launch check needs port 8787 to be unused")
     subprocess.run(["open", "-n", str(bundle)], check=True, timeout=15)
     pid = None
+    observed = {}
     try:
         for _ in range(45):
             listeners = subprocess.run(["lsof", "-nP", "-iTCP:8787", "-sTCP:LISTEN", "-Fp"], text=True, capture_output=True)
@@ -97,22 +108,30 @@ def finder_launch(bundle):
                 if not line.startswith("p"):
                     continue
                 candidate = int(line[1:])
-                command = subprocess.check_output(["ps", "-p", str(candidate), "-o", "command="], text=True).strip()
-                if str(bundle) in command and command.endswith("/MacOS/smartstage"):
+                # Read the executable path from the kernel: ps display output
+                # can truncate or escape long paths and non-ASCII characters.
+                path = ctypes.create_string_buffer(4096)
+                if libproc.proc_pidpath(candidate, path, len(path)) <= 0:
+                    continue
+                observed[candidate] = os.fsdecode(path.value)
+                if Path(observed[candidate]).resolve() == expected_executable:
                     pid = candidate
             if pid:
                 try:
                     with urllib.request.urlopen("http://127.0.0.1:8787/command", timeout=2) as response:
                         assert response.status == 200 and b"Smart Stage" in response.read()
-                    return {"finderLaunchedTerminalAndCore": True, "servedCommandPage": True}
+                    return {"finderLaunchedTerminalAndCore": True, "servedCommandPage": True,
+                            "kernelExecutablePathMatched": True}
                 except (OSError, AssertionError):
                     pass
             time.sleep(1)
-        raise RuntimeError("Finder launch did not start the bundled Smart Stage server in Terminal")
+        raise RuntimeError(f"Finder launch did not start the bundled Smart Stage server in Terminal; listeners: {observed}")
     finally:
         if pid:
-            import os
-            os.kill(pid, signal.SIGINT)
+            try:
+                os.kill(pid, signal.SIGINT)
+            except ProcessLookupError:
+                pass
 
 
 def mac_icon(executable, source, test_finder):
