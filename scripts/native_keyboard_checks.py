@@ -24,11 +24,12 @@ def escape_checks(display):
             command = [os.environ.get("CXX", f"{arch}-w64-mingw32-clang++"), "-std=c++17",
                        "-D_WIN32_WINNT=0x0A00", "-DUNICODE", "-D_UNICODE", "-Wall", "-Wextra",
                        str(root / "scripts/native-keyboard-windows.cpp"),
-                       str(root / "internal/platform/bridge_windows.cpp"), "-o", str(probe),
+                       str(root / "internal/platform/bridge_windows.cpp"),
+                       str(root / "internal/platform/desktop_windows.cpp"), "-o", str(probe),
                        "-static-libstdc++", "-static-libgcc", "-Wl,-Bstatic", "-lwinpthread", "-Wl,-Bdynamic"]
             command.extend("-l" + library for library in
                            ("mfplat", "mf", "mfuuid", "mfreadwrite", "evr", "ole32", "oleaut32",
-                            "uuid", "propsys", "user32", "gdi32", "shcore"))
+                            "uuid", "propsys", "user32", "gdi32", "shcore", "shell32", "dcomp", "bcrypt", "advapi32"))
         build = subprocess.run(command, capture_output=True, text=True, timeout=90)
         assert build.returncode == 0, f"Native keyboard probe compilation failed: {build.stderr}"
         evidence = []

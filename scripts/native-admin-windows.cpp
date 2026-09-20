@@ -103,7 +103,8 @@ int main() {
         // Go's back. Then verify authenticated UI Quit against the real host.
         ui([]{desktop::command(desktop::quitID);});require(ss_desktop_poll_quit_request()==1 && ss_desktop_poll_quit_request()==0,"Native Quit request was not polled exactly once");passed("nativeQuitRequestPolled");
         js(L"document.getElementById('quit-app').click();true");wait([]{return js(L"document.getElementById('app-closed').hidden===false")=="true";},"Real Admin Quit was not acknowledged");passed("realAdminQuitAcknowledged");
-        ss_windows_desktop_shutdown();require(!IsWindow(original),"Native shutdown left Admin open");passed("nativeQuitClosedAdminWindow");report["status"]="\"passed\"";
+        ss_windows_desktop_shutdown();require(!IsWindow(original),"Native shutdown left Admin open");passed("nativeQuitClosedAdminWindow");
+        require(!std::filesystem::exists(desktop::directory),"Normal WebView shutdown left its private browser profile behind");passed("privateWebViewProfileRemovedAfterShutdown");report["status"]="\"passed\"";
         std::cout<<"{";bool firstField=true;for(auto& item:report) {if(!firstField)std::cout<<",";firstField=false;std::cout<<desktop::quote(item.first)<<":"<<item.second;}std::cout<<"}\n";return 0;
     } catch(const std::string& error) {std::cerr<<error<<"\n";} catch(const std::exception& error) {std::cerr<<error.what()<<"\n";}
     ss_windows_desktop_shutdown();return 5;

@@ -102,6 +102,7 @@ Ptr<IDCompositionVisual> visual;
 Ptr<IFileOpenDialog> chooser;
 HMODULE loader = nullptr;
 HANDLE loaderFile = INVALID_HANDLE_VALUE;
+HANDLE browserProcess = nullptr;
 NOTIFYICONDATAW tray{};
 UINT taskbarCreated = 0;
 
@@ -431,7 +432,7 @@ void command(UINT id) {
 void drainTasks() {
     std::deque<std::function<void()>> pending;
     { std::lock_guard<std::mutex> lock(tasksMutex); pending.swap(tasks); }
-    for(auto& fn:pending) { try { fn(); } catch(const std::string& error) {showError(error);} catch(...) {showError("Native Admin operation failed.");} }
+    for(auto& fn:pending) { if(stopping.load())break; try { fn(); } catch(const std::string& error) {showError(error);} catch(...) {showError("Native Admin operation failed.");} }
 }
 void shutdownUI();
 LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
@@ -472,6 +473,9 @@ void shutdownUI() {
     if(chooser)chooser->Close(HRESULT_FROM_WIN32(ERROR_CANCELLED));
     if(trayAdded) {Shell_NotifyIconW(NIM_DELETE,&tray);trayAdded=false;}
     if(window)RevokeDragDrop(window);
+    UINT32 browserID=0;
+    if(webview && SUCCEEDED(webview->get_BrowserProcessId(&browserID)) && browserID)
+        browserProcess=OpenProcess(SYNCHRONIZE,FALSE,browserID);
     if(controller)controller->Close();
     webview.reset();controller.reset();composition.reset();environment.reset();
     visual.reset();target.reset();dcomp.reset();dropTarget.reset();
@@ -491,12 +495,25 @@ void uiMain() {
     if(!control.load()) {if(SUCCEEDED(apartment))OleUninitialize();return;}
     MSG message{};
     while(!uiQuit && GetMessageW(&message,nullptr,0,0)>0) {TranslateMessage(&message);DispatchMessageW(&message);}
+    // Browser profile locks are released asynchronously. Pump this STA while
+    // waiting only for this private profile's browser process, for at most 2s.
+    if(browserProcess) {
+        ULONGLONG deadline=GetTickCount64()+2000;
+        while(GetTickCount64()<deadline) {
+            DWORD status=MsgWaitForMultipleObjects(1,&browserProcess,FALSE,50,QS_ALLINPUT);
+            if(status==WAIT_OBJECT_0 || status==WAIT_FAILED)break;
+            while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)) {TranslateMessage(&message);DispatchMessageW(&message);}
+        }
+        CloseHandle(browserProcess);browserProcess=nullptr;
+    }
     DestroyWindow(control.exchange(nullptr));
-    // Controller::Close releases browser processes asynchronously. Cleanup is
-    // best effort; the private directory is never reused on a later launch.
     if(loader) {FreeLibrary(loader);loader=nullptr;}
     if(loaderFile!=INVALID_HANDLE_VALUE) {CloseHandle(loaderFile);loaderFile=INVALID_HANDLE_VALUE;}
-    if(!directory.empty()) {std::error_code error;std::filesystem::remove_all(directory,error);}
+    if(!directory.empty()) {
+        std::error_code error;ULONGLONG deadline=GetTickCount64()+1000;
+        do {error.clear();std::filesystem::remove_all(directory,error);if(!error)break;Sleep(25);}while(GetTickCount64()<deadline);
+        if(error)fprintf(stderr,"Native Admin private profile cleanup deferred: %s\n",error.message().c_str());
+    }
     OleUninitialize();
 }
 bool post(std::function<void()> fn) {
