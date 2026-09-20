@@ -68,6 +68,14 @@ func main() {
 	if net.ParseIP(*bind) == nil {
 		exitError(errors.New("--bind must be a local IP address, not a hostname"))
 	}
+	*bind = net.ParseIP(*bind).String()
+	if *advertise != "" {
+		ip := net.ParseIP(*advertise)
+		if ip == nil {
+			exitError(errors.New("--advertise-ip must be an active local non-loopback address"))
+		}
+		*advertise = ip.String()
+	}
 	if *configDir == "" {
 		dir, err := os.UserConfigDir()
 		if err != nil {
