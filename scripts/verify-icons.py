@@ -168,6 +168,11 @@ def mac_icon(executable, source, test_finder):
         assert info["CFBundleExecutable"] == "SmartStageLauncher" and info["CFBundlePackageType"] == "APPL"
         assert info["SmartStageBackgroundLaunch"] is True, "The new Finder app must declare background launch"
         assert info["SmartStageDockIcon"] is True, "The new Finder app must declare its visible Dock icon"
+        assert info["SmartStageNativeAdminWindow"] is True, "Finder app must use its own Admin window"
+        assert info["NSAppTransportSecurity"] == {
+            "NSAllowsLocalNetworking": True,
+            "NSExceptionDomains": {"127.0.0.1": {"NSExceptionAllowsInsecureHTTPLoads": True}},
+        }, "Only loopback/local HTTP exceptions are allowed; keep Internet ATS protections"
         assert info.get("LSUIElement", False) is False, "The Finder app must be visible in the Dock"
         document_types = info.get("CFBundleDocumentTypes", [])
         assert any(item.get("CFBundleTypeRole") == "Viewer" and item.get("LSHandlerRank") == "None"
@@ -188,6 +193,9 @@ def mac_icon(executable, source, test_finder):
             result.update(finder_launch(bundle, bool(info.get("SmartStageBackgroundLaunch"))))
             from native_file_checks import file_open_checks
             result["nativeFileOpen"] = file_open_checks(bundle, executable.with_name(executable.name + ".native-files.json"))
+            from native_admin_checks import admin_window_checks
+            result["nativeAdminWindow"] = admin_window_checks(
+                executable, executable.with_name(executable.name + ".native-admin.json"))
         return result
 
 

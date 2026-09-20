@@ -51,7 +51,7 @@ func main() {
 	port := flag.Int("port", 8788, "remote-control HTTP port (0 selects an available port)")
 	adminPort := flag.Int("admin-port", 8787, "localhost Admin HTTP port (0 selects an available port)")
 	bind := flag.String("bind", "0.0.0.0", "remote-control listen IP; Admin always binds 127.0.0.1")
-	noBrowser := flag.Bool("no-browser", false, "do not automatically open Admin in the system browser")
+	noBrowser := flag.Bool("no-browser", false, "do not automatically open the Admin window or system browser")
 	noAutoUpdate := flag.Bool("no-auto-update", false, "check for updates without automatically installing them at launch")
 	advertise := flag.String("advertise-ip", "", "local address to prefer in Admin's remote-control links")
 	configDir := flag.String("config-dir", "", "configuration directory (default: per-user SmartStage directory)")
@@ -234,15 +234,30 @@ func main() {
 			func() bool { return service.Snapshot(true).UpdatePending },
 			func() error { return browseropen.Open(adminURL) },
 			func() { platform.DesktopActivateBrowser() })
+		requestAdmin := func(explicit bool) {
+			if browserCtx.Err() != nil {
+				return
+			}
+			if platform.DesktopHasAdminWindow() {
+				// A bundled Mac app owns its Admin window. It can display startup
+				// update progress immediately and always restores that same window,
+				// regardless of any separately opened browser's presence.
+				if !platform.DesktopShowAdmin() {
+					slog.Warn("Could not show the Admin window; open the printed Admin URL")
+				}
+				return
+			}
+			adminBrowser.Request(explicit)
+		}
 		if !*noBrowser {
-			adminBrowser.Request(false)
+			requestAdmin(false)
 		}
 		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 		for {
 			select {
 			case <-platform.DesktopAdminRequests():
-				adminBrowser.Request(true)
+				requestAdmin(true)
 			case request := <-platform.DesktopFiles():
 				// Native Finder/Dock actions carry original host paths. Keep the
 				// save in this loop so shutdown cannot overtake an accepted append.

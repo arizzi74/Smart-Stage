@@ -31,6 +31,8 @@ int ss_desktop_poll_admin_request(void);
 int ss_desktop_can_choose_files(void);
 int ss_desktop_choose_files(void);
 int ss_desktop_activate_browser(void);
+int ss_desktop_has_admin_window(void);
+int ss_desktop_show_admin(void);
 #endif
 #ifdef __cplusplus
 }

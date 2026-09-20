@@ -198,3 +198,28 @@ browser. Admin can now open the existing asynchronous native chooser and asks th
 operator to select those files, keeping original references. Reading a global
 native drag pasteboard after a browser request would not reliably bind a path to
 the user's actual drop, so no such workaround is used.
+
+
+## Dedicated Mac Admin window (20 September 2026)
+
+The user approved displaying the existing Admin interface inside a dedicated
+macOS application window instead of an external browser. The Mac app therefore
+uses AppKit plus the system WKWebView, with one retained Admin window. Dock and
+menu requests show that same window; browser-tab detection is unnecessary for
+this route. Closing Admin hides it without interrupting playback. Explicit Quit
+retains the existing graceful shutdown. Windows and standalone Mac CLI launches
+continue to use the system browser, and phone/tablet remote control remains web
+based. The existing `--no-browser` flag also suppresses automatic window display.
+
+Native Finder drops target the app-owned window. Their original local file URLs
+come from that specific drag session and enter the bounded native import queue.
+Go retains media-root validation and atomic playlist persistence; no media is
+uploaded, copied, or played merely because it was dropped. Internal Host files
+dragging still uses the existing authenticated web listing. A harmless desktop
+user-agent marker changes help text only and never grants authorization.
+
+The web view loads the real loopback Admin page and uses its normal HTTP/session
+security. It does not receive a privileged JavaScript filesystem bridge. Native
+navigation policy prevents replacing Admin with an arbitrary web/file page;
+intended external links can open in the system browser. The framework is supplied
+by macOS rather than bundled as an additional app runtime.

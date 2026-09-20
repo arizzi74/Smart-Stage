@@ -245,6 +245,7 @@ main() {
     [ "$(/usr/libexec/PlistBuddy -c 'Print :SmartStageVersion' "$staged/Contents/Info.plist")" = "$version" ] || fail 'The downloaded bundle has an unexpected version.'
     background_launch=$(/usr/libexec/PlistBuddy -c 'Print :SmartStageBackgroundLaunch' "$staged/Contents/Info.plist" 2>/dev/null || :)
     dock_icon=$(/usr/libexec/PlistBuddy -c 'Print :SmartStageDockIcon' "$staged/Contents/Info.plist" 2>/dev/null || :)
+    native_admin_window=$(/usr/libexec/PlistBuddy -c 'Print :SmartStageNativeAdminWindow' "$staged/Contents/Info.plist" 2>/dev/null || :)
     for executable in "$staged/Contents/MacOS/smartstage" "$staged/Contents/MacOS/SmartStageLauncher" "$staged/Contents/Resources/Start Smart Stage.command"; do
         [ -f "$executable" ] && [ -x "$executable" ] || fail 'The downloaded app is missing an executable.'
     done
@@ -286,7 +287,11 @@ main() {
             post_install_status=1
         fi
         if [ "$dock_icon" = true ]; then
-            printf 'Smart Stage appears in the Dock and opens Admin in your browser. Right-click its Dock icon and choose Quit to close it.\n'
+            if [ "$native_admin_window" = true ]; then
+                printf 'Smart Stage opens its own Admin window. Drop Finder files into the window to add them without copying. Use Quit Smart Stage to stop playback and exit.\n'
+            else
+                printf 'Smart Stage appears in the Dock and opens Admin in your browser. Right-click its Dock icon and choose Quit to close it.\n'
+            fi
             printf 'Log: %s/Library/Logs/Smart Stage/smartstage.log\n' "$HOME"
         elif [ "$background_launch" = true ]; then
             printf 'Smart Stage runs from its menu bar icon and opens Admin in your browser. Use the icon to reopen Admin, view the log, or quit.\n'

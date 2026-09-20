@@ -14,6 +14,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import plistlib
 import re
 import shutil
 import signal
@@ -396,11 +397,16 @@ def verify(args, output, report):
                               startupAcknowledgedBeforeBackupRemoval=True)
                 assert not (Path(outcome["work"]) / "previous").exists(), "Successful update left its previous-version backup"
                 if args.os == "darwin":
-                    from macos_app_checks import dock_app_checks, terminal_pids
+                    from macos_app_checks import dedicated_admin_checks, dock_app_checks, terminal_pids
                     assert not (terminal_pids() - snapshot["terminalPIDs"]), "Automatic update opened Terminal"
                     assert "skipped" in outcome.get("message", "").lower(), "CI must explicitly skip the real administrator firewall prompt"
                     run(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(target)])
                     report.update(dock_app_checks(target, new_pid))
+                    info = plistlib.loads((target / "Contents/Info.plist").read_bytes())
+                    if info.get("SmartStageNativeAdminWindow"):
+                        report.update(dedicated_admin_checks(
+                            target, new_pid, snapshot,
+                            lambda _bundle: listener_pid(admin_port, core), request_open=True))
                     report.update(restartedWithoutTerminal=True, appSignatureVerified=True, firewallAuthorizationExercised=False)
                 else:
                     report["windowsReplacementAfterOldExecutableExit"] = True

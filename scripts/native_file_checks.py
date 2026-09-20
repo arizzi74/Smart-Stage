@@ -84,6 +84,7 @@ def file_open_checks(bundle, evidence_path):
             pid = launch()
             initial = helpers.wait_for(lambda: playlist_count(1), 20, "the saved show")
             check_originals(initial, 1)
+            window_snapshot = launch_snapshot()
             subprocess.run(["/usr/bin/open", "-a", str(bundle), *map(str, originals[1:3])],
                            check=True, capture_output=True, text=True, timeout=15)
             appended = helpers.wait_for(lambda: playlist_count(3), 20, "files opened into the running app")
@@ -92,6 +93,13 @@ def file_open_checks(bundle, evidence_path):
             report.update(runningAppAcceptedNativeFileOpen=True, runningAppKeptSamePID=True,
                           duplicateBasenamesAndUnicodePathsAccepted=True, originalsReferencedWithoutCopying=True,
                           existingCuePreserved=True, importDidNotStartPlayback=True)
+            helpers.wait_for(lambda: "Loaded native Admin page" in appended_log(window_snapshot),
+                             25, "the native Admin window after file-open delivery")
+            assert appended_log(window_snapshot).count("Created native Admin window") == 1
+            assert "Opened Admin in the system browser" not in appended_log(window_snapshot)
+            assert "Reopened Admin in the system browser" not in appended_log(window_snapshot)
+            report.update(nativeImportOpenedDedicatedAdminWindow=True,
+                          nativeImportDidNotDispatchExternalBrowser=True)
 
             # An invalid request produces a modeless error. Standard app Quit
             # must still complete even when the operator leaves it unattended.
@@ -118,8 +126,10 @@ def file_open_checks(bundle, evidence_path):
             # Exercise the actual authenticated browser-to-native picker route.
             # Leave its panel unattended and verify ordinary app Quit still
             # finishes; production code must not enter a nested modal loop.
-            capabilities = admin.get("/api/state").get("capabilities", {})
-            assert capabilities.get("chooseFiles") is True, capabilities
+            capabilities = helpers.wait_for(
+                lambda: admin.get("/api/state").get("capabilities", {}).get("chooseFiles"),
+                15, "native chooser capability")
+            assert capabilities is True
             chooser_snapshot = launch_snapshot()
             for _ in range(2):
                 status, result = admin.request("POST", "/api/choose-files", {})

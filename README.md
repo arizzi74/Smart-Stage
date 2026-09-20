@@ -32,11 +32,13 @@ also configures Smart Stage's incoming-connection rule in the macOS firewall.
 macOS may request administrator authorization for that rule. The firewall stays
 enabled and other applications' rules are preserved. Saved shows are retained.
 
-Admin opens automatically in your system browser. You can close Terminal after
+Admin opens automatically in Smart Stage's own window. You can close Terminal after
 installation: the app runs independently, without a Terminal window. Its icon
 appears in the Dock. Use **Quit Smart Stage** in Admin, right-click the Dock icon
 and choose **Quit**, or use **Smart Stage → Quit Smart Stage** when the app is active.
-Clicking the Dock icon opens or reuses Admin. Its additional menu bar control provides Admin, logs and Quit. Later, open
+Clicking the Dock icon brings that same Admin window forward. Closing the window
+keeps playback running; Quit stops playback and exits. Its additional menu bar
+control provides Admin, logs and Quit. Later, open
 **Smart Stage.app** from the Applications folder inside your home folder. Quit
 the app before running the installer again to update it.
 
@@ -48,8 +50,9 @@ local-network access, may still need approval.
 
 Starting with preview 10, Smart Stage **updates automatically when it starts**.
 It checks GitHub, downloads the correct version for your computer, verifies the
-checksum, installs it and restarts. An open Admin tab reconnects; otherwise a new
-page opens automatically. Saved shows
+checksum, installs it and restarts. The Mac app reopens its Admin window.
+Standalone Mac and Windows launches reconnect an open Admin browser tab or open
+one if needed. Saved shows
 and output preferences stay in place; playback never resumes automatically.
 
 Install the current release once using the Mac command above or the matching
@@ -97,7 +100,9 @@ Windows executables include the Smart Stage icon. Mac app bundles with the icon
 are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.12/smartstage-darwin-arm64.app.zip)
 and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.12/smartstage-darwin-amd64.app.zip).
 Each app bundle includes the same core executable plus its Finder launcher and
-icon. Opening `Smart Stage.app` runs it without Terminal and opens Admin. The
+icon. Opening `Smart Stage.app` runs it without Terminal and opens a dedicated
+Admin window with native Finder drag-and-drop. It uses the WebKit framework
+already supplied by macOS. The
 standalone ZIPs above contain only `smartstage` (Mac) or `smartstage.exe` (Windows).
 
 Mac files downloaded through your browser are still unnotarized and may require
@@ -116,20 +121,20 @@ acceptance testing.
 
 1. On Mac, use the installation command above or open the extracted app. For a
    standalone ZIP, open `smartstage` (`smartstage.exe` on Windows) in the
-   signed-in interactive desktop session. Keep the application running. It
-   automatically opens **Admin** in your system browser at
-   `http://127.0.0.1:8787/admin`. Admin is available only on the host computer.
+   signed-in interactive desktop session. Keep the application running. The Mac
+   app automatically opens its dedicated **Admin** window; standalone Mac and
+   Windows executables use the system browser. Admin is served only on the host
+   computer at `http://127.0.0.1:8787/admin`.
 2. In Host files, browse the **host computer**, inspect/select files and add them,
    or drag file rows into Playlist. Dot-prefixed files and folders are hidden
    until **Show hidden** is selected. Set labels, order and button colors in
    Playlist; **Default** resets a cue's color. Wait for native validation;
    missing/unsupported files remain visible. Adding a cue does not copy its file.
-   On Mac, use **Choose files on this Mac…** in Admin, drop Finder files onto the
-   running **Smart Stage Dock icon**, or use **Choose Media…** in its app menu.
-   The original files stay in place. Browsers cannot read full Finder paths,
-   so dropping Finder files into the web page explains how to open the native
-   chooser and select those files, or use the Dock. During an update, wait and
-   add files again.
+   In the Mac app, drop Finder files directly into the **Admin window**, use
+   **Choose files on this Mac…**, or drop files onto the Smart Stage Dock icon.
+   The original files stay in place. Regular external browsers cannot read full
+   Finder paths; they offer Host files, the native chooser or Dock guidance.
+   During an update, wait and add files again.
 3. Select audio and stage outputs, then Save outputs. Explicitly acknowledge
    primary/only-display coverage. Audio works without a stage display. Use an
    extended desktop for independent projection; mirrored displays are identified.
@@ -143,7 +148,11 @@ acceptance testing.
    playback. **Disconnect** is in the remote's top bar.
 
 **Quit Smart Stage** in Admin stops playback, closes the stage and exits the app.
-Leave that browser tab open to reconnect after relaunch. Smart Stage allows up to
+Closing the Mac Admin window only hides it. Click the Dock icon or choose Open
+Admin to bring back that same window with its current interface state.
+
+For standalone Mac or Windows browser interfaces, leave the Admin tab open to
+reconnect after relaunch. Smart Stage allows up to
 six seconds for an existing Admin page to reconnect before opening another one;
 the reconnected page reloads its interface for the running version. This is best
 effort: a browser-discarded or heavily suspended tab may not respond in time.
@@ -213,7 +222,7 @@ PLAY is never queued or replayed on reconnect.
 | `--admin-port` | `8787`; Admin always binds to `127.0.0.1` |
 | `--port` | `8788`; remote-control port; conflicts fail clearly |
 | `--bind` | `0.0.0.0`; choose a local IP for remote controls |
-| `--no-browser` | Suppress automatically opening the local Admin page |
+| `--no-browser` | Suppress automatically opening the Admin window or browser page |
 | `--advertise-ip` | Empty; emphasize one valid reachable local address |
 | `--config-dir` | Per-user `SmartStage` under `os.UserConfigDir()` |
 | `--media-root` | All host-readable locations; repeat to restrict roots |
@@ -281,8 +290,9 @@ Windows builds embed the Smart Stage icon in the executable. Mac builds also
 produce `dist/smartstage-darwin-<arch>.app.zip`, an optional Finder app with the
 same icon. Extract it and open `Smart Stage.app` to start the bundled executable
 without Terminal, with the Smart Stage icon in the Dock and a standard Quit
-command. Its menu bar control also provides Admin, logs and Quit. Both
-launch paths open the local Admin page automatically. See the
+command. Its menu bar control also provides Admin, logs and Quit. The bundled app
+opens its dedicated Admin window; the standalone executable opens a browser.
+See the
 [icon source and regeneration instructions](assets/icon/README.md).
 
 ```sh

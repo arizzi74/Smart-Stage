@@ -42,9 +42,19 @@ with (contents / "Info.plist").open("wb") as f:
         "SmartStageVersion": version,
         "SmartStageBackgroundLaunch": True,
         "SmartStageDockIcon": True,
+        "SmartStageNativeAdminWindow": True,
         "LSMinimumSystemVersion": "12.0",
         "LSUIElement": False,
         "NSHighResolutionCapable": True,
+        # WKWebView only navigates to the loopback Admin origin. macOS 14+
+        # requires an explicit exception for HTTP IP addresses; older supported
+        # versions allow local IP loads. Keep Internet ATS protections enabled.
+        "NSAppTransportSecurity": {
+            "NSAllowsLocalNetworking": True,
+            "NSExceptionDomains": {
+                "127.0.0.1": {"NSExceptionAllowsInsecureHTTPLoads": True},
+            },
+        },
         "CFBundleDocumentTypes": [{
             "CFBundleTypeName": "Audio and video for Smart Stage",
             "CFBundleTypeRole": "Viewer",

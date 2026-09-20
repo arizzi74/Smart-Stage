@@ -258,6 +258,12 @@ def verify_bundle(bundle, expected, architecture, version, scratch, report):
         assert info.get("LSUIElement", False) is False
         assert info.get("LSBackgroundOnly", False) is False
         report["installedBundleDeclaresVisibleDockApp"] = True
+    if info.get("SmartStageNativeAdminWindow"):
+        assert info["NSAppTransportSecurity"] == {
+            "NSAllowsLocalNetworking": True,
+            "NSExceptionDomains": {"127.0.0.1": {"NSExceptionAllowsInsecureHTTPLoads": True}},
+        }
+        report["installedBundleDeclaresDedicatedAdminWindow"] = True
     core = contents / "MacOS/smartstage"
     launcher = contents / "MacOS/SmartStageLauncher"
     icon = contents / "Resources/smartstage.icns"

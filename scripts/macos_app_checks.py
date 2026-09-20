@@ -47,7 +47,8 @@ def dock_app_checks(bundle, pid):
     with tempfile.TemporaryDirectory(prefix="smartstage-running-app-") as temporary:
         helper = Path(temporary) / "inspect-macos-app"
         subprocess.run(["/usr/bin/clang", "-fobjc-arc", "-Wall", "-Wextra", "-Werror",
-                        "-mmacosx-version-min=12.0", "-framework", "AppKit", str(source),
+                        "-mmacosx-version-min=12.0", "-framework", "AppKit",
+                        "-framework", "CoreGraphics", str(source),
                         "-o", str(helper)], check=True, capture_output=True, text=True, timeout=90)
         deadline = time.monotonic() + 15
         observation = None
@@ -88,6 +89,48 @@ def dock_app_checks(bundle, pid):
             "runningApplication": observation}
 
 
+def dedicated_admin_checks(bundle, pid, snapshot, find_core_pid, request_open=False):
+    """Observe the packaged app's real window and a same-window Dock reopen."""
+    if request_open:
+        subprocess.run(["/usr/bin/open", str(bundle)], check=True, timeout=15)
+    deadline = time.monotonic() + 30
+    initial = None
+    while time.monotonic() < deadline:
+        assert find_core_pid(bundle) == pid, "Native Admin replaced its running core"
+        if "Loaded native Admin page" in appended_log(snapshot):
+            initial = dock_app_checks(bundle, pid)
+            windows = initial["runningApplication"]["visibleNormalWindows"]
+            if len(windows) == 1:
+                break
+        time.sleep(0.25)
+    else:
+        raise AssertionError(f"The dedicated Admin window did not load: {appended_log(snapshot)}")
+    window_id = windows[0]["windowID"]
+    reopen_snapshot = {"logOffset": LOG_PATH.stat().st_size}
+    subprocess.run(["/usr/bin/open", str(bundle)], check=True, timeout=15)
+    deadline = time.monotonic() + 15
+    while time.monotonic() < deadline:
+        assert find_core_pid(bundle) == pid, "Dock reopen replaced its running core"
+        if "Showed native Admin window" in appended_log(reopen_snapshot):
+            reopened = dock_app_checks(bundle, pid)
+            current = reopened["runningApplication"]["visibleNormalWindows"]
+            if len(current) == 1 and current[0]["windowID"] == window_id:
+                break
+        time.sleep(0.25)
+    else:
+        raise AssertionError("Dock reopen did not retain the one dedicated Admin window")
+    log = appended_log(snapshot)
+    assert log.count("Created native Admin window") == 1, "Reopen created another Admin window"
+    assert not any(message in log for message in (
+        "Opened Admin in the system browser", "Reopened Admin in the system browser",
+        "Requested Admin in the system browser")), "Bundled app dispatched Admin to an external browser"
+    return {**reopened, "nativeAdminPageLoaded": True, "nativeAdminWindowVisible": True,
+            "nativeAdminSingleWindow": True, "nativeAdminWindowID": window_id,
+            "dockReopenPreservedNativeAdminWindowID": True,
+            "nativeAdminDidNotDispatchExternalBrowser": True,
+            "reopenKeptSameCorePID": True}
+
+
 def background_launch_checks(bundle, pid, snapshot, find_core_pid):
     """Inspect the actual running core, then exercise LaunchServices reopen."""
     info = plistlib.loads((bundle / "Contents/Info.plist").read_bytes())
@@ -117,6 +160,13 @@ def background_launch_checks(bundle, pid, snapshot, find_core_pid):
         time.sleep(0.25)
     else:
         raise AssertionError("Startup URL and menu readiness were not written to the app log")
+
+    if info.get("SmartStageNativeAdminWindow"):
+        native = dedicated_admin_checks(bundle, pid, snapshot, find_core_pid)
+        assert not (terminal_pids() - snapshot["terminalPIDs"]), "Reopening the app started Terminal"
+        return {**native, "finderDidNotStartTerminal": True, "coreHasNoControllingTerminal": True,
+                "standardInputIsDevNull": True, "stdoutAndStderrUseAppLog": True,
+                "startupURLWrittenToAppLog": True, "appLogPath": str(LOG_PATH)}
 
     reopen_snapshot = {"logOffset": LOG_PATH.stat().st_size}
     subprocess.run(["/usr/bin/open", str(bundle)], check=True, timeout=15)

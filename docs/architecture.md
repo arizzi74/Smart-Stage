@@ -1,24 +1,38 @@
 # Architecture
 
-Smart Stage is one Go process with a compiled-in native bridge. It embeds the
+Smart Stage has one Go host process with a compiled-in native bridge. It embeds
 HTML/CSS/JavaScript with `go:embed` and uses OS-native playback without a media
-player, transcoder or separate service. After both HTTP listeners are ready, it
-gives an existing authenticated Admin page up to six seconds to reconnect, then
-asks the operating system to open local Admin in the default system browser if
-no page is present. Active Admin SSE and authenticated page heartbeats establish
-presence. A reconnected page reloads its assets when the host instance changes;
-`--no-browser` disables that launch. A browser engine is not bundled. The native
-harness is a development artifact, not an application dependency. Unsupported platforms or
-builds without cgo fail initialization; there is no production fake backend.
+player, transcoder or separate playback service. The bundled Mac app displays
+Admin in one retained AppKit window containing the system WKWebView. macOS may
+start its own WebKit rendering/network helper processes; no browser engine or
+additional runtime is distributed with Smart Stage.
 
-The optional Mac app launcher redirects output to
+After both HTTP listeners are ready, the Mac app shows its Admin window. It can
+show startup-update progress while the service blocks playback and edits. Dock,
+menu and native-import actions restore the same window, independent of external
+browser presence. Closing the window hides Admin and keeps the host running;
+Quit stops playback and exits. Window UI remains on the AppKit main queue.
+
+Standalone Mac executables and Windows use the system browser. They give an
+existing authenticated Admin page up to six seconds to reconnect before opening
+another page. Active Admin SSE and authenticated heartbeats establish presence;
+a new host instance reloads the existing page's assets. `--no-browser` suppresses
+automatic Admin presentation for either window or browser, while explicit native
+Open Admin actions remain available. Unsupported platforms/builds without cgo
+fail initialization; there is no production fake backend.
+
+The Mac launcher redirects output to
 `~/Library/Logs/Smart Stage/smartstage.log` and replaces itself with the bundled
-core executable. It does not start Terminal or leave a separate background
-helper. Finder launches use regular AppKit activation with the bundled icon in
-the Dock and a standard application menu. Dock Quit and the application menu's
-Quit command request graceful shutdown. The additional menu bar control reopens
-local Admin, reveals the log, and requests normal shutdown. Closing the browser
-leaves the host running.
+core executable. It does not start Terminal or leave an extra launcher process.
+The app has its Dock icon and standard menus, including Quit and text editing.
+The additional menu bar control opens Admin, reveals the log and requests Quit.
+
+The dedicated window loads the actual loopback Admin URL, using the existing
+session, Origin, CSRF and local-listener protections. Native navigation policy
+keeps Admin in that local origin; intended external links use the system browser.
+Finder drops are read from the specific native drag session's file-URL pasteboard
+and queued through the same original-path import and root-validation flow as
+Dock imports. Web-page scripts do not acquire arbitrary filesystem access.
 
 ## Automatic updates
 

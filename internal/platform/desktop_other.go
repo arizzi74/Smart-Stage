@@ -11,4 +11,6 @@ func DesktopAdminRequests() <-chan struct{}   { return nil }
 func DesktopCanChooseFiles() bool             { return false }
 func DesktopChooseFiles() bool                { return false }
 func DesktopActivateBrowser() bool            { return false }
+func DesktopHasAdminWindow() bool             { return false }
+func DesktopShowAdmin() bool                  { return false }
 func pollDesktop()                            {}

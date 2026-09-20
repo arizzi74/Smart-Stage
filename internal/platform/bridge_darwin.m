@@ -9,6 +9,7 @@
 #import <IOKit/pwr_mgt/IOPMLib.h>
 #import <QuartzCore/QuartzCore.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
+#import <WebKit/WebKit.h>
 #include <stdatomic.h>
 #include <pthread.h>
 #include <signal.h>
@@ -19,6 +20,7 @@ static _Atomic(bool) shuttingDown;
 static _Atomic(bool) desktopReady;
 static _Atomic(bool) desktopAdminRequested;
 static _Atomic(bool) desktopChooserScheduled;
+static _Atomic(bool) desktopAdminShowScheduled;
 static pthread_mutex_t eventMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t commandMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t desktopFileMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -134,7 +136,80 @@ static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
     return YES;
 }
 
-@interface SSApplicationDelegate : NSObject <NSApplicationDelegate>
+// The native destination receives this exact drag session's pasteboard. It
+// never reads the global drag/clipboard pasteboard or interprets DOM strings as
+// paths. Other drags keep WebKit's normal behavior, including Host files rows.
+@interface SSAdminWebView : WKWebView
+@property(nonatomic) NSTimeInterval lastUserInteraction;
+@end
+@implementation SSAdminWebView
+- (instancetype)initWithFrame:(NSRect)frame configuration:(WKWebViewConfiguration *)configuration {
+    self = [super initWithFrame:frame configuration:configuration];
+    if (self) {
+        NSMutableArray<NSPasteboardType> *types = [self.registeredDraggedTypes mutableCopy];
+        if (!types) types = [NSMutableArray array];
+        if (![types containsObject:NSPasteboardTypeFileURL]) [types addObject:NSPasteboardTypeFileURL];
+        [self registerForDraggedTypes:types];
+    }
+    return self;
+}
+- (BOOL)isNativeFileDrag:(id<NSDraggingInfo>)sender {
+    return [sender.draggingPasteboard.types containsObject:NSPasteboardTypeFileURL];
+}
+- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender {
+    if (![self isNativeFileDrag:sender]) return [super draggingEntered:sender];
+    return atomic_load(&desktopReady) && !atomic_load(&shuttingDown) ? NSDragOperationCopy : NSDragOperationNone;
+}
+- (NSDragOperation)draggingUpdated:(id<NSDraggingInfo>)sender {
+    if (![self isNativeFileDrag:sender]) return [super draggingUpdated:sender];
+    return [self draggingEntered:sender];
+}
+- (BOOL)prepareForDragOperation:(id<NSDraggingInfo>)sender {
+    if (![self isNativeFileDrag:sender]) return [super prepareForDragOperation:sender];
+    return atomic_load(&desktopReady) && !atomic_load(&shuttingDown);
+}
+- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender {
+    if (![self isNativeFileDrag:sender]) return [super performDragOperation:sender];
+    if (!atomic_load(&desktopReady) || atomic_load(&shuttingDown)) return NO;
+    NSPasteboard *pasteboard = sender.draggingPasteboard;
+    if (!pasteboard.pasteboardItems.count || pasteboard.pasteboardItems.count > 500) {
+        desktopFileAlert(@"Choose between 1 and 500 audio or video files."); return NO;
+    }
+    NSArray<NSURL *> *urls = [pasteboard readObjectsForClasses:@[NSURL.class]
+        options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
+    if (urls.count != pasteboard.pasteboardItems.count) {
+        desktopFileAlert(@"Drop existing files from Finder. Mixed items and promised downloads cannot be added."); return NO;
+    }
+    NSString *failure = nil;
+    if (!queueDesktopFiles(urls, &failure)) { desktopFileAlert(failure); return NO; }
+    fputs("Queued original files from native Admin drop\n", stderr);
+    return YES;
+}
+@end
+
+@interface SSAdminWindow : NSWindow
+@property(nonatomic, weak) SSAdminWebView *adminView;
+@end
+@implementation SSAdminWindow
+- (void)sendEvent:(NSEvent *)event {
+    if (event.type == NSEventTypeLeftMouseDown || event.type == NSEventTypeLeftMouseUp ||
+        (event.type == NSEventTypeKeyDown && (event.keyCode == 36 || event.keyCode == 49))) {
+        self.adminView.lastUserInteraction = NSProcessInfo.processInfo.systemUptime;
+    }
+    [super sendEvent:event];
+}
+@end
+
+static BOOL validAdminURL(NSURL *url) {
+    return [url.scheme.lowercaseString isEqualToString:@"http"] && [url.host isEqualToString:@"127.0.0.1"] &&
+        url.port.integerValue > 0 && url.port.integerValue <= 65535 && [url.path isEqualToString:@"/admin"] &&
+        !url.user.length && !url.password.length && !url.query.length;
+}
+static BOOL sameAdminPage(NSURL *url, NSURL *expected) {
+    return validAdminURL(url) && validAdminURL(expected) && [url.port isEqual:expected.port];
+}
+
+@interface SSApplicationDelegate : NSObject <NSApplicationDelegate, NSWindowDelegate, WKNavigationDelegate, WKUIDelegate>
 @property(nonatomic, strong) NSStatusItem *status;
 @property(nonatomic, strong) NSMutableArray<NSMenuItem *> *openItems;
 @property(nonatomic, strong) NSMutableArray<NSMenuItem *> *quitItems;
@@ -143,7 +218,16 @@ static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
 @property(nonatomic) BOOL quitStarted;
 @property(nonatomic) BOOL terminationPending;
 @property(nonatomic, strong) NSOpenPanel *filePanel;
+@property(nonatomic, strong) SSAdminWindow *adminWindow;
+@property(nonatomic, strong) SSAdminWebView *adminWebView;
+@property(nonatomic, strong) NSView *adminErrorView;
+@property(nonatomic, strong) NSTextField *adminErrorLabel;
+@property(nonatomic) BOOL adminShowPending;
+@property(nonatomic) NSUInteger adminCrashRetries;
+@property(nonatomic) NSTimeInterval adminCrashRetryStart;
 - (void)openAdmin:(id)sender;
+- (void)showAdminWindow;
+- (void)reloadAdmin:(id)sender;
 - (void)viewLog:(id)sender;
 - (void)quit:(id)sender;
 - (void)chooseMedia:(id)sender;
@@ -151,6 +235,163 @@ static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
 static SSApplicationDelegate *applicationDelegate;
 
 @implementation SSApplicationDelegate
+- (void)showAdminError:(NSString *)message {
+    if (self.quitStarted || atomic_load(&shuttingDown)) return;
+    self.adminErrorLabel.stringValue = message;
+    self.adminErrorView.hidden = NO;
+}
+- (void)reloadAdmin:(id)sender {
+    (void)sender;
+    if (self.quitStarted || atomic_load(&shuttingDown) || !validAdminURL(self.adminURL)) return;
+    self.adminErrorView.hidden = YES;
+    [self.adminWebView loadRequest:[NSURLRequest requestWithURL:self.adminURL
+        cachePolicy:NSURLRequestReloadIgnoringLocalCacheData timeoutInterval:15]];
+}
+- (void)showAdminWindow {
+    if (self.quitStarted || atomic_load(&shuttingDown)) return;
+    if (!validAdminURL(self.adminURL)) { self.adminShowPending = YES; return; }
+    self.adminShowPending = NO;
+    if (!self.adminWindow) {
+        // NSScreen.mainScreen can be a focused stage/projector. The menu-bar
+        // screen is first; only initial placement uses it, never a reopen.
+        NSRect screen = NSScreen.screens.firstObject.visibleFrame;
+        CGFloat width = MIN(1100, MAX(640, screen.size.width - 80));
+        CGFloat height = MIN(760, MAX(420, screen.size.height - 80));
+        NSRect bounds = NSMakeRect(0, 0, width, height);
+        SSAdminWindow *window = [[SSAdminWindow alloc] initWithContentRect:bounds
+            styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
+            backing:NSBackingStoreBuffered defer:NO];
+        window.title = @"Smart Stage — Admin";
+        window.identifier = @"SmartStageAdminWindow";
+        window.releasedWhenClosed = NO;
+        window.minSize = NSMakeSize(640, 420);
+        window.delegate = self;
+        NSRect frame = window.frame;
+        frame.origin = NSMakePoint(NSMidX(screen) - frame.size.width / 2, NSMidY(screen) - frame.size.height / 2);
+        [window setFrame:frame display:NO];
+        NSView *content = [[NSView alloc] initWithFrame:bounds];
+        window.contentView = content;
+
+        WKWebViewConfiguration *configuration = [[WKWebViewConfiguration alloc] init];
+        configuration.websiteDataStore = WKWebsiteDataStore.nonPersistentDataStore;
+        configuration.applicationNameForUserAgent = @"SmartStageDesktop";
+        configuration.preferences.javaScriptCanOpenWindowsAutomatically = NO;
+        configuration.mediaTypesRequiringUserActionForPlayback = WKAudiovisualMediaTypeAll;
+        SSAdminWebView *webView = [[SSAdminWebView alloc] initWithFrame:content.bounds configuration:configuration];
+        webView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+        webView.navigationDelegate = self;
+        webView.UIDelegate = self;
+        webView.allowsBackForwardNavigationGestures = NO;
+        [content addSubview:webView];
+        window.adminView = webView;
+        self.adminWindow = window;
+        self.adminWebView = webView;
+
+        NSView *errorView = [[NSView alloc] initWithFrame:NSMakeRect(0, height - 76, width, 76)];
+        errorView.autoresizingMask = NSViewWidthSizable | NSViewMinYMargin;
+        errorView.wantsLayer = YES;
+        errorView.layer.backgroundColor = NSColor.windowBackgroundColor.CGColor;
+        NSTextField *message = [NSTextField wrappingLabelWithString:@""];
+        message.frame = NSMakeRect(18, 14, width - 145, 48);
+        message.autoresizingMask = NSViewWidthSizable;
+        NSButton *retry = [NSButton buttonWithTitle:@"Reload Admin" target:self action:@selector(reloadAdmin:)];
+        retry.frame = NSMakeRect(width - 122, 23, 112, 30);
+        retry.autoresizingMask = NSViewMinXMargin;
+        [errorView addSubview:message]; [errorView addSubview:retry];
+        errorView.hidden = YES;
+        [content addSubview:errorView];
+        self.adminErrorView = errorView;
+        self.adminErrorLabel = message;
+        [self reloadAdmin:nil];
+        [window makeFirstResponder:webView];
+        fputs("Created native Admin window\n", stderr);
+    }
+    if (self.adminWindow.isMiniaturized) [self.adminWindow deminiaturize:nil];
+    [self.adminWindow makeKeyAndOrderFront:nil];
+    [NSApp activateIgnoringOtherApps:YES];
+    fputs("Showed native Admin window\n", stderr);
+}
+- (BOOL)windowShouldClose:(NSWindow *)sender {
+    if (sender == self.adminWindow && !self.quitStarted && !atomic_load(&shuttingDown)) {
+        [sender orderOut:nil];
+        fputs("Hid native Admin window\n", stderr);
+        return NO;
+    }
+    return YES;
+}
+- (BOOL)openExternalAction:(WKNavigationAction *)action webView:(WKWebView *)webView {
+    NSURL *url = action.request.URL;
+    BOOL safeURL = ([url.scheme.lowercaseString isEqualToString:@"http"] || [url.scheme.lowercaseString isEqualToString:@"https"]) &&
+        url.host.length && !url.user.length && !url.password.length;
+    NSTimeInterval elapsed = NSProcessInfo.processInfo.systemUptime - self.adminWebView.lastUserInteraction;
+    if (!safeURL || action.navigationType != WKNavigationTypeLinkActivated || !action.sourceFrame.isMainFrame ||
+        !sameAdminPage(action.sourceFrame.request.URL, self.adminURL) || webView != self.adminWebView ||
+        !self.adminWebView.lastUserInteraction || elapsed < 0 || elapsed > 2) return NO;
+    self.adminWebView.lastUserInteraction = 0;
+    if ([NSWorkspace.sharedWorkspace openURL:url]) fputs("Opened an explicit Admin link in the system browser\n", stderr);
+    return YES;
+}
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)action
+        decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+    BOOL allowed = !self.quitStarted && !atomic_load(&shuttingDown) && webView == self.adminWebView &&
+        action.targetFrame.isMainFrame && sameAdminPage(action.request.URL, self.adminURL) &&
+        (!action.request.HTTPMethod || [action.request.HTTPMethod isEqualToString:@"GET"]);
+    if (!allowed && !self.quitStarted && !atomic_load(&shuttingDown)) [self openExternalAction:action webView:webView];
+    decisionHandler(allowed ? WKNavigationActionPolicyAllow : WKNavigationActionPolicyCancel);
+}
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationResponse:(WKNavigationResponse *)response
+        decisionHandler:(void (^)(WKNavigationResponsePolicy))decisionHandler {
+    BOOL allowed = !self.quitStarted && !atomic_load(&shuttingDown) && webView == self.adminWebView &&
+        response.isForMainFrame && response.canShowMIMEType && sameAdminPage(response.response.URL, self.adminURL) &&
+        [response.response.MIMEType.lowercaseString isEqualToString:@"text/html"];
+    decisionHandler(allowed ? WKNavigationResponsePolicyAllow : WKNavigationResponsePolicyCancel);
+}
+- (WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration
+        forNavigationAction:(WKNavigationAction *)action windowFeatures:(WKWindowFeatures *)features {
+    (void)configuration; (void)features;
+    if (!self.quitStarted && !atomic_load(&shuttingDown)) [self openExternalAction:action webView:webView];
+    return nil;
+}
+- (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
+    (void)navigation;
+    if (webView != self.adminWebView || !sameAdminPage(webView.URL, self.adminURL) || atomic_load(&shuttingDown)) return;
+    self.adminErrorView.hidden = YES;
+    fputs("Loaded native Admin page\n", stderr);
+}
+- (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error {
+    (void)navigation;
+    if (webView != self.adminWebView || error.code == NSURLErrorCancelled) return;
+    [self showAdminError:@"Admin could not connect. Check that Smart Stage has finished starting, then reload."];
+    fprintf(stderr, "Native Admin navigation failed (%ld)\n", (long)error.code);
+}
+- (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error {
+    [self webView:webView didFailProvisionalNavigation:navigation withError:error];
+}
+- (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
+    if (webView != self.adminWebView || self.quitStarted || atomic_load(&shuttingDown)) return;
+    [self showAdminError:@"The Admin page stopped responding. Reload to reconnect; the host is still running."];
+    NSTimeInterval now = NSProcessInfo.processInfo.systemUptime;
+    if (now - self.adminCrashRetryStart > 60) { self.adminCrashRetryStart = now; self.adminCrashRetries = 0; }
+    if (++self.adminCrashRetries > 2) return;
+    __weak SSApplicationDelegate *weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        SSApplicationDelegate *owner = weakSelf;
+        if (owner && !owner.quitStarted && !atomic_load(&shuttingDown)) [owner reloadAdmin:nil];
+    });
+}
+- (void)webView:(WKWebView *)webView runOpenPanelWithParameters:(WKOpenPanelParameters *)parameters
+        initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(NSArray<NSURL *> *))completionHandler {
+    (void)webView; (void)parameters; (void)frame;
+    // Web content receives no file-reading privilege. The authenticated native
+    // chooser and native drop queue are the only original-file entry points.
+    completionHandler(nil);
+}
+- (void)webView:(WKWebView *)webView requestMediaCapturePermissionForOrigin:(WKSecurityOrigin *)origin
+        initiatedByFrame:(WKFrameInfo *)frame type:(WKMediaCaptureType)type
+        decisionHandler:(void (^)(WKPermissionDecision))decisionHandler {
+    (void)webView; (void)origin; (void)frame; (void)type;
+    decisionHandler(WKPermissionDecisionDeny);
+}
 - (void)application:(NSApplication *)application openURLs:(NSArray<NSURL *> *)urls {
     (void)application;
     NSString *failure = nil;
@@ -200,7 +441,7 @@ static SSApplicationDelegate *applicationDelegate;
     // Go owns tab-presence/reconnect policy for every entry point. Keep one
     // pending request even when Finder delivers reopen before Go is ready.
     atomic_store(&desktopAdminRequested, true);
-    fputs("Requested Admin in the system browser\n", stderr);
+    fputs("Requested native Admin window\n", stderr);
 }
 - (void)viewLog:(id)sender {
     (void)sender;
@@ -277,6 +518,23 @@ static void setupDesktop(void) {
     NSMenuItem *applicationItem = [[NSMenuItem alloc] initWithTitle:@"Smart Stage" action:NULL keyEquivalent:@""];
     applicationItem.submenu = desktopMenu(YES);
     [mainMenu addItem:applicationItem];
+    NSMenuItem *fileItem = [[NSMenuItem alloc] initWithTitle:@"File" action:NULL keyEquivalent:@""];
+    NSMenu *fileMenu = [[NSMenu alloc] initWithTitle:@"File"];
+    [fileMenu addItemWithTitle:@"Close Window" action:@selector(performClose:) keyEquivalent:@"w"];
+    fileItem.submenu = fileMenu;
+    [mainMenu addItem:fileItem];
+    NSMenuItem *editItem = [[NSMenuItem alloc] initWithTitle:@"Edit" action:NULL keyEquivalent:@""];
+    NSMenu *editMenu = [[NSMenu alloc] initWithTitle:@"Edit"];
+    [editMenu addItemWithTitle:@"Undo" action:@selector(undo:) keyEquivalent:@"z"];
+    NSMenuItem *redo = [editMenu addItemWithTitle:@"Redo" action:@selector(redo:) keyEquivalent:@"z"];
+    redo.keyEquivalentModifierMask = NSEventModifierFlagCommand | NSEventModifierFlagShift;
+    [editMenu addItem:NSMenuItem.separatorItem];
+    [editMenu addItemWithTitle:@"Cut" action:@selector(cut:) keyEquivalent:@"x"];
+    [editMenu addItemWithTitle:@"Copy" action:@selector(copy:) keyEquivalent:@"c"];
+    [editMenu addItemWithTitle:@"Paste" action:@selector(paste:) keyEquivalent:@"v"];
+    [editMenu addItemWithTitle:@"Select All" action:@selector(selectAll:) keyEquivalent:@"a"];
+    editItem.submenu = editMenu;
+    [mainMenu addItem:editItem];
     NSApp.mainMenu = mainMenu;
 
     NSStatusItem *status = [NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
@@ -656,10 +914,22 @@ static void cleanupNative(void) {
     cleaned = YES;
     atomic_store(&desktopReady, false);
     atomic_store(&desktopAdminRequested, false);
+    atomic_store(&desktopAdminShowScheduled, false);
     disableStage();
     if (keyObserver) [NSEvent removeMonitor:keyObserver]; keyObserver = nil;
     [applicationDelegate.filePanel cancel:nil]; applicationDelegate.filePanel = nil;
     atomic_store(&desktopChooserScheduled, false);
+    [applicationDelegate.adminWebView stopLoading];
+    applicationDelegate.adminWebView.navigationDelegate = nil;
+    applicationDelegate.adminWebView.UIDelegate = nil;
+    applicationDelegate.adminWindow.delegate = nil;
+    [applicationDelegate.adminWindow close];
+    [applicationDelegate.adminWebView removeFromSuperview];
+    applicationDelegate.adminWebView = nil;
+    applicationDelegate.adminWindow = nil;
+    applicationDelegate.adminErrorView = nil;
+    applicationDelegate.adminErrorLabel = nil;
+    applicationDelegate.adminShowPending = NO;
     for (SSFileAlert *controller in desktopAlerts.allObjects) [controller.alert.window close];
     desktopAlerts = nil;
     [NSNotificationCenter.defaultCenter removeObserver:screenObserver]; screenObserver = nil;
@@ -705,14 +975,31 @@ void ss_desktop_admin(const char *url) {
     @autoreleasepool {
         NSString *value = [NSString stringWithUTF8String:url];
         onMain(^{
-            applicationDelegate.adminURL = [NSURL URLWithString:value];
+            NSURL *address = [NSURL URLWithString:value];
+            if (!validAdminURL(address) || address.fragment.length || atomic_load(&shuttingDown)) return;
+            applicationDelegate.adminURL = address;
             atomic_store(&desktopReady, true);
             for (NSMenuItem *item in applicationDelegate.openItems) item.enabled = YES;
             for (NSMenuItem *item in applicationDelegate.quitItems) item.enabled = YES;
             fputs("Smart Stage menu bar ready\n", stderr);
             if (applicationDelegate.quitPending) [applicationDelegate quit:nil];
+            else if (applicationDelegate.adminShowPending) [applicationDelegate showAdminWindow];
         });
     }
+}
+int ss_desktop_has_admin_window(void) {
+    // This is a capability query, not the asynchronous URL-ready state.
+    return desktopLaunch() ? 1 : 0;
+}
+int ss_desktop_show_admin(void) {
+    if (!desktopLaunch() || atomic_load(&shuttingDown)) return 0;
+    if (atomic_exchange(&desktopAdminShowScheduled, true)) return 1;
+    onMain(^{
+        atomic_store(&desktopAdminShowScheduled, false);
+        if (!applicationDelegate || applicationDelegate.quitStarted || atomic_load(&shuttingDown)) return;
+        [applicationDelegate showAdminWindow];
+    });
+    return 1;
 }
 int ss_desktop_poll_admin_request(void) {
     return atomic_exchange(&desktopAdminRequested, false) ? 1 : 0;

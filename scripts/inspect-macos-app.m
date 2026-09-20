@@ -1,6 +1,7 @@
 // Inspect the process registered with LaunchServices, not just its Info.plist.
 // This external observer needs neither Accessibility permission nor app hooks.
 #import <AppKit/AppKit.h>
+#import <CoreGraphics/CoreGraphics.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -43,6 +44,23 @@ int main(int argc, const char *argv[]) {
                           [NSString stringWithUTF8String:argv[2]]];
         NSData *actual = renderIcon(app.icon);
         NSData *expected = renderIcon(source);
+        // Window IDs, owner IDs and bounds are public WindowServer metadata.
+        // Titles can be redacted without screen-recording permission, so tests
+        // identify the app's visible normal windows by PID/layer/bounds.
+        NSArray *windows = CFBridgingRelease(CGWindowListCopyWindowInfo(
+            kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements, kCGNullWindowID));
+        NSMutableArray *normalWindows = [NSMutableArray array];
+        for (NSDictionary *window in windows) {
+            if ([window[(id)kCGWindowOwnerPID] intValue] != app.processIdentifier ||
+                [window[(id)kCGWindowLayer] intValue] != 0) continue;
+            NSDictionary *bounds = window[(id)kCGWindowBounds];
+            if ([bounds[@"Width"] doubleValue] < 400 || [bounds[@"Height"] doubleValue] < 300) continue;
+            [normalWindows addObject:@{
+                @"windowID": window[(id)kCGWindowNumber] ?: @0,
+                @"title": window[(id)kCGWindowName] ?: @"",
+                @"bounds": bounds ?: @{}
+            }];
+        }
         NSDictionary *result = @{
             @"processIdentifier": @(app.processIdentifier),
             @"activationPolicy": @(app.activationPolicy),
@@ -50,6 +68,7 @@ int main(int argc, const char *argv[]) {
             @"bundlePath": app.bundleURL.path ?: @"",
             @"localizedName": app.localizedName ?: @"",
             @"finishedLaunching": @(app.finishedLaunching),
+            @"visibleNormalWindows": normalWindows,
             @"runtimeIconRGBA": [actual base64EncodedStringWithOptions:0] ?: @"",
             @"sourceIconRGBA": [expected base64EncodedStringWithOptions:0] ?: @""
         };

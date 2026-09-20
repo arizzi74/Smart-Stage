@@ -18,7 +18,8 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.12
   backup, corruption diagnostics and native process lock.
 - Embedded responsive Admin/Command pages, host filesystem browsing/inspection,
   cue CRUD/labels/order/revisions, separate output controls and stage enablement.
-- Localhost-only Admin with automatic system-browser launch and local session;
+- Localhost-only Admin with a dedicated Mac app window or system-browser launch
+  for standalone Mac/Windows, and a local session;
   separate LAN remote listener with an eight-digit per-launch token in its URL,
   Admin QR code/address selection, session/CSRF/Origin/Host enforcement and
   command-role path redaction.
@@ -50,10 +51,12 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.12
 - Authenticated Admin Quit requests graceful shutdown. The open page waits and
   reconnects after relaunch; fresh page presence suppresses another automatic
   browser launch, and a new host instance refreshes the interface once. Native
-  Mac Admin actions share that policy. Suspended tabs may not be detected.
-- Bundled Mac Admin exposes the native file chooser, preserving original file
-  paths. Browser Finder drops explain why paths cannot be read and offer the
-  chooser or Dock route instead.
+  Mac app actions instead restore one retained native Admin window. Suspended
+  external browser tabs may not be detected.
+- Bundled Mac Admin uses the system WKWebView and accepts native Finder file
+  drops and chooser selections, preserving original file paths. Closing the
+  window hides it without interrupting playback; Dock/Open Admin restores it.
+  External-browser Finder drops still offer chooser or Dock guidance.
 - Optional Screen Wake Lock with truthful status, opt-in and release/reacquire
   handling. The default HTTP LAN remote cannot use this HTTPS-only browser API;
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.

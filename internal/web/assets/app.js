@@ -1,6 +1,9 @@
 'use strict';
 const $ = id => document.getElementById(id);
 const adminPage = location.pathname === '/admin';
+// The native user-agent token changes guidance only. It grants no API access
+// and never lets JavaScript read or submit a Finder file's original path.
+const desktopAdmin = adminPage && /(?:^|\s)SmartStageDesktop(?:\s|$)/.test(navigator.userAgent);
 let state = null, role = '', csrf = '', online = false, source = null, lastSeen = 0;
 let playlist = null, devices = null, fileSelection = new Set(), fileEntries = [];
 let fileBrowsePath = '', fileBrowseSequence = 0;
@@ -18,6 +21,10 @@ const cueButtons = new Map(), playlistRows = new Map();
 document.body.classList.toggle('remote-page', !adminPage);
 $('page-title').hidden = !adminPage;
 $('show-hidden').checked = false;
+if (desktopAdmin) {
+  $('playlist-drop-title').textContent = 'Drop Finder files here';
+  $('playlist-drop-hint').textContent = 'Originals stay in place. Files are never uploaded or copied. You can also drag items from Host files below.';
+}
 
 function element(tag, text, className) {
   const node = document.createElement(tag);
@@ -477,7 +484,15 @@ $('install-update').addEventListener('click', () => { void updateAction(true); }
 async function loadPlaylist() {
   if (playlistRefresh) return;
   playlistRefresh = true;
-  try { playlist = await api('GET', '/api/playlist'); renderPlaylist(); }
+  try {
+    const previous = playlist;
+    playlist = await api('GET', '/api/playlist'); renderPlaylist();
+    if (desktopAdmin && previous && previous.playlistRevision !== playlist.playlistRevision) {
+      const previousIDs = new Set(previous.cues.map(cue => cue.id));
+      const added = playlist.cues.filter(cue => !previousIDs.has(cue.id)).length;
+      if (added) fileDropMessage(`Added ${added} ${added === 1 ? 'file' : 'files'} to the playlist. Originals stay in place.`);
+    }
+  }
   catch (error) { notify(error.message, true); }
   finally { playlistRefresh = false; }
 }
@@ -545,7 +560,7 @@ if (adminPage) {
     if (!dragHasType(event, 'Files') && !dragHasType(event, hostFileDragType)) return;
     event.preventDefault(); hostDragDepth = 0; $('playlist-drop').classList.remove('drag-over');
     if (dragHasType(event, 'Files')) {
-      const message = adminCapabilities.chooseFiles === true ? 'Your browser cannot read Finder file paths. Choose the files in the Mac dialog, or drop them onto the Smart Stage Dock icon.' : 'Your browser cannot read original file paths. Select files in Host files below to keep them in place.';
+      const message = desktopAdmin ? 'Drop files directly from Finder onto this Smart Stage window, or choose them in the Mac dialog. Originals stay in place.' : adminCapabilities.chooseFiles === true ? 'Your browser cannot read Finder file paths. Choose the files in the Mac dialog, or drop them onto the Smart Stage Dock icon.' : 'Your browser cannot read original file paths. Select files in Host files below to keep them in place.';
       fileDropMessage(message); notify(message); return;
     }
     // Paths come only from rows rendered by this Admin page. Never accept paths

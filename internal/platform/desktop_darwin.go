@@ -32,6 +32,14 @@ func DesktopChooseFiles() bool { return C.ss_desktop_choose_files() != 0 }
 // never opens a URL, starts a browser process, or selects a particular tab.
 func DesktopActivateBrowser() bool { return C.ss_desktop_activate_browser() != 0 }
 
+// DesktopHasAdminWindow is a static capability of the bundled Mac app. It does
+// not depend on the asynchronous registration of the Admin URL.
+func DesktopHasAdminWindow() bool { return C.ss_desktop_has_admin_window() != 0 }
+
+// DesktopShowAdmin queues show/focus of the one retained native Admin window.
+// A request made before DesktopAdmin registers its URL waits for registration.
+func DesktopShowAdmin() bool { return C.ss_desktop_show_admin() != 0 }
+
 func DesktopFiles() <-chan DesktopFileRequest { return desktopFiles }
 
 func DesktopFilesPending() bool { return C.ss_desktop_files_pending() != 0 }
