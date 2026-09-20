@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """One-off hosted-runner evaluation of the verified vendor driver installer.
 
-This is not shipped with Smart Stage or called by its installers. It only clicks
-an explicitly named native button belonging to the verified setup process.
-Security prompts, policies, certificates and reboot state are not changed.
+This is not shipped with Smart Stage or called by its installers. The pinned
+Pack45 setup recognizes -i (install) and -h (hide its own UI), confirmed in the
+verified installer's command parser and install-command handler. OS security
+prompts, policies, certificates and reboot state are not changed.
 """
 import ctypes
 from ctypes import wintypes
@@ -19,7 +20,8 @@ assert os.environ.get('SMARTSTAGE_EPHEMERAL_AUDIO_EVALUATION') == '1'
 setup,harness,directory=map(lambda value:Path(value).resolve(),sys.argv[1:4])
 directory.mkdir(parents=True,exist_ok=True)
 report={'status':'incomplete','physicalAudioVerified':False,'rebootPerformed':False,
-        'vendorRequiresReboot':True,'securitySettingsChanged':False,'uiSnapshots':[]}
+        'vendorRequiresReboot':True,'securitySettingsChanged':False,
+        'installerArguments':['-i','-h'],'uiSnapshots':[]}
 user=ctypes.WinDLL('user32',use_last_error=True)
 callback_type=ctypes.WINFUNCTYPE(wintypes.BOOL,wintypes.HWND,wintypes.LPARAM)
 def signature(name,arguments,result):
@@ -31,7 +33,6 @@ signature('GetWindowTextW',[wintypes.HWND,wintypes.LPWSTR,ctypes.c_int],ctypes.c
 signature('GetClassNameW',[wintypes.HWND,wintypes.LPWSTR,ctypes.c_int],ctypes.c_int)
 signature('IsWindowEnabled',[wintypes.HWND],wintypes.BOOL)
 signature('IsWindowVisible',[wintypes.HWND],wintypes.BOOL)
-signature('PostMessageW',[wintypes.HWND,wintypes.UINT,wintypes.WPARAM,wintypes.LPARAM],wintypes.BOOL)
 
 def devices():
     return json.loads(subprocess.check_output([str(harness),'--list'],text=True,timeout=20))
@@ -62,8 +63,8 @@ def own_windows(pid):
 
 report['before']=devices()
 assert not report['before']['audio'], 'Evaluation requires a fresh runner without audio endpoints'
-process=subprocess.Popen([str(setup)],cwd=setup.parent)
-started=time.monotonic(); clicked=False; previous=None
+process=subprocess.Popen([str(setup),*report['installerArguments']],cwd=setup.parent)
+started=time.monotonic(); previous=None
 try:
     while time.monotonic()-started < 90 and process.poll() is None:
         rows=own_windows(process.pid)
@@ -71,24 +72,27 @@ try:
         if view!=previous:
             report['uiSnapshots'].append({'seconds':round(time.monotonic()-started,2),'windows':view})
             previous=view; save()
-        main=any(row['class']=='VBCABLE0Installer0MainWindow0' for row in rows)
-        buttons=[row for row in rows if row['class'].lower()=='button' and
-                 row['text'].replace('&','')=='Install Driver' and row['visible'] and row['enabled']]
-        if main and len(buttons)==1 and not clicked:
-            # BM_CLICK, targeted only at this verified installer's named button.
-            if not user.PostMessageW(buttons[0]['handle'],0x00F5,0,0):
-                raise ctypes.WinError(ctypes.get_last_error())
-            clicked=True; report['installButtonRequested']=True; save()
-        complete=any('Installation Complete and Successful' in row['text'] for row in rows)
-        if complete:
+        time.sleep(.5)
+    report['installerExitCode']=process.poll()
+    report['installerTimedOut']=process.poll() is None
+    if report['installerExitCode']==0:
+        # Device enumeration can settle after the vendor installer exits. This
+        # bounded observation does not reboot or alter any OS security controls.
+        endpoint_deadline=time.monotonic()+30
+        while True:
             report['after']=devices()
             if any('CABLE' in item['name'].upper() for item in report['after']['audio']):
                 report['status']='endpoint-available-before-reboot'
                 break
-        time.sleep(.5)
+            if time.monotonic()>=endpoint_deadline:
+                break
+            time.sleep(.5)
     if report['status']=='incomplete':
-        report.update(status='unavailable',reason='Documented installer UI did not yield an observable completed installation and audio endpoint')
+        report.update(status='unavailable',reason='No successful installer exit with an active CABLE endpoint before reboot')
         report['after']=devices()
+except Exception as error:
+    report.update(status='evaluation-error',reason=str(error))
+    raise
 finally:
     report['elapsedSeconds']=round(time.monotonic()-started,2)
     save()
@@ -98,4 +102,11 @@ finally:
     if os.environ.get('GITHUB_OUTPUT'):
         with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
             output.write('available='+str(report['status']=='endpoint-available-before-reboot').lower()+'\n')
+    if os.environ.get('GITHUB_STEP_SUMMARY'):
+        with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as output:
+            output.write('Virtual audio evaluation: **'+report['status']+'**.\n\n')
+            output.write('Vendor reboot requirement remains unmet; no physical audio was verified. ')
+            if report['status']!='endpoint-available-before-reboot':
+                output.write('Native audio tests are skipped because the endpoint is unavailable. ')
+            output.write('\n')
 print(json.dumps(report,indent=2))
