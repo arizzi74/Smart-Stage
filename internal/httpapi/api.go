@@ -312,12 +312,12 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	admin := session.Role == "admin"
 	path := r.URL.Path
 	remoteStage := r.Method == http.MethodPost && path == "/api/stage-output"
-	if path != "/api/state" && path != "/api/events" && path != "/api/play" && path != "/api/stop" && path != "/api/logout" && !remoteStage && !admin {
+	if path != "/api/state" && path != "/api/events" && path != "/api/play" && path != "/api/stop" && path != "/api/emergency-stop" && path != "/api/logout" && !remoteStage && !admin {
 		fail(w, 403, "admin_required", "Admin pairing is required")
 		return
 	}
 	// STOP and Quit bypass bounded ordinary-operation slots.
-	if path != "/api/stop" && path != "/api/quit" && path != "/api/events" && path != "/api/state" {
+	if path != "/api/stop" && path != "/api/emergency-stop" && path != "/api/quit" && path != "/api/events" && path != "/api/state" {
 		select {
 		case a.ordinary <- struct{}{}:
 			defer func() { <-a.ordinary }()
@@ -395,6 +395,28 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 202, ack)
 	case "GET /api/playlist":
 		writeJSON(w, 200, a.app.Playlist())
+	case "POST /api/emergency-stop":
+		var body app.StopRequest
+		if !decode(w, r, &body) {
+			return
+		}
+		ack, err := a.app.EmergencyStop(body)
+		if err != nil {
+			respondError(w, err)
+			return
+		}
+		writeJSON(w, 202, ack)
+	case "PUT /api/stage-settings":
+		var body app.StageEdit
+		if !decode(w, r, &body) {
+			return
+		}
+		config, err := a.app.ConfigureStage(r.Context(), body)
+		if err != nil {
+			respondError(w, err)
+			return
+		}
+		writeJSON(w, 200, config)
 	case "PUT /api/playlist":
 		var body app.PlaylistEdit
 		if !decode(w, r, &body) {

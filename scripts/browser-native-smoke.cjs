@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 const net = require('node:net');
 const readline = require('node:readline');
+const zlib = require('node:zlib');
 const { spawn, spawnSync } = require('node:child_process');
 const { chromium } = require('./browser/node_modules/playwright');
 
@@ -34,6 +35,33 @@ async function until(check, message, timeout = 30000) {
   const mediaRoot = path.join(config, 'media');
   fs.cpSync(path.join(root, 'testdata', 'media'), mediaRoot, { recursive: true });
   fs.copyFileSync(path.join(mediaRoot, "Opening – café's tone.wav"), path.join(mediaRoot, '.hidden.wav'));
+
+  // Long native sound keeps the new scene checks independent of UI/decoder
+  // startup timing. The PNG is a real bounded image with valid chunk CRCs.
+  const sceneMusicFilename = 'Scene music 60s.wav', sceneImageFilename = 'Scene image.png';
+  const samples = 16000 * 60, wave = Buffer.alloc(44 + samples * 2);
+  wave.write('RIFF', 0); wave.writeUInt32LE(wave.length - 8, 4); wave.write('WAVEfmt ', 8);
+  wave.writeUInt32LE(16, 16); wave.writeUInt16LE(1, 20); wave.writeUInt16LE(1, 22);
+  wave.writeUInt32LE(16000, 24); wave.writeUInt32LE(32000, 28);
+  wave.writeUInt16LE(2, 32); wave.writeUInt16LE(16, 34); wave.write('data', 36); wave.writeUInt32LE(samples * 2, 40);
+  for (let i = 0; i < samples; ++i) wave.writeInt16LE(Math.round(3000 * Math.sin(2 * Math.PI * 440 * i / 16000)), 44 + i * 2);
+  fs.writeFileSync(path.join(mediaRoot, sceneMusicFilename), wave);
+  function pngChunk(kind, data) {
+    const type = Buffer.from(kind), body = Buffer.concat([type, data]);
+    let crc = 0xffffffff;
+    for (const byte of body) { crc ^= byte; for (let bit = 0; bit < 8; ++bit) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0); }
+    const size = Buffer.alloc(4), checksum = Buffer.alloc(4);
+    size.writeUInt32BE(data.length); checksum.writeUInt32BE((crc ^ 0xffffffff) >>> 0);
+    return Buffer.concat([size, body, checksum]);
+  }
+  const imageHeader = Buffer.alloc(13); imageHeader.writeUInt32BE(64, 0); imageHeader.writeUInt32BE(64, 4);
+  imageHeader[8] = 8; imageHeader[9] = 2;
+  const imagePixels = Buffer.alloc((64 * 3 + 1) * 64);
+  for (let y = 0; y < 64; ++y) for (let x = 0; x < 64; ++x) imagePixels[y * 193 + 1 + x * 3] = 255;
+  fs.writeFileSync(path.join(mediaRoot, sceneImageFilename), Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), pngChunk('IHDR', imageHeader),
+    pngChunk('IDAT', zlib.deflateSync(imagePixels)), pngChunk('IEND', Buffer.alloc(0))]));
+
   const version = spawnSync(exe, ['--version'], { encoding: 'utf8' });
   assert.equal(version.status, 0, 'Published executable must report its version');
   const target = version.stdout.match(/, (darwin|windows)\/(arm64|amd64)/);
@@ -267,19 +295,148 @@ async function until(check, message, timeout = 30000) {
     await command.locator('#remote-stage').tap();
     assert.equal((await stageOff).status(), 202);
     assert.deepEqual((await stageOff).request().postDataJSON(), { enabled: false });
-    await until(async () => { const state = await snapshot(); return state.state === 'stopped' && !state.stageEnabled; }, 'Remote Stage off did not stop playback and close the native stage');
+    await until(async () => { const state = await snapshot(); return state.state === 'playing' && !state.stageEnabled; }, 'Remote Stage off interrupted playback or failed to close the native stage');
     await command.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'false' && !document.getElementById('remote-stage').disabled);
     const stageOn = command.waitForResponse(response => apiPath(response) === '/api/stage-output' && response.request().method() === 'POST');
     await command.locator('#remote-stage').tap();
     assert.equal((await stageOn).status(), 202);
     assert.deepEqual((await stageOn).request().postDataJSON(), { enabled: true });
     await until(async () => (await snapshot()).stageEnabled, 'Remote Stage on did not open the native stage');
-    const escapeOff = command.waitForResponse(response => apiPath(response) === '/api/stage-output' && response.request().method() === 'POST');
+    const escapeOff = command.waitForResponse(response => apiPath(response) === '/api/emergency-stop' && response.request().method() === 'POST');
     await command.keyboard.press('Escape');
     assert.equal((await escapeOff).status(), 202);
-    assert.deepEqual((await escapeOff).request().postDataJSON(), { enabled: false });
+    assert.equal(typeof (await escapeOff).request().postDataJSON().requestId, 'string');
     await until(async () => { const state = await snapshot(); return state.state === 'stopped' && !state.stageEnabled; }, 'Browser Escape did not stop playback and close the native stage');
-    record.checks.push('Remote Stage off stopped an actual silent video and closed the native stage; Stage on reopened it and browser Escape closed it again');
+    record.checks.push('Remote Stage off preserved native video playback while hiding the stage; Stage on reopened it and emergency Escape stopped and hid it');
+
+    // Dedicated scene integration: browser controls, persisted settings, real
+    // media inspection and authoritative native playback events. Native probes
+    // separately measure renderer gains; this page test never claims speakers.
+    for (const filename of [sceneMusicFilename, sceneImageFilename])
+      await admin.getByRole('checkbox', { name: `Select ${filename}`, exact: true }).check();
+    await edit(() => admin.locator('#add-files').click(), saved.playlistRevision + 1);
+    const musicCue = saved.cues.find(cue => path.basename(cue.path) === sceneMusicFilename);
+    const imageCue = saved.cues.find(cue => path.basename(cue.path) === sceneImageFilename);
+    const backgroundCue = saved.cues.find(cue => path.basename(cue.path) === 'video-aac-1080p.mp4');
+    assert(musicCue && imageCue && backgroundCue);
+    await until(async () => {
+      const current = await snapshot();
+      return current.cues.find(cue => cue.id === imageCue.id)?.kind === 'image' &&
+        current.cues.filter(cue => [musicCue.id, imageCue.id].includes(cue.id)).every(cue => cue.validation === 'ready');
+    }, 'Native audio/image inspection did not validate scene fixtures', 90000);
+    const backgroundIndex = saved.cues.findIndex(cue => cue.id === backgroundCue.id) + 1;
+    const imageIndex = saved.cues.findIndex(cue => cue.id === imageCue.id) + 1;
+    await edit(() => admin.getByRole('checkbox', { name: `Use cue ${backgroundIndex} as a background button`, exact: true }).check(), saved.playlistRevision + 1);
+    await edit(() => admin.getByRole('checkbox', { name: `Hide remote button for cue ${backgroundIndex}`, exact: true }).check(), saved.playlistRevision + 1);
+    await command.locator(`[data-cue-id="${backgroundCue.id}"]`).waitFor({ state: 'detached' });
+    assert.equal(await admin.locator('.playlist-row').count(), saved.cues.length, 'Hidden remote cues must remain in Admin');
+    assert.equal(saved.cues.find(cue => cue.id === backgroundCue.id).background, true);
+    assert.equal(saved.cues.find(cue => cue.id === backgroundCue.id).hidden, true);
+    assert.equal(await admin.locator('#fade-seconds').inputValue(), '1', 'Default fade duration must be one second');
+    async function saveStageSettings() {
+      const response = admin.waitForResponse(item => apiPath(item) === '/api/stage-settings' && item.request().method() === 'PUT');
+      await admin.locator('#save-stage-settings').click();
+      const result = await response;
+      assert.equal(result.status(), 200, 'Stage settings must save through the actual Admin API');
+      saved = await result.json();
+      await admin.waitForFunction(revision => document.getElementById('playlist-revision').textContent.endsWith(`revision ${revision}`), saved.playlistRevision);
+      await until(async () => (await snapshot()).playlistRevision === saved.playlistRevision, 'Saved scene settings did not reach live state');
+    }
+    await admin.locator('#background-cue').selectOption(backgroundCue.id);
+    await admin.locator('#background-audio').setChecked(Boolean(audio));
+    await admin.locator('#fade-enabled').check();
+    await admin.locator('#fade-seconds').fill('1.2');
+    await admin.locator('#toggle-audio').check();
+    await saveStageSettings();
+    assert.deepEqual(saved.stage, { backgroundCueId: backgroundCue.id, backgroundAudio: Boolean(audio), fadeEnabled: true, fadeSeconds: 1.2, toggleAudio: true });
+    await admin.reload({ waitUntil: 'domcontentloaded' });
+    await admin.locator('#connection.live').waitFor();
+    await admin.locator('.playlist-row').last().waitFor();
+    assert.equal(await admin.locator('#background-cue').inputValue(), backgroundCue.id);
+    assert.equal(await admin.locator('#background-audio').isChecked(), Boolean(audio));
+    assert.equal(await admin.locator('#fade-seconds').inputValue(), '1.2');
+    assert.equal(await admin.locator('#toggle-audio').isChecked(), true);
+    assert.equal(await admin.getByRole('checkbox', { name: `Hide remote button for cue ${backgroundIndex}`, exact: true }).isChecked(), true);
+    await command.locator('#remote-stage').tap();
+    await until(async () => {
+      const state = await snapshot(); return state.stageEnabled && state.backgroundCueId === backgroundCue.id && !state.backgroundError;
+    }, 'Stage did not enable the configured video background');
+    const musicButton = command.locator(`[data-cue-id="${musicCue.id}"]`);
+    const imageButton = command.locator(`[data-cue-id="${imageCue.id}"]`);
+    async function assertIndependentStage(expected, source) {
+      await command.waitForFunction(enabled => document.getElementById('remote-stage').getAttribute('aria-pressed') === String(!enabled) && !document.getElementById('remote-stage').disabled, expected);
+      await command.locator('#remote-stage').tap();
+      await until(async () => {
+        const state = await snapshot();
+        if (source && (state.activeCueId !== source.activeCueId || state.generation !== source.generation || state.state !== 'playing'))
+          throw new Error('Stage toggle interrupted or restarted the selected music');
+        return state.stageEnabled === expected;
+      }, `Stage did not become ${expected ? 'enabled' : 'disabled'} independently`);
+    }
+    if (audio) {
+      await musicButton.tap(); await waitState('playing');
+      const musicPlaying = await snapshot();
+      assert.equal(musicPlaying.activeCueId, musicCue.id);
+      await imageButton.tap();
+      await until(async () => {
+        const state = await snapshot();
+        return state.imageCueId === imageCue.id && state.activeCueId === musicCue.id && state.generation === musicPlaying.generation && state.state === 'playing';
+      }, 'Image cue did not preserve the selected music and playback generation');
+      await command.waitForFunction(ids => ids.every(id => document.querySelector(`[data-cue-id="${id}"]`)?.getAttribute('aria-pressed') === 'true'), [imageCue.id, musicCue.id]);
+      const beforeStageToggle = await snapshot();
+      await assertIndependentStage(false, beforeStageToggle);
+      await until(async () => (await snapshot()).elapsed > beforeStageToggle.elapsed + .2, 'Native music timeline stopped while stage was off');
+      await assertIndependentStage(true, beforeStageToggle);
+      assert.equal((await snapshot()).imageCueId, imageCue.id, 'Stage reopening must preserve the selected image');
+      await musicButton.tap(); await waitState('stopped');
+      const toggledOff = await snapshot();
+      assert.equal(toggledOff.activeCueId, ''); assert.equal(toggledOff.imageCueId, imageCue.id);
+      assert.equal(toggledOff.stageEnabled, true); assert.equal(toggledOff.backgroundCueId, backgroundCue.id);
+      await command.waitForFunction(id => document.querySelector(`[data-cue-id="${id}"]`)?.getAttribute('aria-pressed') === 'true', imageCue.id);
+      await musicButton.tap(); await waitState('playing');
+      await until(async () => (await snapshot()).imageCueId === '', 'Starting a music button did not return visual output to the background');
+      await imageButton.tap();
+      await until(async () => (await snapshot()).imageCueId === imageCue.id, 'Image did not become active again');
+      await command.locator('#stop').tap(); await waitState('stopped');
+      const stoppedScene = await snapshot();
+      assert.equal(stoppedScene.imageCueId, ''); assert.equal(stoppedScene.activeCueId, '');
+      assert.equal(stoppedScene.backgroundCueId, backgroundCue.id); assert.equal(stoppedScene.stageEnabled, true);
+      record.checks.push('Real native music kept its cue ID, generation and advancing timeline through image selection and Stage off/on; pressing the music button again stopped only music and kept the image; STOP cleared the image and returned to background');
+    } else {
+      await imageButton.tap();
+      await until(async () => (await snapshot()).imageCueId === imageCue.id, 'Native image cue did not become active');
+      await assertIndependentStage(false); await assertIndependentStage(true);
+      assert.equal((await snapshot()).imageCueId, imageCue.id);
+      await command.locator('#stop').tap(); await waitState('stopped');
+      assert.equal((await snapshot()).imageCueId, '');
+      record.checks.push('Real native image selection, independent stage hiding/restoration, and image-only STOP passed; music/background soundtrack integration was unavailable because the runner has no audio endpoint');
+    }
+    await edit(() => admin.getByRole('checkbox', { name: `Use cue ${imageIndex} as a background button`, exact: true }).check(), saved.playlistRevision + 1);
+    let backgroundMusic;
+    if (audio) { await musicButton.tap(); await waitState('playing'); backgroundMusic = await snapshot(); }
+    await imageButton.tap();
+    await until(async () => (await snapshot()).backgroundCueId === imageCue.id, 'Image background button did not select the current background');
+    const backgroundSwitched = await snapshot();
+    assert.equal(backgroundSwitched.imageCueId, '');
+    assert.equal(backgroundSwitched.stage.backgroundCueId, backgroundCue.id, 'A session background button must not overwrite the saved default');
+    if (audio) {
+      assert.equal(backgroundSwitched.activeCueId, musicCue.id); assert.equal(backgroundSwitched.generation, backgroundMusic.generation);
+      assert.equal(backgroundSwitched.state, 'playing');
+    }
+    await command.locator('#stop').tap(); await waitState('stopped');
+    await admin.locator('#background-cue').selectOption(imageCue.id);
+    await admin.locator('#background-audio').uncheck();
+    await saveStageSettings();
+    assert.equal(saved.stage.backgroundCueId, imageCue.id);
+    assert.equal(saved.cues.find(cue => cue.id === backgroundCue.id).hidden, true);
+    assert.equal(saved.cues.find(cue => cue.id === imageCue.id).background, true);
+    record.sceneIntegration = { nativeImageInspected: true, savedVideoAndImageBackgrounds: true,
+      hiddenBackgroundCueEditableInAdmin: true, persistedConfigReloaded: true, configuredFadeSeconds: 1.2,
+      musicImageAndIndependentStage: Boolean(audio), backgroundSoundtrackEnabled: Boolean(audio),
+      selectedMusicToggleKeepsImage: Boolean(audio), nativeAudioGainsMeasuredHere: false,
+      audioUnavailableReason: audio ? '' : 'No enumerated native audio endpoint' };
+    record.checks.push('Admin saved/reloaded fade, background soundtrack and music-toggle settings; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available');
+
     await command.evaluate(() => scrollTo(0, document.body.scrollHeight));
     const bounds = await command.locator('#stop').boundingBox();
     assert(bounds && bounds.y >= 0 && bounds.y + bounds.height <= 844);
@@ -287,7 +444,7 @@ async function until(check, message, timeout = 30000) {
     await command.screenshot({ path: path.join(output, 'command-phone.png'), fullPage: true });
     await admin.screenshot({ path: path.join(output, 'admin-desktop.png'), fullPage: true,
       mask: [admin.locator('#remote-url'), admin.locator('#remote-code'), admin.locator('#remote-qr')] });
-    const allowed = new Set(['/command', '/assets/app.js', '/assets/style.css', '/assets/wake-lock.js', '/favicon.ico', '/api/pair', '/api/state', '/api/events', '/api/play', '/api/stop', '/api/stage-output']);
+    const allowed = new Set(['/command', '/assets/app.js', '/assets/style.css', '/assets/wake-lock.js', '/favicon.ico', '/api/pair', '/api/state', '/api/events', '/api/play', '/api/stop', '/api/stage-output', '/api/emergency-stop']);
     for (const request of requests) {
       const url = new URL(request.url);
       assert.equal(url.origin, commandBase);

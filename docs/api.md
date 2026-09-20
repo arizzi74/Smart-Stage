@@ -73,12 +73,16 @@ POST /api/play
 
 POST /api/stop
 {"requestId":"another-unique-client-id"}
+
+POST /api/emergency-stop
+{"requestId":"emergency-unique-client-id"}
 ```
 
 IDs contain 8–128 ASCII letters/digits/underscores/hyphens. Intentional presses
 use new IDs; automatic PLAY retry with a new ID is forbidden. The last 4,096
 accepted IDs are idempotent; a different payload conflicts. STOP has no
 revision/epoch precondition and bypasses ordinary-operation concurrency limits.
+Emergency stop uses the same request-ID rules and bypasses those limits too.
 
 HTTP 202 acknowledges acceptance:
 
@@ -87,8 +91,23 @@ HTTP 202 acknowledges acceptance:
 ```
 
 Observe state for actual native transitions. A stale instance/epoch, unknown or
-invalid cue is rejected without replacing playback. An accepted native failure
-stops/blackens and remains visible in state.
+invalid cue is rejected without replacing playback. An accepted foreground native
+failure stops all sound, disables the stage and remains visible in state.
+
+Audio/video cues replace the foreground media. Image cues set a visual overlay
+without restarting or stopping foreground music; audio/video PLAY clears that
+overlay. A cue with `background:true` selects the current session's background
+without replacing foreground music or enabling a disabled stage. The saved
+`stage.backgroundCueId` is the default restored on the next launch.
+
+STOP clears foreground media and the image overlay, retaining stage visibility.
+An enabled stage returns to its background image/video, or black if none is set.
+Background video loops; its optional soundtrack plays while the stage is enabled
+and no foreground cue owns audio. With fading enabled, replacement audio
+crossfades and STOP fades to silence or back to background audio. Starting from
+silence is immediate. Natural foreground completion also returns to background.
+`POST /api/emergency-stop`, native Escape and browser Escape immediately silence
+all media and disable the stage without a fade. Quit also stops immediately.
 
 ## State/events
 
@@ -96,7 +115,10 @@ State contains `instanceId`, `revision`, `playlistRevision`, `state`
 (`stopped|loading|playing|stopping|error`), `activeCueId`, `activePosition`
 (one-based, zero if inactive), `elapsed`, `duration` (seconds; zero unknown),
 `lastError`, `outputs`, `resolvedAudioId`, `stageEnabled`, `outputFault`,
-`generation`, `stopEpoch`, `cues`, `validationJob`, `updatePending`.
+`generation`, `stopEpoch`, `cues`, `validationJob`, `updatePending`, `stage`,
+`backgroundCueId`, `imageCueId`, `backgroundError`. The background/image fields
+are independent of `activeCueId`, which identifies foreground audio/video.
+Command state receives a generic background error rather than native details.
 
 `updatePending` reserves the host while a startup update is checked or an update
 is prepared. PLAY, show edits and enabling stage output are rejected during
@@ -105,7 +127,12 @@ the reservation. The update cannot reserve playing/loading/stopping playback
 or an enabled stage, including a black stage between cues.
 
 Cue views contain `id,label,position,kind,duration,validation` and optional `color`
-(`#RRGGBB`; omitted/empty uses the default button color). Validation jobs
+(`#RRGGBB`; omitted/empty uses the default button color), `hidden` and `background`.
+`kind` may be `audio`, `video` or `image`; images have no duration or audio track.
+`hidden:true` omits a button from the remote UI; it does not remove the cue from
+state or make its ID an authorization boundary. `background:true` makes an image
+or video button select the background instead of playing a foreground cue.
+Validation jobs
 contain `running,completed,total`. Output preferences contain
 `audioId,displayId,allowPrimary`.
 
@@ -129,25 +156,35 @@ expiry/logout ends them. Commands do not travel over SSE.
 | `GET /api/remote-control/qr?index=N` | PNG of the exact selected link, encoded locally with a four-module white quiet zone and `Cache-Control: no-store`. Requires the Admin session. Unknown/stale index returns 404; invalid query shape returns 400. |
 | `GET /api/files?path=...&showHidden=false` | Canonical directory, parent, roots/volumes, breadcrumbs, at most 1,000 visible entries and truncation. Dot-prefixed names are hidden by default; `showHidden=true` includes them. Empty path chooses home or first permitted root. Explicit paths remain accessible within media roots. Entries include name/path/directory/bytes/modification nanoseconds. |
 | `GET /api/playlist` | Full configuration model, source paths and derived validation cache. |
-| `PUT /api/playlist` | `{expectedRevision:N,cues:[{id:"existing or empty",label:"...",path:"host file",color:"#RRGGBB"}]}`; returns saved configuration. Omitted color preserves an existing value; empty resets to default. Invalid colors are rejected. New IDs are server-generated; empty labels default only for new cues. Array order is cue order. |
+| `PUT /api/playlist` | `{expectedRevision:N,cues:[{id:"existing or empty",label:"...",path:"host file",color:"#RRGGBB",hidden:false,background:false}]}`; returns saved configuration. Omitted color/flags preserve existing values; empty color resets its default. Invalid colors and validated audio-only backgrounds are rejected. New IDs are server-generated; empty labels default only for new cues. Array order is cue order. |
+| `PUT /api/stage-settings` | `{expectedRevision:N,settings:{backgroundCueId:"cue ID or empty",backgroundAudio:false,fadeEnabled:false,fadeSeconds:1,toggleAudio:false}}`; validates/saves settings and returns the configuration with an incremented playlist revision. The background must be a readable image/video cue. Fade duration is 0.1–30 seconds, including when disabled; its initial value is 1 second. |
 | `POST /api/validate` | `{}` starts bounded background native validation; HTTP 202. |
 | `POST /api/inspect` | `{path:"host file"}` returns native validation/metadata without rendering; used by Host files Inspect. Same root restrictions apply. |
 | `GET /api/devices` | `{audio:[{id,name,default}],displays:[{id,name,x,y,width,height,primary,mirrored}]}`. |
 | `PUT /api/outputs` | `{audioId:"default or endpoint",displayId:"ID or empty",allowPrimary:false}`; stopped/error only; saves and disarms stage. |
-| `POST /api/stage-output` | `{enabled:true|false}`; enable requires available display and primary acknowledgement. Disable stops before hiding. HTTP 202. |
+| `POST /api/stage-output` | `{enabled:true|false}`; enable requires an available display and primary acknowledgement. Toggling visibility preserves foreground playback, including its audio and timeline. HTTP 202. |
 
 `POST /api/stage-output` is also available to authenticated Command sessions with
-the usual exact Origin and CSRF checks. `{enabled:true}` requires stopped playback
-and previously configured/acknowledged outputs; `{enabled:false}` stops playback
-and closes the stage. Command cannot change output devices or any other Admin
-configuration. Browser Escape invokes this same stage-off operation; native Escape
-also stops and closes the stage, including when its generation has become stale.
+the usual exact Origin and CSRF checks, including during audio/video playback.
+Disabling the stage hides its visuals and silences background sound while
+foreground music continues; enabling restores the visual selection. Command
+cannot change outputs or stage settings. Escape uses `/api/emergency-stop`, not
+the visibility toggle, and remains effective across a concurrently accepted PLAY.
+
+`backgroundAudio` opts into the selected background video's soundtrack.
+`fadeEnabled` enables the configured crossfade/fade duration. `toggleAudio:true`
+makes a second intentional press of the current audio cue stop foreground music
+while retaining an image overlay; pressing an audio cue otherwise restarts it.
+These settings can be saved during playback, subject to revision/update guards.
 
 Authenticated Command access to other Admin APIs returns 403. The remote listener
 returns 404 for `/admin` and `/api/local-session`. Active/loading cue removal/source
-replacement returns 409; label/order edits are allowed. Files remain in place.
-Cache is not accepted as edit input. Schema 1 stores cue identities, labels,
-canonical paths/order, output preferences and playlist revision. Validation
+replacement returns 409; label/order edits are allowed. Active image cues also
+cannot be removed/replaced. Removing the selected background clears its selection.
+Files remain in place. Cache is not accepted as edit input. Schema 1 stores cue
+identities, labels, canonical paths/order, color/hidden/background flags, output
+preferences, stage settings and playlist revision. Older configurations without
+stage settings load with fading disabled and a one-second duration. Validation
 statuses: `unchecked`, `checking`, `ready`, `missing`, `unsupported`, `error`.
 Raw reasons/media cache metadata are available only to administrators.
 
@@ -168,7 +205,7 @@ Errors: `{"error":{"code":"...","message":"..."}}`.
 
 | HTTP | Codes |
 | --- | --- |
-| 400 | `invalid_json`, `invalid_request`, `invalid_label`, `invalid_path`, `browse_failed`, `invalid_cue_id`, `duplicate_cue_id`, `too_many_cues`, `cue_invalid`, `output_unavailable`, `display_unavailable`, `primary_confirmation`, `invalid_index` |
+| 400 | `invalid_json`, `invalid_request`, `invalid_label`, `invalid_color`, `invalid_stage`, `invalid_background`, `invalid_path`, `browse_failed`, `invalid_cue_id`, `duplicate_cue_id`, `too_many_cues`, `cue_invalid`, `output_unavailable`, `display_unavailable`, `primary_confirmation`, `invalid_index` |
 | 401 | `unpaired`, `pair_failed` |
 | 403 | `origin_denied`, `origin_required`, `csrf_denied`, `admin_required` |
 | 404 | `cue_not_found`, `link_not_found`, `unknown_route` |

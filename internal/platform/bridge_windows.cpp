@@ -8,6 +8,9 @@
 #include <mfreadwrite.h>
 #include <mferror.h>
 #include <evr.h>
+#include <wincodec.h>
+#include <cmath>
+#include <array>
 #include <mmdeviceapi.h>
 #include <functiondiscoverykeys_devpkey.h>
 #include <propvarutil.h>
@@ -78,8 +81,9 @@ std::string failure(HRESULT hr, const char *action) {
 }
 void check(HRESULT hr, const char *action) { if (FAILED(hr)) throw failure(hr, action); }
 
-constexpr UINT commandMessage = WM_APP+1, readyMessage = WM_APP+2, deviceMessage = WM_APP+3, quitMessage = WM_APP+4;
+constexpr UINT commandMessage = WM_APP+1, readyMessage = WM_APP+2, deviceMessage = WM_APP+3, quitMessage = WM_APP+4, sceneMessage = WM_APP+5;
 HWND controlWindow = nullptr, stageWindow = nullptr, videoWindow = nullptr;
+HWND sceneVideoWindows[2] = {nullptr, nullptr}, backgroundWindow = nullptr;
 std::atomic<uint64_t> generation{0};
 std::atomic<bool> quitting{false};
 std::atomic<bool> cleanupQuitting{false};
@@ -173,13 +177,25 @@ struct Request {
     std::string path, audio, display;
     bool video = false, enabled = false;
     HWND target = nullptr;
+    int sceneRole = 0;
+    uint64_t token = 0;
+    bool image = false, muteTrack = false;
 };
 std::mutex commandMutex;
 std::unique_ptr<Request> latestCommand;
 bool commandScheduled = false;
 struct Playback {
     uint64_t gen = 0;
-    std::string audio;
+    std::string audio, path;
+    int sceneRole = 0;
+    uint64_t token = 0;
+    HWND target = nullptr;
+    UINT imageWidth = 0, imageHeight = 0;
+    std::vector<BYTE> pixels;
+    float gain = 0, rampFrom = 0, rampTo = 0;
+    ULONGLONG rampStarted = 0;
+    double rampSeconds = 0;
+    bool looping = false, loopSeeking = false, loopPending = false, topologyReady = false, startRequested = false, nativeStarted = false;
     bool video = false, playing = false, hasAudio = false;
     double duration = 0;
     Com<IMFMediaSource> source;
@@ -197,7 +213,8 @@ struct Playback {
 std::unique_ptr<Playback> active;
 std::mutex workerMutex, cleanupMutex;
 std::condition_variable workerCV, cleanupCV;
-std::optional<Request> pending;
+std::deque<Request> pending;
+std::array<std::atomic<uint64_t>, 4> sceneTokens{};
 std::deque<std::unique_ptr<Playback>> retired;
 std::thread loader, cleaner;
 
@@ -262,16 +279,46 @@ void addBranch(Playback &p, IMFTopology *topology, IMFPresentationDescriptor *pd
     check(topology->AddNode(dst.p), "Add renderer node");
     check(src->ConnectOutput(0, dst.p, 0), "Connect source to renderer");
 }
+void decodeImage(Playback &p, const std::string &path) {
+    Com<IWICImagingFactory> factory;
+    check(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER,
+                          __uuidof(IWICImagingFactory), (void**)factory.out()), "Create native image decoder");
+    Com<IWICBitmapDecoder> decoder; Com<IWICBitmapFrameDecode> frame;
+    check(factory->CreateDecoderFromFilename(wide(path).c_str(), nullptr, GENERIC_READ,
+                                             WICDecodeMetadataCacheOnDemand, decoder.out()), "Open image");
+    check(decoder->GetFrame(0, frame.out()), "Read image frame");
+    UINT width = 0, height = 0;
+    check(frame->GetSize(&width, &height), "Read image dimensions");
+    if (!width || !height || width > 32768 || height > 32768 || (uint64_t)width*height > 100000000)
+        throw std::string("Image dimensions exceed the supported limit");
+    double scale = std::min(1.0, 4096.0 / std::max(width, height));
+    p.imageWidth = std::max(1U, (UINT)std::lround(width*scale));
+    p.imageHeight = std::max(1U, (UINT)std::lround(height*scale));
+    Com<IWICBitmapScaler> scaler;
+    check(factory->CreateBitmapScaler(scaler.out()), "Create image scaler");
+    check(scaler->Initialize(frame.p, p.imageWidth, p.imageHeight, WICBitmapInterpolationModeFant), "Scale image");
+    Com<IWICFormatConverter> converter;
+    check(factory->CreateFormatConverter(converter.out()), "Create image pixel converter");
+    check(converter->Initialize(scaler.p, GUID_WICPixelFormat32bppPBGRA, WICBitmapDitherTypeNone,
+                               nullptr, 0, WICBitmapPaletteTypeCustom), "Convert image pixels");
+    p.pixels.resize((size_t)p.imageWidth*p.imageHeight*4);
+    check(converter->CopyPixels(nullptr, p.imageWidth*4, (UINT)p.pixels.size(), p.pixels.data()), "Decode image pixels");
+}
+bool requestCurrent(const Request &r) {
+    return r.sceneRole ? r.token == sceneTokens[r.sceneRole].load() : r.gen == generation.load();
+}
 std::unique_ptr<Playback> prepare(const Request &r) {
     auto p = std::make_unique<Playback>(); p->gen = r.gen; p->audio = r.audio;
+    p->path = r.path; p->sceneRole = r.sceneRole; p->token = r.token; p->target = r.target;
     try {
+        if (r.image) { decodeImage(*p, r.path); return p; }
         Com<IMFSourceResolver> resolver; Com<IUnknown> object;
         check(MFCreateSourceResolver(resolver.out()), "Create media resolver");
         MF_OBJECT_TYPE type;
         check(resolver->CreateObjectFromURL(wide(r.path).c_str(), MF_RESOLUTION_MEDIASOURCE | MF_RESOLUTION_READ,
                                            nullptr, &type, object.out()), "Open local media");
         check(object->QueryInterface(__uuidof(IMFMediaSource), (void**)p->source.out()), "Get media source");
-        if (r.gen != generation.load()) return p;
+        if (!requestCurrent(r)) return p;
         Com<IMFPresentationDescriptor> pd; Com<IMFTopology> topology;
         check(p->source->CreatePresentationDescriptor(pd.out()), "Read media tracks");
         UINT64 duration = 0;
@@ -285,7 +332,7 @@ std::unique_ptr<Playback> prepare(const Request &r) {
             check(sd->GetMediaTypeHandler(handler.out()), "Read track type");
             check(handler->GetMajorType(&major), "Read track major type");
             Com<IMFActivate> sink;
-            if (major == MFMediaType_Audio && !audio) {
+            if (major == MFMediaType_Audio && !audio && !r.muteTrack) {
                 if (r.audio.empty()) throw std::string("Select an available audio output");
                 check(MFCreateAudioRendererActivate(sink.out()), "Create audio renderer");
                 check(sink->SetString(MF_AUDIO_RENDERER_ATTRIBUTE_ENDPOINT_ID, wide(r.audio).c_str()), "Select audio endpoint");
@@ -300,7 +347,7 @@ std::unique_ptr<Playback> prepare(const Request &r) {
         }
         if (!audio && !p->video) throw std::string("No supported audio or video track");
         p->hasAudio = audio;
-        if (r.gen != generation.load()) return p;
+        if (!requestCurrent(r)) return p;
         check(MFCreateMediaSession(nullptr, p->session.out()), "Create media session");
         check(p->session->SetTopology(0, topology.p), "Prepare native decoders");
     } catch (const std::string &e) { p->error = e; }
@@ -311,12 +358,12 @@ void loadLoop() {
     for (;;) {
         Request r;
         { std::unique_lock<std::mutex> lock(workerMutex);
-          workerCV.wait(lock, [] { return quitting.load() || pending.has_value(); });
+          workerCV.wait(lock, [] { return quitting.load() || !pending.empty(); });
           if (quitting.load()) return;
-          r = *pending; pending.reset(); }
-        if (r.gen != generation.load()) continue;
+          r = pending.front(); pending.pop_front(); }
+        if (!requestCurrent(r)) continue;
         auto p = prepare(r);
-        if (quitting.load() || r.gen != generation.load()) { retire(std::move(p)); continue; }
+        if (quitting.load() || !requestCurrent(r)) { retire(std::move(p)); continue; }
         Playback *raw = p.release();
         if (!PostMessageW(controlWindow, readyMessage, 0, (LPARAM)raw)) retire(std::unique_ptr<Playback>(raw));
     }
@@ -330,6 +377,338 @@ void cleanupLoop() {
           if (retired.empty() && cleanupQuitting.load()) return;
           p = std::move(retired.front()); retired.pop_front(); }
         p.reset(); // Shutdown can block; never do it on the UI/STOP path.
+    }
+}
+
+// Scene playback retains independent foreground sound, stage visuals, and a
+// looping background. Only this UI thread touches live renderer state.
+struct Scene {
+    uint64_t revision = 0, gen = 0, foregroundID = 0;
+    std::string foregroundPath, foregroundKind, imagePath, backgroundPath, backgroundKind, audio, display;
+    bool foregroundAudio = false, backgroundAudio = false, enabled = false, hardStop = false;
+    double fade = 0;
+};
+std::atomic<uint64_t> sceneRevision{0};
+std::mutex sceneMutex;
+std::unique_ptr<Scene> latestScene;
+Scene scene;
+bool sceneMode = false;
+uint64_t nextSceneToken = 0, stoppedGeneration = 0;
+std::string sceneFatalError;
+uint64_t sceneFatalGeneration = 0;
+std::unique_ptr<Playback> sceneForeground, sceneIncoming, sceneBackground, sceneImage, sceneRetiring;
+
+void emitScene(uint64_t g, const char *kind, const std::string &message = "", double pos = 0, double duration = 0) {
+    std::ostringstream s;
+    s << "{\"generation\":" << g << ",\"sceneRevision\":" << scene.revision
+      << ",\"kind\":" << quote(kind) << ",\"message\":" << quote(message)
+      << ",\"position\":" << pos << ",\"duration\":" << duration
+      << ",\"stageEnabled\":" << (stageEnabled ? "true" : "false") << "}";
+    std::lock_guard<std::mutex> lock(eventMutex);
+    if (eventQueue.size() >= 256) eventQueue.pop_front();
+    eventQueue.push_back(s.str());
+}
+bool sceneCurrent() { return scene.revision == sceneRevision.load() && !quitting.load(); }
+bool volume(Playback &p, float gain) {
+    gain = std::clamp(gain, 0.0f, 1.0f);
+    if (p.streamVolume && !p.silence.empty()) {
+        std::fill(p.silence.begin(), p.silence.end(), gain);
+        if (FAILED(p.streamVolume->SetAllVolumes((UINT32)p.silence.size(), p.silence.data()))) return false;
+    }
+    p.gain = gain;
+    return true;
+}
+void halt(std::unique_ptr<Playback> &p) {
+    if (!p) return;
+    volume(*p, 0);
+    if (p->session) p->session->Stop();
+    if (p->target) ShowWindow(p->target, SW_HIDE);
+    retire(std::move(p));
+}
+void ramp(Playback &p, float target, double seconds) {
+    if (p.rampTo == target && p.rampSeconds > 0) return;
+    p.rampFrom = p.gain; p.rampTo = target;
+    p.rampSeconds = seconds;
+    p.rampStarted = GetTickCount64();
+    if (!p.hasAudio || seconds <= 0 || std::abs(target-p.gain) < 0.0001f) {
+        p.rampSeconds = 0;
+        if (!volume(p, target)) { sceneFatalError = "Cannot update native audio gain"; sceneFatalGeneration = scene.gen; }
+    }
+}
+bool advanceRamp(Playback &p) {
+    if (p.rampSeconds <= 0) return true;
+    double t = std::min(1.0, (GetTickCount64()-p.rampStarted)/(p.rampSeconds*1000.0));
+    bool ok = volume(p, p.rampFrom + (p.rampTo-p.rampFrom)*(float)t);
+    if (t >= 1) p.rampSeconds = 0;
+    return ok;
+}
+bool audible(const Playback *p) { return p && p->playing && p->hasAudio && p->gain > 0.0001f; }
+bool anySceneAudio() {
+    return audible(sceneForeground.get()) || audible(sceneBackground.get()) || audible(sceneRetiring.get());
+}
+void retireWithFade(std::unique_ptr<Playback> &p, double fade) {
+    if (!p) return;
+    // One retiring renderer is enough for an in-progress transition. A rapid
+    // next cue starts from current gains; older retirees are silenced now.
+    if (p->target) ShowWindow(p->target, SW_HIDE);
+    if (audible(p.get()) && fade > 0) {
+        halt(sceneRetiring);
+        sceneRetiring = std::move(p); ramp(*sceneRetiring, 0, fade);
+    } else halt(p);
+}
+void sceneVisuals() {
+    for (HWND window : sceneVideoWindows) ShowWindow(window, SW_HIDE);
+    ShowWindow(backgroundWindow, SW_HIDE);
+    if (!stageEnabled || !sceneCurrent()) return;
+    bool image = sceneImage && sceneImage->path == scene.imagePath && !sceneImage->pixels.empty();
+    if (!image && sceneForeground && sceneForeground->video && sceneForeground->playing) {
+        ShowWindow(sceneForeground->target, SW_SHOWNOACTIVATE);
+        SetWindowPos(sceneForeground->target, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);
+    } else if (!image && sceneBackground && sceneBackground->video && sceneBackground->playing) {
+        ShowWindow(backgroundWindow, SW_SHOWNOACTIVATE);
+    }
+    RedrawWindow(stageWindow, nullptr, nullptr, RDW_INVALIDATE|RDW_ERASE|RDW_UPDATENOW);
+}
+Playback *visualImage() {
+    if (!sceneMode || !stageEnabled) return nullptr;
+    if (sceneImage && sceneImage->path == scene.imagePath && !sceneImage->pixels.empty()) return sceneImage.get();
+    if (sceneForeground && sceneForeground->video && sceneForeground->playing) return nullptr;
+    return sceneBackground && !sceneBackground->pixels.empty() ? sceneBackground.get() : nullptr;
+}
+void paintImage(HDC dc, HWND window) {
+    Playback *p = window == stageWindow ? visualImage() : nullptr;
+    if (!p) return;
+    RECT bounds; GetClientRect(window, &bounds);
+    double scale = std::min((double)(bounds.right-bounds.left)/p->imageWidth,
+                            (double)(bounds.bottom-bounds.top)/p->imageHeight);
+    int width = (int)std::lround(p->imageWidth*scale), height = (int)std::lround(p->imageHeight*scale);
+    BITMAPINFO info{}; info.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    info.bmiHeader.biWidth = (LONG)p->imageWidth; info.bmiHeader.biHeight = -(LONG)p->imageHeight;
+    info.bmiHeader.biPlanes = 1; info.bmiHeader.biBitCount = 32; info.bmiHeader.biCompression = BI_RGB;
+    SetStretchBltMode(dc, HALFTONE); SetBrushOrgEx(dc, 0, 0, nullptr);
+    StretchDIBits(dc, (bounds.right-width)/2, (bounds.bottom-height)/2, width, height,
+                  0, 0, p->imageWidth, p->imageHeight, p->pixels.data(), &info, DIB_RGB_COLORS, SRCCOPY);
+}
+void backgroundGain(bool transition = true) {
+    if (!sceneBackground || !sceneBackground->playing) return;
+    bool foregroundSound = sceneForeground && sceneForeground->playing && sceneForeground->hasAudio;
+    float target = stageEnabled && scene.backgroundAudio && !foregroundSound ? 1.0f : 0.0f;
+    double duration = transition && (target == 0 || anySceneAudio()) ? scene.fade : 0;
+    ramp(*sceneBackground, target, duration);
+}
+void clearScene(bool hide) {
+    for (int role=1; role<=3; ++role) sceneTokens[role].store(++nextSceneToken);
+    { std::lock_guard<std::mutex> lock(workerMutex);
+      pending.erase(std::remove_if(pending.begin(), pending.end(), [](const Request &r) { return r.sceneRole != 0; }), pending.end()); }
+    halt(sceneIncoming); halt(sceneForeground); halt(sceneBackground); halt(sceneImage); halt(sceneRetiring);
+    stoppedGeneration = 0;
+    if (hide) {
+        stageEnabled = false; stageDisplay.clear(); ShowWindow(stageWindow, SW_HIDE);
+        SetThreadExecutionState(ES_CONTINUOUS);
+    }
+}
+bool queueScene(int role, const std::string &path, bool image, bool video, bool mute, uint64_t gen, HWND target) {
+    { std::lock_guard<std::mutex> lock(cleanupMutex);
+      if (retired.size() >= 8) return false; }
+    Request r{Request::Play, gen, path, scene.audio, scene.display};
+    r.sceneRole = role; r.token = ++nextSceneToken; r.image = image; r.video = video; r.muteTrack = mute; r.target = target;
+    sceneTokens[role].store(r.token);
+    { std::lock_guard<std::mutex> lock(workerMutex);
+      pending.erase(std::remove_if(pending.begin(), pending.end(), [role](const Request &old) { return old.sceneRole == role; }), pending.end());
+      pending.push_back(r); }
+    workerCV.notify_one(); return true;
+}
+void resizeSceneRenderers() {
+    RECT r; GetClientRect(stageWindow, &r);
+    for (HWND window : sceneVideoWindows) SetWindowPos(window, nullptr, 0, 0, r.right, r.bottom, SWP_NOZORDER|SWP_NOACTIVATE);
+    SetWindowPos(backgroundWindow, nullptr, 0, 0, r.right, r.bottom, SWP_NOZORDER|SWP_NOACTIVATE);
+    for (Playback *p : {sceneForeground.get(), sceneIncoming.get(), sceneBackground.get()})
+        if (p && p->display) p->display->SetVideoPosition(nullptr, &r);
+}
+void processSceneCommand() {
+    std::unique_ptr<Scene> next;
+    { std::lock_guard<std::mutex> lock(sceneMutex); next = std::move(latestScene); }
+    if (!next || next->revision != sceneRevision.load()) return;
+    if (!sceneMode) { stopCurrent(); sceneMode = true; }
+    Scene previous = scene; scene = std::move(*next);
+    generation.store(scene.gen);
+    if (scene.hardStop) {
+        clearScene(true); emitScene(scene.gen, "stage"); emitScene(scene.gen, "stopped"); return;
+    }
+    if (scene.enabled) {
+        if (!stageEnabled || stageDisplay != scene.display) {
+            if (!enableStage(scene.display)) {
+                clearScene(true); emitScene(scene.gen, "error", "Selected stage display is unavailable"); return;
+            }
+            resizeSceneRenderers();
+        }
+    } else if (stageEnabled) {
+        stageEnabled = false; stageDisplay.clear(); ShowWindow(stageWindow, SW_HIDE);
+        SetThreadExecutionState(ES_CONTINUOUS);
+    }
+    emitScene(scene.gen, "stage");
+    if (scene.foregroundPath.empty() && scene.gen != previous.gen) stoppedGeneration = scene.gen;
+    if (scene.foregroundID != previous.foregroundID || scene.foregroundPath != previous.foregroundPath || (scene.foregroundAudio && scene.audio != previous.audio)) {
+        halt(sceneIncoming); sceneTokens[1].store(++nextSceneToken);
+        if (scene.foregroundPath.empty()) {
+            retireWithFade(sceneForeground, scene.fade); stoppedGeneration = scene.gen;
+        } else {
+            HWND target = sceneForeground && sceneForeground->target == sceneVideoWindows[0] ? sceneVideoWindows[1] : sceneVideoWindows[0];
+            if (!queueScene(1, scene.foregroundPath, false, scene.foregroundKind == "video", !scene.foregroundAudio, scene.foregroundID, target)) {
+                clearScene(true); emitScene(scene.foregroundID, "error", "Native cleanup is busy; stop and retry"); return;
+            }
+        }
+    }
+    if (scene.imagePath != previous.imagePath) {
+        halt(sceneImage); sceneTokens[3].store(++nextSceneToken);
+        if (!scene.imagePath.empty() && !queueScene(3, scene.imagePath, true, false, true, scene.gen, nullptr))
+            emitScene(scene.gen, "background-error", "Native image cleanup is busy; retry the image cue");
+    }
+    bool backgroundChanged = scene.backgroundPath != previous.backgroundPath || scene.backgroundKind != previous.backgroundKind ||
+        (scene.backgroundAudio && (scene.audio != previous.audio ||
+          (sceneBackground && (sceneBackground->audio != scene.audio || !sceneBackground->hasAudio))));
+    if (backgroundChanged || (!stageEnabled && sceneBackground)) {
+        sceneTokens[2].store(++nextSceneToken);
+        if (sceneBackground) retireWithFade(sceneBackground, scene.fade);
+    }
+    if (stageEnabled && !scene.backgroundPath.empty() && (backgroundChanged || !previous.enabled)) {
+        if (!queueScene(2, scene.backgroundPath, scene.backgroundKind == "image", scene.backgroundKind == "video", scene.audio.empty(), scene.gen, backgroundWindow))
+            emitScene(scene.gen, "background-error", "Native background cleanup is busy; retry the background");
+    }
+    if (!stageEnabled) sceneTokens[2].store(++nextSceneToken);
+    backgroundGain(); sceneVisuals();
+}
+void sceneReady(std::unique_ptr<Playback> p) {
+    processSceneCommand();
+    if (!sceneMode || quitting.load() || p->token != sceneTokens[p->sceneRole].load()) { retire(std::move(p)); return; }
+    if (!p->error.empty()) {
+        uint64_t failedGen = p->gen; int role = p->sceneRole; std::string error = p->error;
+        retire(std::move(p));
+        if (role == 1) clearScene(true);
+        emitScene(role == 1 ? failedGen : scene.gen, role == 1 ? "error" : "background-error", error); return;
+    }
+    if (p->sceneRole == 1) { halt(sceneIncoming); sceneIncoming = std::move(p); }
+    else if (p->sceneRole == 2) { halt(sceneBackground); p->looping = true; sceneBackground = std::move(p); }
+    else { halt(sceneImage); sceneImage = std::move(p); }
+    sceneVisuals();
+}
+bool startScenePlayback(Playback &p) {
+    if (!sceneCurrent() || p.token != sceneTokens[p.sceneRole].load()) return false;
+    PROPVARIANT start; PropVariantInit(&start); start.vt = VT_I8; start.hVal.QuadPart = 0;
+    check(p.session->Start(&GUID_NULL, &start), "Start native scene playback");
+    p.startRequested = true; return true;
+}
+bool configureScenePlayback(Playback &p) {
+    if (p.video) {
+        check(MFGetService(p.session.p, MR_VIDEO_RENDER_SERVICE, __uuidof(IMFVideoDisplayControl), (void**)p.display.out()), "Configure stage renderer");
+        RECT rect; GetClientRect(p.target, &rect);
+        check(p.display->SetAspectRatioMode(MFVideoARMode_PreservePicture), "Set video aspect ratio");
+        p.display->SetBorderColor(RGB(0,0,0)); p.display->SetVideoPosition(nullptr, &rect);
+    }
+    if (p.hasAudio) {
+        check(MFGetService(p.session.p, MR_STREAM_VOLUME_SERVICE, __uuidof(IMFAudioStreamVolume), (void**)p.streamVolume.out()), "Acquire independent stream volume");
+        UINT32 channels = 0; check(p.streamVolume->GetChannelCount(&channels), "Read audio channel count");
+        if (!channels || channels > 64) throw std::string("Unsupported audio channel count");
+        p.silence.assign(channels, 0.0f);
+        check(p.streamVolume->SetAllVolumes(channels, p.silence.data()), "Initialize silent incoming stream");
+    }
+    Com<IMFClock> clock;
+    if (SUCCEEDED(p.session->GetClock(clock.out()))) clock->QueryInterface(__uuidof(IMFPresentationClock), (void**)p.clock.out());
+    p.topologyReady = true;
+    return startScenePlayback(p);
+}
+void activateScenePlayback(Playback &p, bool incoming) {
+    if (p.playing || !p.nativeStarted || !sceneCurrent() || p.token != sceneTokens[p.sceneRole].load()) return;
+    p.playing = true;
+    bool wasAudible = anySceneAudio();
+    if (incoming) {
+        retireWithFade(sceneForeground, scene.fade);
+        ramp(p, p.hasAudio ? 1.0f : 0.0f, wasAudible ? scene.fade : 0);
+        if (sceneBackground) ramp(*sceneBackground, p.hasAudio ? 0.0f : (stageEnabled && scene.backgroundAudio ? 1.0f : 0.0f), wasAudible ? scene.fade : 0);
+        emitScene(p.gen, "playing", "", 0, p.duration);
+    } else if (p.sceneRole == 2) {
+        bool foregroundSound = sceneForeground && sceneForeground->playing && sceneForeground->hasAudio;
+        ramp(p, stageEnabled && scene.backgroundAudio && !foregroundSound ? 1.0f : 0.0f, wasAudible ? scene.fade : 0);
+        sceneVisuals();
+    }
+}
+void restartSceneLoop(Playback &p) {
+    if (!p.loopPending || !sceneCurrent() || !stageEnabled || p.token != sceneTokens[2].load()) return;
+    PROPVARIANT start; PropVariantInit(&start); start.vt = VT_I8; start.hVal.QuadPart = 0;
+    check(p.session->Start(&GUID_NULL, &start), "Loop background video");
+    p.loopPending = false; p.loopSeeking = true;
+}
+// Returns true when a session has reached its end or failed and must retire.
+bool pumpScene(Playback &p, bool incoming) {
+    if (!p.session || !sceneCurrent()) return false;
+    try {
+        if (p.topologyReady && !p.startRequested && !startScenePlayback(p)) return false;
+        activateScenePlayback(p, incoming);
+        restartSceneLoop(p);
+        for (int i=0; i<16; ++i) {
+            Com<IMFMediaEvent> event;
+            HRESULT hr = p.session->GetEvent(MF_EVENT_FLAG_NO_WAIT, event.out());
+            if (hr == MF_E_NO_EVENTS_AVAILABLE) break;
+            check(hr, "Read native scene event");
+            MediaEventType type; HRESULT status;
+            check(event->GetType(&type), "Read native event type"); check(event->GetStatus(&status), "Read native event result");
+            check(status, "Native scene playback failed");
+            if (type == MESessionTopologyStatus && MFGetAttributeUINT32(event.p, MF_EVENT_TOPOLOGY_STATUS, 0) == MF_TOPOSTATUS_READY) {
+                if (!configureScenePlayback(p)) return false;
+            } else if (type == MESessionStarted) {
+                p.nativeStarted = true;
+                if (p.loopSeeking) { p.loopSeeking = false; continue; }
+                activateScenePlayback(p, incoming);
+            } else if (type == MESessionEnded) {
+                if (p.looping && stageEnabled && p.token == sceneTokens[2].load()) {
+                    // Wait for the terminal session event, not both end events,
+                    // so one loop causes exactly one seek and retains its gain.
+                    p.loopPending = true;
+                    restartSceneLoop(p);
+                } else {
+                    if (p.sceneRole == 1) emitScene(p.gen, "ended");
+                    return true;
+                }
+            }
+        }
+    } catch (const std::string &error) {
+        if (p.sceneRole == 1) {
+            if (p.gen == scene.foregroundID) { sceneFatalError = error; sceneFatalGeneration = p.gen; }
+        } else emitScene(scene.gen, "background-error", error);
+        return true;
+    }
+    return false;
+}
+void tickScene() {
+    processSceneCommand();
+    if (!sceneMode || !sceneCurrent()) return;
+    if (!sceneFatalError.empty()) { clearScene(true); emitScene(sceneFatalGeneration, "error", sceneFatalError); sceneFatalError.clear(); return; }
+    if (sceneIncoming && pumpScene(*sceneIncoming, true)) halt(sceneIncoming);
+    if (!sceneFatalError.empty()) { clearScene(true); emitScene(sceneFatalGeneration, "error", sceneFatalError); sceneFatalError.clear(); return; }
+    if (sceneIncoming && sceneIncoming->playing) {
+        halt(sceneForeground); sceneForeground = std::move(sceneIncoming); sceneVisuals();
+    }
+    if (sceneForeground && pumpScene(*sceneForeground, false)) {
+        halt(sceneForeground);
+        if (!sceneFatalError.empty()) { clearScene(true); emitScene(sceneFatalGeneration, "error", sceneFatalError); sceneFatalError.clear(); return; }
+        backgroundGain(); sceneVisuals();
+    }
+    if (sceneBackground && pumpScene(*sceneBackground, false)) { halt(sceneBackground); sceneVisuals(); }
+    for (Playback *p : {sceneForeground.get(), sceneBackground.get(), sceneRetiring.get()}) {
+        if (p && !advanceRamp(*p)) {
+            clearScene(true); emitScene(scene.gen, "error", "Cannot update native audio fade"); return;
+        }
+    }
+    if (sceneRetiring && sceneRetiring->rampSeconds <= 0) halt(sceneRetiring);
+    if (stoppedGeneration && !sceneForeground && !sceneIncoming && !sceneRetiring) {
+        emitScene(stoppedGeneration, "stopped"); stoppedGeneration = 0;
+    }
+    static ULONGLONG lastProgress = 0;
+    if (sceneForeground && sceneForeground->playing && sceneForeground->clock && GetTickCount64()-lastProgress >= 250) {
+        MFTIME time = 0;
+        if (SUCCEEDED(sceneForeground->clock->GetTime(&time)))
+            emitScene(sceneForeground->gen, "progress", "", time/10000000.0, sceneForeground->duration);
+        lastProgress = GetTickCount64();
     }
 }
 
@@ -394,6 +773,29 @@ void tick() {
     }
 }
 void checkDevices() {
+    if (sceneMode) {
+        processSceneCommand();
+        auto displays = monitors();
+        bool lostDisplay = stageEnabled && std::none_of(displays.begin(), displays.end(), [](const Monitor &m) { return m.id == stageDisplay; });
+        bool lostAudio = false;
+        std::vector<std::string> requiredAudio;
+        for (Playback *p : {sceneForeground.get(), sceneIncoming.get(), sceneRetiring.get()})
+            if (p && p->hasAudio && !p->audio.empty()) requiredAudio.push_back(p->audio);
+        if (scene.backgroundAudio && stageEnabled && sceneBackground && sceneBackground->hasAudio && !sceneBackground->audio.empty())
+            requiredAudio.push_back(sceneBackground->audio);
+        if (!requiredAudio.empty()) {
+            try {
+                auto devices = audioDevices();
+                for (const std::string &endpoint : requiredAudio)
+                    if (std::none_of(devices.begin(), devices.end(), [&](const Audio &a) { return a.id == endpoint; })) lostAudio = true;
+            } catch (...) { lostAudio = true; }
+        }
+        if (lostDisplay || lostAudio) {
+            clearScene(true);
+            emitScene(scene.gen, "device-lost", lostDisplay ? "Stage display disconnected; select and enable it again" : "Audio output disconnected; playback stopped");
+        }
+        emitScene(scene.gen, "devices"); return;
+    }
     auto displays = monitors();
     bool lostDisplay = stageEnabled && std::none_of(displays.begin(), displays.end(), [](const Monitor &m) { return m.id == stageDisplay; });
     bool lostAudio = false;
@@ -430,10 +832,12 @@ Com<IMMDeviceEnumerator> notificationEnumerator;
 DeviceNotifications *notifications = nullptr;
 
 LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
+    if (msg == sceneMessage) { processSceneCommand(); return 0; }
     if (msg == commandMessage) {
         std::unique_ptr<Request> r;
         { std::lock_guard<std::mutex> lock(commandMutex); r = std::move(latestCommand); commandScheduled = false; }
         if (!r) return 0;
+        if (sceneMode) { clearScene(true); sceneMode = false; }
         if (r->gen != generation.load()) return 0;
         std::string stopError = stopCurrent();
         if (!stopError.empty()) {
@@ -450,11 +854,12 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         { std::lock_guard<std::mutex> lock(cleanupMutex);
           if (retired.size() >= 8) { emit(r->gen, "error", "Native cleanup is busy; stop and retry"); return 0; } }
         r->target = videoWindow;
-        { std::lock_guard<std::mutex> lock(workerMutex); pending = *r; }
+        { std::lock_guard<std::mutex> lock(workerMutex); pending.clear(); pending.push_back(*r); }
         workerCV.notify_one(); return 0;
     }
     if (msg == readyMessage) {
         std::unique_ptr<Playback> p((Playback*)lp);
+        if (p->sceneRole) { sceneReady(std::move(p)); return 0; }
         if (p->gen != generation.load() || quitting.load()) { retire(std::move(p)); return 0; }
         if (!p->error.empty()) { emit(p->gen, "error", p->error); retire(std::move(p)); return 0; }
         active = std::move(p); return 0;
@@ -463,22 +868,26 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         // A fallback for a failed wake PostMessage; control admission is a
         // single latest-command slot, never an unbounded OS message backlog.
         SendMessageW(controlWindow, commandMessage, 0, 0);
-        tick(); return 0;
+        processSceneCommand();
+        if (sceneMode) tickScene(); else tick(); return 0;
     }
     if (msg == deviceMessage || msg == WM_DISPLAYCHANGE || msg == WM_DEVICECHANGE) { checkDevices(); return 0; }
     if (msg == WM_KEYDOWN && wp == VK_ESCAPE) {
+        if (sceneMode) { processSceneCommand(); clearScene(true); emitScene(scene.gen, "escape"); return 0; }
         uint64_t g = generation.fetch_add(1); disableStage(); emit(g, "escape"); return 0;
     }
-    if (msg == WM_CLOSE && hwnd != controlWindow) { uint64_t g = generation.fetch_add(1); disableStage(); emit(g, "escape"); return 0; }
-    if (msg == WM_SETCURSOR && hwnd != controlWindow) { SetCursor(nullptr); return TRUE; }
+    if (msg == WM_CLOSE && hwnd != controlWindow) { if (sceneMode) { clearScene(true); emitScene(scene.gen, "escape"); return 0; } uint64_t g = generation.fetch_add(1); disableStage(); emit(g, "escape"); return 0; }
+    if (msg == WM_SETCURSOR && hwnd != controlWindow && stageEnabled) { SetCursor(nullptr); return TRUE; }
     if (msg == WM_ERASEBKGND) { RECT r; GetClientRect(hwnd,&r); FillRect((HDC)wp,&r,(HBRUSH)GetStockObject(BLACK_BRUSH)); return TRUE; }
     if (msg == WM_PAINT) {
         PAINTSTRUCT ps; HDC dc = BeginPaint(hwnd, &ps);
-        FillRect(dc, &ps.rcPaint, (HBRUSH)GetStockObject(BLACK_BRUSH)); EndPaint(hwnd, &ps);
+        FillRect(dc, &ps.rcPaint, (HBRUSH)GetStockObject(BLACK_BRUSH)); paintImage(dc, hwnd); EndPaint(hwnd, &ps);
         if (hwnd == videoWindow && active && active->display && active->gen == generation.load()) active->display->RepaintVideo();
+        if (sceneMode) for (Playback *p : {sceneForeground.get(), sceneBackground.get()})
+            if (p && p->target == hwnd && p->display) p->display->RepaintVideo();
         return 0;
     }
-    if (msg == quitMessage) { stopCurrent(); disableStage(); PostQuitMessage(0); return 0; }
+    if (msg == quitMessage) { clearScene(true); stopCurrent(); disableStage(); PostQuitMessage(0); return 0; }
     return DefWindowProcW(hwnd, msg, wp, lp);
 }
 void submit(Request *r) {
@@ -503,7 +912,10 @@ extern "C" char *ss_init() {
     controlWindow = CreateWindowExW(0, cls.lpszClassName, L"Smart Stage", 0, 0,0,0,0, nullptr,nullptr,cls.hInstance,nullptr);
     stageWindow = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW, cls.lpszClassName, L"", WS_POPUP | WS_CLIPCHILDREN, 0,0,1,1,nullptr,nullptr,cls.hInstance,nullptr);
     videoWindow = CreateWindowExW(0, cls.lpszClassName, L"", WS_CHILD, 0,0,1,1,stageWindow,nullptr,cls.hInstance,nullptr);
-    if (!controlWindow || !stageWindow || !videoWindow) return copy("Cannot create native stage windows in this desktop session");
+    backgroundWindow = CreateWindowExW(0, cls.lpszClassName, L"", WS_CHILD, 0,0,1,1,stageWindow,nullptr,cls.hInstance,nullptr);
+    for (HWND &window : sceneVideoWindows)
+        window = CreateWindowExW(0, cls.lpszClassName, L"", WS_CHILD, 0,0,1,1,stageWindow,nullptr,cls.hInstance,nullptr);
+    if (!controlWindow || !stageWindow || !videoWindow || !backgroundWindow || !sceneVideoWindows[0] || !sceneVideoWindows[1]) return copy("Cannot create native stage windows in this desktop session");
     if (SUCCEEDED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER,
                                   __uuidof(IMMDeviceEnumerator), (void**)notificationEnumerator.out()))) {
         notifications = new DeviceNotifications();
@@ -529,7 +941,7 @@ extern "C" void ss_run() {
     if (notificationEnumerator.p) { notificationEnumerator.p->Release(); notificationEnumerator.p = nullptr; }
     MFShutdown(); CoUninitialize();
 }
-extern "C" void ss_quit() { generation.fetch_add(1); PostMessageW(controlWindow, quitMessage, 0, 0); }
+extern "C" void ss_quit() { quitting.store(true); generation.fetch_add(1); PostMessageW(controlWindow, quitMessage, 0, 0); }
 extern "C" void ss_free(char *p) { free(p); }
 extern "C" char *ss_poll() {
     std::lock_guard<std::mutex> lock(eventMutex);
@@ -562,6 +974,12 @@ extern "C" char *ss_inspect(const char *path) {
     Apartment apartment;
     try {
         check(apartment.hr, "Initialize inspection COM");
+        // WIC validates actual pixels; a filename extension is never accepted as
+        // proof that a file is a decodable image.
+        try {
+            Playback image; decodeImage(image, path);
+            return copy("{\"kind\":\"image\",\"hasAudio\":false,\"hasVideo\":false,\"duration\":0}");
+        } catch (const std::string &) { /* Let Media Foundation inspect audio/video. */ }
         Com<IMFSourceReader> reader; Com<IMFAttributes> attrs;
         check(MFCreateAttributes(attrs.out(), 1), "Create reader attributes");
         check(attrs->SetUINT32(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING, TRUE), "Enable native video decoding");
@@ -613,4 +1031,22 @@ extern "C" void ss_start(uint64_t g, const char *path, const char *audio, const 
 extern "C" void ss_stop(uint64_t g) { submit(new Request{Request::Stop, g, "", "", ""}); }
 extern "C" void ss_stage(uint64_t g, const char *display, int enabled) {
     auto *r = new Request{Request::Stage, g, "", "", display}; r->enabled = enabled != 0; submit(r);
+}
+
+extern "C" void ss_scene(const ss_scene_request *r) {
+    if (!r) return;
+    auto s = std::make_unique<Scene>();
+    s->revision = r->revision; s->gen = r->generation; s->foregroundID = r->foreground_id;
+    auto text = [](const char *p) { return p ? std::string(p) : std::string(); };
+    s->foregroundPath = text(r->foreground_path); s->foregroundKind = text(r->foreground_kind);
+    s->imagePath = text(r->image_path); s->backgroundPath = text(r->background_path); s->backgroundKind = text(r->background_kind);
+    s->audio = text(r->audio); s->display = text(r->display);
+    s->foregroundAudio = r->foreground_has_audio != 0; s->backgroundAudio = r->background_audio != 0;
+    s->enabled = r->stage_enabled != 0; s->hardStop = r->hard_stop != 0;
+    s->fade = std::isfinite(r->fade_seconds) ? std::clamp(r->fade_seconds, 0.0, 30.0) : 0;
+    bool wake = false;
+    { std::lock_guard<std::mutex> lock(sceneMutex);
+      if (r->revision <= sceneRevision.load()) return;
+      sceneRevision.store(r->revision); wake = !latestScene; latestScene = std::move(s); }
+    if (wake) PostMessageW(controlWindow, sceneMessage, 0, 0);
 }

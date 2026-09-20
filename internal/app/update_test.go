@@ -61,7 +61,7 @@ type delayedUpdateStageNative struct{ *fakeNative }
 func (*delayedUpdateStageNative) Stage(uint64, string, bool) error { return nil }
 
 func TestUpdateRejectsPendingStageEnableAfterPreliminaryStop(t *testing.T) {
-	for _, completion := range []string{"enabled then disabled", "superseded by STOP"} {
+	for _, completion := range []string{"enabled then disabled", "superseded by emergency STOP"} {
 		t.Run(completion, func(t *testing.T) {
 			backend := &delayedUpdateStageNative{&fakeNative{events: make(chan playback.Event, 16)}}
 			config := model.DefaultConfig()
@@ -93,7 +93,7 @@ func TestUpdateRejectsPendingStageEnableAfterPreliminaryStop(t *testing.T) {
 					t.Fatal(err)
 				}
 			} else {
-				if _, err := s.Stop(StopRequest{RequestID: "cancel-pending-stage"}); err != nil {
+				if _, err := s.EmergencyStop(StopRequest{RequestID: "cancel-pending-stage"}); err != nil {
 					t.Fatal(err)
 				}
 				// A late completion from the cancelled generation cannot re-enable

@@ -42,13 +42,41 @@ type Start struct {
 	Video      bool
 }
 
+// Scene is a complete desired presentation. Revision orders native work;
+// ForegroundID identifies one intentional audio/video start and remains stable
+// across image/background/stage changes. Images never replace foreground sound.
+type Scene struct {
+	Revision           uint64
+	Generation         uint64
+	ForegroundID       uint64
+	ForegroundPath     string
+	ForegroundKind     string
+	ForegroundHasAudio bool
+	ImagePath          string
+	BackgroundPath     string
+	BackgroundKind     string
+	BackgroundAudio    bool
+	AudioID            string
+	DisplayID          string
+	StageEnabled       bool
+	FadeSeconds        float64
+	HardStop           bool
+}
+
+// SceneBackend adds independent stage/background presentation and audio mixing.
+// Legacy Start/Stop/Stage remain available to the native diagnostic harness.
+type SceneBackend interface {
+	ApplyScene(Scene) error
+}
+
 type Event struct {
-	Generation   uint64  `json:"generation"`
-	Kind         string  `json:"kind"` // playing, progress, ended, stopped, error, devices, escape
-	Position     float64 `json:"position"`
-	Duration     float64 `json:"duration"`
-	Message      string  `json:"message,omitempty"`
-	StageEnabled bool    `json:"stageEnabled"`
+	Generation    uint64  `json:"generation"`
+	SceneRevision uint64  `json:"sceneRevision,omitempty"`
+	Kind          string  `json:"kind"` // playing, progress, ended, stopped, error, devices, escape
+	Position      float64 `json:"position"`
+	Duration      float64 `json:"duration"`
+	Message       string  `json:"message,omitempty"`
+	StageEnabled  bool    `json:"stageEnabled"`
 }
 
 // Backend does not retain Go pointers in native objects. Start/Stop/Stage enqueue

@@ -74,18 +74,20 @@ activated while their edit is being written. STOP never acquires that mutex.
 The initial OS thread is locked during package initialization and runs AppKit
 or Win32. The Go application/server run in another goroutine. Windows UI,
 loader, inspector and cleanup threads use the same COM MTA; no STA interface
-crosses apartments. A latest-only source-loader mailbox prepares Media Session
-topologies off the UI thread. A separate worker shuts down retired sources and
-sessions. A nonblocking native event poll advances playback. Audio and video
-use one session clock; audio renderer endpoint ID is set before activation.
-STOP zeros the retiring renderer's per-stream channel volumes, then stops its
-session. It does not change the shared audio-session or endpoint mixer state.
+crosses apartments. Bounded per-role source-loader mailboxes prepare Media Session topologies off
+the UI thread. A separate worker shuts down retired sources and sessions. A
+nonblocking native event poll advances playback. Each audio/video source uses
+one session clock; its audio renderer endpoint ID is set before activation.
+Per-stream channel volumes implement transitions without changing the shared
+audio-session or endpoint mixer. WIC decodes images into bounded native rasters.
 
 macOS uses AVPlayer/AVPlayerItem/AVPlayerLayer, asynchronous asset loading and
 Core Audio endpoint UIDs. `audioOutputDeviceUniqueID` pins each cue's route.
 AppKit, KVO handling and player transitions run on the main queue. Preflight
 uses AVAssetReader on a background worker. ARC owns objects; teardown removes
-KVO, notification and time observers and detaches the player layer.
+KVO, notification and time observers and detaches each player's own layer.
+ImageIO decodes still images on a bounded worker queue; validation also decodes
+an image without creating a visible renderer.
 
 `internal/playback/backend.go` defines the typed boundary. `bridge.h` defines
 the C ABI: UTF-8 input strings are copied; returned native malloc strings are
@@ -95,35 +97,64 @@ Go. Inspection admits one native operation at a time. Cancellation releases
 the caller, but an OS call may continue until the decoder/filesystem returns;
 it cannot hold the coordinator mutex or trap STOP behind it.
 
-## Commands, generation and blackout
+## Scenes, commands and stage presentation
 
-PLAY requires the current process instance and stop epoch. Accepted playback
-changes advance a generation. STOP advances the epoch, clears the active cue,
-cancels pending preparation and invalidates old native work before enqueueing
-blackout. Late callbacks are ignored. A latest-only mailbox replaces pending
-PLAY; there is no advancing cue queue. Native errors stop/blacken and remain
-visible. HTTP acknowledgement means accepted, not physically playing/silent.
+`SceneBackend.ApplyScene` supplies a complete desired scene: a foreground
+source/identity, independent image overlay, background image/video and audio
+opt-in, output IDs, stage visibility, fade duration and hard-stop flag. Native
+code copies every string before returning. Scene revision orders a latest-only
+command mailbox; foreground identity remains stable across image, background
+and visibility changes. A repeated intentional foreground PLAY uses a new
+identity. Legacy `Start/Stop/Stage` remain for the native diagnostic harness.
 
-The last 4,096 accepted request IDs are tracked with their payload hash and
-acknowledgement (FIFO eviction). Identical retries are idempotent; different
-payloads conflict. Deliberate repeated presses use different IDs and restart.
-Command-role responses use cue views without source paths or raw native errors.
+PLAY requires the current process instance and stop epoch. Accepted foreground
+changes advance a generation; replacement preparation keeps outgoing sound
+available until the incoming decoder starts. STOP advances the epoch, cancels
+pending foreground/image work and clears both selections. Native foreground
+`playing/progress/ended` events identify that foreground generation;
+`stage/background-error` events identify the applied scene revision. This lets
+music progress remain valid across a stage toggle while stale visual state is
+ignored. Async decoder completion is tied to source identity, and newer STOP
+or hard-stop commands prevent a stale decoder from starting or revealing.
 
-The stage window persists through STOP/end/error. Windows hides the EVR child
-surface over a black parent; macOS uses an independent black overlay and hides
-the video layer. Current-generation video alone can be revealed. Native
-renderers preserve aspect ratio. Disable/exit deliberately hide/close the stage.
-Escape stops playback and disables the stage, including a stale key event that
-overlaps a newer PLAY. App-local key handling needs no global keyboard permission.
-Connected browser pages send the same stage-off intent. STOP still retains an
-enabled black stage. Power assertions discourage idle/display sleep on the host;
+The last 4,096 accepted request IDs retain their payload hash and acknowledgement
+(FIFO eviction). Identical retries are idempotent; different payloads conflict.
+Deliberate repeated audio/video presses restart, unless optional audio-toggle
+mode makes a second press stop the current audio cue. Image cues preserve
+foreground sound; background buttons replace only the session's background.
+Hidden buttons remain saved cues and are omitted from the remote UI, not from
+role-appropriate state. Command responses contain no source paths or raw errors.
+
+Visual priority is image overlay, foreground video, background image/video, then
+opaque black. Native renderers preserve aspect ratio. Background video loops
+while the stage is enabled and remains muted behind foreground sound, retaining
+its loop position when music ends. Its soundtrack is opt-in. Stage off hides all
+visuals and silences background sound while preserving the foreground timeline;
+stage on restores the selected visual. Pointer hiding applies only over the
+visible native stage. It does not hide the pointer over Admin or other apps.
+
+When fading is enabled, the configured duration (initially one second; 0.1–30
+seconds) controls audio replacement and STOP. Incoming sound starts immediately
+from silence; otherwise outgoing and incoming streams overlap with volume ramps. Native code bounds active sources and retiring audio tails, and a
+new command retargets the current gains. STOP returns an enabled stage to the
+background, crossfading back to its optional soundtrack or fading to silence.
+Natural foreground completion also returns to background. A stopped foreground
+may therefore coexist with an audible background and an enabled stage.
+
+Escape, authenticated emergency stop, Quit and update shutdown immediately
+silence all streams, cancel fades and hide the stage. Connected browser pages
+send `/api/emergency-stop`; stage on/off is a separate operation. Native Escape
+remains effective when a concurrent PLAY makes its generation stale, without
+global keyboard permission. Foreground errors and device loss also disarm the
+stage; background errors leave foreground music intact. Explicit output
+re-selection/save is required after device loss. The system-default audio
+preference resolves to a concrete endpoint without changing global OS routing.
+
+HTTP acknowledgement means accepted, not physically playing or silent. Power
+assertions discourage idle/display sleep on the host while stage output is on;
 remote browser Screen Wake Lock is separate and requires a secure context.
-
-Native endpoint/display notifications trigger checks. Device loss stops media;
-display loss also hides/disarms output. Explicit re-selection/save is required
-after an output fault. The system-default audio preference is resolved anew
-for each cue and never changes global OS routing. Physical hotplug/relocation
-behavior still requires validation.
+Physical routing, cursor visibility, hotplug and projector behavior still require
+hardware validation.
 
 ## Files, persistence and network
 
@@ -132,7 +163,10 @@ process lock released by the OS after a crash. Saves sync a same-directory
 temporary file, then replace atomically (`rename` plus directory sync on Unix;
 `ReplaceFileW`/`MoveFileExW` on Windows). The previous valid snapshot becomes
 `state.json.bak`. Corruption stops startup, retaining the original for recovery.
-Restart restores cues/preferences but never playback or stage enablement.
+Restart restores cues/preferences, including the saved background, fade settings
+and hidden/background button flags, but never playback or stage enablement.
+Selecting a background button overrides the current session's background; the
+saved default remains the next-launch selection.
 
 Root restrictions resolve symlinks/junctions and compare relative paths and
 volumes, during browsing, source edits, inspection and each play preparation.

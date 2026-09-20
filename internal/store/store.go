@@ -45,7 +45,9 @@ func Open(dir string) (*Store, model.Config, error) {
 	if err == nil && len(data) > maxConfigBytes {
 		err = errors.New("configuration exceeds 4 MiB")
 	}
-	var config model.Config
+	// Only the newly introduced optional settings receive migration defaults;
+	// missing required schema/revision fields must still fail validation.
+	config := model.Config{Stage: model.DefaultConfig().Stage}
 	if err == nil {
 		decoder := json.NewDecoder(bytes.NewReader(data))
 		decoder.DisallowUnknownFields()
@@ -75,6 +77,9 @@ func validate(c model.Config) error {
 	if c.PlaylistRevision == 0 || len(c.Cues) > model.MaxCues {
 		return errors.New("invalid playlist revision or cue count")
 	}
+	if !c.Stage.Valid() {
+		return errors.New("invalid stage settings; fade duration must be between 0.1 and 30 seconds")
+	}
 	ids := map[string]bool{}
 	for _, cue := range c.Cues {
 		if cue.ID == "" || len(cue.ID) > 128 || ids[cue.ID] || strings.TrimSpace(cue.Label) == "" || len(cue.Label) > 512 || strings.ContainsAny(cue.Label, "\x00\r\n") || !filepath.IsAbs(cue.Path) || len(cue.Path) > 32768 {
@@ -84,6 +89,9 @@ func validate(c model.Config) error {
 			return errors.New("invalid cue color; use empty or #RRGGBB")
 		}
 		ids[cue.ID] = true
+	}
+	if c.Stage.BackgroundCueID != "" && !ids[c.Stage.BackgroundCueID] {
+		return errors.New("stage background must refer to a cue in the playlist")
 	}
 	return nil
 }

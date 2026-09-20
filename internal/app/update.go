@@ -13,7 +13,7 @@ func (s *Service) ReserveUpdate() (func(), error) {
 	if s.closed || s.state.UpdatePending {
 		return nil, problem("updating", "An update or shutdown is already in progress")
 	}
-	if s.state.State != "stopped" || s.state.StageEnabled || s.stageEnablePending {
+	if s.state.State != "stopped" || s.state.StageEnabled || s.stageDesired || s.stageEnablePending || s.pendingImageID != "" {
 		return nil, problem("must_stop", "Stop playback and disable stage output before updating Smart Stage")
 	}
 	s.invalidateLocked()

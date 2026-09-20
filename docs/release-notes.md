@@ -1,22 +1,27 @@
 Smart Stage preview for macOS Apple Silicon/Intel and Windows ARM64/AMD64.
 
-Preview 13 gives the Mac app its own Admin window:
+Preview 14 adds independent stage presentation and sound:
 
-- **Smart Stage.app opens Admin in a dedicated window**, using macOS WebKit.
-  Clicking the Dock icon or Open Admin brings that same window forward.
-- **Drop Finder files into the Admin window** to append them to the playlist.
-  Original files stay in place, with no uploads, copying or automatic playback.
-  Host files dragging and the native chooser remain available.
-- Closing the Admin window hides it while playback continues. **Quit Smart
-  Stage** stops playback, closes the stage and exits the app.
-- Native menus support normal Mac text editing. The local Admin interface keeps
-  its existing session and request protections; phone/tablet remote control
-  remains available through its URL and QR code.
+- Hide the pointer over the fullscreen stage. Stage on/off works while music or
+  video plays, without restarting the foreground timeline.
+- Select a saved image or looping video background in **Stage and sound**.
+  Background cue buttons can change it for the current session. Enable background
+  video audio to hear it when no foreground sound is playing.
+- Add image cues to the playlist. Showing an image keeps the music playing and
+  its button selected. An optional setting makes a second press of the selected
+  music button stop only that music.
+- Enable audio fades/crossfades and choose their duration (default one second).
+  New audio starts immediately from silence; otherwise it crossfades from the
+  outgoing sound. STOP returns to background audio or fades to silence.
+- Hide individual remote buttons without removing their cues from Admin.
+- STOP returns to the current background; Escape immediately silences everything
+  and closes the stage. Quit still stops playback and exits.
 
-Use the Mac app bundle for the dedicated window. Standalone Mac executables and
-Windows continue to open Admin in the system browser. A regular external browser
-cannot reveal Finder file paths; use the dedicated window, chooser or Dock for
-original-file imports on Mac.
+The Mac app retains its dedicated Admin window, Finder drag-and-drop of original
+files, Dock icon and Terminal-free launch. Standalone Mac and Windows executables
+use the system browser. Saved backgrounds and options persist; background buttons
+change the current session without overwriting the saved default. Media is fitted
+inside the stage while preserving its proportions.
 
 Automatic updates continue to install on launch, before playback. Existing
 preview 10 and later installations can update on their next launch. Saved shows and output
@@ -47,10 +52,10 @@ binary; no additional runtime is required.
 
 | Computer | Download |
 | --- | --- |
-| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.13/smartstage-darwin-arm64.zip) |
-| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.13/smartstage-darwin-amd64.zip) |
-| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.13/smartstage-windows-arm64.zip) |
-| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.13/smartstage-windows-amd64.zip) |
+| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.14/smartstage-darwin-arm64.zip) |
+| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.14/smartstage-darwin-amd64.zip) |
+| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.14/smartstage-windows-arm64.zip) |
+| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.14/smartstage-windows-amd64.zip) |
 
 The Mac app displays Admin in its dedicated window; standalone Mac and Windows
 launches use the system browser. Admin listens only on **127.0.0.1:8787**. Its Remote control area displays the phone/tablet
@@ -66,7 +71,7 @@ opens its dedicated Admin window. The primary Mac ZIP contains only the
 standalone executable.
 
 Native AVFoundation/Media Foundation playback, manual cue playlists, output
-selection, persistent blackout and atomic local persistence remain available.
+selection and atomic local persistence remain available.
 Playback retains preview 4's macOS rendering-layer cleanup and preview 3's
 Windows per-stream STOP muting. Prior native resource and physical-test limits
 remain documented in

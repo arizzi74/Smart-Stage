@@ -12,10 +12,12 @@ import (
 )
 
 type CueEdit struct {
-	ID    string  `json:"id"`
-	Label string  `json:"label"`
-	Path  string  `json:"path"`
-	Color *string `json:"color,omitempty"`
+	ID         string  `json:"id"`
+	Label      string  `json:"label"`
+	Path       string  `json:"path"`
+	Color      *string `json:"color,omitempty"`
+	Hidden     *bool   `json:"hidden,omitempty"`
+	Background *bool   `json:"background,omitempty"`
 }
 type PlaylistEdit struct {
 	ExpectedRevision uint64    `json:"expectedRevision"`
@@ -88,7 +90,17 @@ func (s *Service) editPlaylistLocked(edit PlaylistEdit) (model.Config, error) {
 		if !model.ValidCueColor(color) {
 			return model.Config{}, problem("invalid_color", "Cue colors must be empty for the default or use #RRGGBB")
 		}
-		next.Cues = append(next.Cues, model.Cue{ID: id, Label: label, Path: path, Color: color, Cache: cache})
+		hidden, background := previous.Hidden, previous.Background
+		if item.Hidden != nil {
+			hidden = *item.Hidden
+		}
+		if item.Background != nil {
+			background = *item.Background
+		}
+		if background && cache.Status == "ready" && cache.Media.Kind != "image" && cache.Media.Kind != "video" {
+			return model.Config{}, problem("invalid_background", "Only image and video cues can act as background buttons")
+		}
+		next.Cues = append(next.Cues, model.Cue{ID: id, Label: label, Path: path, Color: color, Hidden: hidden, Background: background, Cache: cache})
 	}
 	removing := map[string]bool{}
 	for id, c := range old {
@@ -108,11 +120,14 @@ func (s *Service) editPlaylistLocked(edit PlaylistEdit) (model.Config, error) {
 		s.mu.Unlock()
 		return model.Config{}, problem("revision_conflict", "Playlist changed; reload before editing")
 	}
-	if removing[s.state.ActiveCueID] {
+	if removing[s.state.ActiveCueID] || removing[s.state.ImageCueID] || removing[s.pendingImageID] {
 		s.mu.Unlock()
 		return model.Config{}, problem("active_cue", "Stop the active/loading cue before removing or replacing its source")
 	}
 	s.removing = removing
+	if removing[next.Stage.BackgroundCueID] {
+		next.Stage.BackgroundCueID = ""
+	}
 	next.PlaylistRevision++
 	s.mu.Unlock()
 	err := s.store.Save(next)
@@ -131,6 +146,9 @@ func (s *Service) editPlaylistLocked(edit PlaylistEdit) (model.Config, error) {
 		}
 	}
 	s.config = next
+	if removing[s.state.BackgroundCueID] {
+		s.selectBackgroundLocked(next.Stage.BackgroundCueID)
+	}
 	s.changedLocked()
 	result := s.config.Clone()
 	s.mu.Unlock()
@@ -190,26 +208,37 @@ func (s *Service) ConfigureOutputs(ctx context.Context, out model.Outputs) error
 	}
 	s.config.Outputs = out
 	s.state.OutputFault = false
-	s.stopLocked()
+	s.stageDesired = false
+	s.stageSerial++
+	s.state.StageEnabled = false
+	s.stopForegroundLocked(true, true)
 	// Moving output configuration disarms presentation until explicitly enabled
 	// or a new intentional video cue starts with these choices.
-	if err = s.backend.Stage(s.state.Generation, out.DisplayID, false); err != nil {
-		s.failLocked(err.Error())
-		return err
-	}
+	s.selectBackgroundLocked(s.state.BackgroundCueID)
 	return nil
 }
 
 func (s *Service) Stage(ctx context.Context, enabled bool) error {
-	if !enabled {
-		s.mu.Lock()
-		defer s.mu.Unlock()
-		s.stopLocked()
-		return s.backend.Stage(s.state.Generation, s.config.Outputs.DisplayID, false)
-	}
 	s.mu.Lock()
+	if s.closed {
+		s.mu.Unlock()
+		return problem("unavailable", "Application is shutting down")
+	}
+	s.stageSerial++
+	serial := s.stageSerial
 	out := s.config.Outputs
-	gen := s.state.Generation
+	if !enabled {
+		s.stageDesired = false
+		s.stageEnablePending = false
+		err := s.applySceneLocked(false)
+		if err != nil {
+			s.state.LastError = err.Error()
+			err = problem("stage_failed", "Stage output could not be changed; check Admin Status")
+		}
+		s.changedLocked()
+		s.mu.Unlock()
+		return err
+	}
 	s.mu.Unlock()
 	devices, err := s.backend.Devices(ctx)
 	if err != nil {
@@ -223,19 +252,20 @@ func (s *Service) Stage(ctx context.Context, enabled bool) error {
 	if s.closed || s.state.UpdatePending {
 		return problem("updating", "Wait for the application update before enabling the stage")
 	}
-	if s.state.Generation != gen || (s.state.State != "stopped" && s.state.State != "error") || s.configBusy {
-		return problem("must_stop", "Enable stage output while stopped")
+	if s.stageSerial != serial || s.config.Outputs != out || s.configBusy {
+		return problem("busy", "Stage settings changed; try again")
 	}
 	if s.state.OutputFault {
 		return problem("output_unavailable", "Re-select and save available outputs before enabling the stage")
 	}
-	s.stopLocked()
-	if err := s.backend.Stage(s.state.Generation, out.DisplayID, true); err != nil {
-		return err
+	s.stageDesired = true
+	if err := s.applySceneLocked(false); err != nil {
+		s.state.LastError = err.Error()
+		s.changedLocked()
+		return problem("stage_failed", "Stage output could not be changed; check Admin Status")
 	}
-	// Stop and Stage produce separate native completions. The earlier stopped
-	// event may still say stage=false while the enable request is queued.
 	s.stageEnablePending = true
+	s.changedLocked()
 	return nil
 }
 

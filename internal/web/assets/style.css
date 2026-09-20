@@ -73,3 +73,12 @@
   #files-section .breadcrumbs button{min-height:38px}
   #files-section .root-picker{max-width:none}
 }
+
+.cue-options{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:10px}
+.cue-options .check{margin:0;font-size:.76rem;color:var(--muted);gap:7px;min-height:28px}
+#stage-settings-form .check{margin:18px 0 8px}
+.fade-duration{font-size:.83rem;margin:12px 0}
+.fade-duration span{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:400}
+#fade-seconds{max-width:100px;margin:0}
+#current-background{padding:10px 12px;border-left:2px solid var(--accent);background:#adecd109}
+#stage-settings-message:empty{display:none}

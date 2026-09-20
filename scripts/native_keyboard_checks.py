@@ -17,7 +17,7 @@ def escape_checks(display):
                        "-Wall", "-Wextra", str(root / "scripts/native-keyboard-darwin.m"),
                        str(root / "internal/platform/bridge_darwin.m"), "-o", str(probe)]
             for framework in ("AppKit", "AVFoundation", "CoreAudio", "CoreMedia", "CoreVideo",
-                              "QuartzCore", "CoreGraphics", "IOKit", "UniformTypeIdentifiers", "WebKit"):
+                              "QuartzCore", "CoreGraphics", "IOKit", "UniformTypeIdentifiers", "WebKit", "ImageIO"):
                 command.extend(["-framework", framework])
         else:
             arch = "aarch64" if platform.machine().lower() in ("arm64", "aarch64") else "x86_64"

@@ -48,6 +48,8 @@ type CueView struct {
 	ID         string  `json:"id"`
 	Label      string  `json:"label"`
 	Color      string  `json:"color,omitempty"`
+	Hidden     bool    `json:"hidden,omitempty"`
+	Background bool    `json:"background,omitempty"`
 	Position   int     `json:"position"`
 	Kind       string  `json:"kind"`
 	Duration   float64 `json:"duration"`
@@ -59,34 +61,39 @@ type ValidationJob struct {
 	Total     int  `json:"total"`
 }
 type State struct {
-	InstanceID       string        `json:"instanceId"`
-	Revision         uint64        `json:"revision"`
-	PlaylistRevision uint64        `json:"playlistRevision"`
-	State            string        `json:"state"`
-	ActiveCueID      string        `json:"activeCueId"`
-	ActivePosition   int           `json:"activePosition"`
-	Elapsed          float64       `json:"elapsed"`
-	Duration         float64       `json:"duration"`
-	LastError        string        `json:"lastError"`
-	Outputs          model.Outputs `json:"outputs"`
-	ResolvedAudioID  string        `json:"resolvedAudioId"`
-	StageEnabled     bool          `json:"stageEnabled"`
-	OutputFault      bool          `json:"outputFault"`
-	Generation       uint64        `json:"generation"`
-	StopEpoch        uint64        `json:"stopEpoch"`
-	Cues             []CueView     `json:"cues"`
-	ValidationJob    ValidationJob `json:"validationJob"`
-	UpdatePending    bool          `json:"updatePending"`
+	InstanceID       string              `json:"instanceId"`
+	Revision         uint64              `json:"revision"`
+	PlaylistRevision uint64              `json:"playlistRevision"`
+	State            string              `json:"state"`
+	ActiveCueID      string              `json:"activeCueId"`
+	ActivePosition   int                 `json:"activePosition"`
+	Elapsed          float64             `json:"elapsed"`
+	Duration         float64             `json:"duration"`
+	LastError        string              `json:"lastError"`
+	Outputs          model.Outputs       `json:"outputs"`
+	Stage            model.StageSettings `json:"stage"`
+	BackgroundCueID  string              `json:"backgroundCueId"`
+	ImageCueID       string              `json:"imageCueId"`
+	BackgroundError  string              `json:"backgroundError"`
+	ResolvedAudioID  string              `json:"resolvedAudioId"`
+	StageEnabled     bool                `json:"stageEnabled"`
+	OutputFault      bool                `json:"outputFault"`
+	Generation       uint64              `json:"generation"`
+	StopEpoch        uint64              `json:"stopEpoch"`
+	Cues             []CueView           `json:"cues"`
+	ValidationJob    ValidationJob       `json:"validationJob"`
+	UpdatePending    bool                `json:"updatePending"`
 }
 type cachedRequest struct {
 	fingerprint [32]byte
 	ack         Ack
 }
 type loadJob struct {
-	ctx        context.Context
-	generation uint64
-	cue        model.Cue
-	outputs    model.Outputs
+	ctx         context.Context
+	generation  uint64
+	cue         model.Cue
+	outputs     model.Outputs
+	stageSerial uint64
 }
 
 type Service struct {
@@ -109,13 +116,31 @@ type Service struct {
 	configBusy         bool
 	stageEnablePending bool
 	closed             bool
+	sceneRevision      uint64
+	stageSerial        uint64
+	stageDesired       bool
+	foreground         presentationSource
+	image              presentationSource
+	background         presentationSource
+	visualLoads        chan visualJob
+	backgroundLoads    chan visualJob
+	visualSequence     uint64
+	backgroundSequence uint64
+	visualCancel       context.CancelFunc
+	backgroundCancel   context.CancelFunc
+	pendingImageID     string
+	legacyForegroundID uint64
+	legacyStage        bool
 }
 
 func New(backend playback.Backend, browser *files.Browser, store Persistence, config model.Config) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
+	if config.Stage.FadeSeconds == 0 {
+		config.Stage.FadeSeconds = 1
+	}
 	s := &Service{backend: backend, files: browser, store: store, config: config.Clone(), ctx: ctx, cancel: cancel,
 		loads: make(chan loadJob, 1), validation: make(chan struct{}, 1), requests: map[string]cachedRequest{},
-		subscribers: map[chan struct{}]struct{}{}, removing: map[string]bool{}}
+		subscribers: map[chan struct{}]struct{}{}, removing: map[string]bool{}, visualLoads: make(chan visualJob, 1), backgroundLoads: make(chan visualJob, 1)}
 	s.state = State{InstanceID: identity.New(), Revision: 1, State: "stopped", Generation: 1, StopEpoch: 1}
 	// Cached results never prove readiness in a new process.
 	for i := range s.config.Cues {
@@ -124,6 +149,11 @@ func New(backend playback.Backend, browser *files.Browser, store Persistence, co
 	go s.loadLoop()
 	go s.eventLoop()
 	go s.validationLoop()
+	go s.visualLoop(s.visualLoads, false)
+	go s.visualLoop(s.backgroundLoads, true)
+	s.mu.Lock()
+	s.selectBackgroundLocked(config.Stage.BackgroundCueID)
+	s.mu.Unlock()
 	return s
 }
 
@@ -133,15 +163,19 @@ func (s *Service) Snapshot(admin bool) State {
 	out := s.state
 	out.PlaylistRevision = s.config.PlaylistRevision
 	out.Outputs = s.config.Outputs
+	out.Stage = s.config.Stage
 	out.Cues = make([]CueView, 0, len(s.config.Cues))
 	for i, c := range s.config.Cues {
-		out.Cues = append(out.Cues, CueView{ID: c.ID, Label: c.Label, Color: c.Color, Position: i + 1, Kind: c.Cache.Media.Kind, Duration: c.Cache.Media.Duration, Validation: c.Cache.Status})
+		out.Cues = append(out.Cues, CueView{ID: c.ID, Label: c.Label, Color: c.Color, Hidden: c.Hidden, Background: c.Background, Position: i + 1, Kind: c.Cache.Media.Kind, Duration: c.Cache.Media.Duration, Validation: c.Cache.Status})
 		if c.ID == out.ActiveCueID {
 			out.ActivePosition = i + 1
 		}
 	}
 	if !admin && out.LastError != "" {
 		out.LastError = "Playback or output error. Check Admin Status before retrying."
+	}
+	if !admin && out.BackgroundError != "" {
+		out.BackgroundError = "Background unavailable. Check Admin."
 	}
 	return out
 }
@@ -219,7 +253,6 @@ func (s *Service) rememberLocked(id string, hash [32]byte) Ack {
 	return a
 }
 func (s *Service) invalidateLocked() {
-	s.stageEnablePending = false
 	if s.loadCancel != nil {
 		s.loadCancel()
 		s.loadCancel = nil
@@ -277,6 +310,21 @@ func (s *Service) Play(r PlayRequest) (Ack, error) {
 	if cue.Cache.Status == "missing" || cue.Cache.Status == "unsupported" || cue.Cache.Status == "error" {
 		return Ack{}, problem("cue_invalid", "Cue needs successful validation in Admin before playback")
 	}
+	if cue.Background {
+		s.selectBackgroundLocked(cue.ID)
+		s.changedLocked()
+		return s.rememberLocked(r.RequestID, hash), nil
+	}
+	if cue.Cache.Media.Kind == "image" || cue.Cache.Media.Kind == "" && imageFile(cue.Path) {
+		s.selectImageLocked(*cue)
+		s.changedLocked()
+		return s.rememberLocked(r.RequestID, hash), nil
+	}
+	if s.config.Stage.ToggleAudio && cue.ID == s.state.ActiveCueID && cue.Cache.Media.Kind == "audio" {
+		s.stopForegroundLocked(false, false)
+		return s.rememberLocked(r.RequestID, hash), nil
+	}
+	s.clearImageLocked()
 	s.invalidateLocked()
 	s.state.State = "loading"
 	s.state.ActiveCueID = cue.ID
@@ -284,13 +332,11 @@ func (s *Service) Play(r PlayRequest) (Ack, error) {
 	s.state.Elapsed = 0
 	s.state.Duration = cue.Cache.Media.Duration
 	s.state.ResolvedAudioID = ""
-	if err := s.backend.Stop(s.state.Generation); err != nil {
-		s.failLocked(err.Error())
-		return s.rememberLocked(r.RequestID, hash), nil
-	}
+	// Keep the previous native source audible while the replacement is checked
+	// and prepared. The native scene mixer performs the eventual crossfade.
 	ctx, cancel := context.WithCancel(s.ctx)
 	s.loadCancel = cancel
-	s.loads <- loadJob{ctx, s.state.Generation, *cue, s.config.Outputs}
+	s.loads <- loadJob{ctx: ctx, generation: s.state.Generation, cue: *cue, outputs: s.config.Outputs, stageSerial: s.stageSerial}
 	s.changedLocked()
 	return s.rememberLocked(r.RequestID, hash), nil
 }
@@ -308,12 +354,20 @@ func (s *Service) Stop(r StopRequest) (Ack, error) {
 	return s.rememberLocked(r.RequestID, hash), nil
 }
 func (s *Service) stopLocked() {
+	s.stopForegroundLocked(true, false)
+}
+
+func (s *Service) stopForegroundLocked(clearImage, hard bool) {
 	s.invalidateLocked()
 	s.state.StopEpoch++
 	s.clearActiveLocked()
+	s.foreground = presentationSource{}
+	if clearImage {
+		s.clearImageLocked()
+	}
 	s.state.State = "stopping"
 	s.state.LastError = ""
-	if err := s.backend.Stop(s.state.Generation); err != nil {
+	if err := s.applySceneLocked(hard); err != nil {
 		s.state.State = "error"
 		s.state.LastError = err.Error()
 	}
@@ -323,9 +377,15 @@ func (s *Service) failLocked(message string) {
 	s.invalidateLocked()
 	s.state.StopEpoch++
 	s.clearActiveLocked()
+	s.foreground = presentationSource{}
+	s.clearImageLocked()
+	s.stageDesired = false
+	s.stageSerial++
+	s.stageEnablePending = false
+	s.state.StageEnabled = false
 	s.state.State = "error"
 	s.state.LastError = message
-	_ = s.backend.Stop(s.state.Generation)
+	_ = s.applySceneLocked(true)
 	s.changedLocked()
 }
 func (s *Service) loadLoop() {
@@ -395,7 +455,7 @@ func (s *Service) prepare(job loadJob) {
 			err = errors.New("Selected audio output is unavailable; select an output in Admin")
 		}
 	}
-	if err == nil && cache.Media.HasVideo {
+	if err == nil && (cache.Media.HasVideo || cache.Media.Kind == "image") {
 		err = checkDisplay(devices, job.outputs)
 	}
 	if job.ctx.Err() != nil {
@@ -415,9 +475,35 @@ func (s *Service) prepare(job loadJob) {
 		s.failLocked(err.Error())
 		return
 	}
+	// An image added before validation still preserves any existing music.
+	// Usually images are dispatched directly by Play after playlist validation.
+	if cache.Media.Kind == "image" {
+		s.state.ActiveCueID = s.foreground.cueID
+		if s.foreground.id == 0 {
+			s.state.State = "stopped"
+		} else {
+			s.state.State = "playing"
+		}
+		s.state.Duration = s.foreground.duration
+		s.image = presentationSource{cueID: job.cue.ID, path: path, kind: "image"}
+		s.state.ImageCueID = job.cue.ID
+		if job.stageSerial == s.stageSerial {
+			s.stageDesired = true
+		}
+		if err = s.applySceneLocked(false); err != nil {
+			s.failLocked(err.Error())
+			return
+		}
+		s.changedLocked()
+		return
+	}
 	s.state.ResolvedAudioID = resolvedAudio
 	s.state.Duration = cache.Media.Duration
-	if err = s.backend.Start(playback.Start{Generation: job.generation, Path: path, AudioID: resolvedAudio, DisplayID: job.outputs.DisplayID, Video: cache.Media.HasVideo}); err != nil {
+	s.foreground = presentationSource{id: job.generation, cueID: job.cue.ID, path: path, kind: cache.Media.Kind, hasAudio: cache.Media.HasAudio, audioID: resolvedAudio, duration: cache.Media.Duration}
+	if cache.Media.HasVideo && job.stageSerial == s.stageSerial {
+		s.stageDesired = true
+	}
+	if err = s.applySceneLocked(false); err != nil {
 		s.failLocked(err.Error())
 		return
 	}
@@ -465,24 +551,50 @@ func (s *Service) nativeEvent(e playback.Event) {
 	// A local emergency STOP, like an HTTP STOP, has no stale-generation
 	// precondition. It must still stop a concurrently accepted controller PLAY.
 	if e.Kind == "escape" {
-		s.stopLocked()
+		s.stageDesired = false
+		s.stageSerial++
+		s.stopForegroundLocked(true, true)
 		// Escape closes the stage as well as stopping. Apply the decision to
 		// the current generation even when a concurrent PLAY made the native
 		// key event's generation stale.
 		s.state.StageEnabled = false
-		if err := s.backend.Stage(s.state.Generation, s.config.Outputs.DisplayID, false); err != nil {
-			s.state.State = "error"
-			s.state.LastError = err.Error()
+		s.changedLocked()
+		return
+	}
+	if e.Kind == "stage" || e.Kind == "background-error" {
+		if e.SceneRevision != s.sceneRevision {
+			return
+		}
+		s.state.StageEnabled = e.StageEnabled
+		s.stageEnablePending = false
+		if e.Kind == "background-error" {
+			s.state.BackgroundError = e.Message
 		}
 		s.changedLocked()
 		return
 	}
-	if e.Generation != s.state.Generation {
+	// Output loss belongs to the currently committed native scene, including
+	// while a replacement cue is still being inspected. Cancel that replacement
+	// instead of letting it rearm a scene after the native emergency shutdown.
+	if e.Kind == "device-lost" && e.SceneRevision != 0 && e.SceneRevision == s.sceneRevision {
+		s.state.OutputFault = true
+		s.failLocked(e.Message)
 		return
 	}
-	s.state.StageEnabled = e.StageEnabled
-	if e.StageEnabled {
-		s.stageEnablePending = false
+	expected := s.state.Generation
+	if s.state.State == "playing" && s.foreground.id != 0 {
+		expected = s.foreground.id
+	}
+	if e.Generation != expected {
+		return
+	}
+	// Music keeps its identity across visual changes. Its queued progress may
+	// describe the previous stage visibility, but its timeline is still valid.
+	if e.SceneRevision == s.sceneRevision || e.SceneRevision == 0 {
+		s.state.StageEnabled = e.StageEnabled
+		if e.StageEnabled {
+			s.stageEnablePending = false
+		}
 	}
 	switch e.Kind {
 	case "playing":
@@ -504,7 +616,12 @@ func (s *Service) nativeEvent(e playback.Event) {
 			return
 		}
 		s.clearActiveLocked()
+		s.foreground = presentationSource{}
 		s.state.State = "stopped"
+		if err := s.applySceneLocked(false); err != nil {
+			s.failLocked(err.Error())
+			return
+		}
 	case "stopped":
 		if s.state.State != "stopping" && s.state.State != "stopped" {
 			return
@@ -527,7 +644,9 @@ func (s *Service) Close() {
 	if s.closed {
 		return
 	}
-	s.stopLocked()
+	s.stageDesired = false
+	s.stageSerial++
+	s.stopForegroundLocked(true, true)
 	s.closed = true
 	s.cancel()
 	for ch := range s.subscribers {

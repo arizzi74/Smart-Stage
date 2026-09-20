@@ -25,6 +25,7 @@ type commandStageBackend struct {
 	enabled    bool
 	stageCalls int
 	stopError  error
+	stageError error
 }
 
 func (*commandStageBackend) Devices(context.Context) (playback.Devices, error) {
@@ -46,6 +47,11 @@ func (b *commandStageBackend) Stop(generation uint64) error {
 }
 func (b *commandStageBackend) Stage(generation uint64, _ string, enabled bool) error {
 	b.mu.Lock()
+	if b.stageError != nil {
+		err := b.stageError
+		b.mu.Unlock()
+		return err
+	}
 	b.enabled = enabled
 	b.stageCalls++
 	b.mu.Unlock()
@@ -94,7 +100,7 @@ func waitCommandStageState(t *testing.T, service *app.Service, state string, ena
 	t.Fatalf("stage state did not become %s, enabled=%v: %+v", state, enabled, service.Snapshot(false))
 }
 
-func TestRemoteStageOnRequiresStoppedAndOffStopsPlayback(t *testing.T) {
+func TestRemoteStageOnAndOffPreservePlayback(t *testing.T) {
 	command, authentication, service, _ := commandStageSetup(t)
 	session, _ := authentication.PairCommand(authentication.CommandToken(), "remote")
 	origin := "http://127.0.0.1:8787"
@@ -108,17 +114,17 @@ func TestRemoteStageOnRequiresStoppedAndOffStopsPlayback(t *testing.T) {
 		t.Fatalf("remote PLAY: %d %s", response.Code, response.Body.String())
 	}
 	waitCommandStageState(t, service, "playing", true)
-	if response := request(command, "POST", "/api/stage-output", `{"enabled":true}`, session, origin); response.Code != 409 {
-		t.Fatalf("remote enabled stage during playback: %d %s", response.Code, response.Body.String())
+	if response := request(command, "POST", "/api/stage-output", `{"enabled":true}`, session, origin); response.Code != 202 {
+		t.Fatalf("remote could not enable stage during playback: %d %s", response.Code, response.Body.String())
 	}
 	before := service.Snapshot(false)
 	if response := request(command, "POST", "/api/stage-output", `{"enabled":false}`, session, origin); response.Code != 202 {
 		t.Fatalf("remote stage off: %d %s", response.Code, response.Body.String())
 	}
-	waitCommandStageState(t, service, "stopped", false)
+	waitCommandStageState(t, service, "playing", false)
 	after := service.Snapshot(false)
-	if after.ActiveCueID != "" || after.StopEpoch <= before.StopEpoch {
-		t.Fatal("remote stage off did not stop and invalidate playback")
+	if after.ActiveCueID != before.ActiveCueID || after.StopEpoch != before.StopEpoch || after.Generation != before.Generation {
+		t.Fatal("remote stage off interrupted or invalidated playback")
 	}
 }
 
@@ -144,7 +150,7 @@ func TestRemoteStageRetainsSessionOriginCSRFBorders(t *testing.T) {
 			t.Fatalf("remote GET gained access to %s: %d", route, response.Code)
 		}
 	}
-	for _, route := range []string{"/api/playlist", "/api/outputs"} {
+	for _, route := range []string{"/api/playlist", "/api/outputs", "/api/stage-settings"} {
 		if response := request(command, "PUT", route, "{}", session, origin); response.Code != 403 {
 			t.Fatalf("remote mutation gained access to %s: %d", route, response.Code)
 		}
@@ -165,10 +171,10 @@ func TestRemoteStageResponseRedactsNativeErrors(t *testing.T) {
 	session, _ := authentication.PairCommand(authentication.CommandToken(), "remote")
 	const privateError = "Could not stop /private/operator/show/secret.wav"
 	backend.mu.Lock()
-	backend.stopError = errors.New(privateError)
+	backend.stageError = errors.New(privateError)
 	backend.mu.Unlock()
-	response := request(command, "POST", "/api/stage-output", `{"enabled":false}`, session, "http://127.0.0.1:8787")
-	if response.Code != 202 || strings.Contains(response.Body.String(), privateError) || strings.Contains(response.Body.String(), "secret.wav") {
+	response := request(command, "POST", "/api/stage-output", `{"enabled":true}`, session, "http://127.0.0.1:8787")
+	if response.Code != 400 || strings.Contains(response.Body.String(), privateError) || strings.Contains(response.Body.String(), "secret.wav") {
 		t.Fatalf("remote stage response leaked a native error: %d %s", response.Code, response.Body.String())
 	}
 	if service.Snapshot(true).LastError != privateError {

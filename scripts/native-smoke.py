@@ -83,6 +83,17 @@ try:
         from native_keyboard_checks import escape_checks
         records.append({'nativeKeyboardEvents':escape_checks(screen),
                         'method':'Test-only event driver linked against the production bridge; no physical keyboard assertion'})
+    if devices['displays'] and (sys.platform == 'win32' or devices['audio']):
+        if sys.platform == 'darwin':
+            from native_scene_checks import scene_checks
+            scene = scene_checks(devices)
+        else:
+            from windows_scene_checks import scene_checks
+            endpoint = next((item for item in devices['audio'] if item['default']), next(iter(devices['audio']), None))
+            scene = scene_checks(endpoint, devices['displays'][0])
+        records.append({'nativeScene': scene, 'method': 'Test-only observer of production native players, gain, timeline and presentation; no physical speaker assertion'})
+    else:
+        records.append({'nativeScene': {'status': 'unavailable', 'reason': 'Native scene checks need an audio endpoint and display', 'audioEndpoints': len(devices['audio']), 'displays': len(devices['displays'])}})
     print('Native smoke checks passed. This checks native events, not physical routing or visible blackout.')
 finally:
     Path(exe+'.smoke.json').write_text(json.dumps(records,indent=2,ensure_ascii=False),encoding='utf-8')

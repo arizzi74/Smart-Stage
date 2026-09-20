@@ -8,6 +8,7 @@ let state = null, role = '', csrf = '', online = false, source = null, lastSeen 
 let playlist = null, devices = null, fileSelection = new Set(), fileEntries = [];
 let fileBrowsePath = '', fileBrowseSequence = 0;
 let playlistBusy = false, refreshing = false, renderedOrder = '', playlistRefresh = false;
+let stageSettingsDirty = false, stageSettingsRevision = 0;
 let draggedHostPaths = [], hostDragDepth = 0;
 let controlSequence = 0;
 let validationSignature = '', validationRefresh = false;
@@ -222,7 +223,8 @@ function applyState(next) {
   $('playback-error').hidden = !next.lastError; $('playback-error').textContent = next.lastError;
   renderCues();
   if (adminPage && role === 'admin') {
-    $('stage-state').textContent = next.stageEnabled ? 'Stage output enabled · STOP retains black' : 'Stage output disabled';
+    $('stage-state').textContent = next.stageEnabled ? 'Stage output enabled · STOP returns to background' : 'Stage output disabled · music is independent';
+    renderBackgroundStatus();
     const job = next.validationJob;
     $('validate').textContent = job.running ? `Validating ${job.completed}/${job.total}…` : 'Validate all cues';
     for (const c of next.cues) {
@@ -241,6 +243,9 @@ function applyState(next) {
       ['Playback', next.state], ['Current cue', current?.label || 'None'],
       ['Stage', next.stageEnabled ? 'Enabled' : 'Disabled'], ['Output selection', next.outputFault ? 'Re-select outputs required' : 'Configured'],
       ['Audio route', next.resolvedAudioId ? (devices?.audio.find(d => d.id === next.resolvedAudioId)?.name || next.resolvedAudioId) : 'No active route'],
+      ['Background', next.cues.find(c => c.id === next.backgroundCueId)?.label || 'None — black'],
+      ['Stage image', next.cues.find(c => c.id === next.imageCueId)?.label || 'None'],
+      ['Background error', next.backgroundError || 'None'],
       ['Playlist revision', next.playlistRevision], ['Validation', job.running ? `${job.completed} of ${job.total}` : 'Idle']
     ]) { details.append(element('dt', label), element('dd', String(value))); }
     if (playlist && playlist.playlistRevision !== next.playlistRevision && !playlistBusy && !playlistRefresh) {
@@ -251,12 +256,13 @@ function applyState(next) {
   }
 }
 function renderCues() {
-  const order = state.cues.map(c => c.id).join('|');
-  for (const [id, node] of cueButtons) if (!state.cues.some(c => c.id === id)) { node.remove(); cueButtons.delete(id); }
-  for (const cue of state.cues) {
+  const visible = state.cues.filter(cue => !cue.hidden);
+  const order = visible.map(c => c.id).join('|');
+  for (const [id, node] of cueButtons) if (!visible.some(c => c.id === id)) { node.remove(); cueButtons.delete(id); }
+  for (const cue of visible) {
     let node = cueButtons.get(cue.id);
     if (!node) {
-      node = button('', () => trigger(cue.id), 'cue');
+      node = button('', () => trigger(cue.id), 'cue'); node.dataset.cueId = cue.id;
       node.append(element('span', '', 'cue-title'), element('span', '', 'cue-meta'));
       cueButtons.set(cue.id, node);
     }
@@ -265,13 +271,22 @@ function renderCues() {
     node.classList.toggle('custom-color', Boolean(color));
     if (color) { node.style.setProperty('--cue-fill', color); node.style.setProperty('--cue-ink', cueTextColor(color)); }
     else { node.style.removeProperty('--cue-fill'); node.style.removeProperty('--cue-ink'); }
-    const active = state.activeCueId === cue.id && ['loading', 'playing'].includes(state.state);
-    node.lastChild.replaceChildren(element('span', `${String(cue.position).padStart(2, '0')} · ${cue.kind || 'unchecked'}`), element('span', active ? state.state : cue.validation === 'ready' ? 'Start cue ↗' : cue.validation));
+    const foreground = state.activeCueId === cue.id && ['loading', 'playing'].includes(state.state);
+    const image = state.stageEnabled && state.imageCueId === cue.id;
+    const background = Boolean(cue.background && state.backgroundCueId === cue.id);
+    const active = foreground || image || background;
+    let action = cue.background ? 'Set background ↗' : cue.kind === 'image' ? 'Show image ↗' : 'Start cue ↗';
+    if (background) action = 'Background selected';
+    if (image) action = 'On stage';
+    if (foreground) action = cue.kind === 'audio' && state.stage?.toggleAudio ? 'Press again to stop' : state.state;
+    if (cue.validation !== 'ready' && !active) action = cue.validation;
+    node.lastChild.replaceChildren(element('span', `${String(cue.position).padStart(2, '0')} · ${cue.background ? 'background ' : ''}${cue.kind || 'unchecked'}`), element('span', action));
     node.classList.toggle('active', active); node.setAttribute('aria-pressed', String(active));
     node.disabled = !online || updatePending() || ['missing', 'unsupported', 'error'].includes(cue.validation);
     if (renderedOrder !== order) $('cue-grid').append(node);
   }
-  renderedOrder = order; $('empty-cues').hidden = state.cues.length > 0;
+  renderedOrder = order; $('empty-cues').hidden = visible.length > 0;
+  $('empty-cues').textContent = state.cues.length ? 'No visible buttons. Show cue buttons in Admin on the host computer.' : 'Your show is empty. Add cues on the host computer to get started.';
 }
 function validCueColor(value) { return /^#[0-9a-f]{6}$/i.test(value || '') ? value : ''; }
 function cueTextColor(color) {
@@ -284,8 +299,8 @@ function renderRemoteStage() {
   control.textContent = enabled ? 'Stage on' : 'Stage off';
   control.setAttribute('aria-pressed', String(enabled));
   control.setAttribute('aria-label', enabled ? 'Disable stage output' : 'Enable stage output');
-  control.disabled = !enabled && (!online || !state || state.state !== 'stopped' || state.outputFault || updatePending());
-  control.title = enabled ? 'Stop playback and close the stage display' : control.disabled ? 'Stop playback before enabling the stage display' : 'Open the stage display';
+  control.disabled = !online || !state || (!enabled && (state.outputFault || updatePending()));
+  control.title = enabled ? 'Close the stage display; music keeps playing' : 'Open the stage display; music keeps playing';
 }
 async function trigger(cueId) {
   if (updatePending()) { notify('Smart Stage is preparing an update. Playback is unavailable until it finishes.'); return; }
@@ -391,8 +406,11 @@ function renderEditAvailability() {
   $('choose-files').disabled = !online || role !== 'admin' || chooseFilesBusy || quitBusy || appClosed || updatePending() || playlistBusy;
   const pending = updatePending();
   $('save-outputs').disabled = pending || !['stopped', 'error'].includes(state.state);
-  $('enable-stage').disabled = pending || !['stopped', 'error'].includes(state.state) || state.outputFault;
-  $('disable-stage').disabled = pending;
+  $('enable-stage').disabled = !online || pending || state.outputFault;
+  $('disable-stage').disabled = !online;
+  const editingStage = !online || pending || playlistBusy || !playlist;
+  for (const id of ['background-cue', 'background-audio', 'fade-enabled', 'toggle-audio', 'save-stage-settings']) $(id).disabled = editingStage;
+  $('fade-seconds').disabled = editingStage || !$('fade-enabled').checked;
   $('validate').disabled = pending || state.validationJob.running;
   for (const id of ['audio-output', 'display-output', 'allow-primary']) $(id).disabled = pending;
   for (const [id, row] of playlistRows) {
@@ -403,6 +421,14 @@ function renderEditAvailability() {
     row.remove.disabled = pending || id === state.activeCueId;
     row.color.disabled = pending;
     row.resetColor.disabled = pending || !row.customColor;
+    row.hidden.disabled = pending || playlistBusy;
+    const cue = playlist?.cues.find(c => c.id === id);
+    const foreground = state.activeCueId === id && ['loading', 'playing'].includes(state.state);
+    const selected = foreground || (state.stageEnabled && state.imageCueId === id) || (cue?.background && state.backgroundCueId === id);
+    row.play.setAttribute('aria-pressed', String(Boolean(selected)));
+    row.play.textContent = cue?.background ? 'Set background' : cue?.cache.media.kind === 'image' ? 'Show image' : foreground && cue?.cache.media.kind === 'audio' && state.stage?.toggleAudio ? 'Stop music' : 'Play';
+    row.background.disabled = pending || playlistBusy || !['image', 'video'].includes(cue?.cache.media.kind);
+    row.backgroundLabel.hidden = !['image', 'video'].includes(cue?.cache.media.kind) && !cue?.background;
   }
   updateSelected();
 }
@@ -509,18 +535,18 @@ async function refreshValidationDetails() {
       }
     }
   } catch (error) { notify(error.message, true); }
-  finally { validationRefresh = false; }
+  finally { validationRefresh = false; renderStageSettings(); renderEditAvailability(); }
 }
-function cueEdits() { return playlist.cues.map(({ id, label, path, color }) => ({ id, label, path, color: color || '' })); }
+function cueEdits() { return playlist.cues.map(({ id, label, path, color, hidden, background }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background) })); }
 async function savePlaylist(cues) {
   if (updatePending()) { notify('Smart Stage is preparing an update. Wait before editing the show.'); return false; }
   if (playlistBusy) { notify('An edit is being saved. Wait before making another edit.', true); return false; }
-  playlistBusy = true;
+  playlistBusy = true; renderEditAvailability();
   try {
     playlist = await api('PUT', '/api/playlist', { expectedRevision: playlist.playlistRevision, cues });
     renderPlaylist(); notify('Playlist saved.'); await refreshState(); return true;
   } catch (error) { notify(`${error.message} Your edit was not saved. Reload to use the host version.`, true); return false; }
-  finally { playlistBusy = false; }
+  finally { playlistBusy = false; renderEditAvailability(); }
 }
 const hostFileDragType = 'application/x-smartstage-host-files';
 function fileDropMessage(message, error = false) {
@@ -599,6 +625,17 @@ function renderPlaylist() {
     const resetColor = button('Default', () => { const edited = cueEdits(); edited[index].color = ''; void savePlaylist(edited); });
     resetColor.setAttribute('aria-label', `Use default color for cue ${index + 1}`);
     colors.append(colorLabel, resetColor); info.append(colors);
+    const options = element('div', undefined, 'cue-options');
+    const hiddenLabel = element('label', undefined, 'check'), hidden = element('input'); hidden.type = 'checkbox'; hidden.checked = Boolean(cue.hidden);
+    hidden.setAttribute('aria-label', `Hide remote button for cue ${index + 1}`);
+    hidden.addEventListener('change', () => { const edited = cueEdits(); edited[index].hidden = hidden.checked; void savePlaylist(edited); });
+    hiddenLabel.append(hidden, document.createTextNode('Hide remote button'));
+    const backgroundLabel = element('label', undefined, 'check'), background = element('input'); background.type = 'checkbox'; background.checked = Boolean(cue.background);
+    background.setAttribute('aria-label', `Use cue ${index + 1} as a background button`);
+    background.addEventListener('change', () => { const edited = cueEdits(); edited[index].background = background.checked; void savePlaylist(edited); });
+    backgroundLabel.append(background, document.createTextNode('Background button'));
+    backgroundLabel.title = 'Pressing this button changes the stage background and keeps music playing.';
+    options.append(hiddenLabel, backgroundLabel); info.append(options);
     if (counts.get(cue.label) > 1) info.append(element('p', 'Duplicate label — use cue position to distinguish.', 'hint'));
     const tools = element('div', undefined, 'cue-tools');
     const move = delta => { const edited = cueEdits(); [edited[index], edited[index + delta]] = [edited[index + delta], edited[index]]; void savePlaylist(edited); };
@@ -609,10 +646,65 @@ function renderPlaylist() {
     const play = button('Play', () => trigger(cue.id));
     tools.append(play, up, down, remove);
     row.append(element('span', String(index + 1).padStart(2, '0'), 'position'), info, tools);
-    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
+    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, hidden, background, backgroundLabel, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
   });
-  renderEditAvailability();
+  renderStageSettings(); renderEditAvailability();
 }
+function renderBackgroundStatus() {
+  if (!adminPage || !state) return;
+  const current = state.cues.find(cue => cue.id === state.backgroundCueId);
+  $('current-background').textContent = `Current background: ${current?.label || 'None — black'}${state.stageEnabled ? '' : ' · stage is off'}${state.backgroundError ? ` · ${state.backgroundError}` : ''}`;
+}
+function renderStageSettings() {
+  if (!playlist || !adminPage) return;
+  const settings = playlist.stage || {};
+  const selected = stageSettingsDirty ? $('background-cue').value : settings.backgroundCueId || '';
+  const options = [option('', 'None — black')];
+  for (const cue of playlist.cues) {
+    if (['image', 'video'].includes(cue.cache.media.kind) && cue.cache.status === 'ready') options.push(option(cue.id, `${cue.label} · ${cue.cache.media.kind}`));
+  }
+  if (selected && !options.some(item => item.value === selected)) {
+    const cue = playlist.cues.find(item => item.id === selected);
+    options.push(option(selected, `${cue?.label || 'Previous background'} · unavailable`));
+  }
+  $('background-cue').replaceChildren(...options); $('background-cue').value = selected;
+  if (!stageSettingsDirty) {
+    stageSettingsRevision = playlist.playlistRevision;
+    $('background-audio').checked = Boolean(settings.backgroundAudio);
+    $('fade-enabled').checked = Boolean(settings.fadeEnabled);
+    $('fade-seconds').value = settings.fadeSeconds > 0 ? settings.fadeSeconds : 1;
+    $('toggle-audio').checked = Boolean(settings.toggleAudio);
+  }
+  renderBackgroundStatus();
+}
+for (const id of ['background-cue', 'background-audio', 'fade-enabled', 'fade-seconds', 'toggle-audio']) $(id).addEventListener('input', () => {
+  if (!stageSettingsDirty) stageSettingsRevision = playlist?.playlistRevision || 0;
+  stageSettingsDirty = true; $('stage-settings-message').textContent = 'Unsaved changes.';
+  $('stage-settings-message').classList.remove('error'); renderEditAvailability();
+});
+$('stage-settings-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!online || !playlist || playlistBusy || updatePending()) return;
+  const fadeSeconds = Number($('fade-seconds').value);
+  if (!Number.isFinite(fadeSeconds) || fadeSeconds < .1 || fadeSeconds > 30) {
+    $('stage-settings-message').textContent = 'Choose a transition duration from 0.1 to 30 seconds.';
+    $('stage-settings-message').classList.add('error'); return;
+  }
+  const settings = {
+    backgroundCueId: $('background-cue').value, backgroundAudio: $('background-audio').checked,
+    fadeEnabled: $('fade-enabled').checked, fadeSeconds, toggleAudio: $('toggle-audio').checked
+  };
+  playlistBusy = true; renderEditAvailability();
+  try {
+    playlist = await api('PUT', '/api/stage-settings', { expectedRevision: stageSettingsRevision || playlist.playlistRevision, settings });
+    stageSettingsDirty = false; renderPlaylist();
+    $('stage-settings-message').textContent = 'Stage and sound settings saved.';
+    $('stage-settings-message').classList.remove('error'); await refreshState();
+  } catch (error) {
+    $('stage-settings-message').textContent = `${error.message} Settings were not saved. Reload the playlist before trying again.`;
+    $('stage-settings-message').classList.add('error');
+  } finally { playlistBusy = false; renderEditAvailability(); }
+});
 async function browse(path = '') {
   const sequence = ++fileBrowseSequence;
   fileBrowsePath = path;
@@ -680,7 +772,7 @@ $('add-files').addEventListener('click', async () => {
   const additions = selectedHostPaths().map(path => ({ id: '', label: '', path }));
   if (await savePlaylist([...cueEdits(), ...additions])) { fileSelection.clear(); $('file-list').querySelectorAll('input[type=checkbox]').forEach(node => { node.checked = false; }); updateSelected(); }
 });
-$('reload-playlist').addEventListener('click', () => loadPlaylist());
+$('reload-playlist').addEventListener('click', () => { stageSettingsDirty = false; $('stage-settings-message').textContent = ''; void loadPlaylist(); });
 $('validate').addEventListener('click', async () => {
   try { await api('POST', '/api/validate', {}); notify('Native validation started. STOP remains available.'); }
   catch (error) { notify(error.message, true); }
@@ -701,7 +793,7 @@ async function loadDevices() {
 }
 function displayWarning() {
   const d = devices?.displays.find(item => item.id === $('display-output').value);
-  $('display-warning').textContent = !d ? 'Choose a display to use video cues.' : d.mirrored ? 'This display is mirrored. The desktop cannot present an independent stage image.' : d.primary || devices.displays.length === 1 ? 'Warning: enabling stage output or a video cue covers the primary/only display.' : 'Video fills only the selected display, with black bars to preserve its aspect ratio.';
+  $('display-warning').textContent = !d ? 'Choose a display to show images, videos, and backgrounds.' : d.mirrored ? 'This display is mirrored. The desktop cannot present an independent stage image.' : d.primary || devices.displays.length === 1 ? 'Warning: enabling stage output or a video cue covers the primary/only display.' : 'Images and videos fill the selected display while preserving their aspect ratio.';
 }
 $('display-output').addEventListener('change', () => { $('allow-primary').checked = false; displayWarning(); });
 $('refresh-devices').addEventListener('click', () => loadDevices());
@@ -713,14 +805,19 @@ $('save-outputs').addEventListener('click', async () => {
 });
 async function setStageOutput(enabled) {
   if (!csrf) { showPair(); return; }
-  try { await api('POST', '/api/stage-output', { enabled }); notify(enabled ? 'Stage enable accepted.' : 'Stop and stage disable accepted.'); await refreshState(); }
-  catch (error) { notify(`${enabled ? 'Stage enable' : 'Stop and stage disable'} is unconfirmed. ${error.message}`, true); }
+  try { await api('POST', '/api/stage-output', { enabled }); notify(enabled ? 'Stage enable accepted. Music keeps playing.' : 'Stage disable accepted. Music keeps playing.'); await refreshState(); }
+  catch (error) { notify(`${enabled ? 'Stage enable' : 'Stage disable'} is unconfirmed. ${error.message}`, true); }
 }
 for (const [id, enabled] of [['enable-stage', true], ['disable-stage', false]]) $(id).addEventListener('click', () => { void setStageOutput(enabled); });
 $('remote-stage').addEventListener('click', () => { void setStageOutput(!state?.stageEnabled); });
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || event.repeat || !csrf || !online || $('pairing').open) return;
-  event.preventDefault(); void setStageOutput(false);
+  event.preventDefault();
+  const sequence = ++controlSequence;
+  void api('POST', '/api/emergency-stop', { requestId: requestID() }).then(async () => {
+    if (sequence === controlSequence) notify('Emergency stop accepted. All sound stops and the stage closes.');
+    await refreshState();
+  }).catch(error => { if (sequence === controlSequence) notify(`Emergency stop is unconfirmed. ${error.message}`, true); });
 });
 async function initializeSession() {
   if (!await refreshState()) return false;

@@ -43,7 +43,7 @@ def admin_window_checks(executable, evidence_path):
                        "-Wall", "-Wextra", str(root / "scripts/native-admin-darwin.m"),
                        str(root / "internal/platform/bridge_darwin.m"), "-o", str(binary)]
             for framework in ("AppKit", "AVFoundation", "CoreAudio", "CoreMedia", "CoreVideo",
-                              "QuartzCore", "CoreGraphics", "IOKit", "UniformTypeIdentifiers", "WebKit"):
+                              "QuartzCore", "CoreGraphics", "IOKit", "UniformTypeIdentifiers", "WebKit", "ImageIO"):
                 command.extend(["-framework", framework])
             built = subprocess.run(command, capture_output=True, text=True, timeout=120)
             assert built.returncode == 0, f"Native Admin probe compilation failed: {built.stderr}"

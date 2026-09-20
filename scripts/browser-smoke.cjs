@@ -19,8 +19,9 @@ const assert = require('node:assert/strict');
   let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: false };
   let update = { currentVersion: 'v0.1.0-preview.8', latestVersion: 'v0.1.0-preview.9', phase: 'available', available: true, canInstall: true, message: 'A new version is available.', releaseURL: 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', checkedAt: new Date().toISOString() };
   const labels = ['Opening music', 'Welcome video with a deliberately long label that must wrap clearly', "Café's interlude", '<img src=x onerror="window.__xss=true">'];
-  const state = { instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
-  const config = { schema: 1, playlistRevision: 1, outputs: state.outputs, cues: state.cues.map(c => ({ id: c.id, label: c.label, path: `/Host/Show/${c.id}.mp4`, cache: { status: 'ready', media: { kind: c.kind, duration: 3 } } })) };
+  const stageDefaults = { backgroundCueId: '', backgroundAudio: false, fadeEnabled: false, fadeSeconds: 1, toggleAudio: false };
+  const state = { stage: { ...stageDefaults }, backgroundCueId: '', imageCueId: '', instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
+  const config = { stage: { ...stageDefaults }, schema: 1, playlistRevision: 1, outputs: state.outputs, cues: state.cues.map(c => ({ id: c.id, label: c.label, path: `/Host/Show/${c.id}.mp4`, cache: { status: 'ready', media: { kind: c.kind, duration: 3 } } })) };
   const broadcast = () => { for (const c of clients) c.write(`event: state\ndata: ${JSON.stringify(state)}\n\n`); };
   const createServer = listenerRole => http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
@@ -84,7 +85,7 @@ const assert = require('node:assert/strict');
         reply(update, 202); return;
       }
     }
-    if (['/api/remote-control', '/api/remote-control/qr', '/api/playlist', '/api/devices', '/api/files'].includes(url.pathname) && role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
+    if (['/api/remote-control', '/api/remote-control/qr', '/api/playlist', '/api/stage-settings', '/api/devices', '/api/files'].includes(url.pathname) && role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
     if (url.pathname === '/api/remote-control') { remoteGets++; reply({ links, token }); return; }
     if (url.pathname === '/api/remote-control/qr') { res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' }); res.end(imageFixture); return; }
     if (url.pathname === '/api/playlist') {
@@ -92,13 +93,21 @@ const assert = require('node:assert/strict');
         assert.equal(req.headers['x-csrf-token'], 'test-csrf'); assert.equal(body.expectedRevision, config.playlistRevision);
         config.cues = body.cues.map((cue, index) => {
           const previous = config.cues.find(item => item.id === cue.id);
-          return { ...cue, id: cue.id || `added-${config.playlistRevision}-${index}`, label: cue.label || path.basename(cue.path), color: cue.color ?? previous?.color ?? '', cache: previous?.cache || { status: 'ready', media: { kind: 'audio', duration: 3 } } };
+          return { ...cue, id: cue.id || `added-${config.playlistRevision}-${index}`, label: cue.label || path.basename(cue.path), color: cue.color ?? previous?.color ?? '', hidden: cue.hidden ?? previous?.hidden ?? false, background: cue.background ?? previous?.background ?? false, cache: previous?.cache || { status: 'ready', media: { kind: 'audio', duration: 3 } } };
         });
         config.playlistRevision++; state.playlistRevision = config.playlistRevision;
-        state.cues = config.cues.map((cue, index) => ({ id: cue.id, label: cue.label, color: cue.color, position: index + 1, kind: cue.cache.media.kind, duration: 3, validation: 'ready' }));
+        state.cues = config.cues.map((cue, index) => ({ id: cue.id, label: cue.label, color: cue.color, hidden: cue.hidden, background: cue.background, position: index + 1, kind: cue.cache.media.kind, duration: 3, validation: 'ready' }));
         state.revision++; broadcast();
       }
       reply(config); return;
+    }
+    if (url.pathname === '/api/stage-settings') {
+      assert.equal(req.method, 'PUT'); assert.equal(req.headers['x-csrf-token'], 'test-csrf');
+      if (body.expectedRevision !== config.playlistRevision) { reply({ error: { message: 'The playlist changed; reload before editing' } }, 409); return; }
+      assert.equal(Boolean(state.updatePending), false);
+      assert(body.settings.fadeSeconds >= .1 && body.settings.fadeSeconds <= 30);
+      config.stage = { ...body.settings }; state.stage = { ...config.stage }; state.backgroundCueId = config.stage.backgroundCueId;
+      config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast(); reply(config); return;
     }
     if (url.pathname === '/api/devices') { reply({ audio: [{ id: 'speaker', name: 'USB Audio', default: true }], displays: [{ id: 'screen', name: 'Stage display', width: 1920, height: 1080, primary: true, mirrored: false }] }); return; }
     if (url.pathname === '/api/files') {
@@ -119,10 +128,10 @@ const assert = require('node:assert/strict');
       assert.equal(req.headers['x-csrf-token'], 'test-csrf');
       assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
       assert.equal(typeof body.enabled, 'boolean');
-      if (body.enabled) { assert.equal(state.state, 'stopped'); assert.equal(Boolean(state.updatePending), false); }
-      else { state.state = 'stopped'; state.activeCueId = ''; state.stopEpoch++; }
+      if (body.enabled) assert.equal(Boolean(state.updatePending), false);
       state.stageEnabled = body.enabled; state.revision++; broadcast();
     }
+    if (url.pathname === '/api/emergency-stop') { assert.equal(req.headers['x-csrf-token'], 'test-csrf'); state.state = 'stopped'; state.activeCueId = ''; state.imageCueId = ''; state.stageEnabled = false; state.stopEpoch++; state.revision++; broadcast(); }
     if (url.pathname === '/api/play' && holdPlay) { await new Promise(resolve => setTimeout(resolve, 600)); }
     if (url.pathname === '/api/stop') { state.revision++; state.stopEpoch++; state.activeCueId = ''; state.state = 'stopped'; broadcast(); }
     reply({ accepted: true }, 202);
@@ -164,8 +173,11 @@ const assert = require('node:assert/strict');
     await page.locator('#remote-stage').click();
     await page.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'false');
     assert.deepEqual(requests.filter(r => r.path === '/api/stage-output').at(-1).body, { enabled: false });
-    state.state = 'playing'; state.revision++; broadcast();
-    await page.waitForFunction(() => document.getElementById('remote-stage').disabled);
+    assert.equal(state.state, 'playing', 'closing the stage does not stop foreground music');
+    assert.equal(state.activeCueId, 'cue-0');
+    await page.locator('#remote-stage').click();
+    await page.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'true');
+    assert.equal(state.activeCueId, 'cue-0', 'stage can reopen while music continues');
     state.state = 'stopped'; state.activeCueId = ''; state.revision++; broadcast();
     state.stageEnabled = true; state.state = 'playing'; state.revision++; broadcast();
     await page.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'true');
@@ -325,11 +337,89 @@ const assert = require('node:assert/strict');
     await page.waitForFunction(() => !document.querySelector('.cue').classList.contains('custom-color'));
     assert.equal(config.cues[0].color, '', 'Default explicitly resets the saved color');
     await admin.waitForFunction(() => document.querySelector('button[aria-label="Use default color for cue 1"]').disabled);
-    const stageCommandsBeforeEscape = requests.filter(r => r.path === '/api/stage-output').length;
+    // UI checks use explicit authoritative fixture events; they do not emulate
+    // native decoders, soundtrack arbitration, image rendering, or fades.
+    assert.equal(await admin.locator('#fade-enabled').isChecked(), false);
+    assert.equal(await admin.locator('#fade-seconds').inputValue(), '1');
+    assert.equal(await admin.locator('#fade-seconds').isDisabled(), true);
+    await admin.getByRole('checkbox', { name: 'Hide remote button for cue 1', exact: true }).check();
+    await page.locator('[data-cue-id="cue-0"]').waitFor({ state: 'detached' });
+    assert.equal(config.cues[0].hidden, true);
+    assert.equal(await admin.locator('.playlist-row').count(), config.cues.length, 'hidden buttons remain editable in Admin');
+    await admin.getByRole('textbox', { name: 'Label for cue 1', exact: true }).fill('Hidden opening music');
+    await admin.getByRole('textbox', { name: 'Label for cue 1', exact: true }).press('Tab');
+    await admin.waitForFunction(() => document.getElementById('notice').textContent === 'Playlist saved.');
+    assert.equal(config.cues[0].hidden, true, 'unrelated cue edits preserve hidden state');
+    await admin.getByRole('checkbox', { name: 'Hide remote button for cue 1', exact: true }).uncheck();
+    await page.locator('[data-cue-id="cue-0"]').waitFor();
+    await admin.getByRole('checkbox', { name: 'Use cue 2 as a background button', exact: true }).check();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-1"] .cue-meta').textContent.includes('background video'));
+    await admin.locator('#background-cue').selectOption('cue-1');
+    await admin.locator('#background-audio').check();
+    await admin.locator('#fade-enabled').check();
+    await admin.locator('#fade-seconds').fill('1.6');
+    await admin.locator('#toggle-audio').check();
+    await admin.locator('#save-stage-settings').click();
+    await admin.waitForFunction(() => document.getElementById('stage-settings-message').textContent === 'Stage and sound settings saved.');
+    assert.deepEqual(config.stage, { backgroundCueId: 'cue-1', backgroundAudio: true, fadeEnabled: true, fadeSeconds: 1.6, toggleAudio: true });
+    assert.equal(config.cues[1].background, true, 'stage settings preserve background button flags');
+    await admin.reload(); await admin.locator('.playlist-row').first().waitFor();
+    assert.equal(await admin.locator('#background-cue').inputValue(), 'cue-1');
+    assert.equal(await admin.locator('#fade-seconds').inputValue(), '1.6', 'saved settings survive an Admin reload');
+    assert.equal(await admin.locator('#background-audio').isChecked(), true);
+    assert.equal(await admin.locator('#toggle-audio').isChecked(), true);
+    config.cues.push({ id: 'image-fixture', label: 'Sponsor image', path: '/Host/Show/sponsor.png', hidden: false, background: false, cache: { status: 'ready', media: { kind: 'image', duration: 0 } } });
+    config.playlistRevision++; state.playlistRevision = config.playlistRevision;
+    state.cues.push({ id: 'image-fixture', label: 'Sponsor image', position: config.cues.length, kind: 'image', duration: 0, validation: 'ready' });
+    state.activeCueId = 'cue-0'; state.state = 'playing'; state.stageEnabled = true; state.revision++; broadcast();
+    await admin.waitForFunction(() => document.querySelector('#background-cue option[value="image-fixture"]'));
+    await page.locator('[data-cue-id="image-fixture"]').click();
+    assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.cueId, 'image-fixture');
+    state.imageCueId = 'image-fixture'; state.revision++; broadcast();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="image-fixture"]').getAttribute('aria-pressed') === 'true');
+    assert.equal(await page.locator('[data-cue-id="cue-0"]').getAttribute('aria-pressed'), 'true', 'the authoritative image selection keeps the music button selected');
+    assert.match(await page.locator('[data-cue-id="cue-0"] .cue-meta').textContent(), /Press again to stop/);
+    await page.locator('[data-cue-id="cue-0"]').click();
+    assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.cueId, 'cue-0', 'a selected music button sends the same cue; host decides the configured toggle');
+    state.activeCueId = ''; state.state = 'stopped'; state.revision++; broadcast();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-0"]').getAttribute('aria-pressed') === 'false');
+    assert.equal(await page.locator('[data-cue-id="image-fixture"]').getAttribute('aria-pressed'), 'true', 'stopping music alone preserves the selected image');
+    await page.locator('[data-cue-id="cue-1"]').click();
+    assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.cueId, 'cue-1');
+    state.imageCueId = ''; state.backgroundCueId = 'cue-1'; state.revision++; broadcast();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-1"] .cue-meta').textContent.includes('Background selected'));
+    await admin.locator('#background-cue').selectOption('image-fixture');
+    await admin.locator('#save-stage-settings').click();
+    await admin.waitForFunction(() => document.getElementById('stage-settings-message').textContent === 'Stage and sound settings saved.');
+    assert.equal(config.stage.backgroundCueId, 'image-fixture', 'images can also be configured as the default background');
+    await admin.locator('#fade-seconds').fill('2.5');
+    const staleRevision = config.playlistRevision;
+    config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
+    await admin.locator('#save-stage-settings').click();
+    await admin.waitForFunction(() => document.getElementById('stage-settings-message').textContent.includes('Settings were not saved'));
+    assert.equal(requests.filter(r => r.path === '/api/stage-settings').at(-1).body.expectedRevision, staleRevision, 'an unsaved settings draft keeps its original revision across incoming state');
+    assert.equal(config.stage.fadeSeconds, 1.6, 'stale settings cannot overwrite a newer saved show');
+    await admin.locator('#reload-playlist').click();
+    await admin.waitForFunction(() => document.getElementById('fade-seconds').value === '1.6');
+    state.activeCueId = 'cue-0'; state.state = 'playing'; state.revision++; broadcast();
+    await admin.waitForFunction(() => !document.getElementById('enable-stage').disabled);
+    await admin.locator('#disable-stage').click();
+    await admin.waitForFunction(() => document.getElementById('stage-state').textContent.startsWith('Stage output disabled'));
+    assert.equal(state.activeCueId, 'cue-0', 'Admin Stage off leaves foreground music selected');
+    await admin.locator('#enable-stage').click();
+    await admin.waitForFunction(() => document.getElementById('stage-state').textContent.startsWith('Stage output enabled'));
+    assert.equal(state.activeCueId, 'cue-0', 'Admin Stage on works during foreground music');
+    await admin.locator('#stage-section').screenshot({ path: path.join(output, 'admin-stage-sound.png') });
+    for (const width of [390, 768, 1280]) {
+      await admin.setViewportSize({ width, height: 900 });
+      assert(await admin.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `stage controls overflow at ${width}`);
+    }
+    await admin.setViewportSize({ width: 1280, height: 900 });
+    const stageCommandsBeforeEscape = requests.filter(r => r.path === '/api/emergency-stop').length;
     await admin.keyboard.press('Escape');
     await admin.waitForFunction(() => document.getElementById('play-state').textContent === 'stopped');
-    assert.equal(requests.filter(r => r.path === '/api/stage-output').length, stageCommandsBeforeEscape + 1, 'Escape also sends stage disable from Admin');
-    assert.deepEqual(requests.filter(r => r.path === '/api/stage-output').at(-1).body, { enabled: false });
+    assert.equal(requests.filter(r => r.path === '/api/emergency-stop').length, stageCommandsBeforeEscape + 1, 'Escape sends one atomic emergency stop from Admin');
+    assert.equal(typeof requests.filter(r => r.path === '/api/emergency-stop').at(-1).body.requestId, 'string');
     state.state = 'playing'; state.activeCueId = 'cue-1'; state.revision++; broadcast();
     await page.locator('.cue.active').waitFor();
     assert.equal(await admin.locator('#remote-url').textContent(), links[0].url);
@@ -379,6 +469,8 @@ const assert = require('node:assert/strict');
     await admin.waitForFunction(() => document.getElementById('update-requirements').textContent.includes('before starting'));
     assert.equal(await admin.locator('.playlist-row input').first().isDisabled(), true, 'automatic startup check reserves show editing');
     assert.equal(await admin.locator('.cue-color-controls input[type=color]').first().isDisabled(), true, 'automatic updates reserve color edits too');
+    assert.equal(await admin.locator('#save-stage-settings').isDisabled(), true, 'automatic updates reserve stage settings');
+    assert.equal(await admin.getByRole('checkbox', { name: 'Hide remote button for cue 1', exact: true }).isDisabled(), true, 'automatic updates reserve visibility edits');
     assert.equal(await page.locator('.cue').first().isDisabled(), true, 'automatic startup check reserves remote playback');
     assert.equal(await admin.locator('#stop').isDisabled(), false, 'STOP remains available during automatic startup checking');
     state.stageEnabled = true; state.revision++; broadcast();
@@ -526,7 +618,7 @@ const assert = require('node:assert/strict');
     assert.equal(adminDocumentLoads, beforeQuitDocuments + 1, 'relaunch refreshes the existing Admin tab once rather than opening a new page');
     assert.equal(requests.filter(r => r.path === '/api/quit').length, 1, 'reconnection never repeats Quit');
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesHiddenByDefault: true, hiddenFileToggleAndNavigation: true, hiddenFileResponseRace: true, compactDesktopFileRows: true, hostFileDragUsesOriginalPaths: true, externalFileDropGuidance: true, remoteStageOutputControl: true, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesHiddenByDefault: true, hiddenFileToggleAndNavigation: true, hiddenFileResponseRace: true, compactDesktopFileRows: true, hostFileDragUsesOriginalPaths: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, native file-picker capability/request, host-file selection/dragging, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer].map(server => new Promise(resolve => server.close(resolve)))); }

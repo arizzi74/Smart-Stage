@@ -147,6 +147,32 @@ func (n *native) Start(s playback.Start) error {
 	C.ss_start(C.uint64_t(s.Generation), path, audio, display, v)
 	return nil
 }
+
+func (n *native) ApplyScene(s playback.Scene) error {
+	if err := n.begin(); err != nil {
+		return err
+	}
+	defer n.work.Done()
+	values := []string{s.ForegroundPath, s.ForegroundKind, s.ImagePath, s.BackgroundPath, s.BackgroundKind, s.AudioID, s.DisplayID}
+	strings := make([]*C.char, len(values))
+	for i, value := range values {
+		strings[i] = C.CString(value)
+		defer C.free(unsafe.Pointer(strings[i]))
+	}
+	bit := func(value bool) C.int {
+		if value {
+			return 1
+		}
+		return 0
+	}
+	request := C.ss_scene_request{
+		revision: C.uint64_t(s.Revision), generation: C.uint64_t(s.Generation), foreground_id: C.uint64_t(s.ForegroundID),
+		foreground_path: strings[0], foreground_kind: strings[1], image_path: strings[2], background_path: strings[3], background_kind: strings[4], audio: strings[5], display: strings[6],
+		foreground_has_audio: bit(s.ForegroundHasAudio), background_audio: bit(s.BackgroundAudio), stage_enabled: bit(s.StageEnabled), hard_stop: bit(s.HardStop), fade_seconds: C.double(s.FadeSeconds),
+	}
+	C.ss_scene(&request)
+	return nil
+}
 func (n *native) Stop(g uint64) error {
 	if err := n.begin(); err != nil {
 		return err

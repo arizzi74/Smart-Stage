@@ -7,6 +7,7 @@
 #import <CoreGraphics/CoreGraphics.h>
 #import <CoreVideo/CoreVideo.h>
 #import <IOKit/pwr_mgt/IOPMLib.h>
+#import <ImageIO/ImageIO.h>
 #import <QuartzCore/QuartzCore.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #import <WebKit/WebKit.h>
@@ -43,6 +44,10 @@ static AudioObjectPropertyListenerBlock audioListener;
 static void stopCurrent(void);
 static void emergencyStop(void);
 static void checkDevices(void);
+static BOOL sceneMode;
+static void stopScene(void);
+static void sceneEmergency(void);
+static void sceneCheckDevices(void);
 
 // Only the Finder launcher opts into the Dock and menu bar lifecycle. CLI invocations
 // keep their ordinary stdout/stderr and Ctrl+C behavior.
@@ -96,7 +101,7 @@ static void desktopFileAlert(NSString *message) {
 // against the configured media roots before changing the saved show.
 static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
     if (!urls.count || urls.count > 500) {
-        *failure = @"Choose between 1 and 500 audio or video files.";
+        *failure = @"Choose between 1 and 500 audio, video, or image files.";
         return NO;
     }
     NSMutableArray<NSString *> *paths = [NSMutableArray arrayWithCapacity:urls.count];
@@ -173,7 +178,7 @@ static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
     if (!atomic_load(&desktopReady) || atomic_load(&shuttingDown)) return NO;
     NSPasteboard *pasteboard = sender.draggingPasteboard;
     if (!pasteboard.pasteboardItems.count || pasteboard.pasteboardItems.count > 500) {
-        desktopFileAlert(@"Choose between 1 and 500 audio or video files."); return NO;
+        desktopFileAlert(@"Choose between 1 and 500 audio, video, or image files."); return NO;
     }
     NSArray<NSURL *> *urls = [pasteboard readObjectsForClasses:@[NSURL.class]
         options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
@@ -425,7 +430,7 @@ static SSApplicationDelegate *applicationDelegate;
     panel.canChooseDirectories = NO;
     panel.allowsMultipleSelection = YES;
     panel.resolvesAliases = YES;
-    panel.allowedContentTypes = @[UTTypeAudio, UTTypeMovie];
+    panel.allowedContentTypes = @[UTTypeAudio, UTTypeMovie, UTTypeImage];
     fputs("Opened native media chooser\n", stderr);
     [panel beginWithCompletionHandler:^(NSModalResponse result) {
         self.filePanel = nil;
@@ -659,12 +664,36 @@ static NSArray *displays(void) {
 - (BOOL)canBecomeKeyWindow { return YES; }
 @end
 @interface SSStageView : NSView
+@property(nonatomic, strong) NSTrackingArea *stageTracking;
+@property(nonatomic, strong) NSCursor *stageCursor;
+- (void)refreshStageCursor;
 @end
 @implementation SSStageView
-- (void)resetCursorRects {
-    NSImage *transparent = [[NSImage alloc] initWithSize:NSMakeSize(1,1)];
-    [self addCursorRect:self.bounds cursor:[[NSCursor alloc] initWithImage:transparent hotSpot:NSZeroPoint]];
+- (NSCursor *)transparentCursor {
+    if (!self.stageCursor) {
+        NSImage *transparent = [[NSImage alloc] initWithSize:NSMakeSize(1, 1)];
+        self.stageCursor = [[NSCursor alloc] initWithImage:transparent hotSpot:NSZeroPoint];
+    }
+    return self.stageCursor;
 }
+- (void)resetCursorRects { [self addCursorRect:self.bounds cursor:[self transparentCursor]]; }
+- (void)updateTrackingAreas {
+    if (self.stageTracking) [self removeTrackingArea:self.stageTracking];
+    self.stageTracking = [[NSTrackingArea alloc] initWithRect:NSZeroRect
+        options:NSTrackingMouseEnteredAndExited | NSTrackingCursorUpdate | NSTrackingActiveAlways | NSTrackingInVisibleRect
+        owner:self userInfo:nil];
+    [self addTrackingArea:self.stageTracking];
+    [super updateTrackingAreas];
+}
+- (void)refreshStageCursor {
+    NSPoint point = NSEvent.mouseLocation;
+    if (stageEnabled && self.window.isVisible && NSPointInRect(point, self.window.frame) &&
+        [NSWindow windowNumberAtPoint:point belowWindowWithWindowNumber:0] == self.window.windowNumber)
+        [[self transparentCursor] set];
+}
+- (void)cursorUpdate:(NSEvent *)event { (void)event; [self refreshStageCursor]; }
+- (void)mouseEntered:(NSEvent *)event { (void)event; [self refreshStageCursor]; }
+- (void)mouseExited:(NSEvent *)event { (void)event; [NSCursor.arrowCursor set]; }
 @end
 
 @interface SSPlayback : NSObject
@@ -725,6 +754,8 @@ static BOOL enableStage(NSString *identity) {
     }
     [stageWindow setFrame:target.frame display:YES];
     stageDisplayID = [identity copy]; stageEnabled = YES; blackout(); [stageWindow orderFrontRegardless];
+    [stageWindow invalidateCursorRectsForView:stageWindow.contentView];
+    [(SSStageView *)stageWindow.contentView refreshStageCursor];
     if (powerAssertion == kIOPMNullAssertionID)
         IOPMAssertionCreateWithName(kIOPMAssertionTypePreventUserIdleDisplaySleep, kIOPMAssertionLevelOn,
             CFSTR("Smart Stage stage output enabled"), &powerAssertion);
@@ -733,9 +764,11 @@ static BOOL enableStage(NSString *identity) {
 static void disableStage(void) {
     stopCurrent(); stageEnabled = NO; stageDisplayID = nil;
     [stageWindow orderOut:nil];
+    [NSCursor.arrowCursor set];
     if (powerAssertion != kIOPMNullAssertionID) { IOPMAssertionRelease(powerAssertion); powerAssertion = kIOPMNullAssertionID; }
 }
 static void emergencyStop(void) {
+    if (sceneMode) { sceneEmergency(); return; }
     uint64_t gen = atomic_fetch_add(&currentGeneration, 1);
     disableStage();
     emit(gen, @"escape", nil, 0, 0);
@@ -802,6 +835,7 @@ static void failPlayback(SSPlayback *p, NSString *message) {
 
 static void checkDevices(void) {
     @autoreleasepool {
+        if (sceneMode) { sceneCheckDevices(); return; }
         BOOL lostDisplay = stageEnabled;
         if (stageEnabled) for (NSScreen *s in NSScreen.screens)
             if ([displayID(s) isEqual:stageDisplayID]) { lostDisplay = NO; break; }
@@ -880,6 +914,501 @@ static void beginPlayback(uint64_t gen, NSString *path, NSString *audio, NSStrin
     }];
 }
 
+// The scene path owns its decoders separately from the legacy diagnostic API.
+// Only one foreground, one background and one retiring audio source are kept.
+// Scene revisions order commands; foreground identity survives stage changes.
+static _Atomic(uint64_t) requestedSceneRevision;
+static _Atomic(bool) sceneEmergencyPending;
+static uint64_t appliedSceneRevision, sceneGeneration, sceneEndedForegroundID;
+static BOOL sceneBackgroundAudio, sceneStoppedPending;
+static double sceneFadeSeconds, sceneFadeStarted, sceneFadeDuration;
+static dispatch_source_t sceneFadeTimer;
+static NSOperationQueue *sceneImageQueue;
+
+@interface SSScenePlayer : NSObject
+@property(nonatomic) uint64_t identifier;
+@property(nonatomic, copy) NSString *path;
+@property(nonatomic, copy) NSString *audioID;
+@property(nonatomic, copy) NSString *pendingError;
+@property(nonatomic) BOOL video, background, hasAudio, observing, started, reported, ended, disposed;
+@property(nonatomic) float fadeFrom, fadeTo;
+@property(nonatomic, strong) AVURLAsset *asset;
+@property(nonatomic, strong) AVPlayerItem *item;
+@property(nonatomic, strong) AVPlayer *player;
+@property(nonatomic, strong) AVPlayerLayer *layer;
+@property(nonatomic, strong) id timeObserver, endObserver, failureObserver;
+- (void)prepare;
+- (void)ready;
+- (void)teardown;
+@end
+@interface SSSceneImage : NSObject
+@property(nonatomic, copy) NSString *path;
+@property(nonatomic, strong) CALayer *layer;
+@property(nonatomic, strong) NSOperation *operation;
+@property(nonatomic, copy) NSString *pendingError;
+@property(nonatomic) BOOL background, disposed;
+- (void)prepare;
+- (void)teardown;
+@end
+static SSScenePlayer *sceneForeground, *sceneBackground, *sceneRetiring;
+static SSSceneImage *sceneImage, *sceneBackgroundImage;
+static void renderScene(void);
+static void mixScene(void);
+static BOOL audibleScenePlayer(SSScenePlayer *player);
+static BOOL currentScene(void) {
+    return sceneMode && !atomic_load(&shuttingDown) && !atomic_load(&sceneEmergencyPending) && appliedSceneRevision == atomic_load(&requestedSceneRevision);
+}
+static void emitScene(uint64_t generation, NSString *kind, NSString *message, double position, double duration) {
+    if (!currentScene()) return;
+    NSDictionary *value = @{ @"generation": @(generation), @"sceneRevision": @(appliedSceneRevision),
+        @"kind": kind, @"message": message ?: @"", @"position": @(position), @"duration": @(duration),
+        @"stageEnabled": jbool(stageEnabled) };
+    NSData *data = [NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];
+    if (!data) return;
+    pthread_mutex_lock(&eventMutex);
+    if (events.count >= 256) [events removeObjectAtIndex:0];
+    [events addObject:data];
+    pthread_mutex_unlock(&eventMutex);
+}
+static void hideSceneStage(void) {
+    stageEnabled = NO; stageDisplayID = nil;
+    [stageWindow orderOut:nil];
+    [NSCursor.arrowCursor set];
+    if (powerAssertion != kIOPMNullAssertionID) {
+        IOPMAssertionRelease(powerAssertion); powerAssertion = kIOPMNullAssertionID;
+    }
+}
+static NSArray<SSScenePlayer *> *scenePlayers(void) {
+    NSMutableArray *players = [NSMutableArray arrayWithCapacity:3];
+    if (sceneForeground) [players addObject:sceneForeground];
+    if (sceneBackground) [players addObject:sceneBackground];
+    if (sceneRetiring) [players addObject:sceneRetiring];
+    return players;
+}
+static void cancelSceneFade(void) {
+    if (sceneFadeTimer) { dispatch_source_cancel(sceneFadeTimer); sceneFadeTimer = nil; }
+}
+static void completeSceneFade(void) {
+    cancelSceneFade();
+    if (sceneRetiring && sceneRetiring.player.volume <= 0.001f) {
+        [sceneRetiring teardown]; sceneRetiring = nil;
+    }
+    if (sceneStoppedPending && !sceneForeground && !audibleScenePlayer(sceneRetiring) && currentScene()) {
+        sceneStoppedPending = NO;
+        emitScene(sceneGeneration, @"stopped", nil, 0, 0);
+    }
+}
+static BOOL audibleScenePlayer(SSScenePlayer *player) {
+    return player && player.hasAudio && !player.ended && player.started &&
+        player.player.volume > 0.001f && player.player.timeControlStatus == AVPlayerTimeControlStatusPlaying;
+}
+static void retireScenePlayer(SSScenePlayer *player) {
+    if (!player) return;
+    player.layer.hidden = YES;
+    if (audibleScenePlayer(player) && sceneFadeSeconds > 0) {
+        // A burst of PLAY commands cannot accumulate decoder/audio tails.
+        if (sceneRetiring != player) [sceneRetiring teardown];
+        sceneRetiring = player;
+    } else [player teardown];
+}
+static void mixScene(void) {
+    if (!currentScene()) return;
+    SSScenePlayer *owner = nil;
+    BOOL foregroundWaiting = sceneForeground && sceneForeground.hasAudio && !sceneForeground.started && !sceneForeground.ended;
+    if (sceneForeground.hasAudio && sceneForeground.started && !sceneForeground.ended) owner = sceneForeground;
+    else if (foregroundWaiting && audibleScenePlayer(sceneRetiring)) owner = sceneRetiring;
+    else if (stageEnabled && sceneBackgroundAudio && sceneBackground.hasAudio && sceneBackground.started) owner = sceneBackground;
+    else if (!sceneForeground && stageEnabled && sceneBackgroundAudio && sceneBackground && !sceneBackground.started && audibleScenePlayer(sceneRetiring)) owner = sceneRetiring;
+    NSArray<SSScenePlayer *> *players = scenePlayers();
+    BOOL changed = NO, audible = NO;
+    for (SSScenePlayer *player in players) {
+        float target = player == owner ? 1.0f : 0.0f;
+        if (fabsf(player.fadeTo - target) > 0.0001f) changed = YES;
+        if (audibleScenePlayer(player)) audible = YES;
+    }
+    if (!changed && sceneFadeTimer) return;
+    if (!changed) { completeSceneFade(); return; }
+    cancelSceneFade();
+    sceneFadeStarted = NSProcessInfo.processInfo.systemUptime;
+    // Starting from silence is immediate. Only replace/fade audible output.
+    sceneFadeDuration = audible ? sceneFadeSeconds : 0;
+    for (SSScenePlayer *player in players) {
+        player.fadeFrom = player.player.volume;
+        player.fadeTo = player == owner ? 1.0f : 0.0f;
+        if (sceneFadeDuration <= 0) player.player.volume = player.fadeTo;
+    }
+    if (sceneFadeDuration <= 0) { completeSceneFade(); return; }
+    sceneFadeTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    dispatch_source_set_timer(sceneFadeTimer, DISPATCH_TIME_NOW, 20 * NSEC_PER_MSEC, 2 * NSEC_PER_MSEC);
+    dispatch_source_set_event_handler(sceneFadeTimer, ^{
+        @autoreleasepool {
+            if (!currentScene()) return; // A queued newer scene will retarget from current volumes.
+            double progress = MIN(1.0, (NSProcessInfo.processInfo.systemUptime - sceneFadeStarted) / sceneFadeDuration);
+            for (SSScenePlayer *player in scenePlayers())
+                player.player.volume = player.fadeFrom + (player.fadeTo - player.fadeFrom) * progress;
+            if (progress >= 1) completeSceneFade();
+        }
+    });
+    dispatch_resume(sceneFadeTimer);
+}
+static void renderScene(void) {
+    if (!currentScene()) return;
+    [CATransaction begin]; [CATransaction setDisableActions:YES];
+    CALayer *visible = nil;
+    if (stageEnabled) {
+        if (sceneImage.layer.contents) visible = sceneImage.layer;
+        else if (sceneForeground.video && sceneForeground.layer.readyForDisplay && !sceneForeground.ended) visible = sceneForeground.layer;
+        else if (sceneBackgroundImage.layer.contents) visible = sceneBackgroundImage.layer;
+        else if (sceneBackground.layer.readyForDisplay) visible = sceneBackground.layer;
+    }
+    for (SSScenePlayer *player in scenePlayers()) player.layer.hidden = player.layer != visible;
+    sceneImage.layer.hidden = sceneImage.layer != visible;
+    sceneBackgroundImage.layer.hidden = sceneBackgroundImage.layer != visible;
+    blackOverlay.hidden = visible != nil;
+    videoLayer.hidden = YES;
+    [CATransaction commit];
+}
+static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
+    if (!player || player.disposed) return;
+    if (!currentScene() && (player == sceneForeground || player == sceneBackground)) {
+        player.pendingError = message; return;
+    }
+    if (player == sceneBackground) {
+        [player teardown]; sceneBackground = nil;
+        emitScene(sceneGeneration, @"background-error", message, 0, 0);
+        renderScene(); mixScene();
+    } else if (player == sceneForeground) {
+        uint64_t identifier = player.identifier;
+        [player teardown]; sceneForeground = nil;
+        // Invalid foreground media must not leave an older cue playing.
+        retireScenePlayer(sceneRetiring);
+        emitScene(identifier, @"error", message, 0, 0);
+        renderScene(); mixScene();
+    } else if (player == sceneRetiring) { [player teardown]; sceneRetiring = nil; mixScene(); }
+}
+@implementation SSScenePlayer
+- (void)teardown {
+    if (self.disposed) return;
+    self.disposed = YES;
+    [self.asset cancelLoading];
+    self.player.muted = YES; self.player.volume = 0; [self.player pause];
+    if (self.observing) {
+        [self.item removeObserver:self forKeyPath:@"status"];
+        [self.player removeObserver:self forKeyPath:@"timeControlStatus"];
+        if (self.video) [self.layer removeObserver:self forKeyPath:@"readyForDisplay"];
+        self.observing = NO;
+    }
+    if (self.timeObserver) [self.player removeTimeObserver:self.timeObserver];
+    if (self.endObserver) [NSNotificationCenter.defaultCenter removeObserver:self.endObserver];
+    if (self.failureObserver) [NSNotificationCenter.defaultCenter removeObserver:self.failureObserver];
+    self.timeObserver = nil; self.endObserver = nil; self.failureObserver = nil;
+    self.layer.player = nil; [self.layer removeFromSuperlayer]; self.layer = nil;
+    [self.player replaceCurrentItemWithPlayerItem:nil];
+    self.player = nil; self.item = nil; self.asset = nil;
+}
+- (void)ready {
+    if (self.disposed || !currentScene()) return;
+    if (self != sceneForeground && self != sceneBackground && self != sceneRetiring) return;
+    if (self.pendingError.length) { scenePlayerFailed(self, self.pendingError); return; }
+    if (self.item.status == AVPlayerItemStatusFailed) {
+        scenePlayerFailed(self, self.item.error.localizedDescription ?: @"Native decoder could not prepare this file"); return;
+    }
+    if (self.item.status != AVPlayerItemStatusReadyToPlay) return;
+    if (self.background && !stageEnabled) return;
+    if (!self.started && !self.ended && currentScene()) { self.player.muted = NO; [self.player play]; }
+    if (self.player.timeControlStatus == AVPlayerTimeControlStatusPlaying) {
+        self.started = YES;
+        if (self == sceneForeground && !self.reported) {
+            self.reported = YES;
+            emitScene(self.identifier, @"playing", nil, seconds(self.player.currentTime), seconds(self.item.duration));
+        }
+        mixScene();
+    }
+    renderScene();
+}
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
+    (void)keyPath; (void)object; (void)change; (void)context;
+    __weak SSScenePlayer *weakSelf = self;
+    onMain(^{ [weakSelf ready]; });
+}
+- (void)prepare {
+    self.asset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:self.path]
+        options:@{AVURLAssetPreferPreciseDurationAndTimingKey:@YES}];
+    __weak SSScenePlayer *weakSelf = self;
+    [self.asset loadValuesAsynchronouslyForKeys:@[@"playable", @"tracks", @"duration"] completionHandler:^{
+        onMain(^{
+            SSScenePlayer *player = weakSelf;
+            if (!player || player.disposed) return;
+            NSError *error = nil;
+            for (NSString *key in @[@"playable", @"tracks", @"duration"])
+                if ([player.asset statusOfValueForKey:key error:&error] != AVKeyValueStatusLoaded) {
+                    scenePlayerFailed(player, error.localizedDescription ?: @"Native asset loading failed"); return;
+                }
+            if (!player.asset.playable || player.asset.hasProtectedContent) {
+                scenePlayerFailed(player, @"File is unsupported or protected"); return;
+            }
+            BOOL audio = [player.asset tracksWithMediaType:AVMediaTypeAudio].count > 0;
+            BOOL video = [player.asset tracksWithMediaType:AVMediaTypeVideo].count > 0;
+            if (video != player.video || (!audio && !video) || (!player.background && audio != player.hasAudio)) {
+                scenePlayerFailed(player, @"File changed: media tracks no longer match the validated cue"); return;
+            }
+            player.hasAudio = audio;
+            if (audio && (!player.background || sceneBackgroundAudio)) {
+                BOOL found = NO;
+                for (NSDictionary *device in audioDevices()) if ([device[@"id"] isEqual:player.audioID]) found = YES;
+                if (!found) { scenePlayerFailed(player, @"Selected audio output is unavailable"); return; }
+            }
+            player.item = [AVPlayerItem playerItemWithAsset:player.asset];
+            player.player = [AVPlayer playerWithPlayerItem:player.item];
+            player.player.actionAtItemEnd = AVPlayerActionAtItemEndPause;
+            player.player.automaticallyWaitsToMinimizeStalling = YES;
+            player.player.volume = 0; player.player.muted = YES;
+            if (player.audioID.length) player.player.audioOutputDeviceUniqueID = player.audioID;
+            if (audio && player.audioID.length && ![player.player.audioOutputDeviceUniqueID isEqual:player.audioID]) {
+                scenePlayerFailed(player, @"AVPlayer did not accept the requested audio output"); return;
+            }
+            if (player.video) {
+                player.layer = [AVPlayerLayer playerLayerWithPlayer:player.player];
+                player.layer.videoGravity = AVLayerVideoGravityResizeAspect;
+                player.layer.frame = stageWindow.contentView.bounds;
+                player.layer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+                player.layer.hidden = YES;
+                [stageWindow.contentView.layer insertSublayer:player.layer below:blackOverlay];
+            }
+            [player.item addObserver:player forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:NULL];
+            [player.player addObserver:player forKeyPath:@"timeControlStatus" options:NSKeyValueObservingOptionNew context:NULL];
+            if (player.video) [player.layer addObserver:player forKeyPath:@"readyForDisplay" options:NSKeyValueObservingOptionNew context:NULL];
+            player.observing = YES;
+            player.timeObserver = [player.player addPeriodicTimeObserverForInterval:CMTimeMake(1, 4) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
+                SSScenePlayer *source = weakSelf;
+                if (source && source == sceneForeground && !source.disposed && !source.ended)
+                    emitScene(source.identifier, @"progress", nil, seconds(time), seconds(source.item.duration));
+            }];
+            player.endObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:player.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
+                (void)note; SSScenePlayer *source = weakSelf;
+                if (!source || source.disposed) return;
+                if (source.background && (source == sceneBackground || source == sceneRetiring)) {
+                    [source.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
+                        onMain(^{ SSScenePlayer *loop = weakSelf;
+                            if (finished && loop && !loop.disposed && stageEnabled && currentScene()) [loop.player play];
+                        });
+                    }];
+                } else if (source == sceneForeground) {
+                    uint64_t identifier = source.identifier;
+                    source.ended = YES; sceneEndedForegroundID = identifier;
+                    [source teardown]; sceneForeground = nil;
+                    renderScene(); mixScene(); emitScene(identifier, @"ended", nil, 0, 0);
+                } else if (source == sceneRetiring) { [source teardown]; sceneRetiring = nil; mixScene(); }
+            }];
+            player.failureObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemFailedToPlayToEndTimeNotification object:player.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
+                NSError *error = note.userInfo[AVPlayerItemFailedToPlayToEndTimeErrorKey];
+                scenePlayerFailed(weakSelf, error.localizedDescription ?: @"Native playback failed");
+            }];
+            [player ready];
+        });
+    }];
+}
+@end
+
+// ImageIO supplies a decoded, orientation-correct raster without a renderer.
+// Reject absurd dimensions before decoding and cap the displayed raster size.
+static CGImageRef copySceneImage(NSString *path, NSString **failure) {
+    CGImageSourceRef source = CGImageSourceCreateWithURL((__bridge CFURLRef)[NSURL fileURLWithPath:path], NULL);
+    if (!source) { if (failure) *failure = @"Image could not be opened"; return NULL; }
+    NSDictionary *properties = CFBridgingRelease(CGImageSourceCopyPropertiesAtIndex(source, 0, NULL));
+    double width = [properties[(NSString *)kCGImagePropertyPixelWidth] doubleValue];
+    double height = [properties[(NSString *)kCGImagePropertyPixelHeight] doubleValue];
+    if (width <= 0 || height <= 0 || width > 50000 || height > 50000 || width * height > 100000000) {
+        CFRelease(source); if (failure) *failure = @"Image dimensions are invalid or exceed 100 megapixels"; return NULL;
+    }
+    NSDictionary *options = @{(NSString *)kCGImageSourceCreateThumbnailFromImageAlways:@YES,
+        (NSString *)kCGImageSourceCreateThumbnailWithTransform:@YES,
+        (NSString *)kCGImageSourceThumbnailMaxPixelSize:@8192,
+        (NSString *)kCGImageSourceShouldCacheImmediately:@YES};
+    CGImageRef image = CGImageSourceCreateThumbnailAtIndex(source, 0, (__bridge CFDictionaryRef)options);
+    CFRelease(source);
+    if (!image && failure) *failure = @"Native image decoder could not read this image";
+    return image;
+}
+@implementation SSSceneImage
+- (void)teardown {
+    self.disposed = YES; [self.operation cancel]; self.operation = nil;
+    [self.layer removeFromSuperlayer]; self.layer.contents = nil; self.layer = nil;
+}
+- (void)prepare {
+    if (!sceneImageQueue) { sceneImageQueue = [[NSOperationQueue alloc] init]; sceneImageQueue.maxConcurrentOperationCount = 1; sceneImageQueue.qualityOfService = NSQualityOfServiceUserInitiated; }
+    __weak SSSceneImage *weakSelf = self;
+    NSString *path = self.path;
+    __block __weak NSBlockOperation *weakOperation = nil;
+    NSBlockOperation *operation = [NSBlockOperation blockOperationWithBlock:^{
+        @autoreleasepool {
+            if (weakOperation.cancelled) return;
+            NSString *failure = nil;
+            CGImageRef raster = copySceneImage(path, &failure);
+            onMain(^{
+                SSSceneImage *target = weakSelf;
+                if (target && !target.disposed) {
+                    if (raster) {
+                        target.layer = [CALayer layer]; target.layer.contents = (__bridge id)raster;
+                        target.layer.contentsGravity = kCAGravityResizeAspect;
+                        target.layer.frame = stageWindow.contentView.bounds;
+                        target.layer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+                        target.layer.hidden = YES;
+                        [stageWindow.contentView.layer insertSublayer:target.layer below:blackOverlay];
+                        renderScene();
+                    } else {
+                        target.pendingError = failure;
+                        emitScene(sceneGeneration, @"background-error", failure, 0, 0);
+                    }
+                    target.operation = nil;
+                }
+                if (raster) CGImageRelease(raster);
+            });
+        }
+    }];
+    weakOperation = operation; self.operation = operation; [sceneImageQueue addOperation:operation];
+}
+@end
+static void stopScene(void) {
+    cancelSceneFade();
+    [sceneForeground teardown]; sceneForeground = nil;
+    [sceneBackground teardown]; sceneBackground = nil;
+    [sceneRetiring teardown]; sceneRetiring = nil;
+    [sceneImage teardown]; sceneImage = nil;
+    [sceneBackgroundImage teardown]; sceneBackgroundImage = nil;
+    [sceneImageQueue cancelAllOperations];
+    sceneStoppedPending = NO;
+    blackout();
+}
+static void sceneEmergency(void) {
+    uint64_t generation = sceneGeneration;
+    atomic_store(&sceneEmergencyPending, true);
+    stopScene(); hideSceneStage();
+    emit(generation, @"escape", nil, 0, 0);
+}
+static void sceneCheckDevices(void) {
+    BOOL lostDisplay = stageEnabled;
+    if (stageEnabled) for (NSScreen *screen in NSScreen.screens)
+        if ([displayID(screen) isEqual:stageDisplayID]) lostDisplay = NO;
+    NSArray *outputs = audioDevices(); BOOL lostAudio = NO;
+    for (SSScenePlayer *player in scenePlayers()) {
+        if (!player.hasAudio || (player.background && !sceneBackgroundAudio) || !player.audioID.length) continue;
+        BOOL found = NO;
+        for (NSDictionary *output in outputs) if ([output[@"id"] isEqual:player.audioID]) found = YES;
+        if (!found) lostAudio = YES;
+    }
+    if (lostDisplay || lostAudio) {
+        stopScene(); hideSceneStage();
+        emitScene(sceneGeneration, @"device-lost", lostDisplay ? @"Stage display disconnected" : @"Audio output disconnected", 0, 0);
+    }
+    emitScene(sceneGeneration, @"devices", nil, 0, 0);
+}
+static SSScenePlayer *newScenePlayer(uint64_t identifier, NSString *path, NSString *kind, NSString *audio, BOOL hasAudio, BOOL background) {
+    SSScenePlayer *player = [[SSScenePlayer alloc] init];
+    player.identifier = identifier; player.path = path; player.video = [kind isEqualToString:@"video"];
+    player.audioID = audio; player.hasAudio = hasAudio; player.background = background;
+    return player;
+}
+static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregroundID, NSString *foregroundPath,
+    NSString *foregroundKind, BOOL foregroundAudio, NSString *imagePath, NSString *backgroundPath,
+    NSString *backgroundKind, BOOL backgroundAudio, NSString *audio, NSString *display, BOOL stage,
+    double fade, BOOL hardStop) {
+    if (revision != atomic_load(&requestedSceneRevision) || atomic_load(&shuttingDown) || atomic_load(&sceneEmergencyPending)) return;
+    if (!sceneMode) { stopCurrent(); sceneMode = YES; }
+    appliedSceneRevision = revision; sceneGeneration = generation;
+    sceneBackgroundAudio = backgroundAudio; sceneFadeSeconds = isfinite(fade) ? MAX(0, MIN(30, fade)) : 0;
+    sceneStoppedPending = !foregroundID || !foregroundPath.length;
+    if (hardStop) {
+        stopScene(); hideSceneStage(); emitScene(generation, @"stage", nil, 0, 0);
+        emitScene(generation, @"stopped", nil, 0, 0); return;
+    }
+    if (stage && (!stageEnabled || ![stageDisplayID isEqual:display])) {
+        if (!enableStage(display)) {
+            stopScene(); hideSceneStage(); emitScene(generation, @"error", @"Selected stage display is unavailable", 0, 0); return;
+        }
+    } else if (!stage) hideSceneStage();
+    BOOL sameForeground = sceneForeground && foregroundID == sceneForeground.identifier &&
+        [foregroundPath isEqual:sceneForeground.path] && (!foregroundAudio || [audio isEqual:sceneForeground.audioID]);
+    if (!sameForeground) {
+        SSScenePlayer *old = sceneForeground; sceneForeground = nil;
+        retireScenePlayer(old);
+        if (foregroundID && foregroundPath.length && foregroundID != sceneEndedForegroundID) {
+            sceneForeground = newScenePlayer(foregroundID, foregroundPath, foregroundKind, audio, foregroundAudio, NO);
+            [sceneForeground prepare];
+        }
+    }
+    BOOL backgroundVideo = [backgroundKind isEqualToString:@"video"] && backgroundPath.length;
+    BOOL sameBackground = sceneBackground && backgroundVideo && [backgroundPath isEqual:sceneBackground.path] && (!backgroundAudio || [audio isEqual:sceneBackground.audioID]);
+    if (!sameBackground) {
+        SSScenePlayer *old = sceneBackground; sceneBackground = nil; retireScenePlayer(old);
+        if (backgroundVideo) {
+            sceneBackground = newScenePlayer(0, backgroundPath, backgroundKind, audio, NO, YES);
+            [sceneBackground prepare];
+        }
+    }
+    if (sceneBackground) {
+        if (!stage) { sceneBackground.player.volume = 0; sceneBackground.fadeTo = 0; [sceneBackground.player pause]; }
+        else if (sceneBackground.started) [sceneBackground.player play];
+        else [sceneBackground ready];
+    }
+    if (![sceneImage.path isEqual:imagePath]) {
+        [sceneImage teardown]; sceneImage = nil;
+        if (imagePath.length) { sceneImage = [[SSSceneImage alloc] init]; sceneImage.path = imagePath; [sceneImage prepare]; }
+    }
+    NSString *backgroundImagePath = [backgroundKind isEqualToString:@"image"] ? backgroundPath : @"";
+    if (![sceneBackgroundImage.path isEqual:backgroundImagePath]) {
+        [sceneBackgroundImage teardown]; sceneBackgroundImage = nil;
+        if (backgroundImagePath.length) {
+            sceneBackgroundImage = [[SSSceneImage alloc] init]; sceneBackgroundImage.path = backgroundImagePath;
+            sceneBackgroundImage.background = YES; [sceneBackgroundImage prepare];
+        }
+    }
+    // Layers created while the stage was disabled attach when a display exists.
+    for (SSScenePlayer *player in scenePlayers()) if (player.layer && !player.layer.superlayer && stageWindow) {
+        player.layer.frame = stageWindow.contentView.bounds;
+        [stageWindow.contentView.layer insertSublayer:player.layer below:blackOverlay];
+    }
+    for (SSSceneImage *image in @[sceneImage ?: (id)NSNull.null, sceneBackgroundImage ?: (id)NSNull.null])
+        if ((id)image != NSNull.null && image.layer && !image.layer.superlayer && stageWindow) {
+            image.layer.frame = stageWindow.contentView.bounds;
+            [stageWindow.contentView.layer insertSublayer:image.layer below:blackOverlay];
+        }
+    renderScene();
+    [sceneForeground ready]; [sceneBackground ready];
+    mixScene();
+    emitScene(generation, @"stage", nil, 0, 0);
+    if (foregroundID && foregroundID == sceneEndedForegroundID) emitScene(foregroundID, @"ended", nil, 0, 0);
+    if (sceneImage.pendingError.length) emitScene(generation, @"background-error", sceneImage.pendingError, 0, 0);
+    if (sceneBackgroundImage.pendingError.length) emitScene(generation, @"background-error", sceneBackgroundImage.pendingError, 0, 0);
+}
+void ss_scene(const ss_scene_request *request) {
+    if (!request || atomic_load(&shuttingDown)) return;
+    @autoreleasepool {
+        uint64_t revision = request->revision, generation = request->generation, foregroundID = request->foreground_id;
+        NSString *(^copyUTF8)(const char *) = ^NSString *(const char *value) { return [NSString stringWithUTF8String:value ?: ""] ?: @""; };
+        NSString *foreground = copyUTF8(request->foreground_path), *kind = copyUTF8(request->foreground_kind), *image = copyUTF8(request->image_path);
+        NSString *background = copyUTF8(request->background_path), *backgroundKind = copyUTF8(request->background_kind);
+        NSString *audio = copyUTF8(request->audio), *display = copyUTF8(request->display);
+        BOOL hasAudio = request->foreground_has_audio, backgroundAudio = request->background_audio;
+        BOOL stage = request->stage_enabled, hardStop = request->hard_stop;
+        double fade = request->fade_seconds;
+        pthread_mutex_lock(&commandMutex);
+        if (revision <= atomic_load(&requestedSceneRevision)) { pthread_mutex_unlock(&commandMutex); return; }
+        atomic_store(&requestedSceneRevision, revision);
+        atomic_store(&sceneEmergencyPending, false);
+        latestCommand = [^{ applyScene(revision, generation, foregroundID, foreground, kind, hasAudio, image,
+            background, backgroundKind, backgroundAudio, audio, display, stage, fade, hardStop); } copy];
+        BOOL wake = !commandScheduled; commandScheduled = YES;
+        pthread_mutex_unlock(&commandMutex);
+        if (wake) onMain(^{
+            pthread_mutex_lock(&commandMutex);
+            void (^next)(void) = latestCommand; latestCommand = nil; commandScheduled = NO;
+            pthread_mutex_unlock(&commandMutex);
+            if (next) next();
+        });
+    }
+}
+
 char *ss_init(void) {
     @autoreleasepool {
         if (!NSThread.isMainThread) return copyString(@"AppKit initialization must run on the process main thread");
@@ -915,6 +1444,7 @@ static void cleanupNative(void) {
     atomic_store(&desktopReady, false);
     atomic_store(&desktopAdminRequested, false);
     atomic_store(&desktopAdminShowScheduled, false);
+    stopScene();
     disableStage();
     if (keyObserver) [NSEvent removeMonitor:keyObserver]; keyObserver = nil;
     [applicationDelegate.filePanel cancel:nil]; applicationDelegate.filePanel = nil;
@@ -1128,6 +1658,13 @@ char *ss_devices(void) {
 char *ss_inspect(const char *path) {
     @autoreleasepool {
         NSString *file = [NSString stringWithUTF8String:path];
+        if ([@[@"png", @"jpg", @"jpeg", @"gif", @"webp", @"tif", @"tiff", @"bmp", @"heic", @"heif", @"avif", @"ico"] containsObject:file.pathExtension.lowercaseString]) {
+            NSString *failure = nil;
+            CGImageRef image = copySceneImage(file, &failure);
+            if (!image) return errorJSON(failure);
+            CGImageRelease(image);
+            return json(@{@"kind": @"image", @"hasAudio": @NO, @"hasVideo": @NO, @"duration": @0});
+        }
         AVURLAsset *asset = [AVURLAsset URLAssetWithURL:[NSURL fileURLWithPath:file] options:@{AVURLAssetPreferPreciseDurationAndTimingKey:@YES}];
         dispatch_semaphore_t loaded = dispatch_semaphore_create(0);
         [asset loadValuesAsynchronouslyForKeys:@[@"playable", @"tracks", @"duration"] completionHandler:^{ dispatch_semaphore_signal(loaded); }];

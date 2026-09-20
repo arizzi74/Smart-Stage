@@ -56,10 +56,10 @@ with (contents / "Info.plist").open("wb") as f:
             },
         },
         "CFBundleDocumentTypes": [{
-            "CFBundleTypeName": "Audio and video for Smart Stage",
+            "CFBundleTypeName": "Audio, video and images for Smart Stage",
             "CFBundleTypeRole": "Viewer",
             "LSHandlerRank": "None",
-            "LSItemContentTypes": ["public.audio", "public.movie"],
+            "LSItemContentTypes": ["public.audio", "public.movie", "public.image"],
         }],
     }, f)
 subprocess.run([

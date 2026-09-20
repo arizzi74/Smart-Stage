@@ -1,6 +1,6 @@
 # Smart Stage
 
-Trigger local music/video cues on a Windows PC or Mac from a phone, tablet or
+Trigger local music, video and image cues on a Windows PC or Mac from a phone, tablet or
 desktop browser. Native playback stays on the host. One executable includes the
 browser interfaces and native bridge. No Go, Node, Python, database, player or
 extra application runtime is needed on the event computer.
@@ -142,10 +142,24 @@ acceptance testing.
    on the same network, or copy its URL. That URL includes a random numeric token
    and opens the remote controls without typing a separate pairing key. Use the
    address for the network your phone can reach.
-5. Tap a cue to start/restart it. STOP silences and retains an enabled black stage.
-   Natural completion does the same, without auto-advance. The remote's small
-   **Stage on/off** control opens or closes the stage; turning it off also stops
-   playback. **Disconnect** is in the remote's top bar.
+5. In **Stage and sound**, choose an optional saved image or looping video
+   background. Enable its soundtrack if wanted. Set optional audio fades and
+   crossfades (one second by default, adjustable from 0.1 to 30 seconds).
+   Playlist images/videos can also be marked **Background**, so their buttons
+   change the background for this session. **Hide button** keeps a cue in Admin
+   while removing it from the remote.
+6. Tap an audio/video cue to play it. An audio cue returns the stage to its
+   background; an image cue changes the picture while the music and its selected
+   button stay active. Enable **Press selected music button again to stop** to
+   stop that music without clearing an image. **Stage on/off** opens or closes
+   the stage independently of foreground music/video. The pointer is hidden
+   over the fullscreen stage and restored outside it.
+7. **STOP** ends the foreground cue and clears the image overlay, returning to
+   the current background and its optional soundtrack. Enabled fades crossfade
+   outgoing sound to new sound, or fade it to silence; starting from silence is
+   immediate. Background video loops and its soundtrack yields to foreground
+   audio. Stage off mutes the background soundtrack. **Escape** immediately
+   stops all sound and closes the stage. **Disconnect** is in the top bar.
 
 **Quit Smart Stage** in Admin stops playback, closes the stage and exits the app.
 Closing the Mac Admin window only hides it. Click the Dock icon or choose Open
@@ -209,7 +223,8 @@ in the menu bar control or inspect `~/Library/Logs/Smart Stage/smartstage.log`.
 
 Escape while the native Smart Stage app/stage or a connected Admin/remote browser
 page has focus stops playback and closes the stage window, exposing the desktop.
-It is not a system-wide keyboard shortcut; STOP still retains an enabled black stage.
+It is not a system-wide keyboard shortcut. STOP retains an enabled stage with its
+current background, or black when no background is selected.
 Quit Smart Stage (or Ctrl+C for a Terminal launch) closes the stage window.
 Losing browser connections or a sleeping phone does not stop playback.
 Unacknowledged STOP is shown as unconfirmed;
