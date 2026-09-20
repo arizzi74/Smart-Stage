@@ -21,6 +21,10 @@ void ss_start(uint64_t generation, const char *path, const char *audio,
               const char *display, int video);
 void ss_stop(uint64_t generation);
 void ss_stage(uint64_t generation, const char *display, int enabled);
+#ifdef __APPLE__
+void ss_desktop_admin(const char *url);
+void ss_desktop_error(const char *message);
+#endif
 #ifdef __cplusplus
 }
 #endif

@@ -56,6 +56,9 @@ user. ZIP downloads remain available, and Windows continues to use ZIPs. Each
 standalone ZIP contains one executable; browser assets, native playback and QR
 rendering are compiled in. The Mac app bundle adds a launcher and icon around
 the same executable; it is one Finder application, not one physical file.
+The later request to run without Terminal changes the Mac app launcher to
+redirect logs and execute the core directly. A native menu bar control provides
+Open Admin, log access and Quit; quitting uses the existing graceful shutdown.
 Preview publication remains explicitly incomplete acceptance until physical
 checks pass.
 

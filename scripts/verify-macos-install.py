@@ -15,7 +15,6 @@ from pathlib import Path
 import platform
 import plistlib
 import re
-import signal
 import socket
 import subprocess
 import sys
@@ -23,6 +22,9 @@ import tempfile
 import time
 import urllib.request
 import zipfile
+
+from macos_app_checks import (background_launch_checks, launch_snapshot,
+                              quit_background_app, stop_core)
 
 
 QUARANTINE = "com.apple.quarantine"
@@ -189,25 +191,12 @@ def find_core_pid(bundle):
     return None
 
 
-def stop_core(pid):
-    if not pid:
-        return
-    try:
-        os.kill(pid, signal.SIGINT)
-    except ProcessLookupError:
-        return
-    for _ in range(60):
-        try:
-            os.kill(pid, 0)
-        except ProcessLookupError:
-            return
-        time.sleep(0.25)
-    os.kill(pid, signal.SIGKILL)
-
-
 def default_launch(script, directory, version, report):
     require_free_default_ports()
     bundle = directory / BUNDLE_NAME
+    info = plistlib.loads((bundle / "Contents/Info.plist").read_bytes())
+    background = bool(info.get("SmartStageBackgroundLaunch"))
+    snapshot = launch_snapshot() if background else None
     install(script, directory, version, launch=True)
     pid = None
     try:
@@ -235,6 +224,10 @@ def default_launch(script, directory, version, report):
         assert (bundle / "Contents/MacOS/smartstage").read_bytes() == original
         assert find_core_pid(bundle) == pid
         assert get(8787, "/admin")[0] == 200
+        if background:
+            report.update(background_launch_checks(bundle, pid, snapshot, find_core_pid))
+            report.update(quit_background_app(pid))
+            pid = None
         report.update(installerLaunchedBundleAndCore=True, kernelExecutablePathMatched=True,
                       adminServedOnLoopback=True, adminListenerOnly127001=True,
                       remoteListenerRejectsAdmin=True, runningAppReplacementRefused=True,
@@ -311,7 +304,7 @@ def failed_update_checks(script, destination, version, report):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--installer", type=Path, default=ROOT / "install.sh")
-    parser.add_argument("--version", default="v0.1.0-preview.6")
+    parser.add_argument("--version", help="Published release to verify; defaults to the installer's selected release")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--bootstrap-url", default="https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh")
     parser.add_argument("--launch", action="store_true", help="Launch the real default show; use only on a fresh ephemeral CI Mac")
@@ -321,6 +314,12 @@ def main():
     architecture = {"arm64": "arm64", "x86_64": "amd64"}.get(platform.machine().lower())
     if not architecture:
         parser.error("Unsupported native Mac architecture")
+    local_script = args.installer.read_text()
+    default_match = re.search(r'version=\$\{SMARTSTAGE_VERSION:-(v[0-9A-Za-z._-]+)\}', local_script)
+    if not default_match:
+        parser.error("Could not read the installer's default release")
+    default_version = default_match[1]
+    args.version = args.version or default_version
     if not re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.]+)?", args.version):
         parser.error("Invalid release version")
     output = args.output.resolve()
@@ -350,13 +349,13 @@ def main():
                 f.write(b"operator configuration must survive\n")
             xattr_write(config_marker, CUSTOM_ATTRIBUTE, CUSTOM_VALUE)
             expected = official_bundle(scratch, args.version, architecture, report)
-            install(script, destination, None if args.version == "v0.1.0-preview.6" else args.version)
+            install(script, destination, None if args.version == default_version else args.version)
             assert bundle.is_dir() and not bundle.is_symlink()
             assert_no_quarantine(bundle)
             verify_bundle(bundle, expected, architecture, args.version, scratch, report)
             require_free_default_ports()
             report.update(noLaunchOptionRespected=True,
-                          defaultReleaseSelectionTested=args.version == "v0.1.0-preview.6")
+                          defaultReleaseSelectionTested=args.version == default_version)
 
             install(quarantined_installer(script), destination, args.version)
             assert_no_quarantine(bundle)

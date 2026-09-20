@@ -8,6 +8,12 @@ asks the operating system to open local Admin in the default system browser;
 harness is a development artifact, not an application dependency. Unsupported platforms or
 builds without cgo fail initialization; there is no production fake backend.
 
+The optional Mac app launcher redirects output to
+`~/Library/Logs/Smart Stage/smartstage.log` and replaces itself with the bundled
+core executable. It does not start Terminal or leave a separate background
+helper. The native AppKit menu bar control reopens local Admin, reveals the log,
+and requests normal shutdown. Closing the browser leaves the host running.
+
 ## Threads and ownership
 
 `internal/app.Service` owns authoritative show/playback state. Its mutex covers

@@ -1,6 +1,6 @@
 # Mac physical test
 
-Use the published **v0.1.0-preview.6** on the Mac that will run the show.
+Use the published **v0.1.0-preview.7** on the Mac that will run the show.
 The available physical test machine is an **Apple Silicon Mac**; its macOS
 version is not yet recorded. An external audio output and a second
 monitor/projector are available. Use the **darwin/arm64** release. Windows physical checks remain pending. This is a procedure and result
@@ -57,8 +57,9 @@ Smart Stage instance first so local Admin port 8787 and remote-control port 8788
 are available. Admin opens automatically at `http://127.0.0.1:8787/admin` and is
 accessible only on the Mac itself.
 
-Opening the app in Finder starts the normal configuration. Use the Terminal
-command above for this isolated test. Direct [Apple Silicon standalone ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-darwin-arm64.zip)
+Opening the app in Finder starts the normal configuration without Terminal; use
+its menu bar control to quit. Use the Terminal
+command above for this isolated test. Direct [Apple Silicon standalone ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.7/smartstage-darwin-arm64.zip)
 downloads also remain available, but browser-downloaded files may require
 **Privacy & Security → Open Anyway**. Mac builds remain ad-hoc signed rather than
 Developer ID signed/notarized; record any security or local-network prompt and

@@ -25,7 +25,15 @@ and removes quarantine only from that app. It does not establish notarization.
 This path passed native installation, quarantine, preservation/rollback and
 app-to-Admin launch checks on both Mac architectures in
 [run 35501797274](https://github.com/arizzi74/Smart-Stage/actions/runs/35501797274).
-The user's own Mac launch and physical output observations remain pending.
+The user's Mac subsequently served both `127.0.0.1:8787/admin` and
+`127.0.0.1:8788/command` with HTTP 200. The advertised LAN address accepted a TCP
+connection but reset it before an HTTP response; the browser failed on both the
+Mac and phone. Swapping HTTP Host headers confirmed the failure follows the
+LAN destination; the same Host is accepted through loopback. The Mac has its
+firewall and third-party network filters enabled. The component responsible has
+not been identified, and this is not a passed physical network test.
+Physical output observations remain pending. The user also
+requested that the Mac app run without a Terminal window.
 
 Current release: preview 6, commit `4aa3529`.
 [Native/browser run 35500115900](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115900)

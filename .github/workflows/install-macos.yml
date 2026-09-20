@@ -2,8 +2,19 @@ name: Verify Mac app installation and quarantine removal
 on:
   push:
     branches: [main]
-    paths: ['install.sh', 'scripts/verify-macos-install.py', '.github/workflows/install-macos.yml']
+    paths: ['install.sh', 'scripts/verify-macos-install.py', 'scripts/macos_app_checks.py', '.github/workflows/install-macos.yml']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag; leave empty to verify the installer default'
+        type: string
+        required: false
+  workflow_call:
+    inputs:
+      version:
+        description: 'Published release tag to install and launch'
+        type: string
+        required: true
 permissions:
   contents: read
 jobs:
@@ -21,9 +32,11 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Install the published app, clear only its quarantine, and launch Admin
+        env:
+          RELEASE_VERSION: ${{ inputs.version || '' }}
         run: |
           python3 scripts/verify-macos-install.py --installer install.sh \
-            --version v0.1.0-preview.6 --launch \
+            --version "$RELEASE_VERSION" --launch \
             --output 'dist/macos-install/${{ matrix.arch }}/result.json'
       - name: Retain installation evidence
         if: always()

@@ -40,6 +40,7 @@ with (contents / "Info.plist").open("wb") as f:
         "CFBundleShortVersionString": short_version,
         "CFBundleVersion": bundle_version,
         "SmartStageVersion": version,
+        "SmartStageBackgroundLaunch": True,
         "LSMinimumSystemVersion": "12.0",
         "LSUIElement": True,
         "NSHighResolutionCapable": True,
@@ -47,7 +48,7 @@ with (contents / "Info.plist").open("wb") as f:
 subprocess.run([
     os.environ.get("CC", "clang"), "-arch", native_arch,
     "-mmacosx-version-min=12.0", "-Os", "-Wall", "-Wextra", "-Werror",
-    "-framework", "Foundation", str(root / "packaging/macos/launcher.m"),
+    "-fobjc-arc", "-framework", "AppKit", str(root / "packaging/macos/launcher.m"),
     "-o", str(macos / "SmartStageLauncher"),
 ], check=True)
 subprocess.run(["codesign", "--force", "--sign", "-", str(bundle)], check=True)

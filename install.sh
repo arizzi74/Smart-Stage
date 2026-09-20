@@ -20,7 +20,7 @@ check_destination() {
         [ "$existing_id" = 'com.github.arizzi74.smartstage' ] || fail "The existing app is not Smart Stage: $destination"
         if [ -f "$destination/Contents/MacOS/smartstage" ]; then
             running=$(/usr/sbin/lsof -t "$destination/Contents/MacOS/smartstage" 2>/dev/null || :)
-            [ -z "$running" ] || fail 'Smart Stage is running. Stop it with Ctrl+C in its Terminal window, then run the installer again.'
+            [ -z "$running" ] || fail 'Smart Stage is running. Quit it using its menu bar icon (or Ctrl+C in its Terminal window), then run the installer again.'
         fi
     fi
     if [ "$no_launch" = 0 ]; then
@@ -177,6 +177,7 @@ main() {
     [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$staged/Contents/Info.plist")" = SmartStageLauncher ] || fail 'The downloaded app has an unexpected launcher.'
     [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIconFile' "$staged/Contents/Info.plist")" = smartstage.icns ] || fail 'The downloaded app has an unexpected icon.'
     [ "$(/usr/libexec/PlistBuddy -c 'Print :SmartStageVersion' "$staged/Contents/Info.plist")" = "$version" ] || fail 'The downloaded bundle has an unexpected version.'
+    background_launch=$(/usr/libexec/PlistBuddy -c 'Print :SmartStageBackgroundLaunch' "$staged/Contents/Info.plist" 2>/dev/null || :)
     for executable in "$staged/Contents/MacOS/smartstage" "$staged/Contents/MacOS/SmartStageLauncher" "$staged/Contents/Resources/Start Smart Stage.command"; do
         [ -f "$executable" ] && [ -x "$executable" ] || fail 'The downloaded app is missing an executable.'
     done
@@ -207,7 +208,12 @@ main() {
     complete=1
     printf 'Installed %s\n%s\n' "$destination" "$installed_version"
     if [ "$no_launch" = 0 ]; then
-        printf 'Smart Stage opens in Terminal and opens Admin in your browser. Press Ctrl+C in its Terminal window to stop it.\n'
+        if [ "$background_launch" = true ]; then
+            printf 'Smart Stage runs from its menu bar icon and opens Admin in your browser. Use the icon to reopen Admin, view the log, or quit.\n'
+            printf 'Log: %s/Library/Logs/Smart Stage/smartstage.log\n' "$HOME"
+        else
+            printf 'Smart Stage opens in Terminal and opens Admin in your browser. Press Ctrl+C in its Terminal window to stop it.\n'
+        fi
     else
         printf 'Open Smart Stage.app to start it.\n'
     fi

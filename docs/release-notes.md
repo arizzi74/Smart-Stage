@@ -1,15 +1,26 @@
 Smart Stage preview for macOS Apple Silicon/Intel and Windows ARM64/AMD64.
 
-Download the ZIP for your computer, extract it, and open its executable. Each
-primary ZIP contains just one application binary; no installer or additional
-runtime is required.
+On Mac, install the app with its icon using:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
+```
+
+The installer chooses Apple Silicon or Intel, verifies the download, installs in
+`~/Applications` and removes quarantine only from Smart Stage. Quit the old app
+before updating. The app opens Admin automatically and runs independently of
+Terminal. Its menu bar control reopens Admin, reveals the log and quits the app.
+Logs are saved in `~/Library/Logs/Smart Stage/smartstage.log`.
+
+Direct ZIPs also remain available. Each primary ZIP contains just one application
+binary; no additional runtime is required.
 
 | Computer | Download |
 | --- | --- |
-| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-darwin-arm64.zip) |
-| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-darwin-amd64.zip) |
-| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-windows-arm64.zip) |
-| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-windows-amd64.zip) |
+| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.7/smartstage-darwin-arm64.zip) |
+| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.7/smartstage-darwin-amd64.zip) |
+| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.7/smartstage-windows-arm64.zip) |
+| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.7/smartstage-windows-amd64.zip) |
 
 Launching Smart Stage automatically opens Admin in the system browser. Admin
 listens only on **127.0.0.1:8787**. Its Remote control area displays the phone/tablet
@@ -20,7 +31,7 @@ The token changes at every launch, so scan the current QR code after restarting.
 
 Windows executables retain the embedded Smart Stage icon. The optional Mac
 `smartstage-darwin-<arch>.app.zip` contains a Finder bundle with the same core
-executable, launcher and icon. Opening it starts Smart Stage in Terminal and
+executable, launcher and icon. Opening it starts Smart Stage without Terminal and
 opens Admin in your system browser. The primary Mac ZIP contains only the
 standalone executable.
 

@@ -5,7 +5,6 @@ import hashlib
 import json
 from pathlib import Path
 import plistlib
-import signal
 import socket
 import struct
 import subprocess
@@ -13,6 +12,9 @@ import sys
 import tempfile
 import time
 import urllib.request
+
+from macos_app_checks import (background_launch_checks, launch_snapshot,
+                              quit_background_app, stop_core)
 
 
 def digest(path):
@@ -92,7 +94,7 @@ def windows_icon(executable, source):
             "shellLargeExtractCount": large_count, "shellSmallExtractCount": small_count}
 
 
-def finder_launch(bundle):
+def finder_launch(bundle, background):
     import ctypes
     import os
 
@@ -106,40 +108,48 @@ def finder_launch(bundle):
         with socket.socket() as probe:
             if probe.connect_ex(("127.0.0.1", port)) == 0:
                 raise RuntimeError(f"Finder launch check needs port {port} to be unused")
+    observed = {}
+
+    def find_core_pid(_bundle):
+        listeners = subprocess.run(["lsof", "-nP", "-iTCP:8787", "-sTCP:LISTEN", "-Fp"], text=True, capture_output=True, timeout=15)
+        for line in listeners.stdout.splitlines():
+            if not line.startswith("p"):
+                continue
+            candidate = int(line[1:])
+            # Read the executable path from the kernel: ps display output can
+            # truncate or escape long paths and non-ASCII characters.
+            path = ctypes.create_string_buffer(4096)
+            if libproc.proc_pidpath(candidate, path, len(path)) <= 0:
+                continue
+            observed[candidate] = os.fsdecode(path.value)
+            if Path(observed[candidate]).resolve() == expected_executable:
+                return candidate
+        return None
+
+    snapshot = launch_snapshot() if background else None
     subprocess.run(["open", "-n", str(bundle)], check=True, timeout=15)
     pid = None
-    observed = {}
     try:
         for _ in range(45):
-            listeners = subprocess.run(["lsof", "-nP", "-iTCP:8787", "-sTCP:LISTEN", "-Fp"], text=True, capture_output=True)
-            for line in listeners.stdout.splitlines():
-                if not line.startswith("p"):
-                    continue
-                candidate = int(line[1:])
-                # Read the executable path from the kernel: ps display output
-                # can truncate or escape long paths and non-ASCII characters.
-                path = ctypes.create_string_buffer(4096)
-                if libproc.proc_pidpath(candidate, path, len(path)) <= 0:
-                    continue
-                observed[candidate] = os.fsdecode(path.value)
-                if Path(observed[candidate]).resolve() == expected_executable:
-                    pid = candidate
+            pid = find_core_pid(bundle)
             if pid:
                 try:
                     with urllib.request.urlopen("http://127.0.0.1:8787/admin", timeout=2) as response:
                         assert response.status == 200 and b"Smart Stage" in response.read()
-                    return {"finderLaunchedTerminalAndCore": True, "servedAdminPage": True,
-                            "kernelExecutablePathMatched": True}
                 except (OSError, AssertionError):
                     pass
+                else:
+                    result = {"finderLaunchedBundledCore": True, "servedAdminPage": True,
+                              "kernelExecutablePathMatched": True}
+                    if background:
+                        result.update(background_launch_checks(bundle, pid, snapshot, find_core_pid))
+                        result.update(quit_background_app(pid))
+                        pid = None
+                    return result
             time.sleep(1)
-        raise RuntimeError(f"Finder launch did not start the bundled Smart Stage server in Terminal; listeners: {observed}")
+        raise RuntimeError(f"Finder launch did not start the bundled Smart Stage server; listeners: {observed}")
     finally:
-        if pid:
-            try:
-                os.kill(pid, signal.SIGINT)
-            except ProcessLookupError:
-                pass
+        stop_core(pid or find_core_pid(bundle))
 
 
 def mac_icon(executable, source, test_finder):
@@ -156,6 +166,7 @@ def mac_icon(executable, source, test_finder):
         assert digest(icon) == digest(source), "Bundled icon differs from the source ICNS"
         assert digest(contents / "MacOS/smartstage") == digest(executable), "Bundle must contain the standalone release bytes"
         assert info["CFBundleExecutable"] == "SmartStageLauncher" and info["CFBundlePackageType"] == "APPL"
+        assert info["SmartStageBackgroundLaunch"] is True, "The new Finder app must declare background launch"
         subprocess.run(["codesign", "--verify", "--deep", "--strict", str(bundle)], check=True)
         decoded = parent / "decoded.iconset"
         subprocess.run(["iconutil", "--convert", "iconset", "--output", str(decoded), str(icon)], check=True)
@@ -168,14 +179,14 @@ def mac_icon(executable, source, test_finder):
                   "adHocSignatureVerified": True, "standaloneBytesMatch": True,
                   "spacesQuotesUnicodePathPassed": True, "version": version}
         if test_finder:
-            result.update(finder_launch(bundle))
+            result.update(finder_launch(bundle, bool(info.get("SmartStageBackgroundLaunch"))))
         return result
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("executable", type=Path)
-    parser.add_argument("--finder-launch", action="store_true", help="Launch Terminal and the default show on an ephemeral CI Mac")
+    parser.add_argument("--finder-launch", action="store_true", help="Launch the Finder app and default show on an ephemeral CI Mac")
     args = parser.parse_args()
     executable = args.executable.resolve()
     icons = Path(__file__).resolve().parents[1] / "assets/icon"

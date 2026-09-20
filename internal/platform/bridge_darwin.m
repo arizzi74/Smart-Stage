@@ -10,6 +10,8 @@
 #import <QuartzCore/QuartzCore.h>
 #include <stdatomic.h>
 #include <pthread.h>
+#include <signal.h>
+#include <unistd.h>
 
 static _Atomic(uint64_t) currentGeneration;
 static _Atomic(bool) shuttingDown;
@@ -28,6 +30,90 @@ static id screenObserver;
 static AudioObjectPropertyListenerBlock audioListener;
 static void stopCurrent(void);
 static void checkDevices(void);
+
+// Only the Finder launcher opts into the menu bar lifecycle. CLI invocations
+// keep their ordinary stdout/stderr and Ctrl+C behavior.
+static BOOL desktopLaunch(void) {
+    const char *value = getenv("SMARTSTAGE_APP_LAUNCH");
+    return value && strcmp(value, "1") == 0;
+}
+
+@interface SSApplicationDelegate : NSObject <NSApplicationDelegate>
+@property(nonatomic, strong) NSStatusItem *status;
+@property(nonatomic, strong) NSMenuItem *openItem;
+@property(nonatomic, strong) NSMenuItem *quitItem;
+@property(nonatomic, strong) NSURL *adminURL;
+@property(nonatomic) BOOL reopenPending;
+@property(nonatomic) BOOL quitPending;
+@property(nonatomic) BOOL quitStarted;
+@property(nonatomic) BOOL terminationPending;
+- (void)openAdmin:(id)sender;
+- (void)viewLog:(id)sender;
+- (void)quit:(id)sender;
+@end
+static SSApplicationDelegate *applicationDelegate;
+
+@implementation SSApplicationDelegate
+- (void)openAdmin:(id)sender {
+    (void)sender;
+    if (!self.adminURL) { self.reopenPending = YES; return; }
+    if ([NSWorkspace.sharedWorkspace openURL:self.adminURL])
+        fputs("Reopened Admin in the system browser\n", stderr);
+    else
+        fputs("Smart Stage: could not reopen Admin in the system browser\n", stderr);
+}
+- (void)viewLog:(id)sender {
+    (void)sender;
+    const char *path = getenv("SMARTSTAGE_LOG_PATH");
+    if (path) [NSWorkspace.sharedWorkspace openURL:[NSURL fileURLWithPath:[NSString stringWithUTF8String:path]]];
+}
+- (void)quit:(id)sender {
+    (void)sender;
+    // The signal context is installed before Go enables the menu. Let Go
+    // close HTTP listeners, save state, and stop native playback normally.
+    if (!self.adminURL) { self.quitPending = YES; return; }
+    if (self.quitStarted) return;
+    self.quitStarted = YES;
+    self.quitItem.enabled = NO;
+    fputs("Quitting Smart Stage from the app menu\n", stderr);
+    kill(getpid(), SIGTERM);
+}
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
+    self.terminationPending = YES;
+    [self quit:sender];
+    return NSTerminateLater;
+}
+- (BOOL)applicationShouldHandleReopen:(NSApplication *)sender hasVisibleWindows:(BOOL)visible {
+    (void)visible;
+    [self openAdmin:sender];
+    return NO;
+}
+@end
+
+static void setupDesktop(void) {
+    if (!desktopLaunch()) return;
+    applicationDelegate = [[SSApplicationDelegate alloc] init];
+    NSApp.delegate = applicationDelegate;
+    NSStatusItem *status = [NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
+    applicationDelegate.status = status;
+    status.button.title = @"Smart Stage";
+    status.button.toolTip = @"Smart Stage — Open Admin, view logs, or quit";
+    NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Smart Stage"];
+    menu.autoenablesItems = NO;
+    NSMenuItem *open = [[NSMenuItem alloc] initWithTitle:@"Open Admin" action:@selector(openAdmin:) keyEquivalent:@""];
+    open.target = applicationDelegate; open.enabled = NO;
+    applicationDelegate.openItem = open;
+    [menu addItem:open];
+    NSMenuItem *log = [[NSMenuItem alloc] initWithTitle:@"View Log" action:@selector(viewLog:) keyEquivalent:@""];
+    log.target = applicationDelegate;
+    [menu addItem:log];
+    [menu addItem:NSMenuItem.separatorItem];
+    NSMenuItem *quit = [[NSMenuItem alloc] initWithTitle:@"Quit Smart Stage" action:@selector(quit:) keyEquivalent:@"q"];
+    quit.target = applicationDelegate; quit.enabled = NO;
+    applicationDelegate.quitItem = quit;
+    [menu addItem:quit];
+    status.menu = menu;
+}
 
 // Go calls and AVFoundation callbacks do not necessarily arrive as AppKit
 // events. Bound their temporary Objective-C objects to each main-queue task
@@ -369,6 +455,7 @@ char *ss_init(void) {
         if (!NSThread.isMainThread) return copyString(@"AppKit initialization must run on the process main thread");
         [NSApplication sharedApplication];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+        setupDesktop();
         [NSApp finishLaunching];
         events = [NSMutableArray array];
         if (![AVPlayer instancesRespondToSelector:@selector(setAudioOutputDeviceUniqueID:)])
@@ -382,26 +469,76 @@ char *ss_init(void) {
         return NULL;
     }
 }
+static void cleanupNative(void) {
+    static BOOL cleaned;
+    if (cleaned) return;
+    cleaned = YES;
+    disableStage();
+    [NSNotificationCenter.defaultCenter removeObserver:screenObserver]; screenObserver = nil;
+    for (NSNumber *selector in @[@(kAudioHardwarePropertyDevices), @(kAudioHardwarePropertyDefaultOutputDevice)]) {
+        AudioObjectPropertyAddress address = {selector.unsignedIntValue, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain};
+        AudioObjectRemovePropertyListenerBlock(kAudioObjectSystemObject, &address, dispatch_get_main_queue(), audioListener);
+    }
+    audioListener = nil;
+    [stageWindow close]; stageWindow = nil; videoLayer = nil; blackOverlay = nil;
+    if (applicationDelegate) {
+        [NSStatusBar.systemStatusBar removeStatusItem:applicationDelegate.status];
+        NSApp.delegate = nil; applicationDelegate = nil;
+    }
+}
 void ss_run(void) {
     @autoreleasepool {
         [NSApp run];
-        disableStage();
-        [NSNotificationCenter.defaultCenter removeObserver:screenObserver]; screenObserver = nil;
-        for (NSNumber *selector in @[@(kAudioHardwarePropertyDevices), @(kAudioHardwarePropertyDefaultOutputDevice)]) {
-            AudioObjectPropertyAddress address = {selector.unsignedIntValue, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain};
-            AudioObjectRemovePropertyListenerBlock(kAudioObjectSystemObject, &address, dispatch_get_main_queue(), audioListener);
-        }
-        audioListener = nil;
-        [stageWindow close]; stageWindow = nil; videoLayer = nil; blackOverlay = nil;
+        cleanupNative();
     }
 }
 void ss_quit(void) {
     atomic_store(&shuttingDown, true); atomic_fetch_add(&currentGeneration, 1);
     onMain(^{
+        if (applicationDelegate.terminationPending) {
+            // NSTerminateLater enters a nested modal run loop, so it cannot
+            // wait for ss_run to return. Go has already closed HTTP/storage
+            // and native workers before requesting this final cleanup.
+            cleanupNative();
+            [NSApp replyToApplicationShouldTerminate:YES];
+        }
         disableStage(); [NSApp stop:nil];
         NSEvent *wake = [NSEvent otherEventWithType:NSEventTypeApplicationDefined location:NSZeroPoint modifierFlags:0 timestamp:0 windowNumber:0 context:nil subtype:0 data1:0 data2:0];
         [NSApp postEvent:wake atStart:NO];
     });
+}
+void ss_desktop_admin(const char *url) {
+    if (!desktopLaunch()) return;
+    @autoreleasepool {
+        NSString *value = [NSString stringWithUTF8String:url];
+        onMain(^{
+            applicationDelegate.adminURL = [NSURL URLWithString:value];
+            applicationDelegate.openItem.enabled = YES;
+            applicationDelegate.quitItem.enabled = YES;
+            fputs("Smart Stage menu bar ready\n", stderr);
+            if (applicationDelegate.quitPending) [applicationDelegate quit:nil];
+            else if (applicationDelegate.reopenPending) {
+                applicationDelegate.reopenPending = NO;
+                [applicationDelegate openAdmin:nil];
+            }
+        });
+    }
+}
+void ss_desktop_error(const char *message) {
+    if (!desktopLaunch()) return;
+    @autoreleasepool {
+        [NSApplication sharedApplication];
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+        NSAlert *alert = [[NSAlert alloc] init];
+        alert.messageText = @"Smart Stage could not start";
+        alert.informativeText = [NSString stringWithFormat:@"%s\n\nDetails are saved in ~/Library/Logs/Smart Stage/smartstage.log.", message];
+        [alert addButtonWithTitle:@"OK"];
+        [alert addButtonWithTitle:@"View Log"];
+        if ([alert runModal] == NSAlertSecondButtonReturn) {
+            const char *path = getenv("SMARTSTAGE_LOG_PATH");
+            if (path) [NSWorkspace.sharedWorkspace openURL:[NSURL fileURLWithPath:[NSString stringWithUTF8String:path]]];
+        }
+    }
 }
 void ss_free(char *p) { free(p); }
 char *ss_poll(void) {

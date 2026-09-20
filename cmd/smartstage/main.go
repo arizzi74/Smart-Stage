@@ -142,8 +142,13 @@ func main() {
 		defer commandServer.Close()
 		fmt.Printf("Smart Stage %s\n", version)
 		adminURL := lan.URL("127.0.0.1", *adminPort, "/admin")
+		platform.DesktopAdmin(adminURL)
 		fmt.Printf("Admin: %s\nRemote listener: %s\n", adminURL, lan.URL(*bind, *port, "/command"))
-		fmt.Println("Open Admin to scan or copy the remote-control link. Ctrl+C exits; STOP retains an enabled black stage.")
+		exitHint := "Ctrl+C exits"
+		if runtime.GOOS == "darwin" && os.Getenv("SMARTSTAGE_APP_LAUNCH") == "1" {
+			exitHint = "Use the Smart Stage menu bar item to quit"
+		}
+		fmt.Printf("Open Admin to scan or copy the remote-control link. %s; STOP retains an enabled black stage.\n", exitHint)
 		if !*noBrowser {
 			go func() {
 				if err := browseropen.Open(adminURL); err != nil {
@@ -212,4 +217,8 @@ func remoteLinks(addresses []lan.Address, bind, advertise string, port int, toke
 	}
 	return links
 }
-func exitError(err error) { fmt.Fprintln(os.Stderr, "Smart Stage:", err); os.Exit(1) }
+func exitError(err error) {
+	fmt.Fprintln(os.Stderr, "Smart Stage:", err)
+	platform.DesktopError(err.Error())
+	os.Exit(1)
+}

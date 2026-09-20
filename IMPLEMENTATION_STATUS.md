@@ -28,7 +28,8 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.6
   the icon-bearing app bundle, removes quarantine only from that app, and opens
   Admin. Windows retains direct ZIP downloads.
 - Embedded Windows executable icons and optional Mac Finder apps with the same
-  artwork; Finder starts the bundled executable in Terminal and opens local Admin.
+  artwork; Finder starts the bundled executable without Terminal and opens local
+  Admin. The Mac menu bar provides Admin, log access and graceful Quit.
 
 ## Built and automatically tested
 
