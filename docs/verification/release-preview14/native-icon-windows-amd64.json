@@ -1,0 +1,21 @@
+{
+  "executable": "smartstage-windows-amd64.exe",
+  "sha256": "595d1f886df96cad2c7d6a3fb44dd3e879821d3eb4a567c015d7f0f5276819f1",
+  "platform": "win32",
+  "status": "passed",
+  "embeddedSizes": [
+    16,
+    20,
+    24,
+    32,
+    40,
+    48,
+    64,
+    128,
+    256
+  ],
+  "sourcePixelsMatch": true,
+  "shellExtractedLargeAndSmall": true,
+  "shellLargeExtractCount": 1,
+  "shellSmallExtractCount": 1
+}

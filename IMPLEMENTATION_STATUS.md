@@ -5,14 +5,21 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.13
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.14
 
 ## Implemented
 
 - Compiled-in AVFoundation/AppKit/Core Audio backend on macOS and Media
   Foundation/EVR/Win32 backend on Windows; real native harness and media fixtures.
-- Routed single-timeline playback, persistent native black stage, STOP/end/error
-  handling, output enumeration, hotplug handling, Escape and power assertions.
+- Routed foreground audio/video playback with independent stage visibility and
+  image cues, looping image/video backgrounds, optional background sound,
+  bounded native audio crossfades, output enumeration, hotplug handling,
+  emergency Escape and power assertions. The pointer hides over the stage.
+- Saved background selection and session background cue buttons, hidden remote
+  buttons, configurable fades (default duration one second, initially disabled),
+  and an optional selected-music-button toggle that keeps the image displayed.
+  STOP returns to the background; emergency Escape stops everything and hides
+  the stage.
 - Go coordinator with generations, stop epochs, latest-only native/load mailboxes,
   bounded request idempotency and SSE subscribers. Atomic per-user persistence,
   backup, corruption diagnostics and native process lock.
@@ -62,6 +69,27 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.13
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Preview 14 is source `49c9bf7051c2a5a70196dabc7e585690e7dee515`.
+[Candidate run 35525447112](https://github.com/arizzi74/Smart-Stage/actions/runs/35525447112)
+passed shared checks and all four native/browser targets.
+[Release run 35525752618](https://github.com/arizzi74/Smart-Stage/actions/runs/35525752618)
+passed all 20 jobs: native builds, publication, public downloads/browser checks,
+both Mac installers and actual automatic updates on all four targets. Mac scene
+probes measured native AVPlayer gains, crossfades, looping, timeline preservation,
+image layers and emergency cleanup. Both Mac browser tests kept music selected
+through images and stage toggles, then stopped it with the selected-button option.
+Windows probes verified real image pixels, looping, stage/timeline independence,
+cursor handling and hard stop; their runners lack audio endpoints, so Windows
+audio crossfades remain unverified at runtime. All six public ZIPs match the exact
+clean source and architecture. Reports are in
+[`docs/verification/release-preview14`](docs/verification/release-preview14/).
+Both Macs also passed [default-install run 35526039651](https://github.com/arizzi74/Smart-Stage/actions/runs/35526039651)
+without a version override, matching the public archive and installer hashes.
+Physical speaker/projector and pointer checks still need the event Mac; long-session
+acceptance of the new mixer has not been established.
+
+Historical preview 13 evidence follows.
 
 Preview 13 is source `824698e90b360822f713840df60ae914767e21df`.
 [Candidate run 35521516191](https://github.com/arizzi74/Smart-Stage/actions/runs/35521516191)

@@ -1,0 +1,134 @@
+[
+  {
+    "runID": 35525447112,
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35525447112",
+    "sourceRevision": "49c9bf7051c2a5a70196dabc7e585690e7dee515",
+    "status": "passed",
+    "jobs": [
+      {
+        "name": "shared",
+        "conclusion": "success"
+      },
+      {
+        "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+        "conclusion": "success"
+      },
+      {
+        "name": "native (macos-15-intel, darwin, amd64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+        "conclusion": "success"
+      },
+      {
+        "name": "native (macos-15, darwin, arm64)",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "runID": 35525752618,
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35525752618",
+    "sourceRevision": "49c9bf7051c2a5a70196dabc7e585690e7dee515",
+    "status": "passed",
+    "jobs": [
+      {
+        "name": "shared",
+        "conclusion": "success"
+      },
+      {
+        "name": "native (macos-15-intel, darwin, amd64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+        "conclusion": "success"
+      },
+      {
+        "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+        "conclusion": "success"
+      },
+      {
+        "name": "native (macos-15, darwin, arm64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "publish",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-browser / browser (macos-15-intel, darwin, amd64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-browser / browser (windows-2025, windows, amd64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-download / download (windows-2025, windows, amd64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-browser / browser (windows-11-arm, windows, arm64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-update / update (macos-15, darwin, arm64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-download / download (windows-11-arm, windows, arm64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-browser / browser (macos-15, darwin, arm64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-update / update (windows-11-arm, windows, arm64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-update / update (macos-15-intel, darwin, amd64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-macos-install / install (macos-15-intel, amd64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-macos-install / install (macos-15, arm64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-update / update (windows-2025, windows, amd64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-download / download (macos-15-intel, darwin, amd64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "verify-download / download (macos-15, darwin, arm64)",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "runID": 35526039651,
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35526039651",
+    "sourceRevision": "f88525dfb76ba746be337465cfe69f8f76932f8d",
+    "status": "passed",
+    "jobs": [
+      {
+        "name": "install (macos-15, arm64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "install (macos-15-intel, amd64)",
+        "conclusion": "success"
+      }
+    ]
+  }
+]

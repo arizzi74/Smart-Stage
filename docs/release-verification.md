@@ -55,6 +55,14 @@ web view loads real loopback Admin assets and keeps session/Origin/CSRF checks,
 with no privileged JavaScript filesystem bridge. Standalone Mac and Windows
 executables retain the external-browser interface.
 
+Preview 14 separates foreground sound, image presentation and stage visibility.
+Admin saves a default image/looping-video background; background cue buttons change
+it for the session. Background audio is optional, music can remain selected under
+an image, and a selected-music toggle stops only music. Optional configurable fades
+crossfade outgoing sound or fade it to silence; silence-to-play starts immediately.
+STOP returns to the background. Escape/Quit stop all native sources and close the
+stage. The stage uses a transparent cursor on Mac and hidden cursor on Windows.
+
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin and report
 that the operating system accepted the automatic browser launch; the separate
@@ -63,6 +71,42 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+[Preview 14](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.14)
+is source `49c9bf7051c2a5a70196dabc7e585690e7dee515`.
+[Candidate run 35525447112](https://github.com/arizzi74/Smart-Stage/actions/runs/35525447112)
+passed shared race/vet and all four native/browser targets. The exact-source
+[tagged run 35525752618](https://github.com/arizzi74/Smart-Stage/actions/runs/35525752618)
+passed **all 20 jobs**, publishing 36 assets and verifying public downloads,
+real browser controls, both Mac installers and actual automatic updates on all
+four targets. All six independently downloaded ZIPs match their checksums,
+architecture and clean source metadata; app cores match standalone cores.
+
+Both Mac native scene probes observe actual AVPlayer volumes and overlapping
+crossfades between background/foreground cues, between two cues, and on STOP.
+They also check immediate starts from silence, fades to silence, background
+looping, decoder retirement, music timelines through stage toggles, image layers,
+transparent cursor configuration, natural completion and rapid PLAY/hard-STOP
+cancellation. Both Mac browser tests use real native audio endpoints to preserve
+selected music through images/stage toggles, stop music while keeping the image,
+return to background, and persist hidden/background/fade/toggle preferences.
+Both Windows probes verify looping video, image pixels, stable preparation,
+independent stage/timeline behavior, cursor handling and hard stop. Windows CI
+has no audio endpoint; audio fade and music integration fields explicitly remain
+unverified there. These checks do not establish physical sound/pointer/projector
+behavior or long-session acceptance of the new mixer.
+
+The default installer changed to preview 14 at `f88525d` after public archive
+verification. The public bootstrap fetched at 17:30:15 UTC on 20 September 2026
+matches the repository and SHA-256
+`6376448b035656b863237bda58c9f545352567d67d7ef76467d12e546d8308bb`.
+Both Macs passed [default-install run 35526039651](https://github.com/arizzi74/Smart-Stage/actions/runs/35526039651)
+without a version override, with matching installed core, archive and public
+installer hashes.
+Reports are retained in
+[`verification/release-preview14`](verification/release-preview14/).
+
+Historical preview 13 evidence follows.
 
 [Preview 13](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.13)
 is source `824698e90b360822f713840df60ae914767e21df`.
