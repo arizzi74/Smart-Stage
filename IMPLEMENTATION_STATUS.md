@@ -60,6 +60,24 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.12
 
 ## Built and automatically tested
 
+Preview 12 is source `ea9245c2b1a4d095d02f87faaa879cf434bdea77`.
+[Candidate run 35519125516](https://github.com/arizzi74/Smart-Stage/actions/runs/35519125516)
+passed shared checks and all four native/browser targets.
+[Release run 35519418601](https://github.com/arizzi74/Smart-Stage/actions/runs/35519418601)
+published all six architecture-specific ZIPs after native checks. Its public
+download/browser jobs passed on all four targets, and both Mac installs passed.
+One Apple Silicon updater job hit GitHub's anonymous rate limit; the separate
+default updater run below passed on all four targets. Admin Quit
+stopped native video, exited cleanly and released both listeners; the same Admin
+tab then reconnected across relaunch with exactly one reload and no additional OS
+browser launch. Both Macs tested chooser reuse, cancellation and unattended Quit.
+[Default update run 35519683976](https://github.com/arizzi74/Smart-Stage/actions/runs/35519683976)
+installed the actual published bytes on all four targets. Archive/source/hash
+checks, both default Mac installs and synthetic browser evidence are in
+[`docs/verification/release-preview12`](docs/verification/release-preview12/).
+
+Historical preview 11 evidence follows.
+
 Preview 11 is source `9e7919547038372adaa8b7a3b028817928df62a0`.
 [Candidate run 35515364477](https://github.com/arizzi74/Smart-Stage/actions/runs/35515364477)
 passed shared checks and all four native/browser targets.

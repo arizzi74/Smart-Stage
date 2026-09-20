@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "release": "v0.1.0-preview.12",
+  "sourceRevision": "5a7c7d70827d98367ecc4de724a0890e8c0ceeb7",
+  "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+  "fetchedAt": "2026-09-20T15:28:56.111900+00:00",
+  "sha256": "efd3f6fe1f7f51615d3a9e6ef52121e9f77439edcc7c6298e01fcd434c168153",
+  "matchesLocalInstaller": true,
+  "defaultVersion": "v0.1.0-preview.12"
+}

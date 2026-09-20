@@ -149,8 +149,8 @@ the reconnected page reloads its interface for the running version. This is best
 effort: a browser-discarded or heavily suspended tab may not respond in time.
 An already open tab is reused without requiring browser Automation permission;
 Smart Stage cannot guarantee that the browser selects that particular tab.
-When upgrading from preview 11 or earlier, refresh an already open Admin tab once
-to load the new interface and reconnect behavior.
+When upgrading from preview 11 or earlier, refresh already open Admin and remote
+pages once to load the new interface and Admin reconnect behavior.
 
 The remote's optional **Keep awake** control uses the browser Screen Wake Lock
 API. It requires HTTPS and a supported browser; the default HTTP LAN address

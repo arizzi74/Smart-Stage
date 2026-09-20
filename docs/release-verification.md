@@ -39,6 +39,14 @@ Mac media-root checks compare filesystem identity when actual Unicode/case alias
 use different spellings. Wake Lock reports its real state when supported; the
 ordinary HTTP LAN page reports Needs HTTPS and does not promise to prevent sleep.
 
+Preview 12 removes the remote heading/ordinary acknowledgement block and adds
+Admin Quit, authenticated page presence and native Mac file selection from Admin.
+Quit flushes its acknowledgement before graceful cleanup. Existing Admin tabs
+reconnect and refresh their assets after a new host instance; startup waits up to
+six seconds before dispatching a browser URL. Native Dock/menu/import actions use
+the same policy. A fully suspended browser tab may not be detected, and exact-tab
+selection is not guaranteed. Older already-open pages need one manual refresh.
+
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin and report
 that the operating system accepted the automatic browser launch; the separate
@@ -47,6 +55,57 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+[Preview 12](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.12)
+is source `ea9245c2b1a4d095d02f87faaa879cf434bdea77`.
+[Candidate run 35519125516](https://github.com/arizzi74/Smart-Stage/actions/runs/35519125516)
+passed shared race/vet and all four native/browser targets. The
+[tagged run 35519418601](https://github.com/arizzi74/Smart-Stage/actions/runs/35519418601)
+published 36 assets after all four native build, startup, import, icon and
+platform-specific checks passed. All four published-download/startup jobs, all
+four published-browser jobs and both Mac installers passed. The run finished
+19 of 20 jobs successfully; the remaining Apple Silicon updater job hit GitHub's
+anonymous rate limit before downloading an update. The separate four-target
+updater run below installed the same release successfully.
+
+Real browser checks quit during native video playback, observe exit code zero
+and closed Admin/remote ports, then relaunch on the same ports with that Admin tab
+still open. The tab reconnects, reloads its interface exactly once, and the host
+suppresses another OS browser dispatch. The remote no longer renders its heading
+block. Browser checks cover widths 320–1280, hidden success notices, visible
+errors, native picker availability changing after initial page load, and quiet
+closed-page reconnection. Shared tests verify Admin/Origin/CSRF enforcement,
+flushing before exactly-once Quit, multi-tab presence expiry, launch coalescing,
+and cancellation/deferment during shutdown and updates.
+
+Both Macs exercise real native chooser creation, repeated request reuse, cancel,
+reopen and cleanup on Quit. Bundled-app tests call the authenticated Admin chooser
+API and quit with its panel unattended. Existing LaunchServices import tests
+still preserve original paths and saved cues without copying or autoplay. These
+checks do not claim a physical Finder gesture or file selection by a human.
+
+All six public ZIPs independently pass checksum, architecture, clean tagged
+source metadata and matching Mac bundle/core checks. The default updater
+verification targets preview 12 at `5a7c7d70827d98367ecc4de724a0890e8c0ceeb7`;
+[run 35519683976](https://github.com/arizzi74/Smart-Stage/actions/runs/35519683976)
+passed actual public discovery/download/replacement/restart on all four targets.
+The installed executable hashes match the independent public downloads. The
+public unversioned installer fetched at 15:28:56 UTC on 20 September 2026 defaults
+to preview 12 and matches SHA-256
+`efd3f6fe1f7f51615d3a9e6ef52121e9f77439edcc7c6298e01fcd434c168153`.
+Both Macs passed installation without a version override in
+[default-install run 35519683947](https://github.com/arizzi74/Smart-Stage/actions/runs/35519683947).
+Its observed installer hash and installed core hashes match the public bootstrap
+and independent archive checks. The installer/verification-default commit also
+passed shared checks and all four native/browser targets in
+[run 35519684094](https://github.com/arizzi74/Smart-Stage/actions/runs/35519684094).
+Reports are retained in
+[`verification/release-preview12`](verification/release-preview12/).
+
+An earlier standalone updater run against unchanged preview 11 hit GitHub's
+anonymous rate limit on one hosted Apple Silicon runner. Its three other targets
+passed; the preview 12 default updater run above passed all four. This was a
+network-service limit, not evidence that preview 12 installed incorrectly.
 
 [Preview 11](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.11)
 is source `9e7919547038372adaa8b7a3b028817928df62a0`.

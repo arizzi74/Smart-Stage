@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "target": "windows/amd64",
+  "release": "v0.1.0-preview.12",
+  "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.12/smartstage-windows-amd64.zip",
+  "archive": "smartstage-windows-amd64.zip",
+  "archiveSHA256": "119623ae58b420e55b2da7039a47cf89dd44ab34d952ad0e0bd2d500ee3bb00e",
+  "archiveEntries": [
+    "smartstage.exe"
+  ],
+  "executableSHA256": "0109e531544c528c38562b2220fda1c57887c6a6db2f65c75da34808de55f789",
+  "executablePermissions": "0755",
+  "version": "Smart Stage v0.1.0-preview.12 (ea9245c2b1a4), go1.26.5, windows/amd64",
+  "adminServedOnLoopback": true,
+  "automaticSystemBrowserDispatchAccepted": true,
+  "adminURL": "http://127.0.0.1:50047/admin",
+  "remoteListenerRejectsAdmin": true
+}

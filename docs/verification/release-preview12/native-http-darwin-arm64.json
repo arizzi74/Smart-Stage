@@ -1,0 +1,35 @@
+[
+  {
+    "cuesConfigured": 4,
+    "cuesNativelyPlayedAndStopped": 4,
+    "audioEndpoints": 2,
+    "displays": 1,
+    "physicalRoutingVerified": false
+  },
+  {
+    "soak": {
+      "requestedSeconds": 10,
+      "elapsedSeconds": 10.103814625000041,
+      "cycles": 19,
+      "completed": true,
+      "samples": [
+        {
+          "seconds": 0.24,
+          "cycles": 1,
+          "residentBytes": 56459264
+        },
+        {
+          "seconds": 10.1,
+          "cycles": 19,
+          "residentBytes": 60227584
+        }
+      ],
+      "physicalRoutingOrAVDriftVerified": false
+    }
+  },
+  {
+    "restart": "saved labels/order restored; silent and stage disabled",
+    "instanceChanged": true,
+    "pairingTokenRotated": true
+  }
+]
