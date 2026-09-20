@@ -88,6 +88,11 @@ def smoke(binary, target_os, target_arch, version, report):
         native_windows = dedicated_windows_release(version)
         if native_windows:
             report["windowsExecutable"] = inspect_gui_executable(binary)
+            failed = subprocess.run([str(binary), "--no-browser", "--admin-port", "-1"],
+                                    capture_output=True, text=True, timeout=15)
+            assert failed.returncode != 0 and "must be between 0 and 65535" in failed.stderr, \
+                f"Headless startup did not report its error and exit: {failed}"
+            report["headlessStartupErrorsExitWithoutDialog"] = True
     actual = subprocess.check_output([str(binary), "--version"], text=True, timeout=30).strip()
     if not actual.endswith(f"{target_os}/{target_arch}") or f" {version} " not in actual:
         raise AssertionError(f"Unexpected downloaded executable version: {actual}")

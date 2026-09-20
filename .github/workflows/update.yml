@@ -9,17 +9,17 @@ on:
         description: 'Published release to verify'
         required: true
         type: string
-        default: 'v0.1.0-preview.15'
+        default: 'v0.1.0-preview.16'
       fixture-run:
         description: 'Tagged build run containing the older-version fixtures'
         required: true
         type: string
-        default: '35530818664'
+        default: '35532965821'
       fixture-source:
         description: 'Expected source commit of the published release and fixtures'
         required: true
         type: string
-        default: '580cbb63db18e32b4946abe49c5363eb00e50cc2'
+        default: '918830774f1ddefebed2551a28bcb9e499d939f4'
   workflow_call:
     inputs:
       version:
@@ -54,7 +54,7 @@ jobs:
         with:
           name: update-fixture-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/update-fixture
-          run-id: ${{ inputs.fixture-run || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '35530818664') || github.run_id }}
+          run-id: ${{ inputs.fixture-run || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '35532965821') || github.run_id }}
           github-token: ${{ github.token }}
       - name: Ensure the Windows dedicated-window runtime
         if: matrix.os == 'windows'
@@ -63,8 +63,8 @@ jobs:
       - name: Exercise real automatic discovery, replacement and restart
         shell: bash
         env:
-          RELEASE_VERSION: ${{ inputs.version || 'v0.1.0-preview.15' }}
-          FIXTURE_SOURCE: ${{ inputs.fixture-source || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '580cbb63db18e32b4946abe49c5363eb00e50cc2') || github.sha }}
+          RELEASE_VERSION: ${{ inputs.version || 'v0.1.0-preview.16' }}
+          FIXTURE_SOURCE: ${{ inputs.fixture-source || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '918830774f1ddefebed2551a28bcb9e499d939f4') || github.sha }}
         run: |
           python3 scripts/verify-auto-update.py --version "$RELEASE_VERSION" \
             --os '${{ matrix.os }}' --arch '${{ matrix.arch }}' \

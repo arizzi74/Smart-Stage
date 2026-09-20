@@ -41,6 +41,8 @@ type rootsFlag []string
 func (r *rootsFlag) String() string     { return strings.Join(*r, ", ") }
 func (r *rootsFlag) Set(v string) error { *r = append(*r, v); return nil }
 
+var allowStartupDialog = true
+
 func main() {
 	if len(os.Args) >= 5 && os.Args[1] == "--smartstage-restart" && os.Args[4] == "--" {
 		pid, err := strconv.Atoi(os.Args[2])
@@ -74,6 +76,9 @@ func main() {
 	var roots rootsFlag
 	flag.Var(&roots, "media-root", "allowed host media directory; repeat for several roots")
 	flag.Parse()
+	// Headless invocations and supervised update candidates must report errors
+	// and exit promptly; a modal dialog would hold up diagnostics or rollback.
+	allowStartupDialog = !*noBrowser && *updateReceipt == ""
 	if *showVersion {
 		prepareVersionOutput()
 		fmt.Printf("Smart Stage %s (%s), %s, %s/%s\n", version, commit, runtime.Version(), runtime.GOOS, runtime.GOARCH)
@@ -83,7 +88,7 @@ func main() {
 	if *updateReceipt != "" {
 		if err := update.RegisterStartup(*updateReceipt, version); err != nil {
 			// Exit promptly so the helper can observe failed startup and roll
-			// back. A native error dialog here could keep an unregistered Mac
+			// back. A native error dialog here could keep an unregistered
 			// candidate alive without a PID the helper can safely terminate.
 			fmt.Fprintln(os.Stderr, "Smart Stage update startup:", err)
 			os.Exit(1)
@@ -446,6 +451,8 @@ func remoteLinks(addresses []lan.Address, bind, advertise string, port int, toke
 }
 func exitError(err error) {
 	fmt.Fprintln(os.Stderr, "Smart Stage:", err)
-	platform.DesktopError(err.Error())
+	if allowStartupDialog {
+		platform.DesktopError(err.Error())
+	}
 	os.Exit(1)
 }
