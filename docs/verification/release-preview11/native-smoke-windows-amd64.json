@@ -1,0 +1,117 @@
+[
+  {
+    "args": [
+      "--list"
+    ],
+    "returncode": 0,
+    "stdout": "{\"audio\":[],\"displays\":[{\"id\":\"\\\\\\\\?\\\\DISPLAY#MSH062E#5\\u00261a097cd8\\u00260\\u0026UID5527112#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}\",\"name\":\"HyperVMonitor\",\"x\":0,\"y\":0,\"width\":1024,\"height\":768,\"primary\":true,\"mirrored\":false}]}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--inspect",
+      "D:\\a\\Smart-Stage\\Smart-Stage\\testdata\\media\\Opening – café's tone.wav"
+    ],
+    "returncode": 0,
+    "stdout": "{\"kind\":\"audio\",\"duration\":3,\"hasAudio\":true,\"hasVideo\":false}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--inspect",
+      "D:\\a\\Smart-Stage\\Smart-Stage\\testdata\\media\\tone.mp3"
+    ],
+    "returncode": 0,
+    "stdout": "{\"kind\":\"audio\",\"duration\":3.048,\"hasAudio\":true,\"hasVideo\":false}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--inspect",
+      "D:\\a\\Smart-Stage\\Smart-Stage\\testdata\\media\\silent-1080p.mp4"
+    ],
+    "returncode": 0,
+    "stdout": "{\"kind\":\"video\",\"duration\":3,\"hasAudio\":false,\"hasVideo\":true}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--inspect",
+      "D:\\a\\Smart-Stage\\Smart-Stage\\testdata\\media\\video-aac-1080p.mp4"
+    ],
+    "returncode": 0,
+    "stdout": "{\"kind\":\"video\",\"duration\":3,\"hasAudio\":true,\"hasVideo\":true}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--inspect",
+      "D:\\a\\Smart-Stage\\Smart-Stage\\testdata\\media\\damaged.mp4"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "Inspect local media (0xc00d36c4): The byte stream type of the given URL is unsupported.\n"
+  },
+  {
+    "args": [
+      "--file",
+      "D:\\a\\Smart-Stage\\Smart-Stage\\testdata\\media\\Opening – café's tone.wav",
+      "--audio",
+      "smartstage-output-that-does-not-exist",
+      "--exit-after",
+      "5s"
+    ],
+    "returncode": 0,
+    "stdout": "{\"generation\":2,\"kind\":\"error\",\"position\":0,\"duration\":0,\"message\":\"Native playback failed (0xc00d36fa): Activate failed to create mediasink. Call OutputNode::GetUINT32(MF_TOPONODE_MAJORTYPE) for more information.\",\"stageEnabled\":false}\n",
+    "stderr": "Commands: stop, play (restart), enable, disable, quit. Escape in the stage window stops; Ctrl+C exits.\n"
+  },
+  {
+    "args": [
+      "--file",
+      "D:\\a\\Smart-Stage\\Smart-Stage\\testdata\\media\\silent-1080p.mp4",
+      "--display",
+      "smartstage-output-that-does-not-exist",
+      "--exit-after",
+      "5s"
+    ],
+    "returncode": 0,
+    "stdout": "{\"generation\":2,\"kind\":\"error\",\"position\":0,\"duration\":0,\"message\":\"Select an available stage display before playing video\",\"stageEnabled\":false}\n",
+    "stderr": "Stage output will cover the selected display. STOP retains a black window; quit closes it.\nCommands: stop, play (restart), enable, disable, quit. Escape in the stage window stops; Ctrl+C exits.\n"
+  },
+  {
+    "args": [
+      "--file",
+      "D:\\a\\Smart-Stage\\Smart-Stage\\testdata\\media\\silent-1080p.mp4",
+      "--display",
+      "\\\\?\\DISPLAY#MSH062E#5&1a097cd8&0&UID5527112#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+      "--exit-after",
+      "40s"
+    ],
+    "returncode": 0,
+    "stdout": "{\"generation\":2,\"kind\":\"playing\",\"position\":0,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":0.0762455,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":0.324306,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":0.572005,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":0.822139,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":1.07264,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":1.32756,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":1.57459,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":1.82504,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":2.07629,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":2.32765,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":2.57211,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":2.82428,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"ended\",\"position\":0,\"duration\":0,\"stageEnabled\":true}\n",
+    "stderr": "Stage output will cover the selected display. STOP retains a black window; quit closes it.\nCommands: stop, play (restart), enable, disable, quit. Escape in the stage window stops; Ctrl+C exits.\n",
+    "observedEventSeconds": {
+      "playing": 1.016,
+      "progress": 1.016,
+      "ended": 3.86
+    },
+    "elapsedSeconds": 3.875
+  },
+  {
+    "nativeKeyboardEvents": [
+      {
+        "nativeEscapeEvent": true,
+        "stageDisabled": true,
+        "stageWindowHidden": true,
+        "target": "stage"
+      },
+      {
+        "nativeEscapeEvent": true,
+        "stageDisabled": true,
+        "stageWindowHidden": true,
+        "target": "app"
+      }
+    ],
+    "method": "Test-only event driver linked against the production bridge; no physical keyboard assertion"
+  }
+]

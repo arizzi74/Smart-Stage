@@ -48,6 +48,63 @@ not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
 
+[Preview 11](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.11)
+is source `9e7919547038372adaa8b7a3b028817928df62a0`.
+[Candidate native/browser run 35515364477](https://github.com/arizzi74/Smart-Stage/actions/runs/35515364477)
+passed shared race/vet and all four native targets. The
+[tagged release run 35515606727](https://github.com/arizzi74/Smart-Stage/actions/runs/35515606727)
+passed **all 20 jobs**: shared checks, four native builds, publication of 36 assets,
+four public downloads/startups, four real-browser checks, both Mac installers and
+four actual automatic discovery/download/replacement/restart checks.
+
+Both Macs received real LaunchServices file-open events while running and at
+startup, retained original Unicode media paths and existing cue identities,
+saved imports across restart, and quit with an unattended import error. No media
+was copied and no playback started. Filesystem-identity regression checks cover
+actual Unicode/case aliases and retain root/symlink restrictions. Test-only native
+event drivers linked to the production bridges dispatched Cocoa/Win32 Escape
+from both app and stage targets on all four architectures, observing disabled
+stage state and hidden windows. These are native event tests, not physical Dock
+mouse gestures, file-picker selections or keyboard delivery tests.
+
+Browser checks against the published binaries verify hidden-file default/toggle,
+color persistence and readable remote colors under production CSP, remote Stage
+off during actual silent-video playback, Stage on and browser Escape. The real
+non-loopback HTTP remote loads the embedded wake-lock code but correctly disables
+the option and displays Needs HTTPS. Deterministic browser-API tests cover request,
+denial, background release/reacquisition, logout and pending-request races; no
+physical phone screen-sleep prevention on HTTP is claimed.
+
+Independent checks of all six ZIPs confirm SHA-256, architecture, one executable
+per standalone archive, exact tagged source, clean build metadata and matching
+Mac app/standalone core bytes. The downloaded executable hashes agree with the
+native icon, installer and actual self-update records. The updater checks retain
+saved shows/media/ports, start stopped with stage disabled, and validate refreshed
+Mac Dock/icon identity. Interactive update firewall authorization is explicitly
+skipped in these CI checks; installer checks separately exercise scoped firewall
+rules. Reports are retained in
+[`verification/release-preview11`](verification/release-preview11/).
+
+The installer default changed to preview 11 at
+`b6556cd204a133b08d04841e1c40c798b9a3a9d3`. Both Macs passed without a version
+override in [default-install run 35515883852](https://github.com/arizzi74/Smart-Stage/actions/runs/35515883852).
+The public unversioned `main/install.sh` was fetched on 20 September 2026 at
+14:15:48 UTC and exactly matched the tested installer SHA-256
+`0feaccd7cce0c34dd67610b67985f80ec4ebfee95055e26c7f0457bffb8f6ed0`.
+Updated standalone verification defaults also passed real updates on all four
+targets in [run 35515883876](https://github.com/arizzi74/Smart-Stage/actions/runs/35515883876).
+Local synthetic Chromium checks additionally cover actual mouse drag from Host
+files, rejection/guidance for external Finder payloads, hidden-list response
+races, compact row sizing and widths 320–1280; their report explicitly excludes
+native/physical playback assertions.
+The current installer/verification commit also passed shared checks and all four
+native/browser targets in [run 35515883967](https://github.com/arizzi74/Smart-Stage/actions/runs/35515883967).
+A separate [Mac memory profile run 35514949325](https://github.com/arizzi74/Smart-Stage/actions/runs/35514949325)
+passed 1,200-second transition workloads and idle diagnostics on both Macs. That
+profile used candidate source `9332bc586cd68278b5fc85159dc1413aacd0dff7`, with the
+same native bridge as preview 11, before the shared filesystem-identity fix; it
+does not replace exact-release or physical acceptance checks.
+
 [Preview 10](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.10)
 is source `3c8492f036840f64612cef12045bd718a96c9d81`.
 [Native/browser run 35512154212](https://github.com/arizzi74/Smart-Stage/actions/runs/35512154212)

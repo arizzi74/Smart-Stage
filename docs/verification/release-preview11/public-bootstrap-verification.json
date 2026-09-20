@@ -1,0 +1,13 @@
+{
+  "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+  "checkedAt": "2026-09-20T14:15:48.342076+00:00",
+  "expectedInstallerSource": "b6556cd204a133b08d04841e1c40c798b9a3a9d3",
+  "expectedVersion": "v0.1.0-preview.11",
+  "downloadedSHA256": "0feaccd7cce0c34dd67610b67985f80ec4ebfee95055e26c7f0457bffb8f6ed0",
+  "localSHA256": "0feaccd7cce0c34dd67610b67985f80ec4ebfee95055e26c7f0457bffb8f6ed0",
+  "exactBytesMatch": true,
+  "defaultVersionMatches": true,
+  "cacheControl": "max-age=300",
+  "age": null,
+  "status": "passed"
+}

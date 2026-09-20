@@ -51,6 +51,26 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.11
 
 ## Built and automatically tested
 
+Preview 11 is source `9e7919547038372adaa8b7a3b028817928df62a0`.
+[Candidate run 35515364477](https://github.com/arizzi74/Smart-Stage/actions/runs/35515364477)
+passed shared checks and all four native/browser targets.
+[Tagged run 35515606727](https://github.com/arizzi74/Smart-Stage/actions/runs/35515606727)
+passed all 20 jobs, including publication, four public downloads/browser checks,
+both Mac installers and all four actual automatic updates. Both Macs accepted
+native file-open events into running/closed apps with original paths and saved
+playlist preservation. Native stage/app Escape events disabled and hid the stage
+on all four platforms. Browser checks covered hidden files, cue colors, Stage
+controls, browser Escape and truthful Needs HTTPS status on the LAN remote.
+Independent archive checks and runtime hashes agree on the exact published bytes.
+Details and physical-test limitations are in [release verification](docs/release-verification.md).
+The default Mac installer changed to preview 11 at `b6556cd`; both architectures
+passed [run 35515883852](https://github.com/arizzi74/Smart-Stage/actions/runs/35515883852)
+without an override. The public bootstrap exactly matches the verified installer.
+Updated standalone verification defaults passed automatic updates on all four
+targets in [run 35515883876](https://github.com/arizzi74/Smart-Stage/actions/runs/35515883876).
+The current installer/verification commit also passed the full four-target
+native/browser run [35515883967](https://github.com/arizzi74/Smart-Stage/actions/runs/35515883967).
+
 Preview 10 is source `3c8492f036840f64612cef12045bd718a96c9d81`.
 [Native/browser run 35512154212](https://github.com/arizzi74/Smart-Stage/actions/runs/35512154212)
 passed shared race/vet and all four native targets. The
@@ -226,7 +246,7 @@ The user reported that preview 7 now works after the firewall change, followed
 by the missing-icon complaint addressed in preview 8. This is a positive
 operational report; the structured phone, audio and display test matrix remains
 incomplete. The [Mac physical procedure](docs/macos-physical-test.md) now targets
-preview 8 on the available Apple Silicon Mac with external audio and a second
+preview 11 on the available Apple Silicon Mac with external audio and a second
 monitor/projector.
 
 Physical non-default audio routing, projector/second-monitor blackout, hotplug/
