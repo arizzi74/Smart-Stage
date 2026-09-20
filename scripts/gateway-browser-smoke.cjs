@@ -11,15 +11,21 @@ const path = require('node:path');
   const config = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   fs.mkdirSync(config.outputDir, { recursive: true });
   const browser = await chromium.launch({ headless: true });
-  const errors = [], publicRequests = [], mutations = [];
+  const errors = [], publicRequests = [], mutations = [], adminRequests = [];
   try {
     const adminContext = await browser.newContext({ ignoreHTTPSErrors: true });
     const admin = await adminContext.newPage();
     admin.on('pageerror', error => errors.push(error.message));
+    admin.on('request', request => adminRequests.push(new URL(request.url()).pathname));
     await admin.goto(config.adminURL + '/admin');
     await admin.locator('#connection.live').waitFor();
     await admin.waitForFunction(() => document.getElementById('gateway-mode').value === 'gateway' && !document.getElementById('gateway-fields').hidden);
+    assert.equal(await admin.locator('#remote-connection-settings').evaluate(node => node.open), false, 'connection settings begin collapsed');
+    assert.equal(await admin.locator('#files-section, a[href="#files-section"]').count(), 0);
+    assert.equal(await admin.locator('#gateway-status').isVisible(), true);
+    assert.equal(await admin.locator('#lan-firewall-guidance').isVisible(), false);
     assert.equal(await admin.locator('#remote-ready').isVisible(), false, 'unconfigured default gateway must not advertise a LAN link');
+    await admin.locator('#remote-connection-settings > summary').click();
     await admin.locator('#gateway-url').fill(config.gatewayURL);
     await admin.locator('#gateway-token').fill(config.registrationToken);
     const save = admin.waitForResponse(response => response.url().endsWith('/api/gateway') && response.request().method() === 'PUT');
@@ -33,6 +39,11 @@ const path = require('node:path');
     assert.notEqual(parsed.hash.slice(7), config.registrationToken);
     assert.equal(await admin.locator('#gateway-token').inputValue(), '', 'saved gateway secret stays out of the form');
     await admin.waitForFunction(() => document.getElementById('remote-qr').naturalWidth > 0);
+    await admin.locator('#remote-connection-settings > summary').click();
+    await admin.evaluate(async () => { await loadGateway(); await loadRemoteControl(); });
+    assert.equal(await admin.locator('#remote-connection-settings').evaluate(node => node.open), false, 'real status requests preserve collapsed settings');
+    assert.equal(await admin.locator('#remote-url').isVisible(), true);
+    assert.equal(await admin.locator('#remote-qr').isVisible(), true);
     await admin.screenshot({ path: path.join(config.outputDir, 'gateway-admin.png'), fullPage: false });
 
     // Follow the real target=_blank link, which starts as a cross-site
@@ -139,9 +150,12 @@ const path = require('node:path');
     await page.locator('#pairing').waitFor({ state: 'visible' });
     assert.equal((await context.cookies()).filter(c => c.name === 'smartstage_command_session').length, 0);
     assert.equal(await page.evaluate(() => window.__wakeReleases), 1);
+    assert.equal(adminRequests.some(p => ['/api/files', '/api/inspect'].includes(p)), false, 'Admin performs no hidden folder browsing');
     const report = {
       actualTLSGateway: true, actualHostTunnel: true, actualAdminConfiguration: true,
       actualAdminOpenRemoteLink: true,
+      connectionSettingsCollapsedWithVisibleQR: true, statusPollingPreservesCollapsedSettings: true,
+      noHostFilesPanelOrBackgroundBrowsing: true,
       actualPairingAndScopedSecureCookie: true, actualCSRFMutations: true,
       actualSSEPlaybackTransitions: true, endpointRelativeAssetsAndRequests: true,
       publicPairingFragmentRemovedBeforeRequest: true, noPairingSecretInBrowserStorage: true,

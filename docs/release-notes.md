@@ -1,24 +1,25 @@
-Smart Stage preview 15 adds a public HTTPS gateway and makes it the default
-remote-control mode on Mac and Windows.
+Smart Stage preview 16 simplifies Admin and makes the remote connection settings
+less intrusive.
 
-- Deploy the new static Linux gateway binary on AMD64 or ARM64 with one command.
-  The installer lists existing nginx HTTPS virtual hosts and adds `/smartstage`
-  to the selected site. Without nginx it offers Caddy and automatic HTTPS.
-- In Admin → Remote control, enter the gateway URL and its registration token.
-  Smart Stage connects outward and displays a separate public link/QR for phones
-  and tablets. Admin, files and media stay on the event computer.
-- Direct LAN access is disabled in gateway mode, including while disconnected.
-  Automatic reconnection creates a new endpoint and phone pairing secret.
-- Selecting Local LAN explicitly restarts Smart Stage and configures the app's
-  incoming firewall allowance. Gateway-mode installation and subsequent updates
-  leave firewall rules unchanged.
-- The HTTPS remote supports Keep awake on compatible browsers while visible.
-  Power saving, switching apps or manually locking can release the wake lock.
+- Removes the **ON THE HOST COMPUTER / Host files** browser and its navigation
+  entry. In the Mac app, add original files with Finder drag-and-drop,
+  **Choose Media…**, or the Dock icon. Files stay in place.
+- Collapses **Remote control → Connection settings** by default. Expand it to
+  change Public gateway / Local network, the URL or registration token. The
+  current remote link, QR code and connection status remain visible.
+- Keeps **Public gateway** as the default. Installing or automatically updating
+  in gateway mode does not ask for administrator authorization to configure the
+  firewall, and does not open the LAN listener.
+- Saving **Local network** explains the incoming-connection requirement and
+  restarts Smart Stage for the existing scoped firewall setup. Admin keeps
+  firewall instructions visible after restart.
+- Browser-only hosts without a native chooser retain a small **Add files by
+  path** form in Playlist. It is hidden in the dedicated Mac app.
 
 Install the gateway on a Linux server with systemd:
 
 ```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/install-gateway.sh | sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/install-gateway.sh | sh
 ```
 
 [Gateway setup, prerequisites and recovery](https://github.com/arizzi74/Smart-Stage/blob/main/docs/gateway-install.md).
@@ -45,7 +46,7 @@ once; later gateway-mode updates skip firewall setup. Mac releases remain ad-hoc
 signed, not Developer ID signed/notarized; Windows executables are not
 Authenticode signed.
 
-All stage/image/background/audio-fade features from preview 14 are retained.
+The public gateway and all stage/image/background/audio-fade features are retained.
 Gateway and browser integration checks cover authenticated registration, scoped
 pairing/cookies, CSRF, streaming status, STOP capacity, private API exclusion,
 reconnection and closed LAN access. Native builds, extracted downloads,

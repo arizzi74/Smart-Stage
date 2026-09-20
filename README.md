@@ -23,7 +23,7 @@ Open Terminal, paste this command, and press Return:
 curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
 ```
 
-The installer detects Apple Silicon or Intel, downloads the matching preview 15
+The installer detects Apple Silicon or Intel, downloads the matching preview 16
 app ZIP, verifies its SHA-256 checksum, and installs **Smart Stage.app** with its
 icon into `~/Applications`. It removes `com.apple.quarantine` only from that app
 and its contents, then launches it. Copying the app needs no administrator
@@ -87,7 +87,7 @@ a particular launch, use `--no-auto-update`.
 On your Linux server (AMD64 or ARM64, systemd), run:
 
 ```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/install-gateway.sh | sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/install-gateway.sh | sh
 ```
 
 The installer lists suitable **existing nginx HTTPS virtual hosts**. Choose one
@@ -97,19 +97,22 @@ installs a static Go binary, an unprivileged systemd service, and generates a
 private registration token. See [gateway installation](docs/gateway-install.md)
 for proxy prerequisites, manual setup, logs and removal.
 
-In Smart Stage Admin → **Remote control**, keep **Public gateway** selected,
-enter the HTTPS URL and registration token printed by the installer, then Save.
+In Smart Stage Admin → **Remote control**, expand **Connection settings**, keep
+**Public gateway** selected, enter the HTTPS URL and registration token printed
+by the installer, then Save. Connection settings start collapsed; the remote
+link, QR code and connection status remain visible.
 When connected, scan the public URL's QR code on a phone/tablet. The phone can use
 Wi-Fi or cellular data. Its link has a separate random control secret; it never
 contains the server's registration token. Only remote controls pass through the
-gateway; Admin, host file browsing and media remain on the event computer.
+gateway; Admin, media selection and playback remain on the event computer.
 
 Smart Stage makes an outbound encrypted connection. **The LAN listener stays
 closed**, including during outages or before gateway configuration. Reconnection
 is automatic and rotates the public link/QR code. Gateway mode requires an
 internet connection. To use a local network without a gateway, select **Local
 LAN**, stop playback and switch the stage off, then Save. Smart Stage restarts,
-configures its incoming firewall allowance, and displays local addresses.
+configures its incoming firewall allowance, and displays local addresses. Admin
+shows how to allow Smart Stage in the firewall if incoming connections are blocked.
 
 ## Download ZIPs
 
@@ -119,15 +122,15 @@ executable, including both browser interfaces and native playback.
 
 | Computer | Download |
 | --- | --- |
-| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-darwin-arm64.zip) |
-| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-darwin-amd64.zip) |
-| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-windows-arm64.zip) |
-| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-windows-amd64.zip) |
+| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-darwin-arm64.zip) |
+| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-darwin-amd64.zip) |
+| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-windows-arm64.zip) |
+| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-windows-amd64.zip) |
 
-[Release notes and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.15).
+[Release notes and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.16).
 Windows executables include the Smart Stage icon. Mac app bundles with the icon
-are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-darwin-arm64.app.zip)
-and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-darwin-amd64.app.zip).
+are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-darwin-arm64.app.zip)
+and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-darwin-amd64.app.zip).
 Each app bundle includes the same core executable plus its Finder launcher and
 icon. Opening `Smart Stage.app` runs it without Terminal and opens a dedicated
 Admin window with native Finder drag-and-drop. It uses the WebKit framework
@@ -154,20 +157,19 @@ acceptance testing.
    app automatically opens its dedicated **Admin** window; standalone Mac and
    Windows executables use the system browser. Admin is served only on the host
    computer at `http://127.0.0.1:8787/admin`.
-2. In Host files, browse the **host computer**, inspect/select files and add them,
-   or drag file rows into Playlist. Dot-prefixed files and folders are hidden
-   until **Show hidden** is selected. Set labels, order and button colors in
-   Playlist; **Default** resets a cue's color. Wait for native validation;
-   missing/unsupported files remain visible. Adding a cue does not copy its file.
-   In the Mac app, drop Finder files directly into the **Admin window**, use
-   **Choose files on this Mac…**, or drop files onto the Smart Stage Dock icon.
-   The original files stay in place. Regular external browsers cannot read full
-   Finder paths; they offer Host files, the native chooser or Dock guidance.
-   During an update, wait and add files again.
+2. In the Mac app, drop Finder files directly into the **Admin window**, use
+   **Choose Media…**, or drop files onto the Smart Stage Dock icon. The original
+   files stay in place. Set labels, order and button colors in Playlist;
+   **Default** resets a cue's color. Wait for native validation;
+   missing/unsupported files remain visible. Regular external browsers cannot
+   read full Finder paths; use the native chooser when available. Browser-only
+   hosts without a native chooser provide **Add files by path** in Playlist,
+   accepting one absolute host path per line. During an update, wait and add
+   files again.
 3. Select audio and stage outputs, then Save outputs. Explicitly acknowledge
    primary/only-display coverage. Audio works without a stage display. Use an
    extended desktop for independent projection; mirrored displays are identified.
-4. In Admin, find **Remote control**. Configure your public gateway URL/token,
+4. In Admin, find **Remote control → Connection settings**. Configure your public gateway URL/token,
    then scan its QR code or copy its URL. Alternatively, explicitly select
    **Local LAN** and save to restart with a local listener and firewall setup.
    The link pairs the browser without a separate key entry.
@@ -325,7 +327,7 @@ bash scripts/build.sh windows arm64
 ```
 
 Build on matching OS runners normally. `DEBUG=1` retains symbols;
-`VERSION=v0.1.0-preview.15` sets metadata. Output:
+`VERSION=v0.1.0-preview.16` sets metadata. Output:
 `dist/smartstage-<os>-<arch>.zip`, the raw build executable and engineering
 harness `dist/native-harness-<os>-<arch>[.exe]`, with adjacent checksums, import
 audits and toolchain records. Published application downloads are ZIPs. Apple system frameworks remain dynamic; Windows compiler

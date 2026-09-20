@@ -202,9 +202,9 @@ silence/blackout checks.
   return with the current show state, without opening a browser tab or duplicate
   window. Repeat with Command-W while Admin has focus and with **Open Admin**
   from the menu bar control. Use STOP after checking continued playback.
-- Add another file using **Choose files on this Mac…**, another by dropping it
-  onto the Dock icon, and another by dragging a row from **Host files** into
-  Playlist. Each should retain its original source path and leave playback
+- Add another file using **Choose Media…**, another by dropping it
+  onto the Dock icon, and another by dragging it from Finder into the Admin
+  window. Each should retain its original source path and leave playback
   stopped. Confirm native drop feedback appears, and try a filename containing
   spaces and Unicode. Check Command-A/C/V in a cue-label field and **Copy link**
   for sharing the remote URL. Record a cancelled chooser separately from a
@@ -215,7 +215,7 @@ silence/blackout checks.
   not resume playback; explicitly select/save outputs and issue a new PLAY.
 - Change the Mac's system-default audio output while Smart Stage uses a specific
   connected output. Confirm sound stays on the selected device.
-- While playback runs, browse files and Validate all cues from Admin, then STOP
+- While playback runs, review the playlist and Validate all cues from Admin, then STOP
   from the phone. Check that STOP remains usable. Try another controller, phone
   sleep and a Wi-Fi disconnect/reconnect. Playback should continue through a
   controller disconnection; reconnect must not replay old PLAY
@@ -259,7 +259,7 @@ Phone or tablet / OS / browser / LAN connection:
 Media tested:
 Launch and permission prompts:
 Dedicated Admin window / Dock icon / Terminal closed:
-Finder, Dock, chooser and Host files additions / original paths preserved:
+Finder, Dock and chooser additions / original paths preserved:
 Close hides / same-window Dock and menu reopening / Quit exits:
 Copy link / Command-A/C/V:
 First-pass steps 1–9 (pass / fail / not tested, with observations):

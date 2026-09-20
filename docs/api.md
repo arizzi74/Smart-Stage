@@ -159,7 +159,7 @@ expiry/logout ends them. Commands do not travel over SSE.
 | `PUT /api/playlist` | `{expectedRevision:N,cues:[{id:"existing or empty",label:"...",path:"host file",color:"#RRGGBB",hidden:false,background:false}]}`; returns saved configuration. Omitted color/flags preserve existing values; empty color resets its default. Invalid colors and validated audio-only backgrounds are rejected. New IDs are server-generated; empty labels default only for new cues. Array order is cue order. |
 | `PUT /api/stage-settings` | `{expectedRevision:N,settings:{backgroundCueId:"cue ID or empty",backgroundAudio:false,fadeEnabled:false,fadeSeconds:1,toggleAudio:false}}`; validates/saves settings and returns the configuration with an incremented playlist revision. The background must be a readable image/video cue. Fade duration is 0.1–30 seconds, including when disabled; its initial value is 1 second. |
 | `POST /api/validate` | `{}` starts bounded background native validation; HTTP 202. |
-| `POST /api/inspect` | `{path:"host file"}` returns native validation/metadata without rendering; used by Host files Inspect. Same root restrictions apply. |
+| `POST /api/inspect` | `{path:"host file"}` returns native validation/metadata without rendering. Same root restrictions apply. |
 | `GET /api/devices` | `{audio:[{id,name,default}],displays:[{id,name,x,y,width,height,primary,mirrored}]}`. |
 | `PUT /api/outputs` | `{audioId:"default or endpoint",displayId:"ID or empty",allowPrimary:false}`; stopped/error only; saves and disarms stage. |
 | `POST /api/stage-output` | `{enabled:true|false}`; enable requires an available display and primary acknowledgement. Toggling visibility preserves foreground playback, including its audio and timeline. HTTP 202. |

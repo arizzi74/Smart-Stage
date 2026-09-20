@@ -143,7 +143,7 @@ static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
 
 // The native destination receives this exact drag session's pasteboard. It
 // never reads the global drag/clipboard pasteboard or interprets DOM strings as
-// paths. Other drags keep WebKit's normal behavior, including Host files rows.
+// paths. Other drags keep WebKit's normal text and selection behavior.
 @interface SSAdminWebView : WKWebView
 @property(nonatomic) NSTimeInterval lastUserInteraction;
 @end

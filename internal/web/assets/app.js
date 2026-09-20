@@ -10,11 +10,9 @@ const endpointPath = path => endpointPrefix + path;
 // and never lets JavaScript read or submit a Finder file's original path.
 const desktopAdmin = adminPage && /(?:^|\s)SmartStageDesktop(?:\s|$)/.test(navigator.userAgent);
 let state = null, role = '', csrf = '', online = false, source = null, lastSeen = 0;
-let playlist = null, devices = null, fileSelection = new Set(), fileEntries = [];
-let fileBrowsePath = '', fileBrowseSequence = 0;
+let playlist = null, devices = null;
 let playlistBusy = false, refreshing = false, renderedOrder = '', playlistRefresh = false;
 let stageSettingsDirty = false, stageSettingsRevision = 0;
-let draggedHostPaths = [], hostDragDepth = 0;
 let controlSequence = 0;
 let validationSignature = '', validationRefresh = false;
 let localSessionBusy = false, localSessionRetry = null;
@@ -27,17 +25,12 @@ let updateRestartInstance = '', updateRestartComplete = false, updateRestartStar
 const cueButtons = new Map(), playlistRows = new Map();
 document.body.classList.toggle('remote-page', !adminPage);
 $('page-title').hidden = !adminPage;
-$('show-hidden').checked = false;
 if (gatewayRoute) {
   $('pair-guidance').textContent = 'Scan the current QR code or open the remote control link shown in Admin on the host computer. You can also paste the access key from that link below.';
   $('pair-key-label').textContent = 'Access key';
   $('pair-key').inputMode = 'text'; $('pair-key').maxLength = 64; $('pair-key').minLength = 64;
   $('pair-key').pattern = '[0-9a-fA-F]{64}';
   $('pair-network-hint').textContent = 'Keep Smart Stage running and connected to the public gateway.';
-}
-if (desktopAdmin) {
-  $('playlist-drop-title').textContent = 'Drop Finder files here';
-  $('playlist-drop-hint').textContent = 'Originals stay in place. Files are never uploaded or copied. You can also drag items from Host files below.';
 }
 
 function element(tag, text, className) {
@@ -445,6 +438,7 @@ function renderGateway() {
   }[status] || 'Waiting for the public gateway connection…' : gateway ? 'Local network remote control is enabled.' : 'Loading connection settings…';
   $('gateway-status').textContent = description + (gateway?.message ? ` ${gateway.message}` : '');
   $('gateway-status').classList.toggle('error', status === 'error');
+  $('lan-firewall-guidance').hidden = gateway?.mode !== 'lan';
   $('network-note-title').textContent = gateway?.mode === 'gateway' ? 'Public gateway over HTTPS' : 'Trusted LAN only';
   $('network-note-text').textContent = gateway?.mode === 'gateway' ? 'Remote commands travel through your gateway over HTTPS. Anyone with the remote link can control playback. Admin stays on this computer. HTTPS also allows supported phones and tablets to use Keep awake.' : 'HTTP traffic is not encrypted. Pairing protects control access, but cannot protect against someone listening on the network. Keep the host and controllers on a trusted network.';
 }
@@ -487,7 +481,7 @@ $('gateway-form').addEventListener('submit', async event => {
   try {
     const result = await api('PUT', '/api/gateway', body);
     gatewayDirty = false; applyGateway(result);
-    $('gateway-message').textContent = result.restart ? 'Saved. Smart Stage is restarting to enable local network remote control and configure its firewall rule.' : result.mode === 'gateway' ? 'Saved. The public link and QR code appear once connected.' : 'Saved. Local network remote control is enabled.';
+    $('gateway-message').textContent = result.restart ? 'Saved. Smart Stage is restarting to enable local network remote control. Approve its firewall setup and allow Smart Stage incoming connections when prompted.' : result.mode === 'gateway' ? 'Saved. The public link and QR code appear once connected.' : 'Saved. Local network remote control is enabled. Allow Smart Stage incoming connections if your firewall asks.';
     await loadRemoteControl();
   } catch (error) {
     $('gateway-message').textContent = `Could not save the connection. ${error.message}`;
@@ -516,6 +510,10 @@ function renderEditAvailability() {
   $('quit-app').disabled = !online || role !== 'admin' || quitBusy || appClosed || reloadingAdmin;
   $('choose-files').hidden = adminCapabilities.chooseFiles !== true;
   $('choose-files').disabled = !online || role !== 'admin' || chooseFilesBusy || quitBusy || appClosed || updatePending() || playlistBusy;
+  $('playlist-drop-title').textContent = desktopAdmin ? 'Drop Finder files here' : adminCapabilities.chooseFiles === true ? 'Add media from this Mac' : 'Add media from this computer';
+  $('playlist-drop-hint').textContent = desktopAdmin ? 'Use Choose Media, or drag files from Finder into this window. Originals stay in place; nothing is uploaded or copied.' : adminCapabilities.chooseFiles === true ? 'Use Choose Media to select files on this Mac. Browser drops cannot provide their original paths. You can also drop files onto Smart Stage’s Dock icon.' : 'Browsers cannot read original file paths from a drop. Use Add files by path below. On Mac, you can also open Smart Stage and drop files from Finder into its window.';
+  $('media-path-settings').hidden = desktopAdmin || adminCapabilities.chooseFiles === true;
+  for (const id of ['media-paths', 'add-media-paths']) $(id).disabled = !online || role !== 'admin' || !playlist || playlistBusy || quitBusy || appClosed || updatePending();
   const pending = updatePending();
   $('save-outputs').disabled = pending || !['stopped', 'error'].includes(state.state);
   $('enable-stage').disabled = !online || pending || state.outputFault;
@@ -542,7 +540,6 @@ function renderEditAvailability() {
     row.background.disabled = pending || playlistBusy || !['image', 'video'].includes(cue?.cache.media.kind);
     row.backgroundLabel.hidden = !['image', 'video'].includes(cue?.cache.media.kind) && !cue?.background;
   }
-  updateSelected();
 }
 function releaseLink(value) {
   try {
@@ -660,7 +657,6 @@ async function savePlaylist(cues) {
   } catch (error) { notify(`${error.message} Your edit was not saved. Reload to use the host version.`, true); return false; }
   finally { playlistBusy = false; renderEditAvailability(); }
 }
-const hostFileDragType = 'application/x-smartstage-host-files';
 function fileDropMessage(message, error = false) {
   $('file-drop-message').textContent = message;
   $('file-drop-message').classList.toggle('error', error);
@@ -675,53 +671,41 @@ $('choose-files').addEventListener('click', async () => {
   } catch (error) { fileDropMessage(error.message, true); }
   finally { chooseFilesBusy = false; renderEditAvailability(); }
 });
-function canDropHostFiles() { return online && role === 'admin' && playlist && !playlistBusy && !updatePending(); }
-function selectedHostPaths() { return [...new Set(fileEntries.filter(file => !file.directory && fileSelection.has(file.path)).map(file => file.path))]; }
-async function addDroppedHostFiles(paths) {
-  paths = [...new Set(paths)];
-  if (!canDropHostFiles()) { fileDropMessage('Wait until Smart Stage is connected and ready to edit the playlist.', true); return; }
-  if (playlist.cues.length + paths.length > 500) { fileDropMessage('A playlist can contain up to 500 cues. Select fewer files.', true); return; }
-  const additions = paths.map(path => ({ id: '', label: '', path }));
-  if (await savePlaylist([...cueEdits(), ...additions])) {
-    fileSelection.clear(); $('file-list').querySelectorAll('input[type=checkbox]').forEach(node => { node.checked = false; }); updateSelected();
-    fileDropMessage(`Added ${paths.length} ${paths.length === 1 ? 'file' : 'files'} to the playlist. Files stay in place.`);
+$('media-path-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if ($('media-path-settings').hidden || !online || role !== 'admin' || !playlist || playlistBusy || updatePending()) return;
+  const paths = [...new Set($('media-paths').value.split(/\r?\n/).map(value => {
+    const path = value.trim();
+    return path.length > 1 && ['"', "'"].includes(path[0]) && path.at(-1) === path[0] ? path.slice(1, -1) : path;
+  }).filter(Boolean))];
+  if (!paths.length) { fileDropMessage('Enter one original file path per line.', true); return; }
+  if (paths.some(path => !/^(?:\/|[A-Za-z]:[\\/]|\\\\)/.test(path))) {
+    fileDropMessage('Use absolute file paths on the computer running Smart Stage, one per line.', true); return;
+  }
+  if (playlist.cues.length + paths.length > 500) { fileDropMessage('A playlist can contain up to 500 cues. Add fewer files.', true); return; }
+  if (await savePlaylist([...cueEdits(), ...paths.map(path => ({ id: '', label: '', path }))])) {
+    $('media-paths').value = '';
+    fileDropMessage(`Added ${paths.length} ${paths.length === 1 ? 'file' : 'files'} to the playlist. Originals stay in place.`);
   } else fileDropMessage('The files were not added. Check the message above and try again.', true);
-}
+});
 function dragHasType(event, type) { return Array.from(event.dataTransfer?.types || []).includes(type); }
 if (adminPage) {
   document.addEventListener('dragover', event => {
-    if (!dragHasType(event, 'Files') && !dragHasType(event, hostFileDragType)) return;
+    if (!dragHasType(event, 'Files')) return;
     event.preventDefault();
-    event.dataTransfer.dropEffect = draggedHostPaths.length && $('playlist-section').contains(event.target) && canDropHostFiles() ? 'copy' : 'none';
+    event.dataTransfer.dropEffect = 'none';
   });
   document.addEventListener('drop', event => {
-    if (!dragHasType(event, 'Files') && !dragHasType(event, hostFileDragType)) return;
-    event.preventDefault(); hostDragDepth = 0; $('playlist-drop').classList.remove('drag-over');
-    if (dragHasType(event, 'Files')) {
-      const message = desktopAdmin ? 'Drop files directly from Finder onto this Smart Stage window, or choose them in the Mac dialog. Originals stay in place.' : adminCapabilities.chooseFiles === true ? 'Your browser cannot read Finder file paths. Choose the files in the Mac dialog, or drop them onto the Smart Stage Dock icon.' : 'Your browser cannot read original file paths. Select files in Host files below to keep them in place.';
-      fileDropMessage(message); notify(message); return;
-    }
-    // Paths come only from rows rendered by this Admin page. Never accept paths
-    // supplied by a different page through a forged drag payload.
-    const paths = draggedHostPaths; draggedHostPaths = [];
-    if (!$('playlist-section').contains(event.target) || !paths.length) {
-      fileDropMessage('Drag files from Host files below onto the Playlist area.'); return;
-    }
-    void addDroppedHostFiles(paths);
-  });
-  $('playlist-section').addEventListener('dragenter', event => {
-    if (!dragHasType(event, hostFileDragType) || !draggedHostPaths.length || !canDropHostFiles()) return;
-    event.preventDefault(); hostDragDepth++; $('playlist-drop').classList.add('drag-over');
-  });
-  $('playlist-section').addEventListener('dragleave', () => {
-    hostDragDepth = Math.max(0, hostDragDepth - 1);
-    if (!hostDragDepth) $('playlist-drop').classList.remove('drag-over');
+    if (!dragHasType(event, 'Files')) return;
+    event.preventDefault();
+    const message = desktopAdmin ? 'Drop files directly from Finder onto this Smart Stage window, or use Choose Media. Originals stay in place.' : adminCapabilities.chooseFiles === true ? 'Your browser cannot read Finder file paths. Use Choose Media, or drop files onto the Smart Stage Dock icon.' : 'Your browser cannot read original file paths from a drop. Use Add files by path in the Playlist, or drop Finder files into the Smart Stage Mac app.';
+    fileDropMessage(message); notify(message);
   });
 }
 function renderPlaylist() {
   $('playlist').replaceChildren(); playlistRows.clear();
   $('playlist-revision').textContent = `${playlist.cues.length} cues · saved revision ${playlist.playlistRevision}`;
-  if (!playlist.cues.length) $('playlist').append(element('p', 'Build your show by adding files below.', 'empty'));
+  if (!playlist.cues.length) $('playlist').append(element('p', 'Add audio, videos, or images to build your show.', 'empty'));
   const counts = new Map(); for (const c of playlist.cues) counts.set(c.label, (counts.get(c.label) || 0) + 1);
   playlist.cues.forEach((cue, index) => {
     const row = element('div', undefined, 'playlist-row'), info = element('div', undefined, 'playlist-info');
@@ -817,73 +801,6 @@ $('stage-settings-form').addEventListener('submit', async event => {
     $('stage-settings-message').classList.add('error');
   } finally { playlistBusy = false; renderEditAvailability(); }
 });
-async function browse(path = '') {
-  const sequence = ++fileBrowseSequence;
-  fileBrowsePath = path;
-  $('file-message').textContent = 'Reading the host folder…';
-  $('file-list').setAttribute('aria-busy', 'true');
-  try {
-    const listing = await api('GET', `/api/files?path=${encodeURIComponent(path)}${$('show-hidden').checked ? '&showHidden=true' : ''}`);
-    if (sequence !== fileBrowseSequence) return;
-    fileBrowsePath = listing.path;
-    $('host-path').value = listing.path; fileEntries = listing.entries; fileSelection.clear(); updateSelected();
-    $('roots').replaceChildren(...listing.roots.map(root => { const option = element('option', root); option.value = root; return option; }));
-    $('breadcrumbs').replaceChildren();
-    if (listing.parent) $('breadcrumbs').append(button('↑ Parent', () => browse(listing.parent)));
-    for (const crumb of listing.breadcrumbs) $('breadcrumbs').append(button(crumb.name, () => browse(crumb.path)));
-    $('file-list').replaceChildren();
-    for (const entry of listing.entries) {
-      const row = element('div', undefined, 'file-row');
-      if (entry.directory) {
-        const marker = element('span', '▸', 'folder-marker'); marker.setAttribute('aria-hidden', 'true');
-        const open = button(entry.name, () => browse(entry.path), 'file-name'); open.title = entry.name;
-        open.setAttribute('aria-label', `Open folder ${entry.name}`);
-        row.append(marker, open, element('span', 'Folder', 'file-details'));
-      } else {
-        row.draggable = true;
-        row.addEventListener('dragstart', event => {
-          if (!canDropHostFiles()) { event.preventDefault(); return; }
-          draggedHostPaths = fileSelection.has(entry.path) ? selectedHostPaths() : [entry.path];
-          event.dataTransfer.setData(hostFileDragType, 'Smart Stage host files');
-          event.dataTransfer.effectAllowed = 'copy';
-          fileDropMessage(`Drop ${draggedHostPaths.length} ${draggedHostPaths.length === 1 ? 'file' : 'files'} here to add to the playlist.`);
-        });
-        row.addEventListener('dragend', () => { draggedHostPaths = []; hostDragDepth = 0; $('playlist-drop').classList.remove('drag-over'); });
-        const check = element('input'); check.type = 'checkbox'; check.setAttribute('aria-label', `Select ${entry.name}`);
-        check.id = `file-choice-${sequence}-${$('file-list').childElementCount}`;
-        check.addEventListener('change', () => { if (check.checked) fileSelection.add(entry.path); else fileSelection.delete(entry.path); updateSelected(); });
-        const name = element('label', entry.name, 'file-name'); name.htmlFor = check.id; name.title = entry.name; name.draggable = true;
-        const extension = entry.name.includes('.') ? entry.name.split('.').pop().toUpperCase() : 'File';
-        const details = element('span', `${extension} · ${(entry.size / 1024 / 1024).toFixed(2)} MB`, 'file-details');
-        details.title = `Modified ${new Date(entry.modified / 1e6).toLocaleString()}`;
-        const inspect = button('Inspect', async () => {
-          inspect.disabled = true;
-          try {
-            const result = await api('POST', '/api/inspect', { path: entry.path });
-            details.textContent = `${result.media.kind || 'Unknown type'} · ${result.media.duration ? clock(result.media.duration) : 'Duration unknown'} · ${result.status}${result.reason ? ` · ${result.reason}` : ''}`;
-            details.title = details.textContent;
-            $('file-message').textContent = `${entry.name}: ${details.textContent}`;
-          } catch (error) { details.textContent = error.message; details.title = error.message; $('file-message').textContent = error.message; }
-          finally { inspect.disabled = false; }
-        });
-        inspect.setAttribute('aria-label', `Inspect ${entry.name}`);
-        row.append(check, name, details, inspect);
-      }
-      $('file-list').append(row);
-    }
-    $('file-message').textContent = `${listing.entries.length} visible entries${listing.truncated ? ' · Listing limited to 1,000 entries; use a smaller folder.' : ''}`;
-  } catch (error) { if (sequence === fileBrowseSequence) $('file-message').textContent = error.message; }
-  finally { if (sequence === fileBrowseSequence) $('file-list').setAttribute('aria-busy', 'false'); }
-}
-function updateSelected() { $('add-files').textContent = `Add selected (${fileSelection.size})`; $('add-files').disabled = updatePending() || fileSelection.size === 0; }
-$('browse-form').addEventListener('submit', event => { event.preventDefault(); void browse($('host-path').value); });
-$('roots').addEventListener('change', () => browse($('roots').value));
-$('show-hidden').addEventListener('change', () => { void browse(fileBrowsePath); });
-$('add-files').addEventListener('click', async () => {
-  if (!playlist || !fileSelection.size) return;
-  const additions = selectedHostPaths().map(path => ({ id: '', label: '', path }));
-  if (await savePlaylist([...cueEdits(), ...additions])) { fileSelection.clear(); $('file-list').querySelectorAll('input[type=checkbox]').forEach(node => { node.checked = false; }); updateSelected(); }
-});
 $('reload-playlist').addEventListener('click', () => { stageSettingsDirty = false; $('stage-settings-message').textContent = ''; void loadPlaylist(); });
 $('validate').addEventListener('click', async () => {
   try { await api('POST', '/api/validate', {}); notify('Native validation started. STOP remains available.'); }
@@ -939,7 +856,7 @@ async function initializeSession() {
   $('transport-tools').hidden = adminPage;
   if (!adminPage) window.smartStageWakeLock?.setConnected(role === 'command');
   connectEvents();
-  if (adminPage) { await Promise.all([loadGateway(), loadRemoteControl(), loadPlaylist(), loadDevices(), browse(), loadUpdateStatus()]); }
+  if (adminPage) { await Promise.all([loadGateway(), loadRemoteControl(), loadPlaylist(), loadDevices(), loadUpdateStatus()]); }
   return true;
 }
 setInterval(() => { if (Date.now() - lastSeen > 18000) connection(false); }, 2000);

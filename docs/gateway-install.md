@@ -5,7 +5,7 @@ Smart Stage Gateway is a separate, static Go executable for Linux amd64 or arm64
 Install on the public Linux server from an interactive SSH terminal:
 
 ```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/install-gateway.sh | sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/install-gateway.sh | sh
 ```
 
 The bootstrap downloads the matching architecture, checks its published SHA-256 checksum, and runs the Go installer with `sudo`. It reads choices from the terminal even when the script is piped into `sh`. You can also download the raw executable and its `.sha256` file from the release, verify them, and run `sudo ./smartstage-gateway-linux-amd64 install` (or `arm64`).
@@ -38,7 +38,7 @@ The generated Caddy configuration uses automatic SSE flushing and retains upstre
 
 ## Connect Smart Stage
 
-At the end of installation, copy the displayed gateway URL and authentication token into **Smart Stage Admin → Remote control → Public gateway**. The URL has this form:
+At the end of installation, expand **Smart Stage Admin → Remote control → Connection settings**, keep **Public gateway** selected, and enter the displayed gateway URL and authentication token. The URL has this form:
 
 ```text
 https://stage.example.com/smartstage

@@ -223,3 +223,22 @@ security. It does not receive a privileged JavaScript filesystem bridge. Native
 navigation policy prevents replacing Admin with an arbitrary web/file page;
 intended external links can open in the system browser. The framework is supplied
 by macOS rather than bundled as an additional app runtime.
+
+
+## Simplified Admin media and connection setup (20 September 2026)
+
+At the user's request, preview 16 removes the Host files browser and its internal
+row-dragging interface. Native Finder drops, Dock imports and Choose Media remain
+the Mac app's media entry points, preserving original paths. The local filesystem
+APIs remain private and available for compatibility; Admin no longer requests a
+directory listing. Browser-only hosts without a native chooser get a small,
+collapsed absolute-path import form so they can still build a playlist.
+
+Connection mode, gateway URL/token and save/reconnect actions sit inside a native
+collapsed details element. Polling and reconnection do not open it. The current
+remote link, QR code, status and explicit LAN firewall guidance remain visible.
+The installer/updater keep the existing gateway-first policy: only saved explicit
+LAN mode (or an intentional advanced installer override) enables firewall setup.
+An already-running updater from preview 14 or earlier cannot be changed by a
+newly downloaded executable; using the current Mac installer avoids that older
+helper's unconditional firewall step.

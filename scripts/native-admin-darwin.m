@@ -92,7 +92,7 @@ int main(int argc, const char **argv) {
                         report[@"nativeUserAgentAndPlaylistRendered"] = @YES;
                         evaluating = YES;
                         [webView evaluateJavaScript:
-                            @"window.__smartStageNativeProbe='preserved';document.getElementById('host-path').value='Preserved unsaved UI';document.getElementById('show-hidden').checked=true;document.getElementById('stop').click();true"
+                            @"window.__smartStageNativeProbe='preserved';document.getElementById('remote-connection-settings').open=true;document.getElementById('gateway-url').value='https://unsaved.example/smartstage';document.getElementById('gateway-url').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('stop').click();true"
                             completionHandler:^(id ignored, NSError *actionError) {
                                 (void)ignored; evaluating = NO;
                                 if (actionError) fail(actionError.description); else phase = 1;
@@ -119,7 +119,7 @@ int main(int argc, const char **argv) {
             } else if (phase == 3 && window.isVisible) {
                 evaluating = YES;
                 [webView evaluateJavaScript:
-                    @"window.__smartStageNativeProbe==='preserved' && document.getElementById('host-path').value==='Preserved unsaved UI' && document.getElementById('show-hidden').checked && online"
+                    @"window.__smartStageNativeProbe==='preserved' && document.getElementById('gateway-url').value==='https://unsaved.example/smartstage' && document.getElementById('remote-connection-settings').open && online"
                     completionHandler:^(id result, NSError *jsError) {
                         evaluating = NO;
                         if (jsError || ![result boolValue]) { fail(@"Reopening Admin reloaded or lost its UI state"); return; }

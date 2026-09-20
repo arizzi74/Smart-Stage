@@ -36,7 +36,6 @@ async function until(check, message, timeout = 30000) {
   fs.writeFileSync(path.join(config, 'gateway.json'), JSON.stringify({ mode: 'lan' }), { mode: 0o600 });
   const mediaRoot = path.join(config, 'media');
   fs.cpSync(path.join(root, 'testdata', 'media'), mediaRoot, { recursive: true });
-  fs.copyFileSync(path.join(mediaRoot, "Opening – café's tone.wav"), path.join(mediaRoot, '.hidden.wav'));
 
   // Long native sound keeps the new scene checks independent of UI/decoder
   // startup timing. The PNG is a real bounded image with valid chunk CRCs.
@@ -113,6 +112,8 @@ async function until(check, message, timeout = 30000) {
     const adminContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const commandContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
     admin = await adminContext.newPage(); command = await commandContext.newPage();
+    const adminRequests = [];
+    admin.on('request', request => adminRequests.push(new URL(request.url()).pathname));
     for (const page of [admin, command]) page.on('pageerror', error => errors.push(error.message));
     const apiPath = response => new URL(response.url()).pathname;
     const localSession = admin.waitForResponse(response => apiPath(response) === '/api/local-session');
@@ -152,20 +153,17 @@ async function until(check, message, timeout = 30000) {
     assert.equal((await command.request.get(commandBase + '/api/remote-control')).status(), 401);
     assert.equal((await command.request.get(commandBase + '/api/state')).status(), 401);
     record.checks.push('Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access');
-    await admin.locator('#file-list .file-row').first().waitFor();
     assert.equal(await admin.locator('#admin-view').isVisible(), true);
-    assert.equal(await admin.locator('#show-hidden').isChecked(), false, 'Hidden host files must default to off');
-    assert.equal(await admin.getByRole('checkbox', { name: 'Select .hidden.wav', exact: true }).count(), 0);
-    const hiddenListing = admin.waitForResponse(response => apiPath(response) === '/api/files' && new URL(response.url()).searchParams.get('showHidden') === 'true');
-    await admin.locator('#show-hidden').check();
-    assert.equal((await hiddenListing).status(), 200);
-    assert((await (await hiddenListing).json()).entries.some(entry => entry.name === '.hidden.wav'), 'Real host listing must include the hidden fixture when requested');
-    await admin.getByRole('checkbox', { name: 'Select .hidden.wav', exact: true }).waitFor();
-    await admin.locator('#show-hidden').uncheck();
-    await admin.getByRole('checkbox', { name: 'Select .hidden.wav', exact: true }).waitFor({ state: 'detached' });
-    record.checks.push('Real host dotfile stayed hidden by default, appeared with Show hidden, and disappeared when disabled');
+    assert.equal(await admin.locator('#files-section, a[href="#files-section"]').count(), 0);
+    assert.equal(await admin.locator('#remote-connection-settings').evaluate(node => node.open), false);
+    await admin.evaluate(() => loadGateway());
+    assert.equal(await admin.locator('#remote-connection-settings').evaluate(node => node.open), false, 'status polling keeps settings collapsed');
+    assert.equal(await admin.locator('#remote-url').isVisible(), true);
+    assert.equal(await admin.locator('#remote-qr').isVisible(), true);
+    assert.equal(await admin.locator('#lan-firewall-guidance').isVisible(), true, 'saved LAN firewall guidance remains visible outside settings');
+    assert.equal(adminRequests.some(p => ['/api/files', '/api/inspect'].includes(p)), false);
+    record.checks.push('Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible');
     const filenames = ["Opening – café's tone.wav", 'silent-1080p.mp4', 'tone.mp3', 'video-aac-1080p.mp4'];
-    for (const filename of filenames) await admin.getByRole('checkbox', { name: `Select ${filename}`, exact: true }).check();
     let saved;
     async function edit(action, expectedRevision) {
       const changed = admin.waitForResponse(response => apiPath(response) === '/api/playlist' && response.request().method() === 'PUT');
@@ -181,8 +179,37 @@ async function until(check, message, timeout = 30000) {
       await refreshed;
       await admin.waitForFunction(revision => document.getElementById('playlist-revision').textContent.endsWith(`revision ${revision}`), expectedRevision);
     }
+    const importMethods = new Set();
+    async function importMedia(filenames, expectedRevision) {
+      const paths = filenames.map(filename => path.join(mediaRoot, filename));
+      if (await admin.locator('#media-path-settings').isVisible()) {
+        if (!await admin.locator('#media-path-settings').evaluate(node => node.open)) await admin.locator('#media-path-settings > summary').click();
+        await admin.locator('#media-paths').fill(paths.map(value => '"' + value + '"').join('\n'));
+        await edit(() => admin.locator('#add-media-paths').click(), expectedRevision);
+        assert.equal(await admin.locator('#media-paths').inputValue(), '');
+        await admin.locator('#media-path-settings > summary').click();
+        importMethods.add('Original-path fallback UI');
+      } else {
+        // Mac exposes the real native chooser, whose OS dialog cannot be
+        // selected by Playwright. Seed this playback scenario through the
+        // authenticated API; the separate native Admin probe exercises Finder.
+        assert.equal(await admin.locator('#choose-files').isVisible(), true);
+        assert.equal(await admin.locator('#choose-files').textContent(), 'Choose Media…');
+        await edit(() => admin.evaluate(async paths => {
+          const current = await api('GET', '/api/playlist');
+          await api('PUT', '/api/playlist', { expectedRevision: current.playlistRevision,
+            cues: [...current.cues.map(({ id, label, path, color, hidden, background }) => ({ id, label, path, color, hidden, background })), ...paths.map(path => ({ id: '', label: '', path }))] });
+          await loadPlaylist(); await refreshState();
+        }, paths), expectedRevision);
+        importMethods.add('Authenticated API fixture setup; native chooser is separate');
+      }
+      for (const original of paths) {
+        const source = fs.statSync(original, { bigint: true });
+        assert(saved.cues.some(cue => { const imported = fs.statSync(cue.path, { bigint: true }); return imported.dev === source.dev && imported.ino === source.ino; }), 'Imported fixture must reference the original file, including canonical Windows path aliases');
+      }
+    }
     const initial = await (await admin.request.get(adminBase + '/api/playlist')).json();
-    await edit(() => admin.locator('#add-files').click(), initial.playlistRevision + 1);
+    await importMedia(filenames, initial.playlistRevision + 1);
     assert.equal(saved.cues.length, 4);
     const names = new Map([[filenames[0], 'Opening music'], [filenames[1], 'Finale'],
       [filenames[2], 'Interlude'], [filenames[3], 'Welcome video']]);
@@ -212,7 +239,7 @@ async function until(check, message, timeout = 30000) {
       return result.state;
     }
     await until(async () => (await snapshot()).cues.every(cue => cue.validation === 'ready'), 'Native cue validation did not finish', 90000);
-    record.checks.push('Admin browser selected four real host files, saved four labels and reordered stable cue IDs');
+    record.checks.push('Four real media fixtures were imported without copying; Admin saved four labels and reordered stable cue IDs');
     const devices = await (await admin.request.get(adminBase + '/api/devices')).json();
     const audio = devices.audio.find(device => !device.default) || devices.audio[0];
     const display = devices.displays.find(device => !device.primary) || devices.displays[0];
@@ -314,9 +341,7 @@ async function until(check, message, timeout = 30000) {
     // Dedicated scene integration: browser controls, persisted settings, real
     // media inspection and authoritative native playback events. Native probes
     // separately measure renderer gains; this page test never claims speakers.
-    for (const filename of [sceneMusicFilename, sceneImageFilename])
-      await admin.getByRole('checkbox', { name: `Select ${filename}`, exact: true }).check();
-    await edit(() => admin.locator('#add-files').click(), saved.playlistRevision + 1);
+    await importMedia([sceneMusicFilename, sceneImageFilename], saved.playlistRevision + 1);
     const musicCue = saved.cues.find(cue => path.basename(cue.path) === sceneMusicFilename);
     const imageCue = saved.cues.find(cue => path.basename(cue.path) === sceneImageFilename);
     const backgroundCue = saved.cues.find(cue => path.basename(cue.path) === 'video-aac-1080p.mp4');
@@ -454,6 +479,10 @@ async function until(check, message, timeout = 30000) {
       assert(allowed.has(url.pathname), `Unexpected browser resource: ${url.pathname}`);
       assert.notEqual(request.type, 'media');
     }
+    assert.equal(adminRequests.some(p => ['/api/files', '/api/inspect'].includes(p)), false, 'Admin never starts hidden folder browsing');
+    assert.equal(await admin.locator('#remote-connection-settings').evaluate(node => node.open), false);
+    record.fixtureImportMethods = [...importMethods];
+    record.nativeChooserDialogExecutionVerified = false;
     assert.deepEqual(errors, []);
     record.checks.push('Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap');
     record.checks.push('Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser');

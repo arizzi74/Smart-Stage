@@ -34,7 +34,7 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.15
 - Go coordinator with generations, stop epochs, latest-only native/load mailboxes,
   bounded request idempotency and SSE subscribers. Atomic per-user persistence,
   backup, corruption diagnostics and native process lock.
-- Embedded responsive Admin/Command pages, host filesystem browsing/inspection,
+- Embedded responsive Admin/Command pages, native media selection/inspection,
   cue CRUD/labels/order/revisions, separate output controls and stage enablement.
 - Localhost-only Admin with a dedicated Mac app window or system-browser launch
   for standalone Mac/Windows, and a local session;
@@ -57,11 +57,14 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.15
   failed startup. Periodic checks defer installation until the next launch;
   Admin also offers an update action while playback and stage output are stopped.
 
-- Compact host file browsing with dot-prefixed names hidden by default; Show
-  hidden is optional. Host file rows can be dragged into the playlist. Mac
-  Finder/Dock file-open events and Choose Media append original file references
+- Admin omits the Host files browser. Mac Finder/Dock file-open events and
+  Choose Media append original file references
   atomically without copying or autoplay, respecting configured media roots.
   Filesystem identity handles actual Unicode/case aliases without broadening roots.
+- Remote connection settings start collapsed while the link, QR and status stay
+  visible. Local LAN save guidance explains firewall access; public gateway
+  remains the default with no firewall authorization. Browser-only hosts without
+  a native chooser retain a compact, collapsed absolute-path import form.
 - Compact remote Stage/Disconnect controls, Escape stop-and-close behavior in
   native app/stage and connected browser pages, and persisted per-cue colors.
 - Remote cue buttons directly below the top bar, with ordinary command
