@@ -33,7 +33,8 @@ version override. Public raw installer URLs were also checked to serve preview 4
 [Installer run 35484067090](https://github.com/arizzi74/Smart-Stage/actions/runs/35484067090)
 at test commit `214e15e` additionally passed the exact `irm | iex` command under
 built-in **Windows PowerShell 5.1** on AMD64 and ARM64. Both reported Desktop
-edition version `5.1.26100.9457`. No version or install-directory override was
+edition: `5.1.26100.33296` on AMD64 and `5.1.26100.9457` on ARM64.
+No version or install-directory override was
 set: the executable was installed at `%LOCALAPPDATA%\SmartStage\bin\smartstage.exe`,
 reported preview 4/source `505a1e495075` in the correct native architecture and
 served the Command page. A second installation exercised atomic replacement,
