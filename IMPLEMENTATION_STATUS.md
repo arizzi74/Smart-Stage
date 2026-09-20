@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.11
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.12
 
 ## Implemented
 
