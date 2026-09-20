@@ -13,12 +13,14 @@ func caddyConfiguration(existing []byte, domain string) ([]byte, error) {
 	if !validHostname(domain) {
 		return nil, fmt.Errorf("invalid Caddy hostname")
 	}
+	// Caddy flushes text/event-stream responses automatically. Do not set a
+	// negative flush_interval: older Caddy versions then keep the upstream
+	// request alive after the phone disconnects, leaking its stream slot.
 	block := fmt.Sprintf(`%s
 %s {
     @smartstage path /smartstage /smartstage/*
     handle @smartstage {
         reverse_proxy 127.0.0.1:8790 {
-            flush_interval -1
             transport http {
                 read_timeout 75s
                 write_timeout 75s

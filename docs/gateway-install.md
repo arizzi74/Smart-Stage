@@ -34,6 +34,8 @@ The domain must resolve to this server, with inbound TCP ports 80 and 443 availa
 
 An existing Caddyfile is preserved. The installer asks before appending a new managed site, validates the result, then reloads Caddy. If the chosen domain already appears in the Caddyfile, the installer stops rather than guessing how to modify that site. A modified managed block also requires manual review. Existing Caddy sites, custom imports, or another process already using ports 80/443 can require administrator configuration.
 
+The generated Caddy configuration uses automatic SSE flushing and retains upstream request cancellation when a phone disconnects. It leaves `flush_interval` at its default; a negative value would disable that cancellation on older Caddy versions. See [Caddy streaming behavior](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#streaming).
+
 ## Connect Smart Stage
 
 At the end of installation, copy the displayed gateway URL and authentication token into **Smart Stage Admin → Remote control → Public gateway**. The URL has this form:
@@ -43,6 +45,16 @@ https://stage.example.com/smartstage
 ```
 
 The token is a random 256-bit secret authorizing Smart Stage computers to register with this gateway. Keep it private. Admin shows a separate remote-control URL and QR code for phones and tablets; you do not share the gateway registration token with remote users.
+
+The gateway operator is trusted: HTTPS terminates on that server, which can see
+control traffic. No media is uploaded. The registration token is stored in a
+separate private `gateway.json` on the desktop, outside the saved playlist.
+
+Each gateway permits 16 connected Smart Stage hosts. Per host it permits 32
+ordinary requests, 32 live status streams and four reserved STOP requests.
+Request bodies are limited to 1 MiB; ordinary commands time out after 30 seconds.
+Disconnected commands are not queued or replayed. Reconnecting rotates the public
+endpoint and pairing secret, so phones should scan the current Admin QR code.
 
 The service listens only on `127.0.0.1:8790`; nginx or Caddy is the public entry point. No inbound LAN connection to the Smart Stage computer is needed in gateway mode. The gateway cannot play your files itself, and the Smart Stage application must stay running and connected.
 
