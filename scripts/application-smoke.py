@@ -191,7 +191,7 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                     played+=1
                 if os.environ.get('SMARTSTAGE_AUDIO_METER') == '1':
                     from windows_audio_meter import exercise
-                    meter_result = exercise(exe, admin, command, saved['cues'], audio, outputs, wait_for)
+                    meter_result = exercise(exe, process.pid, admin, command, saved['cues'], audio, outputs, wait_for)
                     records.append({'audioMeter': {key: meter_result[key] for key in
                         ('status', 'selectedNonDefault', 'audioCuePlayStopCycles', 'defaultEndpointUnchanged', 'physicalRoutingVerified')}})
                 previous_instance=ready['instanceId']
