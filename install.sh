@@ -44,7 +44,7 @@ clear_quarantine() {
 firewall_app_state() {
     state=$(LC_ALL=C /usr/libexec/ApplicationFirewall/socketfilterfw --getappblocked "$1" 2>/dev/null || :)
     printf '%s\n' "$state" | /usr/bin/awk '
-        / is not blocked[.]?[[:space:]]*$/ || /^[[:space:]]*\([[:space:]]*Allow incoming connections[[:space:]]*\)[[:space:]]*$/ { allowed = 1 }
+        / is not blocked[.]?[[:space:]]*$/ || / is permitted[.]?[[:space:]]*$/ || /^[[:space:]]*\([[:space:]]*Allow incoming connections[[:space:]]*\)[[:space:]]*$/ { allowed = 1 }
         / is blocked[.]?[[:space:]]*$/ || /^[[:space:]]*\([[:space:]]*Block incoming connections[[:space:]]*\)[[:space:]]*$/ { blocked = 1 }
         END { if (blocked) print "blocked"; else if (allowed) print "allowed"; else print "unknown" }
     '
@@ -97,10 +97,12 @@ SMARTSTAGE_FIREWALL_APPLESCRIPT
     bundle_state=$(firewall_app_state "$destination")
     if [ "$core_state" != allowed ] || [ "$bundle_state" = blocked ]; then
         printf 'Smart Stage is installed, but its firewall allowance could not be verified.\n' >&2
+        LC_ALL=C /usr/libexec/ApplicationFirewall/socketfilterfw --getappblocked "$firewall_core" >&2 || :
+        LC_ALL=C /usr/libexec/ApplicationFirewall/socketfilterfw --getappblocked "$destination" >&2 || :
         printf 'Check System Settings > Network > Firewall > Options. A managed firewall policy may require your administrator.\n' >&2
         return 1
     fi
-    printf 'Verified: the installed Smart Stage executable allows incoming connections.\n'
+    printf 'Verified: the installed Smart Stage executable has an allow rule in the macOS app firewall.\n'
 }
 
 cleanup() {

@@ -20,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.parse
 import urllib.request
 import zipfile
 
@@ -47,8 +48,11 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def fetch(url):
-    request = urllib.request.Request(url, headers={"User-Agent": "Smart-Stage-Mac-installer-verification"})
+def fetch(url, no_cache=False):
+    headers = {"User-Agent": "Smart-Stage-Mac-installer-verification"}
+    if no_cache:
+        headers["Cache-Control"] = "no-cache"
+    request = urllib.request.Request(url, headers=headers)
     with urllib.request.urlopen(request, timeout=120) as response:
         return response.read()
 
@@ -112,19 +116,22 @@ def firewall_globals():
 def firewall_apps():
     applications = {}
     current = None
-    for line in firewall_query("--listapps").splitlines():
+    output = firewall_query("--listapps")
+    for line in output.splitlines():
         match = re.match(r"^\s*\d+\s*:\s*(.+?)\s*$", line)
         if match:
             current = match[1]
         elif current and re.fullmatch(r"\s*\(.*\)\s*", line):
             applications[current] = line.strip()
             current = None
+    count = re.search(r"total number of apps\s*=\s*(\d+)", output)
+    assert count and len(applications) == int(count[1]), f"Unrecognized firewall rule listing: {output}"
     return applications
 
 
 def firewall_state(path):
     text = firewall_query("--getappblocked", path)
-    if re.search(r" is not blocked\.?\s*$|^\s*\(\s*Allow incoming connections\s*\)\s*$", text, re.MULTILINE):
+    if re.search(r" is (?:not blocked|permitted)\.?\s*$|^\s*\(\s*Allow incoming connections\s*\)\s*$", text, re.MULTILINE):
         return "allowed", text
     if re.search(r" is blocked\.?\s*$|^\s*\(\s*Block incoming connections\s*\)\s*$", text, re.MULTILINE):
         return "blocked", text
@@ -191,6 +198,7 @@ def firewall_checks(script, destination, version, report):
                       unrelatedFirewallRulesUnchanged=True,
                       firewallElevationTestMethod="AppleScript with test-only passwordless sudo adapter")
     finally:
+        report["firewallFinalReadbackBeforeCleanup"] = {str(path): firewall_state(path) for path in created}
         for path in reversed(created):
             run(["/usr/bin/sudo", "-n", FIREWALL_TOOL, "--remove", str(path)])
         assert firewall_globals() == before_globals, "Global firewall settings changed during verification"
@@ -437,10 +445,16 @@ def main():
               "release": args.version, "macOSVersion": platform.mac_ver()[0]}
     config_marker = None
     try:
-        raw = fetch(args.bootstrap_url)
-        assert raw == args.installer.read_bytes(), "Published bootstrap differs from this checkout"
+        expected_bootstrap = args.installer.read_bytes()
+        bootstrap_url = urllib.parse.urlsplit(args.bootstrap_url)
+        query = urllib.parse.parse_qsl(bootstrap_url.query, keep_blank_values=True)
+        query.append(("smartstage_verify", digest(expected_bootstrap)))
+        verification_url = urllib.parse.urlunsplit(bootstrap_url._replace(query=urllib.parse.urlencode(query)))
+        raw = fetch(verification_url, no_cache=True)
+        assert raw == expected_bootstrap, "Published bootstrap differs from this checkout"
         script = raw.decode("utf-8")
         report.update(bootstrapURL=args.bootstrap_url, bootstrapSHA256=digest(raw),
+                      bootstrapVerificationURL=verification_url,
                       publishedBootstrapMatchesCheckout=True, pipedShellEntryPoint=True)
         with tempfile.TemporaryDirectory(prefix="smartstage-macos-install-") as temporary:
             scratch = Path(temporary).resolve()
