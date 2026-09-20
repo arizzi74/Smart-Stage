@@ -175,3 +175,5 @@ Read [architecture](docs/architecture.md), [decisions](docs/decisions.md),
 [release verification/event checklist](docs/release-verification.md).
 The [acceptance audit](docs/acceptance-audit.md) maps specification requirements
 to actual evidence and identifies the open physical checks.
+Use the [Mac physical test](docs/macos-physical-test.md) for an isolated test show,
+speaker/display observations and a result template.

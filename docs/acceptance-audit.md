@@ -5,7 +5,19 @@ the specification to current implementation and evidence. An automated result
 is credited only for what it observes; native events do not prove physical
 sound, black pixels, routing or timing.
 
-Current native/application evidence: [preview 4 tag run 35479742963](https://github.com/arizzi74/Smart-Stage/actions/runs/35479742963),
+The user has an **Apple Silicon Mac only** available for physical testing. Its
+macOS version, connected outputs and observations are not yet recorded.
+The [Mac physical procedure](macos-physical-test.md)
+uses preview 5 and a separate test configuration; it does not mark any physical
+check passed. Windows physical acceptance remains pending.
+
+Current release evidence: [preview 5 tag run 35492382186](https://github.com/arizzi74/Smart-Stage/actions/runs/35492382186),
+commit `9e72b4c`, passed native/application, icon/packaging, installer and browser
+checks on all four target runners. Download and default-installer records are
+in [release verification](release-verification.md). Preview 5 changes packaging;
+physical output observations are still required.
+
+Earlier native/application evidence: [preview 4 tag run 35479742963](https://github.com/arizzi74/Smart-Stage/actions/runs/35479742963),
 commit `505a1e4`, passed all four OS/architecture build/native/installation/browser
 jobs, plus shared Go race/vet. Publication/installation evidence for this preview
 is in [release verification](release-verification.md). That document records
