@@ -80,6 +80,9 @@ func validate(c model.Config) error {
 		if cue.ID == "" || len(cue.ID) > 128 || ids[cue.ID] || strings.TrimSpace(cue.Label) == "" || len(cue.Label) > 512 || strings.ContainsAny(cue.Label, "\x00\r\n") || !filepath.IsAbs(cue.Path) || len(cue.Path) > 32768 {
 			return errors.New("invalid cue identity, label or source path")
 		}
+		if !model.ValidCueColor(cue.Color) {
+			return errors.New("invalid cue color; use empty or #RRGGBB")
+		}
 		ids[cue.ID] = true
 	}
 	return nil

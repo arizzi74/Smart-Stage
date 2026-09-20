@@ -87,3 +87,87 @@ func TestListingBoundsAndMissingFile(t *testing.T) {
 		t.Fatalf("large listing returned %d entries, truncated=%v", len(listing.Entries), listing.Truncated)
 	}
 }
+
+func TestHiddenEntriesAreOptionalAndExplicitPathsStillWork(t *testing.T) {
+	root := t.TempDir()
+	hiddenDirectory := filepath.Join(root, ".media")
+	if err := os.Mkdir(hiddenDirectory, 0700); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{".hidden.wav", "visible.wav", "song.with.dots.wav", ".media/inside.wav", ".media/.notes"} {
+		if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(name)), nil, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	b, err := New([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	list, err := b.Browse(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(list.Entries) != 2 || list.Entries[0].Name != "song.with.dots.wav" || list.Entries[1].Name != "visible.wav" {
+		t.Fatalf("default listing did not hide dot files and folders: %+v", list)
+	}
+	all, err := b.BrowseWithHidden(root, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(all.Entries) != 4 || all.Entries[0].Name != ".media" || !all.Entries[0].Directory {
+		t.Fatalf("show hidden did not retain directory-first ordering: %+v", all)
+	}
+	inside, err := b.Browse(hiddenDirectory)
+	if err != nil || len(inside.Entries) != 1 || inside.Entries[0].Name != "inside.wav" || inside.Parent != list.Path {
+		t.Fatalf("explicit hidden-directory navigation failed: %+v %v", inside, err)
+	}
+	if _, _, err := b.File(filepath.Join(root, ".hidden.wav")); err != nil {
+		t.Fatal("hidden preference became an access restriction:", err)
+	}
+	outside := t.TempDir()
+	if _, err := b.BrowseWithHidden(outside, true); err == nil {
+		t.Fatal("show hidden bypassed media-root containment")
+	}
+}
+
+func TestHiddenEntriesDoNotConsumeVisibleLimitOrCauseTruncation(t *testing.T) {
+	root := t.TempDir()
+	for i := 0; i <= MaxEntries; i++ {
+		if err := os.WriteFile(filepath.Join(root, fmt.Sprintf(".hidden-%04d", i)), nil, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for i := 0; i < 3; i++ {
+		if err := os.WriteFile(filepath.Join(root, fmt.Sprintf("visible-%04d.wav", i)), nil, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	b, err := New([]string{root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	list, err := b.Browse(root)
+	if err != nil || len(list.Entries) != 3 || list.Truncated {
+		t.Fatalf("hidden entries consumed the visible limit: count=%d truncated=%v err=%v", len(list.Entries), list.Truncated, err)
+	}
+	all, err := b.BrowseWithHidden(root, true)
+	if err != nil || len(all.Entries) != MaxEntries || !all.Truncated {
+		t.Fatalf("show hidden bypassed the result limit: count=%d truncated=%v err=%v", len(all.Entries), all.Truncated, err)
+	}
+	for i := 3; i < MaxEntries; i++ {
+		if err := os.WriteFile(filepath.Join(root, fmt.Sprintf("visible-%04d.wav", i)), nil, 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	list, err = b.Browse(root)
+	if err != nil || len(list.Entries) != MaxEntries || list.Truncated {
+		t.Fatalf("hidden-only overflow incorrectly marked a full visible page truncated: count=%d truncated=%v err=%v", len(list.Entries), list.Truncated, err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "visible-extra.wav"), nil, 0600); err != nil {
+		t.Fatal(err)
+	}
+	list, err = b.Browse(root)
+	if err != nil || len(list.Entries) != MaxEntries || !list.Truncated {
+		t.Fatalf("visible overflow not bounded: count=%d truncated=%v err=%v", len(list.Entries), list.Truncated, err)
+	}
+}

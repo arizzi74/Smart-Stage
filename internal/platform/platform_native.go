@@ -205,6 +205,7 @@ func (n *native) poll() {
 			return
 		case <-ticker.C:
 		}
+		pollDesktopFiles()
 		for i := 0; i < 128; i++ {
 			p := C.ss_poll()
 			if p == nil {

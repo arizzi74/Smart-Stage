@@ -8,6 +8,7 @@
 #import <CoreVideo/CoreVideo.h>
 #import <IOKit/pwr_mgt/IOPMLib.h>
 #import <QuartzCore/QuartzCore.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #include <stdatomic.h>
 #include <pthread.h>
 #include <signal.h>
@@ -17,6 +18,11 @@ static _Atomic(uint64_t) currentGeneration;
 static _Atomic(bool) shuttingDown;
 static pthread_mutex_t eventMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t commandMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t desktopFileMutex = PTHREAD_MUTEX_INITIALIZER;
+static NSMutableArray<NSData *> *desktopFileQueue;
+static NSMutableDictionary<NSNumber *, NSNumber *> *desktopFileCounts;
+static NSUInteger desktopPendingFileCount;
+static uint64_t desktopNextFileID;
 static void (^latestCommand)(void);
 static BOOL commandScheduled;
 static NSMutableArray<NSData *> *events;
@@ -27,8 +33,10 @@ static NSString *stageDisplayID;
 static BOOL stageEnabled;
 static IOPMAssertionID powerAssertion = kIOPMNullAssertionID;
 static id screenObserver;
+static id keyObserver;
 static AudioObjectPropertyListenerBlock audioListener;
 static void stopCurrent(void);
+static void emergencyStop(void);
 static void checkDevices(void);
 
 // Only the Finder launcher opts into the Dock and menu bar lifecycle. CLI invocations
@@ -36,6 +44,91 @@ static void checkDevices(void);
 static BOOL desktopLaunch(void) {
     const char *value = getenv("SMARTSTAGE_APP_LAUNCH");
     return value && strcmp(value, "1") == 0;
+}
+
+// File errors must not enter a nested modal loop: Go can be finishing a Quit or
+// an update while an operator leaves an error window unattended.
+@interface SSFileAlert : NSObject <NSWindowDelegate>
+@property(nonatomic, strong) NSAlert *alert;
+- (void)dismiss:(id)sender;
+@end
+static NSMutableSet<SSFileAlert *> *desktopAlerts;
+@implementation SSFileAlert
+- (void)dismiss:(id)sender { (void)sender; [self.alert.window close]; }
+- (void)windowWillClose:(NSNotification *)notification {
+    (void)notification;
+    [desktopAlerts removeObject:self];
+}
+@end
+static void desktopFileAlert(NSString *message) {
+    if (atomic_load(&shuttingDown)) return;
+    // Bound outstanding windows when repeated file-open requests fail.
+    if (desktopAlerts.count >= 3) {
+        SSFileAlert *existing = desktopAlerts.anyObject;
+        existing.alert.informativeText = message;
+        [existing.alert.window makeKeyAndOrderFront:nil];
+        return;
+    }
+    SSFileAlert *controller = [[SSFileAlert alloc] init];
+    NSAlert *alert = [[NSAlert alloc] init];
+    controller.alert = alert;
+    alert.messageText = @"Files could not be added";
+    alert.informativeText = message;
+    NSButton *button = [alert addButtonWithTitle:@"OK"];
+    button.target = controller;
+    button.action = @selector(dismiss:);
+    button.keyEquivalent = @"\r";
+    alert.window.delegate = controller;
+    alert.window.releasedWhenClosed = NO;
+    if (!desktopAlerts) desktopAlerts = [NSMutableSet set];
+    [desktopAlerts addObject:controller];
+    [alert.window center];
+    [alert.window makeKeyAndOrderFront:nil];
+}
+
+// Native file-open events carry real filesystem references. The browser never
+// supplies or guesses these paths, and the Go service validates them again
+// against the configured media roots before changing the saved show.
+static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
+    if (!urls.count || urls.count > 500) {
+        *failure = @"Choose between 1 and 500 audio or video files.";
+        return NO;
+    }
+    NSMutableArray<NSString *> *paths = [NSMutableArray arrayWithCapacity:urls.count];
+    for (NSURL *input in urls) {
+        if (!input.isFileURL || (input.host.length && ![input.host.lowercaseString isEqualToString:@"localhost"])) {
+            *failure = @"Only files on this Mac or a mounted drive can be added.";
+            return NO;
+        }
+        // Never touch a slow/network filesystem on AppKit's event thread.
+        // Go resolves symlinks, checks regular files and media roots before save.
+        NSString *path = input.path;
+        if (!path.isAbsolutePath || !path.length || [path lengthOfBytesUsingEncoding:NSUTF8StringEncoding] > 32768) {
+            *failure = @"The selected file does not have a usable absolute filesystem path.";
+            return NO;
+        }
+        [paths addObject:path];
+    }
+    pthread_mutex_lock(&desktopFileMutex);
+    if (desktopFileCounts.count >= 8 || desktopPendingFileCount + paths.count > 500) {
+        pthread_mutex_unlock(&desktopFileMutex);
+        *failure = @"Smart Stage is still adding earlier files. Wait for that operation to finish, then try again.";
+        return NO;
+    }
+    uint64_t identifier = ++desktopNextFileID;
+    if (!identifier) identifier = ++desktopNextFileID;
+    NSData *data = [NSJSONSerialization dataWithJSONObject:@{@"id": @(identifier), @"paths": paths} options:0 error:NULL];
+    if (!data) {
+        pthread_mutex_unlock(&desktopFileMutex);
+        *failure = @"The selected file paths could not be read.";
+        return NO;
+    }
+    desktopFileCounts[@(identifier)] = @(paths.count);
+    desktopPendingFileCount += paths.count;
+    [desktopFileQueue addObject:data];
+    pthread_mutex_unlock(&desktopFileMutex);
+    fprintf(stderr, "Queued %lu original media files from a native file-open action\n", (unsigned long)paths.count);
+    return YES;
 }
 
 @interface SSApplicationDelegate : NSObject <NSApplicationDelegate>
@@ -47,13 +140,55 @@ static BOOL desktopLaunch(void) {
 @property(nonatomic) BOOL quitPending;
 @property(nonatomic) BOOL quitStarted;
 @property(nonatomic) BOOL terminationPending;
+@property(nonatomic, strong) NSOpenPanel *filePanel;
 - (void)openAdmin:(id)sender;
 - (void)viewLog:(id)sender;
 - (void)quit:(id)sender;
+- (void)chooseMedia:(id)sender;
 @end
 static SSApplicationDelegate *applicationDelegate;
 
 @implementation SSApplicationDelegate
+- (void)application:(NSApplication *)application openURLs:(NSArray<NSURL *> *)urls {
+    (void)application;
+    NSString *failure = nil;
+    if (!queueDesktopFiles(urls, &failure)) desktopFileAlert(failure);
+}
+- (void)application:(NSApplication *)application openFiles:(NSArray<NSString *> *)filenames {
+    NSMutableArray<NSURL *> *urls = [NSMutableArray arrayWithCapacity:filenames.count];
+    for (NSString *filename in filenames) {
+        if (!filename.isAbsolutePath) {
+            [application replyToOpenOrPrint:NSApplicationDelegateReplyFailure];
+            desktopFileAlert(@"The selected file does not have an absolute filesystem path.");
+            return;
+        }
+        [urls addObject:[NSURL fileURLWithPath:filename]];
+    }
+    NSString *failure = nil;
+    BOOL queued = queueDesktopFiles(urls, &failure);
+    [application replyToOpenOrPrint:queued ? NSApplicationDelegateReplySuccess : NSApplicationDelegateReplyFailure];
+    if (!queued) desktopFileAlert(failure);
+}
+- (void)chooseMedia:(id)sender {
+    (void)sender;
+    if (self.quitStarted || self.filePanel) return;
+    NSOpenPanel *panel = [NSOpenPanel openPanel];
+    self.filePanel = panel;
+    panel.title = @"Choose media for Smart Stage";
+    panel.prompt = @"Add to Show";
+    panel.message = @"Files stay in their original folders. Adding files does not start playback.";
+    panel.canChooseFiles = YES;
+    panel.canChooseDirectories = NO;
+    panel.allowsMultipleSelection = YES;
+    panel.resolvesAliases = YES;
+    panel.allowedContentTypes = @[UTTypeAudio, UTTypeMovie];
+    [panel beginWithCompletionHandler:^(NSModalResponse result) {
+        self.filePanel = nil;
+        if (result != NSModalResponseOK || self.quitStarted || atomic_load(&shuttingDown)) return;
+        NSString *failure = nil;
+        if (!queueDesktopFiles(panel.URLs, &failure)) desktopFileAlert(failure);
+    }];
+}
 - (void)openAdmin:(id)sender {
     (void)sender;
     if (!self.adminURL) { self.reopenPending = YES; return; }
@@ -97,6 +232,11 @@ static NSMenu *desktopMenu(BOOL applicationMenu) {
     open.target = applicationDelegate; open.enabled = NO;
     [applicationDelegate.openItems addObject:open];
     [menu addItem:open];
+    NSMenuItem *choose = [[NSMenuItem alloc] initWithTitle:@"Choose Media…" action:@selector(chooseMedia:)
+        keyEquivalent:applicationMenu ? @"o" : @""];
+    choose.target = applicationDelegate; choose.enabled = NO;
+    [applicationDelegate.openItems addObject:choose];
+    [menu addItem:choose];
     NSMenuItem *log = [[NSMenuItem alloc] initWithTitle:@"View Log" action:@selector(viewLog:) keyEquivalent:@""];
     log.target = applicationDelegate;
     [menu addItem:log];
@@ -113,6 +253,9 @@ static NSMenu *desktopMenu(BOOL applicationMenu) {
 
 static void setupDesktop(void) {
     if (!desktopLaunch()) return;
+    desktopFileQueue = [NSMutableArray array];
+    desktopFileCounts = [NSMutableDictionary dictionary];
+    desktopPendingFileCount = 0;
     applicationDelegate = [[SSApplicationDelegate alloc] init];
     applicationDelegate.openItems = [NSMutableArray array];
     applicationDelegate.quitItems = [NSMutableArray array];
@@ -251,12 +394,6 @@ static NSArray *displays(void) {
 @end
 @implementation SSStageWindow
 - (BOOL)canBecomeKeyWindow { return YES; }
-- (void)keyDown:(NSEvent *)event {
-    if (event.keyCode == 53) {
-        uint64_t gen = atomic_fetch_add(&currentGeneration, 1);
-        stopCurrent(); emit(gen, @"escape", nil, 0, 0);
-    } else [super keyDown:event];
-}
 @end
 @interface SSStageView : NSView
 @end
@@ -334,6 +471,11 @@ static void disableStage(void) {
     stopCurrent(); stageEnabled = NO; stageDisplayID = nil;
     [stageWindow orderOut:nil];
     if (powerAssertion != kIOPMNullAssertionID) { IOPMAssertionRelease(powerAssertion); powerAssertion = kIOPMNullAssertionID; }
+}
+static void emergencyStop(void) {
+    uint64_t gen = atomic_fetch_add(&currentGeneration, 1);
+    disableStage();
+    emit(gen, @"escape", nil, 0, 0);
 }
 static void failPlayback(SSPlayback *p, NSString *message) {
     if (!p || active != p || p.generation != atomic_load(&currentGeneration)) return;
@@ -483,6 +625,15 @@ char *ss_init(void) {
         setupDesktop();
         [NSApp finishLaunching];
         events = [NSMutableArray array];
+        keyObserver = [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^NSEvent *(NSEvent *event) {
+            if (event.keyCode == 53) {
+                emergencyStop();
+                // Panels still receive Escape so their usual Cancel action
+                // works; the stage itself needs no further key handling.
+                if (event.window == stageWindow) return nil;
+            }
+            return event;
+        }];
         if (![AVPlayer instancesRespondToSelector:@selector(setAudioOutputDeviceUniqueID:)])
             return copyString(@"This macOS AVPlayer cannot select a per-player audio output");
         screenObserver = [NSNotificationCenter.defaultCenter addObserverForName:NSApplicationDidChangeScreenParametersNotification object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) { (void)note; checkDevices(); }];
@@ -499,6 +650,10 @@ static void cleanupNative(void) {
     if (cleaned) return;
     cleaned = YES;
     disableStage();
+    if (keyObserver) [NSEvent removeMonitor:keyObserver]; keyObserver = nil;
+    [applicationDelegate.filePanel cancel:nil]; applicationDelegate.filePanel = nil;
+    for (SSFileAlert *controller in desktopAlerts.allObjects) [controller.alert.window close];
+    desktopAlerts = nil;
     [NSNotificationCenter.defaultCenter removeObserver:screenObserver]; screenObserver = nil;
     for (NSNumber *selector in @[@(kAudioHardwarePropertyDevices), @(kAudioHardwarePropertyDefaultOutputDevice)]) {
         AudioObjectPropertyAddress address = {selector.unsignedIntValue, kAudioObjectPropertyScopeGlobal, kAudioObjectPropertyElementMain};
@@ -510,6 +665,11 @@ static void cleanupNative(void) {
         [NSStatusBar.systemStatusBar removeStatusItem:applicationDelegate.status];
         NSApp.delegate = nil; applicationDelegate = nil;
     }
+    pthread_mutex_lock(&desktopFileMutex);
+    desktopFileQueue = nil;
+    desktopFileCounts = nil;
+    desktopPendingFileCount = 0;
+    pthread_mutex_unlock(&desktopFileMutex);
 }
 void ss_run(void) {
     @autoreleasepool {
@@ -563,6 +723,48 @@ void ss_desktop_error(const char *message) {
             const char *path = getenv("SMARTSTAGE_LOG_PATH");
             if (path) [NSWorkspace.sharedWorkspace openURL:[NSURL fileURLWithPath:[NSString stringWithUTF8String:path]]];
         }
+    }
+}
+char *ss_desktop_poll_files(void) {
+    @autoreleasepool {
+        pthread_mutex_lock(&desktopFileMutex);
+        NSData *data = desktopFileQueue.firstObject;
+        char *result = data ? malloc(data.length + 1) : NULL;
+        if (result) {
+            memcpy(result, data.bytes, data.length); result[data.length] = 0;
+            [desktopFileQueue removeObjectAtIndex:0];
+        }
+        pthread_mutex_unlock(&desktopFileMutex);
+        return result;
+    }
+}
+int ss_desktop_files_pending(void) {
+    pthread_mutex_lock(&desktopFileMutex);
+    BOOL pending = desktopPendingFileCount > 0;
+    pthread_mutex_unlock(&desktopFileMutex);
+    return pending ? 1 : 0;
+}
+void ss_desktop_files_result(uint64_t request_id, const char *message) {
+    if (!desktopLaunch()) return;
+    @autoreleasepool {
+        NSString *failure = message ? [NSString stringWithUTF8String:message] : @"";
+        onMain(^{
+            pthread_mutex_lock(&desktopFileMutex);
+            NSNumber *count = desktopFileCounts[@(request_id)];
+            if (count) {
+                desktopPendingFileCount -= count.unsignedIntegerValue;
+                [desktopFileCounts removeObjectForKey:@(request_id)];
+            }
+            pthread_mutex_unlock(&desktopFileMutex);
+            if (!count) return;
+            if (failure.length) {
+                fprintf(stderr, "Native media import failed: %s\n", failure.UTF8String);
+                desktopFileAlert(failure);
+            } else {
+                fprintf(stderr, "Added %lu original media references without copying or starting playback\n", (unsigned long)count.unsignedIntegerValue);
+                [applicationDelegate openAdmin:nil];
+            }
+        });
     }
 }
 void ss_free(char *p) { free(p); }

@@ -260,10 +260,18 @@ func TestLocalEscapeStopsAConcurrentlyAcceptedNewGeneration(t *testing.T) {
 		t.Fatal(err)
 	}
 	epoch := s.Snapshot(false).StopEpoch
+	s.mu.Lock()
+	s.state.StageEnabled = true
+	s.mu.Unlock()
 	s.nativeEvent(playback.Event{Kind: "escape", Generation: a.Generation})
 	state := s.Snapshot(false)
-	if state.ActiveCueID != "" || state.StopEpoch != epoch+1 || state.State != "stopping" {
+	if state.ActiveCueID != "" || state.StopEpoch != epoch+1 || (state.State != "stopping" && state.State != "stopped") || state.StageEnabled {
 		t.Fatalf("emergency STOP was lost: %+v", state)
+	}
+	s.nativeEvent(playback.Event{Kind: "playing", Generation: a.Generation, StageEnabled: true})
+	eventually(t, func() bool { return s.Snapshot(false).State == "stopped" })
+	if s.Snapshot(false).StageEnabled {
+		t.Fatal("Escape left the stage enabled")
 	}
 }
 

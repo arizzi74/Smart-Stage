@@ -116,6 +116,13 @@ func (b *Browser) File(path string) (string, os.FileInfo, error) {
 	return p, info, nil
 }
 func (b *Browser) Browse(path string) (Listing, error) {
+	return b.BrowseWithHidden(path, false)
+}
+
+// BrowseWithHidden controls presentation of dot-prefixed directory entries.
+// Explicit paths still use the same canonical media-root checks regardless of
+// this preference: hiding a name is not an access restriction.
+func (b *Browser) BrowseWithHidden(path string, showHidden bool) (Listing, error) {
 	if path == "" {
 		path = b.home
 	}
@@ -128,26 +135,37 @@ func (b *Browser) Browse(path string) (Listing, error) {
 		return Listing{}, err
 	}
 	defer f.Close()
-	entries, err := f.ReadDir(MaxEntries + 1)
-	if err != nil && err != io.EOF {
-		return Listing{}, fmt.Errorf("cannot list directory: %w", err)
-	}
 	list := Listing{Path: p, Entries: []Entry{}, Roots: b.Roots()}
-	list.Truncated = len(entries) > MaxEntries
-	if list.Truncated {
-		entries = entries[:MaxEntries]
-	}
-	for _, entry := range entries {
-		name := filepath.Join(p, entry.Name())
-		resolved, e := b.Resolve(name)
-		if e != nil {
-			continue
+	// Read in bounded batches so hidden entries cannot consume the visible
+	// result limit, even when they occur before the first visible media file.
+listing:
+	for {
+		entries, readErr := f.ReadDir(128)
+		if readErr != nil && readErr != io.EOF {
+			return Listing{}, fmt.Errorf("cannot list directory: %w", readErr)
 		}
-		info, e := os.Stat(resolved)
-		if e != nil || (!info.IsDir() && !info.Mode().IsRegular()) {
-			continue
+		for _, entry := range entries {
+			if !showHidden && strings.HasPrefix(entry.Name(), ".") {
+				continue
+			}
+			name := filepath.Join(p, entry.Name())
+			resolved, e := b.Resolve(name)
+			if e != nil {
+				continue
+			}
+			info, e := os.Stat(resolved)
+			if e != nil || (!info.IsDir() && !info.Mode().IsRegular()) {
+				continue
+			}
+			if len(list.Entries) == MaxEntries {
+				list.Truncated = true
+				break listing
+			}
+			list.Entries = append(list.Entries, Entry{Name: entry.Name(), Path: resolved, Directory: info.IsDir(), Size: info.Size(), Modified: info.ModTime().UnixNano()})
 		}
-		list.Entries = append(list.Entries, Entry{Name: entry.Name(), Path: resolved, Directory: info.IsDir(), Size: info.Size(), Modified: info.ModTime().UnixNano()})
+		if readErr == io.EOF {
+			break
+		}
 	}
 	sort.Slice(list.Entries, func(i, j int) bool {
 		a, c := list.Entries[i], list.Entries[j]

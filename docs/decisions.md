@@ -81,8 +81,38 @@ Limits: 500 cues, 1,000 listed entries per folder, 64 SSE clients, 128 sessions
 and 4,096 accepted idempotency records per process. Each HTTP listener admits
 256 TCP connections and 16 concurrent ordinary operations.
 STOP bypasses ordinary-operation admission. These bound memory/work without
-adding another service. No drag-and-drop is necessary because accessible Up/Down
-controls meet the ordering requirement.
+adding another service. Accessible Up/Down controls remain available for ordering.
+
+## Original files and compact remote controls (20 September 2026)
+
+The user requested compact browsing with dot-prefixed names hidden by default,
+dragging media into the playlist without copying it, per-cue button colors, small
+remote Stage/Disconnect controls, and Escape to turn the stage off. These requests
+extend the original UI requirements. Hiding files affects presentation, not
+media-root authorization. Cue colors are optional persisted RGB values and are
+included in path-redacted remote state.
+
+Host-file rows can be dragged within Admin using paths already returned by its
+authenticated file browser. A web browser does not disclose full filesystem
+paths for Finder drops. The Mac app therefore accepts native Finder/Dock file-open
+events and offers Choose Media; its native queue passes original paths to the
+same root validation and atomic playlist save. No files are uploaded or copied,
+and importing does not trigger playback. During an update reservation imports
+are rejected with an instruction to retry afterward. The app registers audio and
+movie document types as a non-default Viewer.
+
+The authenticated remote may now POST stage on/off using the normal Origin and
+CSRF checks. It cannot change output selection or other Admin settings. Escape
+in the native app/stage or a connected browser page stops and closes the stage;
+this deliberately changes the earlier Escape-retains-black behavior. Ordinary
+STOP and natural completion continue to retain an enabled black stage.
+
+Keep awake uses the standard Screen Wake Lock API with explicit opt-in and
+actual lock status. HTTPS and browser support are required; HTTP LAN pages show
+Needs HTTPS and explain the device Auto-Lock/Screen timeout alternative. No
+hidden media playback, automatic certificate installation, or OS lock override
+is introduced. The lock is released on disconnect/backgrounding and requested
+again when the opted-in connected page becomes visible.
 
 ## Automatic application updates (20 September 2026)
 

@@ -45,6 +45,12 @@ with (contents / "Info.plist").open("wb") as f:
         "LSMinimumSystemVersion": "12.0",
         "LSUIElement": False,
         "NSHighResolutionCapable": True,
+        "CFBundleDocumentTypes": [{
+            "CFBundleTypeName": "Audio and video for Smart Stage",
+            "CFBundleTypeRole": "Viewer",
+            "LSHandlerRank": "None",
+            "LSItemContentTypes": ["public.audio", "public.movie"],
+        }],
     }, f)
 subprocess.run([
     os.environ.get("CC", "clang"), "-arch", native_arch,

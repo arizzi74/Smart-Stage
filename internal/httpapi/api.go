@@ -305,7 +305,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	admin := session.Role == "admin"
 	path := r.URL.Path
-	if path != "/api/state" && path != "/api/events" && path != "/api/play" && path != "/api/stop" && path != "/api/logout" && !admin {
+	remoteStage := r.Method == http.MethodPost && path == "/api/stage-output"
+	if path != "/api/state" && path != "/api/events" && path != "/api/play" && path != "/api/stop" && path != "/api/logout" && !remoteStage && !admin {
 		fail(w, 403, "admin_required", "Admin pairing is required")
 		return
 	}
@@ -396,11 +397,30 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		writeJSON(w, 200, config)
 	case "GET /api/files":
-		if len(r.URL.RawQuery) > 100000 || len(r.URL.Query()) > 1 {
+		if len(r.URL.RawQuery) > 100000 {
 			fail(w, 400, "invalid_path", "Invalid file query")
 			return
 		}
-		listing, err := a.app.Browser().Browse(r.URL.Query().Get("path"))
+		query, err := url.ParseQuery(r.URL.RawQuery)
+		if err != nil {
+			fail(w, 400, "invalid_path", "Invalid file query")
+			return
+		}
+		for key, values := range query {
+			if (key != "path" && key != "showHidden") || len(values) != 1 {
+				fail(w, 400, "invalid_path", "Use one path and an optional showHidden=true or false")
+				return
+			}
+		}
+		showHidden := false
+		if values, ok := query["showHidden"]; ok {
+			if values[0] != "true" && values[0] != "false" {
+				fail(w, 400, "invalid_path", "showHidden must be true or false")
+				return
+			}
+			showHidden = values[0] == "true"
+		}
+		listing, err := a.app.Browser().BrowseWithHidden(query.Get("path"), showHidden)
 		if err != nil {
 			fail(w, 400, "browse_failed", err.Error())
 			return

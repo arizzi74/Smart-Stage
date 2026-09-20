@@ -15,6 +15,7 @@ const assert = require('node:assert/strict');
   const imageFixture = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
   let stateGets = 0, holdPlay = false, remoteGets = 0, links = [], sessionCounter = 0;
   let updateGets = 0, updateGetDelay = 0, failUpdateCheck = false, restarting = false;
+  let hiddenListingDelay = 0;
   let update = { currentVersion: 'v0.1.0-preview.8', latestVersion: 'v0.1.0-preview.9', phase: 'available', available: true, canInstall: true, message: 'A new version is available.', releaseURL: 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', checkedAt: new Date().toISOString() };
   const labels = ['Opening music', 'Welcome video with a deliberately long label that must wrap clearly', "Café's interlude", '<img src=x onerror="window.__xss=true">'];
   const state = { instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
@@ -26,11 +27,11 @@ const assert = require('node:assert/strict');
     if (!url.pathname.startsWith('/api/')) {
       const name = url.pathname.startsWith('/assets/') ? path.basename(url.pathname) : 'index.html';
       const type = name.endsWith('.js') ? 'text/javascript' : name.endsWith('.css') ? 'text/css' : 'text/html';
-      res.writeHead(200, { 'Content-Type': type }); res.end(fs.readFileSync(path.join(assets, name))); return;
+      res.writeHead(200, { 'Content-Type': type, 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'" }); res.end(fs.readFileSync(path.join(assets, name))); return;
     }
     let raw = ''; for await (const chunk of req) raw += chunk;
     const body = raw ? JSON.parse(raw) : {};
-    requests.push({ listenerRole, path: url.pathname, body, origin: req.headers.origin, csrf: req.headers['x-csrf-token'] });
+    requests.push({ listenerRole, path: url.pathname, query: url.search, body, origin: req.headers.origin, csrf: req.headers['x-csrf-token'] });
     if (restarting) { reply({ error: { message: 'Host restarting' } }, 503); return; }
     const cookieName = `smartstage_${listenerRole}_session`;
     const sessionID = (req.headers.cookie || '').split(';').map(part => part.trim()).find(part => part.startsWith(cookieName + '='))?.slice(cookieName.length + 1);
@@ -73,10 +74,42 @@ const assert = require('node:assert/strict');
     if (['/api/remote-control', '/api/remote-control/qr', '/api/playlist', '/api/devices', '/api/files'].includes(url.pathname) && role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
     if (url.pathname === '/api/remote-control') { remoteGets++; reply({ links, token }); return; }
     if (url.pathname === '/api/remote-control/qr') { res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' }); res.end(imageFixture); return; }
-    if (url.pathname === '/api/playlist') { reply(config); return; }
+    if (url.pathname === '/api/playlist') {
+      if (req.method === 'PUT') {
+        assert.equal(req.headers['x-csrf-token'], 'test-csrf'); assert.equal(body.expectedRevision, config.playlistRevision);
+        config.cues = body.cues.map((cue, index) => {
+          const previous = config.cues.find(item => item.id === cue.id);
+          return { ...cue, id: cue.id || `added-${config.playlistRevision}-${index}`, label: cue.label || path.basename(cue.path), color: cue.color ?? previous?.color ?? '', cache: previous?.cache || { status: 'ready', media: { kind: 'audio', duration: 3 } } };
+        });
+        config.playlistRevision++; state.playlistRevision = config.playlistRevision;
+        state.cues = config.cues.map((cue, index) => ({ id: cue.id, label: cue.label, color: cue.color, position: index + 1, kind: cue.cache.media.kind, duration: 3, validation: 'ready' }));
+        state.revision++; broadcast();
+      }
+      reply(config); return;
+    }
     if (url.pathname === '/api/devices') { reply({ audio: [{ id: 'speaker', name: 'USB Audio', default: true }], displays: [{ id: 'screen', name: 'Stage display', width: 1920, height: 1080, primary: true, mirrored: false }] }); return; }
-    if (url.pathname === '/api/files') { reply({ path: '/Host/Show', roots: ['/Host/Show'], breadcrumbs: [{ name: 'Show', path: '/Host/Show' }], entries: [{ name: "Café's opening.mp4", path: "/Host/Show/Café's opening.mp4", directory: false, size: 1000000, modified: Date.now() * 1e6 }], truncated: false }); return; }
+    if (url.pathname === '/api/files') {
+      const folder = url.searchParams.get('path') || '/Host/Show';
+      const entry = (name, directory = false) => ({ name, path: `${folder}/${name}`, directory, size: 1000000, modified: Date.now() * 1e6 });
+      const entries = folder === '/Host/Show' ? [{ ...entry('Audio rehearsals with a long folder name that must stay on one line', true), path: '/Host/Show/Audio' }, entry("Café's opening.mp4")] : [entry('Interlude.wav')];
+      const breadcrumbs = [{ name: 'Show', path: '/Host/Show' }];
+      if (folder !== '/Host/Show') breadcrumbs.push({ name: 'Audio', path: folder });
+      if (url.searchParams.get('showHidden') === 'true') {
+        entries.push(entry('.DS_Store'), entry('.backstage', true));
+        if (hiddenListingDelay) await new Promise(resolve => setTimeout(resolve, hiddenListingDelay));
+      }
+      reply({ path: folder, parent: folder === '/Host/Show' ? '' : '/Host/Show', roots: ['/Host/Show'], breadcrumbs, entries, truncated: false }); return;
+    }
+    if (url.pathname === '/api/inspect') { reply({ status: 'ready', media: { kind: 'video', duration: 180 }, reason: '' }); return; }
     commands.push({ path: url.pathname, body });
+    if (url.pathname === '/api/stage-output') {
+      assert.equal(req.headers['x-csrf-token'], 'test-csrf');
+      assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
+      assert.equal(typeof body.enabled, 'boolean');
+      if (body.enabled) { assert.equal(state.state, 'stopped'); assert.equal(Boolean(state.updatePending), false); }
+      else { state.state = 'stopped'; state.activeCueId = ''; state.stopEpoch++; }
+      state.stageEnabled = body.enabled; state.revision++; broadcast();
+    }
     if (url.pathname === '/api/play' && holdPlay) { await new Promise(resolve => setTimeout(resolve, 600)); }
     if (url.pathname === '/api/stop') { state.revision++; state.stopEpoch++; state.activeCueId = ''; state.state = 'stopped'; broadcast(); }
     reply({ accepted: true }, 202);
@@ -104,6 +137,26 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('.cue').count(), 4);
     assert.equal(await page.evaluate(() => window.__xss), undefined);
     assert.equal(await page.locator('#cue-grid img').count(), 0);
+    assert.equal(await page.locator('.transport #logout').count(), 1, 'Disconnect belongs in the fixed transport');
+    assert((await page.locator('#logout').boundingBox()).height <= 32, 'Disconnect remains a small secondary control');
+    await page.locator('#remote-stage').click();
+    await page.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'true');
+    assert.deepEqual(requests.filter(r => r.path === '/api/stage-output').at(-1).body, { enabled: true });
+    assert.equal(requests.filter(r => r.path === '/api/stage-output').at(-1).listenerRole, 'command', 'remote Stage uses the authenticated command listener');
+    state.state = 'playing'; state.activeCueId = 'cue-0'; state.revision++; broadcast();
+    await page.locator('.cue.active').waitFor();
+    assert.equal(await page.locator('#remote-stage').isDisabled(), false, 'an enabled stage can be closed during playback');
+    await page.locator('#remote-stage').click();
+    await page.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'false');
+    assert.deepEqual(requests.filter(r => r.path === '/api/stage-output').at(-1).body, { enabled: false });
+    state.state = 'playing'; state.revision++; broadcast();
+    await page.waitForFunction(() => document.getElementById('remote-stage').disabled);
+    state.state = 'stopped'; state.activeCueId = ''; state.revision++; broadcast();
+    state.stageEnabled = true; state.state = 'playing'; state.revision++; broadcast();
+    await page.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'true');
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'false');
+    assert.equal(state.state, 'stopped', 'Escape in remote control stops playback and closes the stage');
     const beforeReloadPairs = requests.filter(r => r.path === '/api/pair').length;
     await page.reload(); await page.locator('#connection.live').waitFor();
     assert.equal(requests.filter(r => r.path === '/api/pair').length, beforeReloadPairs, 'valid cookie resumes without the numeric token');
@@ -121,6 +174,10 @@ const assert = require('node:assert/strict');
       await page.setViewportSize(size); await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
       const bounds = await page.locator('#stop').boundingBox();
       assert(bounds && bounds.y >= 0 && bounds.y + bounds.height <= size.height, 'STOP must remain in the viewport');
+      for (const selector of ['#remote-stage', '#logout']) {
+        const control = await page.locator(selector).boundingBox();
+        assert(control && control.y >= 0 && control.y + control.height <= size.height, `${selector} must remain in the fixed top bar`);
+      }
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `horizontal overflow at ${size.width}`);
     }
     await page.setViewportSize({ width: 390, height: 844 }); await page.evaluate(() => scrollTo(0, 0));
@@ -140,7 +197,7 @@ const assert = require('node:assert/strict');
     await page.locator('#connection.live').waitFor();
     assert.equal(await page.locator('#pair-key').inputValue(), '', 'manual code is cleared after submission');
 
-    const admin = await context.newPage(); admin.on('pageerror', e => errors.push(e.message));
+    const admin = await browser.newPage({ viewport: { width: 1280, height: 900 }, hasTouch: false }); admin.on('pageerror', e => errors.push(e.message));
     await admin.setViewportSize({ width: 1280, height: 900 }); await admin.goto(adminBase + '/admin');
     await admin.locator('.playlist-row').first().waitFor(); await admin.locator('#remote-ready').waitFor();
     assert.equal(await admin.locator('#pairing').isVisible(), false, 'local Admin opens automatically');
@@ -149,6 +206,98 @@ const assert = require('node:assert/strict');
     assert.equal(await admin.locator('.playlist-row').count(), 4);
     assert.equal(await admin.locator('#playlist img').count(), 0);
     assert.equal(await admin.locator('#audio-output option').count(), 2);
+    await admin.locator('#file-list .file-row').first().waitFor();
+    assert.equal(await admin.locator('#show-hidden').isChecked(), false, 'host files hide dotfiles by default');
+    assert.equal(requests.filter(r => r.path === '/api/files')[0].query.includes('showHidden'), false, 'default browsing uses the server hidden-file filter');
+    assert.equal(await admin.locator('#file-list .file-row').count(), 2);
+    assert.equal(await admin.locator('#file-list').getByText('.DS_Store', { exact: true }).count(), 0);
+    assert(await admin.locator('#file-list .file-row').evaluateAll(rows => rows.every(row => row.getBoundingClientRect().height >= 32 && row.getBoundingClientRect().height <= 36)), 'desktop file rows stay compact and on one line');
+    await admin.locator('#file-list label.file-name').click();
+    assert.equal(await admin.locator('#add-files').textContent(), 'Add selected (1)', 'clicking a file name selects its checkbox');
+    await admin.locator('#file-list').getByRole('button', { name: "Inspect Café's opening.mp4", exact: true }).click();
+    await admin.waitForFunction(() => document.getElementById('file-message').textContent.includes('video · 3:00 · ready'));
+    assert(await admin.locator('#file-list .file-row').evaluateAll(rows => rows.every(row => row.getBoundingClientRect().height <= 36)), 'inspection results do not expand desktop rows');
+    await admin.locator('#show-hidden').check();
+    await admin.locator('#file-list').getByText('.DS_Store', { exact: true }).waitFor();
+    assert.equal(await admin.locator('#file-list .file-row').count(), 4);
+    assert.equal(await admin.locator('#add-files').isDisabled(), true, 'refreshing the listing clears stale selections');
+    await admin.locator('#file-list').getByRole('button', { name: 'Open folder Audio rehearsals with a long folder name that must stay on one line', exact: true }).click();
+    await admin.waitForFunction(() => document.getElementById('host-path').value === '/Host/Show/Audio');
+    assert.equal(await admin.locator('#file-list').getByText('.DS_Store', { exact: true }).count(), 1, 'Show hidden applies while navigating folders');
+    await admin.locator('#breadcrumbs').getByRole('button', { name: '↑ Parent', exact: true }).click();
+    await admin.waitForFunction(() => document.getElementById('host-path').value === '/Host/Show');
+    await admin.locator('#file-list').getByRole('checkbox', { name: 'Select .DS_Store', exact: true }).check();
+    await admin.locator('#show-hidden').uncheck();
+    await admin.waitForFunction(() => document.querySelectorAll('#file-list .file-row').length === 2);
+    assert.equal(await admin.locator('#add-files').isDisabled(), true, 'hidden selections are removed when dotfiles are hidden again');
+    hiddenListingDelay = 250;
+    const delayedHiddenResponse = admin.waitForResponse(response => response.url().includes('/api/files?') && response.url().includes('showHidden=true'));
+    await admin.locator('#show-hidden').check();
+    await admin.locator('#show-hidden').uncheck();
+    await delayedHiddenResponse;
+    await admin.waitForTimeout(100);
+    hiddenListingDelay = 0;
+    assert.equal(await admin.locator('#file-list .file-row').count(), 2, 'an older delayed Show hidden response cannot reveal files after hiding them');
+    assert.equal(await admin.locator('#show-hidden').isChecked(), false);
+    assert.equal(requests.some(r => r.listenerRole === 'command' && r.path === '/api/files'), false, 'remote control never requests host files');
+    const playlistWritesBefore = requests.filter(r => r.path === '/api/playlist' && r.body.cues).length;
+    await admin.evaluate(() => {
+      const files = new DataTransfer(); files.items.add(new File(['example'], 'Finder opening.wav', { type: 'audio/wav' }));
+      const drop = new DragEvent('drop', { dataTransfer: files, bubbles: true, cancelable: true });
+      document.getElementById('playlist-drop').dispatchEvent(drop); window.__finderDropPrevented = drop.defaultPrevented;
+    });
+    assert.equal(await admin.evaluate(() => window.__finderDropPrevented), true, 'external file drops cannot navigate Admin away');
+    assert.match(await admin.locator('#file-drop-message').textContent(), /Dock icon/);
+    assert.equal(requests.filter(r => r.path === '/api/playlist' && r.body.cues).length, playlistWritesBefore, 'Finder drops are not uploaded or converted to invented local paths');
+    await admin.evaluate(() => {
+      const payload = new DataTransfer(); payload.setData('application/x-smartstage-host-files', '/untrusted/injected.mp4');
+      document.getElementById('playlist-drop').dispatchEvent(new DragEvent('drop', { dataTransfer: payload, bubbles: true, cancelable: true }));
+    });
+    assert.equal(requests.filter(r => r.path === '/api/playlist' && r.body.cues).length, playlistWritesBefore, 'a custom drag payload from another page cannot inject a path');
+    const initialCueCount = config.cues.length;
+    const dragSource = admin.locator('#file-list label.file-name');
+    await dragSource.scrollIntoViewIfNeeded();
+    const sourceBounds = await dragSource.boundingBox();
+    await admin.mouse.move(sourceBounds.x + 30, sourceBounds.y + sourceBounds.height / 2);
+    await admin.mouse.down();
+    await admin.mouse.move(sourceBounds.x + 50, sourceBounds.y + sourceBounds.height / 2, { steps: 5 });
+    await admin.locator('#playlist-drop').scrollIntoViewIfNeeded();
+    const dropBounds = await admin.locator('#playlist-drop').boundingBox();
+    await admin.mouse.move(dropBounds.x + 50, dropBounds.y + dropBounds.height / 2, { steps: 10 });
+    await admin.mouse.move(dropBounds.x + 51, dropBounds.y + dropBounds.height / 2);
+    await admin.mouse.up();
+    await admin.waitForFunction(expected => document.querySelectorAll('.playlist-row').length === expected, initialCueCount + 1);
+    assert.equal(config.cues.at(-1).path, "/Host/Show/Café's opening.mp4", 'Host file drops keep the original server path');
+    await admin.waitForFunction(() => document.getElementById('file-drop-message').textContent.includes('Files stay in place'));
+    assert.match(await admin.locator('#file-drop-message').textContent(), /Files stay in place/);
+    assert.equal(requests.some(r => r.path === '/api/playlist/import'), false, 'adding in-place files never sends an upload');
+    const firstColor = admin.getByRole('textbox', { name: 'Label for cue 1', exact: true });
+    await admin.locator('.cue-color-controls input[type=color]').first().evaluate(input => { input.value = '#ffff00'; input.dispatchEvent(new Event('change', { bubbles: true })); });
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('.cue')).backgroundColor === 'rgb(255, 255, 0)');
+    assert.equal(config.cues[0].color, '#ffff00', 'Admin color changes are saved in the playlist');
+    assert.equal(await page.locator('.cue').first().evaluate(node => getComputedStyle(node).color), 'rgb(0, 0, 0)', 'bright cue backgrounds use dark text under the real content security policy');
+    await firstColor.fill('Opening music in yellow'); await firstColor.press('Tab');
+    await admin.waitForFunction(() => document.getElementById('playlist-revision').textContent.includes('saved revision 4'));
+    assert.equal(config.cues[0].color, '#ffff00', 'unrelated label saves preserve cue colors');
+    state.cues[0].color = '#111111'; state.revision++; broadcast();
+    await page.waitForFunction(() => getComputedStyle(document.querySelector('.cue')).backgroundColor === 'rgb(17, 17, 17)');
+    assert.equal(await page.locator('.cue').first().evaluate(node => getComputedStyle(node).color), 'rgb(255, 255, 255)', 'dark cue backgrounds use light text after a state event');
+    state.cues[1].color = '#ffff00'; state.revision++; broadcast();
+    await page.waitForFunction(() => document.querySelector('.cue.active')?.classList.contains('custom-color'));
+    assert.equal(await page.locator('.cue.active').evaluate(node => getComputedStyle(node).outlineStyle), 'solid', 'active colored cues retain a visible outline');
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.screenshot({ path: path.join(output, 'command-colors-phone.png'), fullPage: true });
+    await admin.getByRole('button', { name: 'Use default color for cue 1', exact: true }).click();
+    await page.waitForFunction(() => !document.querySelector('.cue').classList.contains('custom-color'));
+    assert.equal(config.cues[0].color, '', 'Default explicitly resets the saved color');
+    await admin.waitForFunction(() => document.querySelector('button[aria-label="Use default color for cue 1"]').disabled);
+    const stageCommandsBeforeEscape = requests.filter(r => r.path === '/api/stage-output').length;
+    await admin.keyboard.press('Escape');
+    await admin.waitForFunction(() => document.getElementById('play-state').textContent === 'stopped');
+    assert.equal(requests.filter(r => r.path === '/api/stage-output').length, stageCommandsBeforeEscape + 1, 'Escape also sends stage disable from Admin');
+    assert.deepEqual(requests.filter(r => r.path === '/api/stage-output').at(-1).body, { enabled: false });
+    state.state = 'playing'; state.activeCueId = 'cue-1'; state.revision++; broadcast();
+    await page.locator('.cue.active').waitFor();
     assert.equal(await admin.locator('#remote-url').textContent(), links[0].url);
     assert.equal(await admin.locator('#open-remote-url').getAttribute('href'), links[0].url);
     assert.equal(await admin.locator('#remote-code').textContent(), token);
@@ -173,6 +322,8 @@ const assert = require('node:assert/strict');
     links = [fixtureLink('Wi-Fi', commandBase, 0)]; await admin.evaluate(() => loadRemoteControl());
     assert.equal(await admin.locator('#remote-ready').isVisible(), true, 'remote panel recovers when a network returns');
     assert.equal(await admin.locator('#remote-network-choice').isVisible(), false, 'one available address needs no selector');
+    await admin.locator('#files-section').screenshot({ path: path.join(output, 'host-files-compact.png') });
+    await admin.evaluate(() => scrollTo(0, 0));
     await admin.screenshot({ path: path.join(output, 'admin-desktop.png'), fullPage: true });
     for (const width of [320, 390, 768, 1280]) {
       await admin.setViewportSize({ width, height: 900 });
@@ -193,8 +344,15 @@ const assert = require('node:assert/strict');
     await admin.evaluate(() => loadUpdateStatus());
     await admin.waitForFunction(() => document.getElementById('update-requirements').textContent.includes('before starting'));
     assert.equal(await admin.locator('.playlist-row input').first().isDisabled(), true, 'automatic startup check reserves show editing');
+    assert.equal(await admin.locator('.cue-color-controls input[type=color]').first().isDisabled(), true, 'automatic updates reserve color edits too');
     assert.equal(await page.locator('.cue').first().isDisabled(), true, 'automatic startup check reserves remote playback');
     assert.equal(await admin.locator('#stop').isDisabled(), false, 'STOP remains available during automatic startup checking');
+    state.stageEnabled = true; state.revision++; broadcast();
+    await page.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'true');
+    assert.equal(await page.locator('#remote-stage').isDisabled(), false, 'Stage off remains available while an update reserves playback');
+    await page.locator('#remote-stage').click();
+    await page.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'false');
+    assert.equal(await page.locator('#remote-stage').isDisabled(), true, 'Stage on remains blocked during update preparation');
     state.updatePending = false;
     update = { ...update, phase: 'available', message: 'A new version is available.' };
     await admin.evaluate(() => loadUpdateStatus());
@@ -277,7 +435,7 @@ const assert = require('node:assert/strict');
     await invalid.goto(commandBase + '/command'); await invalid.locator('#pairing').waitFor();
     assert.match(await invalid.locator('#pair-form').textContent(), /Scan the QR code/);
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], hostFilesHiddenByDefault: true, hiddenFileToggleAndNavigation: true, hiddenFileResponseRace: true, compactDesktopFileRows: true, hostFileDragUsesOriginalPaths: true, externalFileDropGuidance: true, remoteStageOutputControl: true, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: automatic Admin, token links/session reconnect, QR panel/LAN refresh/clipboard fallback, cues/escaping/STOP/responsive layouts, and update status/retry/startup reservation/install guards/restart session and QR refresh.');
     await context.close();
   } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer].map(server => new Promise(resolve => server.close(resolve)))); }

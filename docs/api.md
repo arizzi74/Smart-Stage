@@ -7,7 +7,7 @@ address header.
 | Listener | Default address | Pages and role |
 | --- | --- | --- |
 | Local Admin | `127.0.0.1:8787` (`--admin-port`) | `/admin`; administration and playback |
-| Remote control | `0.0.0.0:8788` (`--bind`, `--port`) | `/command`; playback only; `/` redirects here |
+| Remote control | `0.0.0.0:8788` (`--bind`, `--port`) | `/command`; playback and stage on/off; `/` redirects here |
 
 Admin always binds IPv4 loopback. Its handler also requires an actual loopback
 peer and exactly `127.0.0.1` with the configured Admin port in `Host`; adding LAN
@@ -59,7 +59,7 @@ local Admin, and are not printed in startup logs or returned in Command state.
 
 `POST /api/logout` invalidates the session and clears that listener's cookie.
 `GET /api/state` returns `{role,csrfToken,state}` for session resumption.
-Both roles can control playback; Command sessions cannot browse/configure or
+Both roles can control playback and stage on/off; Command sessions cannot browse/configure or
 receive source paths/raw native errors.
 
 The current user request replaces the original specification's LAN Admin and
@@ -104,7 +104,8 @@ this reservation; STOP remains available. A failed check or preparation releases
 the reservation. The update cannot reserve playing/loading/stopping playback
 or an enabled stage, including a black stage between cues.
 
-Cue views contain `id,label,position,kind,duration,validation`. Validation jobs
+Cue views contain `id,label,position,kind,duration,validation` and optional `color`
+(`#RRGGBB`; omitted/empty uses the default button color). Validation jobs
 contain `running,completed,total`. Output preferences contain
 `audioId,displayId,allowPrimary`.
 
@@ -123,16 +124,23 @@ expiry/logout ends them. Commands do not travel over SSE.
 | `POST /api/update/install` | `{}` reserves stopped playback with stage output disabled and prepares the discovered update; HTTP 202 with status. The browser cannot supply a URL, version, executable or destination. |
 | `GET /api/remote-control` | `{token:"eight digits",links:[{label:"interface",url:"http://…/command#token=…",qrURL:"/api/remote-control/qr?index=0"}]}`. Links track reachable listener addresses; an empty list is `[]`. |
 | `GET /api/remote-control/qr?index=N` | PNG of the exact selected link, encoded locally with a four-module white quiet zone and `Cache-Control: no-store`. Requires the Admin session. Unknown/stale index returns 404; invalid query shape returns 400. |
-| `GET /api/files?path=...` | Canonical directory, parent, roots/volumes, breadcrumbs, at most 1,000 entries and truncation. Empty path chooses home or first permitted root. Entries include name/path/directory/bytes/modification nanoseconds. |
+| `GET /api/files?path=...&showHidden=false` | Canonical directory, parent, roots/volumes, breadcrumbs, at most 1,000 visible entries and truncation. Dot-prefixed names are hidden by default; `showHidden=true` includes them. Empty path chooses home or first permitted root. Explicit paths remain accessible within media roots. Entries include name/path/directory/bytes/modification nanoseconds. |
 | `GET /api/playlist` | Full configuration model, source paths and derived validation cache. |
-| `PUT /api/playlist` | `{expectedRevision:N,cues:[{id:"existing or empty",label:"...",path:"host file"}]}`; returns saved configuration. New IDs are server-generated; empty labels default only for new cues. Array order is cue order. |
+| `PUT /api/playlist` | `{expectedRevision:N,cues:[{id:"existing or empty",label:"...",path:"host file",color:"#RRGGBB"}]}`; returns saved configuration. Omitted color preserves an existing value; empty resets to default. Invalid colors are rejected. New IDs are server-generated; empty labels default only for new cues. Array order is cue order. |
 | `POST /api/validate` | `{}` starts bounded background native validation; HTTP 202. |
 | `POST /api/inspect` | `{path:"host file"}` returns native validation/metadata without rendering; used by Host files Inspect. Same root restrictions apply. |
 | `GET /api/devices` | `{audio:[{id,name,default}],displays:[{id,name,x,y,width,height,primary,mirrored}]}`. |
 | `PUT /api/outputs` | `{audioId:"default or endpoint",displayId:"ID or empty",allowPrimary:false}`; stopped/error only; saves and disarms stage. |
 | `POST /api/stage-output` | `{enabled:true|false}`; enable requires available display and primary acknowledgement. Disable stops before hiding. HTTP 202. |
 
-Authenticated Command access to Admin APIs returns 403. The remote listener
+`POST /api/stage-output` is also available to authenticated Command sessions with
+the usual exact Origin and CSRF checks. `{enabled:true}` requires stopped playback
+and previously configured/acknowledged outputs; `{enabled:false}` stops playback
+and closes the stage. Command cannot change output devices or any other Admin
+configuration. Browser Escape invokes this same stage-off operation; native Escape
+also stops and closes the stage, including when its generation has become stale.
+
+Authenticated Command access to other Admin APIs returns 403. The remote listener
 returns 404 for `/admin` and `/api/local-session`. Active/loading cue removal/source
 replacement returns 409; label/order edits are allowed. Files remain in place.
 Cache is not accepted as edit input. Schema 1 stores cue identities, labels,

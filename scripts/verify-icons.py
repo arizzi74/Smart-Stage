@@ -169,6 +169,10 @@ def mac_icon(executable, source, test_finder):
         assert info["SmartStageBackgroundLaunch"] is True, "The new Finder app must declare background launch"
         assert info["SmartStageDockIcon"] is True, "The new Finder app must declare its visible Dock icon"
         assert info.get("LSUIElement", False) is False, "The Finder app must be visible in the Dock"
+        document_types = info.get("CFBundleDocumentTypes", [])
+        assert any(item.get("CFBundleTypeRole") == "Viewer" and item.get("LSHandlerRank") == "None"
+                   and set(item.get("LSItemContentTypes", [])) == {"public.audio", "public.movie"}
+                   for item in document_types), "Finder app must accept audio/video drops without taking default file associations"
         subprocess.run(["codesign", "--verify", "--deep", "--strict", str(bundle)], check=True)
         decoded = parent / "decoded.iconset"
         subprocess.run(["iconutil", "--convert", "iconset", "--output", str(decoded), str(icon)], check=True)
@@ -182,6 +186,8 @@ def mac_icon(executable, source, test_finder):
                   "spacesQuotesUnicodePathPassed": True, "version": version}
         if test_finder:
             result.update(finder_launch(bundle, bool(info.get("SmartStageBackgroundLaunch"))))
+            from native_file_checks import file_open_checks
+            result["nativeFileOpen"] = file_open_checks(bundle, executable.with_name(executable.name + ".native-files.json"))
         return result
 
 

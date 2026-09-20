@@ -47,6 +47,7 @@ type Ack struct {
 type CueView struct {
 	ID         string  `json:"id"`
 	Label      string  `json:"label"`
+	Color      string  `json:"color,omitempty"`
 	Position   int     `json:"position"`
 	Kind       string  `json:"kind"`
 	Duration   float64 `json:"duration"`
@@ -134,7 +135,7 @@ func (s *Service) Snapshot(admin bool) State {
 	out.Outputs = s.config.Outputs
 	out.Cues = make([]CueView, 0, len(s.config.Cues))
 	for i, c := range s.config.Cues {
-		out.Cues = append(out.Cues, CueView{c.ID, c.Label, i + 1, c.Cache.Media.Kind, c.Cache.Media.Duration, c.Cache.Status})
+		out.Cues = append(out.Cues, CueView{ID: c.ID, Label: c.Label, Color: c.Color, Position: i + 1, Kind: c.Cache.Media.Kind, Duration: c.Cache.Media.Duration, Validation: c.Cache.Status})
 		if c.ID == out.ActiveCueID {
 			out.ActivePosition = i + 1
 		}
@@ -465,6 +466,15 @@ func (s *Service) nativeEvent(e playback.Event) {
 	// precondition. It must still stop a concurrently accepted controller PLAY.
 	if e.Kind == "escape" {
 		s.stopLocked()
+		// Escape closes the stage as well as stopping. Apply the decision to
+		// the current generation even when a concurrent PLAY made the native
+		// key event's generation stale.
+		s.state.StageEnabled = false
+		if err := s.backend.Stage(s.state.Generation, s.config.Outputs.DisplayID, false); err != nil {
+			s.state.State = "error"
+			s.state.LastError = err.Error()
+		}
+		s.changedLocked()
 		return
 	}
 	if e.Generation != s.state.Generation {

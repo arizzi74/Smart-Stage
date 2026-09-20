@@ -64,6 +64,10 @@ After any restart, reconnect phones/tablets using the new QR code.
 
 Mac updates retain the app icon, Dock controls and Terminal-free launch. macOS
 may request administrator approval to refresh this app's firewall allowance.
+Current Mac releases use ad-hoc signing, so the updater refreshes the allowance
+after each replacement; you should not need to re-enable the app in Firewall
+Settings manually. Reusing a stable Developer ID signature and verifying the
+existing allowance would be needed to avoid that repeated authorization.
 Windows updates replace the executable in its current folder. The installation
 folder must be writable by your user. No additional runtime or permanent updater
 service is installed. If a replacement cannot start, the updater attempts to
@@ -114,9 +118,15 @@ acceptance testing.
    signed-in interactive desktop session. Keep the application running. It
    automatically opens **Admin** in your system browser at
    `http://127.0.0.1:8787/admin`. Admin is available only on the host computer.
-2. In Host files, browse the **host computer**, inspect/select files and add them.
-   Set labels/order in Playlist. Wait for native validation; missing/unsupported
-   files remain visible. Adding a cue does not upload or copy its file.
+2. In Host files, browse the **host computer**, inspect/select files and add them,
+   or drag file rows into Playlist. Dot-prefixed files and folders are hidden
+   until **Show hidden** is selected. Set labels, order and button colors in
+   Playlist; **Default** resets a cue's color. Wait for native validation;
+   missing/unsupported files remain visible. Adding a cue does not copy its file.
+   On Mac, drop Finder files onto the running **Smart Stage Dock icon**, or use
+   **Choose Media…** in its app menu. The original files stay in place. Browsers
+   cannot read full Finder paths, so dropping Finder files into the web page
+   instead explains the Dock action. During an update, wait and add files again.
 3. Select audio and stage outputs, then Save outputs. Explicitly acknowledge
    primary/only-display coverage. Audio works without a stage display. Use an
    extended desktop for independent projection; mirrored displays are identified.
@@ -125,8 +135,18 @@ acceptance testing.
    and opens the remote controls without typing a separate pairing key. Use the
    address for the network your phone can reach.
 5. Tap a cue to start/restart it. STOP silences and retains an enabled black stage.
-   Natural completion does the same, without auto-advance. Enable/Disable stage
-   output are separate actions.
+   Natural completion does the same, without auto-advance. The remote's small
+   **Stage on/off** control opens or closes the stage; turning it off also stops
+   playback. **Disconnect** is in the remote's top bar.
+
+The remote's optional **Keep awake** control uses the browser Screen Wake Lock
+API. It requires HTTPS and a supported browser; the default HTTP LAN address
+shows **Needs HTTPS** and cannot prevent screen sleep. For that address, adjust
+Auto-Lock or Screen timeout on the phone/tablet. When supported, the control
+reports whether a wake lock is actually held, reacquires it on returning to the
+visible page, and releases it on Disconnect. Switching apps, power saving and
+manual locking can still release it. Smart Stage does not configure HTTPS or
+change device lock settings. See [browser requirements](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API).
 
 Admin listens only on `127.0.0.1`. Remote controls use port `8788` by default;
 Admin pages and administration APIs are unavailable on that listener. The remote
@@ -165,7 +185,9 @@ load the remote page; pairing happens afterward. A failed connection therefore
 needs diagnosis before changing the token. For an app launch, use **View Log**
 in the menu bar control or inspect `~/Library/Logs/Smart Stage/smartstage.log`.
 
-Escape while the stage window has focus stops without exposing the desktop.
+Escape while the native Smart Stage app/stage or a connected Admin/remote browser
+page has focus stops playback and closes the stage window, exposing the desktop.
+It is not a system-wide keyboard shortcut; STOP still retains an enabled black stage.
 Quit Smart Stage (or Ctrl+C for a Terminal launch) closes the stage window.
 Losing browser connections or a sleeping phone does not stop playback.
 Unacknowledged STOP is shown as unconfirmed;

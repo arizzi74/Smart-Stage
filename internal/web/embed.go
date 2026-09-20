@@ -26,6 +26,9 @@ func Handler() http.Handler {
 		case "/assets/app.js":
 			name = "app.js"
 			contentType = "text/javascript; charset=utf-8"
+		case "/assets/wake-lock.js":
+			name = "wake-lock.js"
+			contentType = "text/javascript; charset=utf-8"
 		case "/assets/style.css":
 			name = "style.css"
 			contentType = "text/css; charset=utf-8"

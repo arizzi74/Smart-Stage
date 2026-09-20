@@ -12,9 +12,10 @@ import (
 )
 
 type CueEdit struct {
-	ID    string `json:"id"`
-	Label string `json:"label"`
-	Path  string `json:"path"`
+	ID    string  `json:"id"`
+	Label string  `json:"label"`
+	Path  string  `json:"path"`
+	Color *string `json:"color,omitempty"`
 }
 type PlaylistEdit struct {
 	ExpectedRevision uint64    `json:"expectedRevision"`
@@ -22,11 +23,18 @@ type PlaylistEdit struct {
 }
 
 func (s *Service) EditPlaylist(edit PlaylistEdit) (model.Config, error) {
+	s.editMu.Lock()
+	defer s.editMu.Unlock()
+	return s.editPlaylistLocked(edit)
+}
+
+// editPlaylistLocked requires editMu. Native host-file imports share this
+// transaction with browser edits so an append cannot overwrite a concurrent
+// rename, reorder, color change or completed persistence operation.
+func (s *Service) editPlaylistLocked(edit PlaylistEdit) (model.Config, error) {
 	if len(edit.Cues) > model.MaxCues {
 		return model.Config{}, problem("too_many_cues", "A show may contain at most 500 cues")
 	}
-	s.editMu.Lock()
-	defer s.editMu.Unlock()
 	s.mu.Lock()
 	if s.closed || s.state.UpdatePending {
 		s.mu.Unlock()
@@ -73,7 +81,14 @@ func (s *Service) EditPlaylist(edit PlaylistEdit) (model.Config, error) {
 		if err := ValidateLabel(label); err != nil {
 			return model.Config{}, err
 		}
-		next.Cues = append(next.Cues, model.Cue{ID: id, Label: label, Path: path, Cache: cache})
+		color := previous.Color
+		if item.Color != nil {
+			color = *item.Color
+		}
+		if !model.ValidCueColor(color) {
+			return model.Config{}, problem("invalid_color", "Cue colors must be empty for the default or use #RRGGBB")
+		}
+		next.Cues = append(next.Cues, model.Cue{ID: id, Label: label, Path: path, Color: color, Cache: cache})
 	}
 	removing := map[string]bool{}
 	for id, c := range old {

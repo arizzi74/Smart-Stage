@@ -80,6 +80,9 @@ try:
         events = run_until_ended('--file',media/'silent-1080p.mp4','--display',screen['id'],'--exit-after','40s')
         assert any(e['kind']=='playing' for e in events), events
         assert any(e['kind']=='ended' and e['stageEnabled'] for e in events), events
+        from native_keyboard_checks import escape_checks
+        records.append({'nativeKeyboardEvents':escape_checks(screen),
+                        'method':'Test-only event driver linked against the production bridge; no physical keyboard assertion'})
     print('Native smoke checks passed. This checks native events, not physical routing or visible blackout.')
 finally:
     Path(exe+'.smoke.json').write_text(json.dumps(records,indent=2,ensure_ascii=False),encoding='utf-8')

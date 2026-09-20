@@ -19,6 +19,7 @@ jobs:
           cache: false
       - run: go test -race ./...
       - run: go vet ./...
+      - run: node --test scripts/wake-lock.test.cjs
   native:
     strategy:
       fail-fast: false

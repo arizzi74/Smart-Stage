@@ -467,9 +467,9 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
     }
     if (msg == deviceMessage || msg == WM_DISPLAYCHANGE || msg == WM_DEVICECHANGE) { checkDevices(); return 0; }
     if (msg == WM_KEYDOWN && wp == VK_ESCAPE) {
-        uint64_t g = generation.fetch_add(1); stopCurrent(); emit(g, "escape"); return 0;
+        uint64_t g = generation.fetch_add(1); disableStage(); emit(g, "escape"); return 0;
     }
-    if (msg == WM_CLOSE && hwnd != controlWindow) { uint64_t g = generation.fetch_add(1); stopCurrent(); emit(g, "escape"); return 0; }
+    if (msg == WM_CLOSE && hwnd != controlWindow) { uint64_t g = generation.fetch_add(1); disableStage(); emit(g, "escape"); return 0; }
     if (msg == WM_SETCURSOR && hwnd != controlWindow) { SetCursor(nullptr); return TRUE; }
     if (msg == WM_ERASEBKGND) { RECT r; GetClientRect(hwnd,&r); FillRect((HDC)wp,&r,(HBRUSH)GetStockObject(BLACK_BRUSH)); return TRUE; }
     if (msg == WM_PAINT) {

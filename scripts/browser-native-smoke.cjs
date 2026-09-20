@@ -31,6 +31,9 @@ async function until(check, message, timeout = 30000) {
   assert(fs.statSync(exe).isFile(), 'Pass a real supported-OS Smart Stage executable');
   const root = path.resolve(__dirname, '..');
   const config = fs.mkdtempSync(path.join(os.tmpdir(), 'smartstage-browser-'));
+  const mediaRoot = path.join(config, 'media');
+  fs.cpSync(path.join(root, 'testdata', 'media'), mediaRoot, { recursive: true });
+  fs.copyFileSync(path.join(mediaRoot, "Opening – café's tone.wav"), path.join(mediaRoot, '.hidden.wav'));
   const version = spawnSync(exe, ['--version'], { encoding: 'utf8' });
   assert.equal(version.status, 0, 'Published executable must report its version');
   const target = version.stdout.match(/, (darwin|windows)\/(arm64|amd64)/);
@@ -45,7 +48,7 @@ async function until(check, message, timeout = 30000) {
   let adminBase = '';
   let stderr = '', browser, admin, command;
   const application = spawn(exe, ['--port', '0', '--admin-port', '0', '--bind', '0.0.0.0', '--no-browser', '--config-dir', config,
-    '--media-root', path.join(root, 'testdata', 'media')], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    '--media-root', mediaRoot], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
   let exited = false, startError = null;
   application.on('error', error => { startError = error; });
   application.on('exit', () => { exited = true; });
@@ -113,6 +116,16 @@ async function until(check, message, timeout = 30000) {
     record.checks.push('Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access');
     await admin.locator('#file-list .file-row').first().waitFor();
     assert.equal(await admin.locator('#admin-view').isVisible(), true);
+    assert.equal(await admin.locator('#show-hidden').isChecked(), false, 'Hidden host files must default to off');
+    assert.equal(await admin.getByRole('checkbox', { name: 'Select .hidden.wav', exact: true }).count(), 0);
+    const hiddenListing = admin.waitForResponse(response => apiPath(response) === '/api/files' && new URL(response.url()).searchParams.get('showHidden') === 'true');
+    await admin.locator('#show-hidden').check();
+    assert.equal((await hiddenListing).status(), 200);
+    assert((await (await hiddenListing).json()).entries.some(entry => entry.name === '.hidden.wav'), 'Real host listing must include the hidden fixture when requested');
+    await admin.getByRole('checkbox', { name: 'Select .hidden.wav', exact: true }).waitFor();
+    await admin.locator('#show-hidden').uncheck();
+    await admin.getByRole('checkbox', { name: 'Select .hidden.wav', exact: true }).waitFor({ state: 'detached' });
+    record.checks.push('Real host dotfile stayed hidden by default, appeared with Show hidden, and disappeared when disabled');
     const filenames = ["Opening – café's tone.wav", 'silent-1080p.mp4', 'tone.mp3', 'video-aac-1080p.mp4'];
     for (const filename of filenames) await admin.getByRole('checkbox', { name: `Select ${filename}`, exact: true }).check();
     let saved;
@@ -146,6 +159,13 @@ async function until(check, message, timeout = 30000) {
     const before = saved.cues.map(cue => cue.id);
     await edit(() => admin.getByRole('button', { name: 'Move cue 4 up', exact: true }).click(), saved.playlistRevision + 1);
     assert.deepEqual(saved.cues.map(cue => cue.id), [before[0], before[1], before[3], before[2]]);
+    const coloredCueID = saved.cues[0].id;
+    await edit(() => admin.getByLabel('Color for cue 1', { exact: true }).evaluate(input => {
+      input.value = '#fff000'; input.dispatchEvent(new Event('change', { bubbles: true }));
+    }), saved.playlistRevision + 1);
+    assert.equal(saved.cues.find(cue => cue.id === coloredCueID).color, '#fff000');
+    const colorRoundtrip = await (await admin.request.get(adminBase + '/api/playlist')).json();
+    assert.equal(colorRoundtrip.cues.find(cue => cue.id === coloredCueID).color, '#fff000', 'Saved color must survive a real playlist read');
     const labels = saved.cues.map(cue => cue.label);
     async function snapshot(page = admin) {
       const response = await page.request.get((page === admin ? adminBase : commandBase) + '/api/state');
@@ -179,11 +199,21 @@ async function until(check, message, timeout = 30000) {
     await command.locator('#connection.live').waitFor();
     assert.equal(command.url(), commandBase + '/command', 'Pairing fragment must be removed from browser history');
     assert.equal(await command.evaluate(() => window.isSecureContext), false, 'Exercise plain LAN HTTP');
+    assert.equal(await command.evaluate(() => typeof window.smartStageWakeLock?.setConnected), 'function', 'The real embedded wake-lock script must load');
+    await command.waitForFunction(() => document.getElementById('keep-awake-status').textContent === 'Needs HTTPS');
+    assert.equal(await command.locator('#keep-awake').isDisabled(), true, 'Plain LAN HTTP cannot offer a working screen wake lock');
+    assert.match(await command.locator('#keep-awake-status').getAttribute('title'), /requires HTTPS/);
+    record.checks.push('Embedded screen-wake-lock control truthfully reported Needs HTTPS and stayed disabled on real non-loopback HTTP');
     assert.equal(await command.locator('a[href$="/admin"]').count(), 0);
     assert.equal((await command.request.get(commandBase + '/api/remote-control')).status(), 403);
     await command.locator('.cue').nth(3).waitFor();
     assert.deepEqual(await command.locator('.cue-title').allTextContents(), labels);
     const controllerState = await snapshot(command);
+    assert.equal(controllerState.cues.find(cue => cue.id === coloredCueID).color, '#fff000', 'Command state must carry the saved cue color');
+    const coloredButton = command.locator('.cue').nth(saved.cues.findIndex(cue => cue.id === coloredCueID));
+    await until(async () => await coloredButton.evaluate(node => getComputedStyle(node).backgroundColor === 'rgb(255, 240, 0)'), 'Remote cue did not apply its saved color under the actual CSP');
+    assert.equal(await coloredButton.evaluate(node => getComputedStyle(node).color), 'rgb(0, 0, 0)', 'Bright custom cue colors need readable dark text');
+    record.checks.push('Admin saved a cue color through the real API; playlist/command reads and remote CSSOM styling agreed under production CSP');
     const strings = value => typeof value === 'string' ? [value] : value && typeof value === 'object' ? Object.values(value).flatMap(strings) : [];
     for (const cue of saved.cues) assert(!strings(controllerState).includes(cue.path), 'Command state disclosed a host file path');
     assert.equal((await command.request.get(commandBase + '/api/files')).status(), 403);
@@ -218,6 +248,29 @@ async function until(check, message, timeout = 30000) {
     await waitState('playing'); await waitState('stopped');
     const ended = await snapshot();
     assert.equal(ended.activeCueId, ''); assert.equal(ended.stageEnabled, true);
+    // Use the silent video so these real native stage controls do not depend
+    // on an audio endpoint being installed on the CI machine.
+    await command.locator('.cue').filter({ hasText: 'Finale' }).tap();
+    await waitState('playing');
+    await command.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'true');
+    assert.equal(await command.locator('#remote-stage').isDisabled(), false, 'Stage off must remain available during playback');
+    const stageOff = command.waitForResponse(response => apiPath(response) === '/api/stage-output' && response.request().method() === 'POST');
+    await command.locator('#remote-stage').tap();
+    assert.equal((await stageOff).status(), 200);
+    assert.deepEqual((await stageOff).request().postDataJSON(), { enabled: false });
+    await until(async () => { const state = await snapshot(); return state.state === 'stopped' && !state.stageEnabled; }, 'Remote Stage off did not stop playback and close the native stage');
+    await command.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'false' && !document.getElementById('remote-stage').disabled);
+    const stageOn = command.waitForResponse(response => apiPath(response) === '/api/stage-output' && response.request().method() === 'POST');
+    await command.locator('#remote-stage').tap();
+    assert.equal((await stageOn).status(), 200);
+    assert.deepEqual((await stageOn).request().postDataJSON(), { enabled: true });
+    await until(async () => (await snapshot()).stageEnabled, 'Remote Stage on did not open the native stage');
+    const escapeOff = command.waitForResponse(response => apiPath(response) === '/api/stage-output' && response.request().method() === 'POST');
+    await command.keyboard.press('Escape');
+    assert.equal((await escapeOff).status(), 200);
+    assert.deepEqual((await escapeOff).request().postDataJSON(), { enabled: false });
+    await until(async () => { const state = await snapshot(); return state.state === 'stopped' && !state.stageEnabled; }, 'Browser Escape did not stop playback and close the native stage');
+    record.checks.push('Remote Stage off stopped an actual silent video and closed the native stage; Stage on reopened it and browser Escape closed it again');
     await command.evaluate(() => scrollTo(0, document.body.scrollHeight));
     const bounds = await command.locator('#stop').boundingBox();
     assert(bounds && bounds.y >= 0 && bounds.y + bounds.height <= 844);
@@ -225,7 +278,7 @@ async function until(check, message, timeout = 30000) {
     await command.screenshot({ path: path.join(output, 'command-phone.png'), fullPage: true });
     await admin.screenshot({ path: path.join(output, 'admin-desktop.png'), fullPage: true,
       mask: [admin.locator('#remote-url'), admin.locator('#remote-code'), admin.locator('#remote-qr')] });
-    const allowed = new Set(['/command', '/assets/app.js', '/assets/style.css', '/favicon.ico', '/api/pair', '/api/state', '/api/events', '/api/play', '/api/stop']);
+    const allowed = new Set(['/command', '/assets/app.js', '/assets/style.css', '/assets/wake-lock.js', '/favicon.ico', '/api/pair', '/api/state', '/api/events', '/api/play', '/api/stop', '/api/stage-output']);
     for (const request of requests) {
       const url = new URL(request.url);
       assert.equal(url.origin, commandBase);

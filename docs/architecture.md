@@ -96,7 +96,11 @@ The stage window persists through STOP/end/error. Windows hides the EVR child
 surface over a black parent; macOS uses an independent black overlay and hides
 the video layer. Current-generation video alone can be revealed. Native
 renderers preserve aspect ratio. Disable/exit deliberately hide/close the stage.
-Escape requests STOP. Power assertions discourage idle/display sleep.
+Escape stops playback and disables the stage, including a stale key event that
+overlaps a newer PLAY. App-local key handling needs no global keyboard permission.
+Connected browser pages send the same stage-off intent. STOP still retains an
+enabled black stage. Power assertions discourage idle/display sleep on the host;
+remote browser Screen Wake Lock is separate and requires a secure context.
 
 Native endpoint/display notifications trigger checks. Device loss stops media;
 display loss also hides/disarms output. Explicit re-selection/save is required

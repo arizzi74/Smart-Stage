@@ -3,7 +3,9 @@ const $ = id => document.getElementById(id);
 const adminPage = location.pathname === '/admin';
 let state = null, role = '', csrf = '', online = false, source = null, lastSeen = 0;
 let playlist = null, devices = null, fileSelection = new Set(), fileEntries = [];
+let fileBrowsePath = '', fileBrowseSequence = 0;
 let playlistBusy = false, refreshing = false, renderedOrder = '', playlistRefresh = false;
+let draggedHostPaths = [], hostDragDepth = 0;
 let controlSequence = 0;
 let validationSignature = '', validationRefresh = false;
 let localSessionBusy = false, localSessionRetry = null;
@@ -12,6 +14,7 @@ let updateStatus = null, updateBusy = false, updatePreparing = false;
 let updateRestartInstance = '', updateRestartComplete = false, updateRestartStarted = 0;
 const cueButtons = new Map(), playlistRows = new Map();
 $('page-heading').textContent = adminPage ? 'Set the stage' : 'Show control';
+$('show-hidden').checked = false;
 
 function element(tag, text, className) {
   const node = document.createElement(tag);
@@ -37,6 +40,7 @@ function connection(connected) {
   online = connected;
   $('connection').textContent = connected ? 'Connected to host' : expectingUpdateRestart() ? 'Restarting Smart Stage…' : 'Disconnected · status may be stale';
   $('connection').className = connected ? 'live' : 'stale';
+  renderRemoteStage();
   for (const [id, node] of cueButtons) {
     const cue = state?.cues.find(c => c.id === id);
     node.disabled = !connected || updatePending() || !cue || ['missing', 'unsupported', 'error'].includes(cue.validation);
@@ -44,6 +48,7 @@ function connection(connected) {
   if (adminPage) { renderUpdateStatus(); renderEditAvailability(); }
 }
 function showPair() {
+  if (!adminPage) window.smartStageWakeLock?.setConnected(false);
   connection(false); if (source) { source.close(); source = null; }
   if (adminPage) { void connectLocalAdmin(); return; }
   if (!$('pairing').open) $('pairing').showModal();
@@ -124,6 +129,7 @@ function applyState(next) {
     updatePreparing = false; updateRestartInstance = ''; updateRestartStarted = 0; updateRestartComplete = true;
   }
   state = next;
+  renderRemoteStage();
   const current = next.cues.find(c => c.id === next.activeCueId);
   $('play-state').textContent = next.state;
   $('current-cue').textContent = current ? `${current.position}. ${current.label}` : next.state === 'error' ? 'Operator attention needed' : 'Ready when you are';
@@ -170,6 +176,10 @@ function renderCues() {
       cueButtons.set(cue.id, node);
     }
     node.firstChild.textContent = cue.label;
+    const color = validCueColor(cue.color);
+    node.classList.toggle('custom-color', Boolean(color));
+    if (color) { node.style.setProperty('--cue-fill', color); node.style.setProperty('--cue-ink', cueTextColor(color)); }
+    else { node.style.removeProperty('--cue-fill'); node.style.removeProperty('--cue-ink'); }
     const active = state.activeCueId === cue.id && ['loading', 'playing'].includes(state.state);
     node.lastChild.replaceChildren(element('span', `${String(cue.position).padStart(2, '0')} · ${cue.kind || 'unchecked'}`), element('span', active ? state.state : cue.validation === 'ready' ? 'Start cue ↗' : cue.validation));
     node.classList.toggle('active', active); node.setAttribute('aria-pressed', String(active));
@@ -177,6 +187,20 @@ function renderCues() {
     if (renderedOrder !== order) $('cue-grid').append(node);
   }
   renderedOrder = order; $('empty-cues').hidden = state.cues.length > 0;
+}
+function validCueColor(value) { return /^#[0-9a-f]{6}$/i.test(value || '') ? value : ''; }
+function cueTextColor(color) {
+  const channels = [1, 3, 5].map(offset => parseInt(color.slice(offset, offset + 2), 16) / 255).map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
+  const luminance = channels[0] * .2126 + channels[1] * .7152 + channels[2] * .0722;
+  return luminance > .179 ? '#000000' : '#ffffff';
+}
+function renderRemoteStage() {
+  const enabled = Boolean(state?.stageEnabled), control = $('remote-stage');
+  control.textContent = enabled ? 'Stage on' : 'Stage off';
+  control.setAttribute('aria-pressed', String(enabled));
+  control.setAttribute('aria-label', enabled ? 'Disable stage output' : 'Enable stage output');
+  control.disabled = !enabled && (!online || !state || state.state !== 'stopped' || state.outputFault || updatePending());
+  control.title = enabled ? 'Stop playback and close the stage display' : control.disabled ? 'Stop playback before enabling the stage display' : 'Open the stage display';
 }
 async function trigger(cueId) {
   if (updatePending()) { notify('Smart Stage is preparing an update. Playback is unavailable until it finishes.'); return; }
@@ -289,6 +313,8 @@ function renderEditAvailability() {
     row.up.disabled = pending || row.first;
     row.down.disabled = pending || row.last;
     row.remove.disabled = pending || id === state.activeCueId;
+    row.color.disabled = pending;
+    row.resetColor.disabled = pending || !row.customColor;
   }
   updateSelected();
 }
@@ -389,7 +415,7 @@ async function refreshValidationDetails() {
   } catch (error) { notify(error.message, true); }
   finally { validationRefresh = false; }
 }
-function cueEdits() { return playlist.cues.map(({ id, label, path }) => ({ id, label, path })); }
+function cueEdits() { return playlist.cues.map(({ id, label, path, color }) => ({ id, label, path, color: color || '' })); }
 async function savePlaylist(cues) {
   if (updatePending()) { notify('Smart Stage is preparing an update. Wait before editing the show.'); return false; }
   if (playlistBusy) { notify('An edit is being saved. Wait before making another edit.', true); return false; }
@@ -399,6 +425,54 @@ async function savePlaylist(cues) {
     renderPlaylist(); notify('Playlist saved.'); await refreshState(); return true;
   } catch (error) { notify(`${error.message} Your edit was not saved. Reload to use the host version.`, true); return false; }
   finally { playlistBusy = false; }
+}
+const hostFileDragType = 'application/x-smartstage-host-files';
+function fileDropMessage(message, error = false) {
+  $('file-drop-message').textContent = message;
+  $('file-drop-message').classList.toggle('error', error);
+}
+function canDropHostFiles() { return online && role === 'admin' && playlist && !playlistBusy && !updatePending(); }
+function selectedHostPaths() { return [...new Set(fileEntries.filter(file => !file.directory && fileSelection.has(file.path)).map(file => file.path))]; }
+async function addDroppedHostFiles(paths) {
+  paths = [...new Set(paths)];
+  if (!canDropHostFiles()) { fileDropMessage('Wait until Smart Stage is connected and ready to edit the playlist.', true); return; }
+  if (playlist.cues.length + paths.length > 500) { fileDropMessage('A playlist can contain up to 500 cues. Select fewer files.', true); return; }
+  const additions = paths.map(path => ({ id: '', label: '', path }));
+  if (await savePlaylist([...cueEdits(), ...additions])) {
+    fileSelection.clear(); $('file-list').querySelectorAll('input[type=checkbox]').forEach(node => { node.checked = false; }); updateSelected();
+    fileDropMessage(`Added ${paths.length} ${paths.length === 1 ? 'file' : 'files'} to the playlist. Files stay in place.`);
+  } else fileDropMessage('The files were not added. Check the message above and try again.', true);
+}
+function dragHasType(event, type) { return Array.from(event.dataTransfer?.types || []).includes(type); }
+if (adminPage) {
+  document.addEventListener('dragover', event => {
+    if (!dragHasType(event, 'Files') && !dragHasType(event, hostFileDragType)) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = draggedHostPaths.length && $('playlist-section').contains(event.target) && canDropHostFiles() ? 'copy' : 'none';
+  });
+  document.addEventListener('drop', event => {
+    if (!dragHasType(event, 'Files') && !dragHasType(event, hostFileDragType)) return;
+    event.preventDefault(); hostDragDepth = 0; $('playlist-drop').classList.remove('drag-over');
+    if (dragHasType(event, 'Files')) {
+      const message = 'To keep files in place, drop Finder files onto Smart Stage’s Dock icon on Mac, or select them in Host files below.';
+      fileDropMessage(message); notify(message); return;
+    }
+    // Paths come only from rows rendered by this Admin page. Never accept paths
+    // supplied by a different page through a forged drag payload.
+    const paths = draggedHostPaths; draggedHostPaths = [];
+    if (!$('playlist-section').contains(event.target) || !paths.length) {
+      fileDropMessage('Drag files from Host files below onto the Playlist area.'); return;
+    }
+    void addDroppedHostFiles(paths);
+  });
+  $('playlist-section').addEventListener('dragenter', event => {
+    if (!dragHasType(event, hostFileDragType) || !draggedHostPaths.length || !canDropHostFiles()) return;
+    event.preventDefault(); hostDragDepth++; $('playlist-drop').classList.add('drag-over');
+  });
+  $('playlist-section').addEventListener('dragleave', () => {
+    hostDragDepth = Math.max(0, hostDragDepth - 1);
+    if (!hostDragDepth) $('playlist-drop').classList.remove('drag-over');
+  });
 }
 function renderPlaylist() {
   $('playlist').replaceChildren(); playlistRows.clear();
@@ -411,6 +485,14 @@ function renderPlaylist() {
     input.addEventListener('change', () => { const edited = cueEdits(); edited[index].label = input.value; void savePlaylist(edited); });
     const validation = element('div', `${cue.cache.media.kind || 'Unknown type'} · ${cue.cache.status}${cue.cache.reason ? ` · ${cue.cache.reason}` : ''}`, 'validation');
     info.append(input, element('p', cue.path, 'source-path'), validation);
+    const colors = element('div', undefined, 'cue-color-controls'), colorLabel = element('label', 'Color');
+    const color = element('input'); color.type = 'color'; color.value = validCueColor(cue.color) || '#1b2227';
+    color.setAttribute('aria-label', `Color for cue ${index + 1}`);
+    color.addEventListener('change', () => { const edited = cueEdits(); edited[index].color = color.value; void savePlaylist(edited); });
+    colorLabel.append(color);
+    const resetColor = button('Default', () => { const edited = cueEdits(); edited[index].color = ''; void savePlaylist(edited); });
+    resetColor.setAttribute('aria-label', `Use default color for cue ${index + 1}`);
+    colors.append(colorLabel, resetColor); info.append(colors);
     if (counts.get(cue.label) > 1) info.append(element('p', 'Duplicate label — use cue position to distinguish.', 'hint'));
     const tools = element('div', undefined, 'cue-tools');
     const move = delta => { const edited = cueEdits(); [edited[index], edited[index + delta]] = [edited[index + delta], edited[index]]; void savePlaylist(edited); };
@@ -421,14 +503,19 @@ function renderPlaylist() {
     const play = button('Play', () => trigger(cue.id));
     tools.append(play, up, down, remove);
     row.append(element('span', String(index + 1).padStart(2, '0'), 'position'), info, tools);
-    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
+    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
   });
   renderEditAvailability();
 }
 async function browse(path = '') {
+  const sequence = ++fileBrowseSequence;
+  fileBrowsePath = path;
   $('file-message').textContent = 'Reading the host folder…';
+  $('file-list').setAttribute('aria-busy', 'true');
   try {
-    const listing = await api('GET', `/api/files?path=${encodeURIComponent(path)}`);
+    const listing = await api('GET', `/api/files?path=${encodeURIComponent(path)}${$('show-hidden').checked ? '&showHidden=true' : ''}`);
+    if (sequence !== fileBrowseSequence) return;
+    fileBrowsePath = listing.path;
     $('host-path').value = listing.path; fileEntries = listing.entries; fileSelection.clear(); updateSelected();
     $('roots').replaceChildren(...listing.roots.map(root => { const option = element('option', root); option.value = root; return option; }));
     $('breadcrumbs').replaceChildren();
@@ -438,33 +525,53 @@ async function browse(path = '') {
     for (const entry of listing.entries) {
       const row = element('div', undefined, 'file-row');
       if (entry.directory) {
-        row.append(element('span', '▸'), button(entry.name, () => browse(entry.path), 'file-name'));
+        const marker = element('span', '▸', 'folder-marker'); marker.setAttribute('aria-hidden', 'true');
+        const open = button(entry.name, () => browse(entry.path), 'file-name'); open.title = entry.name;
+        open.setAttribute('aria-label', `Open folder ${entry.name}`);
+        row.append(marker, open, element('span', 'Folder', 'file-details'));
       } else {
+        row.draggable = true;
+        row.addEventListener('dragstart', event => {
+          if (!canDropHostFiles()) { event.preventDefault(); return; }
+          draggedHostPaths = fileSelection.has(entry.path) ? selectedHostPaths() : [entry.path];
+          event.dataTransfer.setData(hostFileDragType, 'Smart Stage host files');
+          event.dataTransfer.effectAllowed = 'copy';
+          fileDropMessage(`Drop ${draggedHostPaths.length} ${draggedHostPaths.length === 1 ? 'file' : 'files'} here to add to the playlist.`);
+        });
+        row.addEventListener('dragend', () => { draggedHostPaths = []; hostDragDepth = 0; $('playlist-drop').classList.remove('drag-over'); });
         const check = element('input'); check.type = 'checkbox'; check.setAttribute('aria-label', `Select ${entry.name}`);
+        check.id = `file-choice-${sequence}-${$('file-list').childElementCount}`;
         check.addEventListener('change', () => { if (check.checked) fileSelection.add(entry.path); else fileSelection.delete(entry.path); updateSelected(); });
-        const info = element('div', undefined, 'file-name');
-        info.append(element('span', entry.name), element('div', `${(entry.size / 1024 / 1024).toFixed(2)} MB · ${new Date(entry.modified / 1e6).toLocaleDateString()}`, 'file-details'));
+        const name = element('label', entry.name, 'file-name'); name.htmlFor = check.id; name.title = entry.name; name.draggable = true;
+        const extension = entry.name.includes('.') ? entry.name.split('.').pop().toUpperCase() : 'File';
+        const details = element('span', `${extension} · ${(entry.size / 1024 / 1024).toFixed(2)} MB`, 'file-details');
+        details.title = `Modified ${new Date(entry.modified / 1e6).toLocaleString()}`;
         const inspect = button('Inspect', async () => {
           inspect.disabled = true;
           try {
             const result = await api('POST', '/api/inspect', { path: entry.path });
-            info.lastChild.textContent = `${result.media.kind || 'Unknown type'} · ${result.media.duration ? clock(result.media.duration) : 'Duration unknown'} · ${result.status}${result.reason ? ` · ${result.reason}` : ''}`;
-          } catch (error) { info.lastChild.textContent = error.message; }
+            details.textContent = `${result.media.kind || 'Unknown type'} · ${result.media.duration ? clock(result.media.duration) : 'Duration unknown'} · ${result.status}${result.reason ? ` · ${result.reason}` : ''}`;
+            details.title = details.textContent;
+            $('file-message').textContent = `${entry.name}: ${details.textContent}`;
+          } catch (error) { details.textContent = error.message; details.title = error.message; $('file-message').textContent = error.message; }
           finally { inspect.disabled = false; }
         });
-        row.append(check, info, inspect);
+        inspect.setAttribute('aria-label', `Inspect ${entry.name}`);
+        row.append(check, name, details, inspect);
       }
       $('file-list').append(row);
     }
     $('file-message').textContent = `${listing.entries.length} visible entries${listing.truncated ? ' · Listing limited to 1,000 entries; use a smaller folder.' : ''}`;
-  } catch (error) { $('file-message').textContent = error.message; }
+  } catch (error) { if (sequence === fileBrowseSequence) $('file-message').textContent = error.message; }
+  finally { if (sequence === fileBrowseSequence) $('file-list').setAttribute('aria-busy', 'false'); }
 }
 function updateSelected() { $('add-files').textContent = `Add selected (${fileSelection.size})`; $('add-files').disabled = updatePending() || fileSelection.size === 0; }
 $('browse-form').addEventListener('submit', event => { event.preventDefault(); void browse($('host-path').value); });
 $('roots').addEventListener('change', () => browse($('roots').value));
+$('show-hidden').addEventListener('change', () => { void browse(fileBrowsePath); });
 $('add-files').addEventListener('click', async () => {
   if (!playlist || !fileSelection.size) return;
-  const additions = fileEntries.filter(entry => fileSelection.has(entry.path)).map(entry => ({ id: '', label: '', path: entry.path }));
+  const additions = selectedHostPaths().map(path => ({ id: '', label: '', path }));
   if (await savePlaylist([...cueEdits(), ...additions])) { fileSelection.clear(); $('file-list').querySelectorAll('input[type=checkbox]').forEach(node => { node.checked = false; }); updateSelected(); }
 });
 $('reload-playlist').addEventListener('click', () => loadPlaylist());
@@ -498,15 +605,24 @@ $('save-outputs').addEventListener('click', async () => {
     notify('Outputs saved. Stage output is disabled until you enable it or trigger video.'); await refreshState();
   } catch (error) { notify(error.message, true); }
 });
-for (const [id, enabled] of [['enable-stage', true], ['disable-stage', false]]) $(id).addEventListener('click', async () => {
+async function setStageOutput(enabled) {
+  if (!csrf) { showPair(); return; }
   try { await api('POST', '/api/stage-output', { enabled }); notify(enabled ? 'Stage enable accepted.' : 'Stop and stage disable accepted.'); await refreshState(); }
-  catch (error) { notify(error.message, true); }
+  catch (error) { notify(`${enabled ? 'Stage enable' : 'Stop and stage disable'} is unconfirmed. ${error.message}`, true); }
+}
+for (const [id, enabled] of [['enable-stage', true], ['disable-stage', false]]) $(id).addEventListener('click', () => { void setStageOutput(enabled); });
+$('remote-stage').addEventListener('click', () => { void setStageOutput(!state?.stageEnabled); });
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || event.repeat || !csrf || !online || $('pairing').open) return;
+  event.preventDefault(); void setStageOutput(false);
 });
 async function initializeSession() {
   if (!await refreshState()) return false;
   if (adminPage && role !== 'admin') { notify('Open Admin on the host computer.', true); return false; }
   $('admin-view').hidden = !adminPage; $('command-view').hidden = adminPage;
   $('logout').hidden = adminPage;
+  $('transport-tools').hidden = adminPage;
+  if (!adminPage) window.smartStageWakeLock?.setConnected(role === 'command');
   connectEvents();
   if (adminPage) { await Promise.all([loadRemoteControl(), loadPlaylist(), loadDevices(), browse(), loadUpdateStatus()]); }
   return true;

@@ -1,19 +1,30 @@
 Smart Stage preview for macOS Apple Silicon/Intel and Windows ARM64/AMD64.
 
-This release adds **automatic updates at startup**. Smart Stage checks the
-project's GitHub releases, selects the matching architecture, verifies its
-checksum, installs the update and restarts with the saved show intact. No extra
-runtime or permanent updater service is needed. Install this release once to
-enable future automatic updates; earlier previews need this one manual upgrade.
-Preview 10 corrects preview 9's validation of optimized release binaries, which
-caused its updater to safely reject downloads before replacement.
+Preview 11 makes the show browser and remote easier to use:
 
-Startup checks reserve playback until complete and release controls when
-offline. Updates discovered during a running session wait until the next launch.
-Local Admin has an Updates section for status and an optional immediate update
-while stopped with stage output disabled. The updater retains the previous
-installation until the replacement confirms startup, with rollback on startup
-failure. Restart rotates the phone/tablet QR code as usual.
+- Compact Host files rows, with dot-prefixed files/folders hidden by default and
+  a **Show hidden** option.
+- Drag Host files into Playlist. On Mac, drop Finder files onto Smart Stage’s
+  Dock icon or use **Choose Media…**. Files remain at their original paths;
+  adding them does not copy files or start playback. Wait until startup updates
+  finish before importing files.
+- Small **Stage on/off** and **Disconnect** controls in the remote’s top bar.
+  Stage off stops playback and closes the stage window. Escape does the same
+  when the native app/stage or connected browser page has focus. STOP continues
+  to retain an enabled black stage.
+- A color picker and **Default** action for each cue in Admin; saved colors
+  appear on remote cue buttons with contrasting labels.
+- Optional **Keep awake** on supported secure browser pages. The default HTTP
+  LAN address shows **Needs HTTPS**: phones/tablets cannot use the standard wake
+  lock API there. Use device Auto-Lock/Screen timeout settings for HTTP. Browser
+  wake locks can still be released by backgrounding, power saving or manual lock.
+
+Automatic updates continue to install on launch, before playback. Existing
+preview 10 installations can update on their next launch. Saved shows and output
+preferences are preserved; no playback starts automatically. The Mac updater
+refreshes Smart Stage’s firewall rule and may request an administrator password
+because current builds are ad-hoc signed. No manual Firewall Settings change
+should be needed. Restart creates a new remote link/QR code.
 
 On Mac, install the app with its icon using:
 
@@ -37,10 +48,10 @@ binary; no additional runtime is required.
 
 | Computer | Download |
 | --- | --- |
-| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-arm64.zip) |
-| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-amd64.zip) |
-| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-windows-arm64.zip) |
-| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-windows-amd64.zip) |
+| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.11/smartstage-darwin-arm64.zip) |
+| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.11/smartstage-darwin-amd64.zip) |
+| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.11/smartstage-windows-arm64.zip) |
+| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.11/smartstage-windows-amd64.zip) |
 
 Launching Smart Stage automatically opens Admin in the system browser. Admin
 listens only on **127.0.0.1:8787**. Its Remote control area displays the phone/tablet

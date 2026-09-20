@@ -24,6 +24,9 @@ void ss_stage(uint64_t generation, const char *display, int enabled);
 #ifdef __APPLE__
 void ss_desktop_admin(const char *url);
 void ss_desktop_error(const char *message);
+char *ss_desktop_poll_files(void);
+int ss_desktop_files_pending(void);
+void ss_desktop_files_result(uint64_t request_id, const char *message);
 #endif
 #ifdef __cplusplus
 }

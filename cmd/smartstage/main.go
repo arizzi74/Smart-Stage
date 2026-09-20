@@ -239,6 +239,20 @@ func main() {
 		defer ticker.Stop()
 		for {
 			select {
+			case request := <-platform.DesktopFiles():
+				// Native Finder/Dock actions carry original host paths. Keep the
+				// save in this loop so shutdown cannot overtake an accepted append.
+				_, err := service.AppendHostFiles(request.Paths)
+				message := ""
+				if err != nil {
+					message = err.Error()
+					var problem *app.Error
+					if errors.As(err, &problem) && problem.Code == "updating" {
+						message = "Smart Stage is checking or installing an update. Add these files again after the update finishes. Your original files have not been changed."
+					}
+					slog.Warn("Could not add files from the desktop", "error", err)
+				}
+				platform.DesktopFileResult(request.ID, message)
 			case prepared := <-updateReady:
 				if ctx.Err() != nil {
 					_ = prepared.Abort()
