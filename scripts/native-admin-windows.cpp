@@ -111,6 +111,55 @@ bool trayDiagnostics() {
         return supported;
     });
 }
+struct DropHit {
+    bool matches=false,adminChild=false;
+    std::string evidence;
+};
+DropHit observeDropHit() {
+    return ui([]{
+        HWND admin=desktop::window;RECT bounds{};GetClientRect(admin,&bounds);
+        POINT client{bounds.right/2,bounds.bottom/2},screen=client;ClientToScreen(admin,&screen);
+        HWND hit=WindowFromPoint(screen),root=hit?GetAncestor(hit,GA_ROOT):nullptr;
+        auto describe=[](HWND handle) {
+            wchar_t name[256]{};DWORD pid=0;RECT area{};
+            if(handle) {GetClassNameW(handle,name,256);GetWindowThreadProcessId(handle,&pid);GetWindowRect(handle,&area);}
+            return "{\"hwnd\":"+std::to_string((uintptr_t)handle)+",\"class\":"+desktop::quote(desktop::utf8(name))+",\"pid\":"+std::to_string(pid)+",\"visible\":"+(IsWindowVisible(handle)?"true":"false")+",\"minimized\":"+(IsIconic(handle)?"true":"false")+",\"rect\":["+std::to_string(area.left)+","+std::to_string(area.top)+","+std::to_string(area.right)+","+std::to_string(area.bottom)+"]}";
+        };
+        DropHit result;result.matches=hit==admin;result.adminChild=hit && hit!=admin && (root==admin || IsChild(admin,hit));
+        result.evidence="{\"point\":["+std::to_string(screen.x)+","+std::to_string(screen.y)+"],\"admin\":"+describe(admin)+",\"hit\":"+describe(hit)+",\"hitRoot\":"+describe(root)+",\"foreground\":"+describe(GetForegroundWindow())+",\"directChild\":"+describe(ChildWindowFromPointEx(admin,client,CWP_SKIPINVISIBLE|CWP_SKIPDISABLED|CWP_SKIPTRANSPARENT))+",\"exactAdminHit\":"+(result.matches?"true":"false")+",\"adminChildHit\":"+(result.adminChild?"true":"false")+"}";
+        return result;
+    });
+}
+struct DropSurface {
+    bool raised=false;
+    std::string initial,settled;
+    void prepare() {
+        auto hit=observeDropHit();initial=hit.evidence;
+        auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(3);
+        while(!hit.matches && std::chrono::steady_clock::now()<deadline) {std::this_thread::sleep_for(std::chrono::milliseconds(100));hit=observeDropHit();}
+        settled=hit.evidence;
+        if(!hit.matches)std::cerr<<"Native drop hit after restore: "<<settled<<"\n";
+        require(!hit.adminChild,"A child of Admin intercepts the file-drop point; see class/PID hit diagnostics");
+        if(!hit.matches) {
+            // An unrelated runner window can cover the restored app. Establish
+            // a controlled drop surface only in this own-process test observer.
+            require(ui([]{return !(GetWindowLongPtrW(desktop::window,GWL_EXSTYLE)&WS_EX_TOPMOST);}),"Probe Admin was already topmost before controlled drop");
+            raised=ui([]{return SetWindowPos(desktop::window,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)!=FALSE;});
+            require(raised,"Could not raise the owned probe window above unrelated desktop UI");
+            deadline=std::chrono::steady_clock::now()+std::chrono::seconds(3);
+            do {hit=observeDropHit();if(hit.matches || hit.adminChild)break;std::this_thread::sleep_for(std::chrono::milliseconds(100));}while(std::chrono::steady_clock::now()<deadline);
+        }
+        report["nativeDropHitTest"]="{\"initial\":"+initial+",\"afterRestoreSettled\":"+settled+",\"final\":"+hit.evidence+",\"temporarilyRaisedAboveExternalWindow\":"+(raised?"true":"false")+"}";
+        if(!hit.matches)std::cerr<<"Native drop final hit: "<<hit.evidence<<"\n";
+        require(hit.matches,"The native Admin window is not the exact file-drop hit target");
+    }
+    void restore() {
+        if(raised) {require(ui([]{return SetWindowPos(desktop::window,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)!=FALSE;}),"Could not remove test-only topmost positioning");raised=false;}
+        require(ui([]{return !(GetWindowLongPtrW(desktop::window,GWL_EXSTYLE)&WS_EX_TOPMOST);}),"Test-only drop positioning left Admin topmost");
+        passed("nativeDropTestPositioningRestored");
+    }
+    ~DropSurface() {if(raised)try {ui([]{SetWindowPos(desktop::window,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE);});}catch(...) {}}
+};
 class Files final: public IDataObject {
     ULONG refs=1;std::vector<std::wstring> paths;bool text;
 public:
@@ -203,13 +252,15 @@ int main() {
         require(ss_desktop_poll_emergency_request()==0,"Held Escape repeated emergency requests");passed("nativeAdminEscapePolledWithoutJavaScript");
         require(!ss_desktop_files_pending(),"Native queue was not empty before drop");
         std::wstring firstPath=first,secondPath=second;
+        DropSurface dropSurface;dropSurface.prepare();
         ui([&]{
             RECT bounds{};GetClientRect(desktop::window,&bounds);POINT location{bounds.right/2,bounds.bottom/2};ClientToScreen(desktop::window,&location);
-            require(WindowFromPoint(location)==desktop::window,"Drop point is intercepted by a browser child HWND");
+            require(WindowFromPoint(location)==desktop::window,"Native drop target changed after the recorded hit test");
             auto* object=new Files({firstPath,secondPath});DWORD effect=DROPEFFECT_COPY;POINTL point{location.x,location.y};
             require(SUCCEEDED(desktop::dropTarget->DragEnter(object,0,point,&effect))&&effect==DROPEFFECT_COPY,"Native drop enter was rejected");
             effect=DROPEFFECT_COPY;require(SUCCEEDED(desktop::dropTarget->Drop(object,0,point,&effect))&&effect==DROPEFFECT_COPY,"Native Explorer-format drop was rejected");object->Release();
         });
+        dropSurface.restore();
         passed("publicHitTestTargetsNativeAdminDropWindow");passed("nativeCFHDROPDeliveredToProductionDropTarget");report["dropRequest"]=popRequest(2);
         ui([]{auto* text=new Files({},true);DWORD effect=DROPEFFECT_COPY;desktop::dropTarget->DragEnter(text,0,{0,0},&effect);require(effect==DROPEFFECT_NONE,"Text was accepted as original file paths");desktop::dropTarget->Drop(text,0,{0,0},&effect);text->Release();});require(!ss_desktop_poll_files(),"Text drop queued a file");passed("textCannotSupplyNativeOriginalPaths");
         require(ss_desktop_choose_files(),"Native media chooser was rejected");

@@ -50,6 +50,7 @@ int main(int argc, const char **argv) {
         __block NSWindow *originalWindow;
         __block WKWebView *originalWebView;
         __block NSNumber *originalEpoch;
+        __block NSTimeInterval reopenStarted = 0;
         __block NSMutableDictionary *report = [NSMutableDictionary dictionary];
         __block NSString *failure;
         void (^fail)(NSString *) = ^(NSString *message) {
@@ -115,16 +116,39 @@ int main(int argc, const char **argv) {
                 if (!ss_desktop_has_admin_window()) { fail(@"Closing Admin disabled its reusable UI"); return; }
                 report[@"closeHidWindowWithoutTerminating"] = @YES;
                 [NSApp.delegate applicationShouldHandleReopen:NSApp hasVisibleWindows:NO];
+                reopenStarted = NSProcessInfo.processInfo.systemUptime;
                 phase = 3;
             } else if (phase == 3 && window.isVisible) {
                 evaluating = YES;
                 [webView evaluateJavaScript:
-                    @"window.__smartStageNativeProbe==='preserved' && document.getElementById('gateway-url').value==='https://unsaved.example/smartstage' && document.getElementById('remote-connection-settings').open && online"
+                    @"JSON.stringify({draft:window.__smartStageNativeProbe,url:document.getElementById('gateway-url')?.value,settingsOpen:document.getElementById('remote-connection-settings')?.open,gatewayDirty:typeof gatewayDirty!=='undefined' && gatewayDirty,online:typeof online!=='undefined' && online,eventSourceState:typeof source!=='undefined'?source?.readyState:null,hidden:document.hidden})"
                     completionHandler:^(id result, NSError *jsError) {
                         evaluating = NO;
-                        if (jsError || ![result boolValue]) { fail(@"Reopening Admin reloaded or lost its UI state"); return; }
+                        if (jsError || ![result isKindOfClass:NSString.class]) {
+                            fail([NSString stringWithFormat:@"Could not inspect reopened Admin: error=%@ result=%@", jsError, result]); return;
+                        }
+                        NSDictionary *value = [NSJSONSerialization JSONObjectWithData:[result dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
+                        if (![value isKindOfClass:NSDictionary.class] ||
+                            ![value[@"draft"] isEqual:@"preserved"] ||
+                            ![value[@"url"] isEqual:@"https://unsaved.example/smartstage"] ||
+                            ![value[@"settingsOpen"] boolValue] || ![value[@"gatewayDirty"] boolValue]) {
+                            fail([NSString stringWithFormat:@"Reopening Admin reloaded or lost its unsaved UI state: %@", result]); return;
+                        }
+                        report[@"unsavedUIImmediatelyPreservedOnReopen"] = @YES;
+                        // Visibility deliberately reconnects SSE. Preserve the
+                        // draft on every poll, including the successful one,
+                        // while allowing the live connection to recover.
+                        BOOL connected = [value[@"online"] boolValue] &&
+                            [value[@"eventSourceState"] isEqual:@1] && ![value[@"hidden"] boolValue];
+                        if (!connected) {
+                            if (NSProcessInfo.processInfo.systemUptime - reopenStarted >= 15) {
+                                fail([NSString stringWithFormat:@"Reopened Admin did not restore its live connection: %@", result]);
+                            }
+                            return;
+                        }
                         report[@"dockReopenKeptSameWindowAndWebView"] = @YES;
                         report[@"unsavedUIAndLiveConnectionPreserved"] = @YES;
+                        report[@"liveEventSourceRecoveredAfterReopen"] = @YES;
                         if (!ss_desktop_show_admin() || !ss_desktop_show_admin()) { fail(@"Repeated Admin show request failed"); return; }
                         phase = 4;
                     }];
