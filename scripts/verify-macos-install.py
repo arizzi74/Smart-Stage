@@ -459,7 +459,10 @@ def main():
                 break
             if attempt < 9:
                 time.sleep(3)
-        assert raw == expected_bootstrap, "Published bootstrap differs from this checkout"
+        assert raw == expected_bootstrap, (
+            f"Published bootstrap differs from this checkout: expected {digest(expected_bootstrap)}, "
+            f"received {digest(raw)} from {verification_url}"
+        )
         script = raw.decode("utf-8")
         report.update(bootstrapURL=args.bootstrap_url, bootstrapSHA256=digest(raw),
                       bootstrapVerificationURL=verification_url,
