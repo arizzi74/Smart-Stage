@@ -124,6 +124,14 @@ try:
     print('Native test-pattern pixels, STOP blackout, restarted video and natural-end blackout observed.')
 except Exception as error:
     report.update(status='failed',reason=str(error))
+    if os.name == 'nt':
+        context_path=destination/'desktop-context.json'
+        try:
+            context=subprocess.run(['pwsh','-NoLogo','-NoProfile','-NonInteractive','-File',
+                str(root/'scripts/windows-desktop-context.ps1')],capture_output=True,text=True,timeout=20)
+            context_path.write_text(context.stdout if context.returncode==0 else json.dumps({'unavailable':context.stderr[-1000:]}))
+        except (OSError,subprocess.TimeoutExpired) as unavailable:
+            context_path.write_text(json.dumps({'unavailable':type(unavailable).__name__}))
     save(); raise
 finally:
     if process.poll() is None:

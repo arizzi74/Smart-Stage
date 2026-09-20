@@ -2,7 +2,7 @@ name: Candidate native display pixels
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/native-display.yml', 'scripts/native-display-smoke.py', 'scripts/windows_display_capture.py', 'scripts/pixel-count.go']
+    paths: ['.github/workflows/native-display.yml', 'scripts/native-display-smoke.py', 'scripts/windows_display_capture.py', 'scripts/windows-desktop-context.ps1', 'scripts/pixel-count.go']
   workflow_dispatch:
 permissions:
   contents: read
