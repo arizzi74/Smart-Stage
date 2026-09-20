@@ -31,7 +31,10 @@ explicit user request. Preview 4 is source `505a1e4`.
 passed shared race/vet, all four native build/import/media/HTTP checks,
 publication, curl/irm installation and real Admin/Command browser checks on all
 four targets. The downloaded files passed SHA-256, architecture, Go/module
-version and source-commit checks. The installers now default to preview 4.
+version and source-commit checks. After switching the default to preview 4,
+[installer run 35480086360](https://github.com/arizzi74/Smart-Stage/actions/runs/35480086360)
+and [browser run 35480086365](https://github.com/arizzi74/Smart-Stage/actions/runs/35480086365)
+also passed on all four targets without a version override.
 
 Preview 4 releases the Mac video layer with each cue while retaining the black
 stage window. [Memory evidence](docs/soak-results.md) supports the fix for

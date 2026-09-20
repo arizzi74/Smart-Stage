@@ -25,6 +25,11 @@ The one-command installers now default to this preview. The source's completed
 [resource results](soak-results.md); captured native virtual pixels and the
 Windows ARM64 setup-screen limitation are in [display results](native-display-results.md).
 
+After the default changed, [installer run 35480086360](https://github.com/arizzi74/Smart-Stage/actions/runs/35480086360)
+and [browser run 35480086365](https://github.com/arizzi74/Smart-Stage/actions/runs/35480086365)
+passed on all four targets at installer/test commit `a95a902`, without setting a
+version override. Public raw installer URLs were also checked to serve preview 4.
+
 Earlier evidence follows, retained with its own source and release identity.
 
 [Preview 3](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.3),
