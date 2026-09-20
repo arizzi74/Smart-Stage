@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
     tags: ['v*']
-    paths-ignore: ['docs/**', 'README.md', 'IMPLEMENTATION_STATUS.md', '.github/workflows/downloads.yml', '.github/workflows/soak.yml', '.github/workflows/browser-native.yml', '.github/workflows/windows-audio.yml']
+    paths-ignore: ['docs/**', 'README.md', 'IMPLEMENTATION_STATUS.md', 'install.sh', 'scripts/verify-macos-install.py', '.github/workflows/install-macos.yml', '.github/workflows/downloads.yml', '.github/workflows/soak.yml', '.github/workflows/browser-native.yml', '.github/workflows/windows-audio.yml']
   pull_request:
   workflow_dispatch:
 permissions:

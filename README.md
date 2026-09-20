@@ -15,10 +15,33 @@ failed on shared driver meters. Mac CI uses virtual/null audio. Read [verificati
 and [implementation status](IMPLEMENTATION_STATUS.md). This is not an accepted
 production release.
 
-## Download
+## Install on Mac
+
+Open Terminal, paste this command, and press Return:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
+```
+
+The installer detects Apple Silicon or Intel, downloads the matching preview 6
+app ZIP, verifies its SHA-256 checksum, and installs **Smart Stage.app** with its
+icon into `~/Applications`. It removes `com.apple.quarantine` only from that app
+and its contents, then launches it. No administrator password or extra runtime
+is required. It does not change your saved shows.
+
+Admin opens automatically in your system browser. Keep the Terminal window
+running; Ctrl+C exits Smart Stage. Later, open **Smart Stage.app** from the
+Applications folder inside your home folder. Stop the app before running the
+installer again to update it.
+
+This deliberately removes this app's quarantine check; it does not provide Apple
+notarization or disable Gatekeeper system-wide. Other macOS permissions, such as
+local-network access, may still need approval.
+
+## Download ZIPs
 
 Download the ZIP for your computer, extract it, and open the executable inside.
-There is no installer. Each primary ZIP contains just the single Smart Stage
+Each standalone ZIP below contains just the single Smart Stage
 executable, including both browser interfaces and native playback.
 
 | Computer | Download |
@@ -28,11 +51,18 @@ executable, including both browser interfaces and native playback.
 | Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-windows-arm64.zip) |
 | Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-windows-amd64.zip) |
 
-[Release notes, checksums and optional Mac apps](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.6).
-Windows executables include the Smart Stage icon. For a Finder icon on Mac,
-the optional `.app.zip` contains a bundle around the same core executable;
-opening `Smart Stage.app` starts it in Terminal. The primary `.zip` above
-contains only `smartstage` (Mac) or `smartstage.exe` (Windows).
+[Release notes and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.6).
+Windows executables include the Smart Stage icon. Mac app bundles with the icon
+are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-darwin-arm64.app.zip)
+and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-darwin-amd64.app.zip).
+Each app bundle includes the same core executable plus its Finder launcher and
+icon. Opening `Smart Stage.app` starts it in Terminal and opens Admin. The
+standalone ZIPs above contain only `smartstage` (Mac) or `smartstage.exe` (Windows).
+
+Mac files downloaded through your browser are still unnotarized and may require
+**System Settings → Privacy & Security → Open Anyway** after the first launch
+attempt. The Mac installation command above handles the app-specific quarantine
+removal automatically.
 
 Windows 11 is the intended baseline. Mac builds target macOS 12.0 and have been
 exercised on macOS 15.7.9 CI, not every intervening OS version. Mac binaries are
@@ -43,7 +73,8 @@ acceptance testing.
 
 ## First show
 
-1. Extract the ZIP and open `smartstage` (`smartstage.exe` on Windows) in the
+1. On Mac, use the installation command above or open the extracted app. For a
+   standalone ZIP, open `smartstage` (`smartstage.exe` on Windows) in the
    signed-in interactive desktop session. Keep the application running. It
    automatically opens **Admin** in your system browser at
    `http://127.0.0.1:8787/admin`. Admin is available only on the host computer.
@@ -122,6 +153,12 @@ requirements.
 Third-party license notices are embedded in the executable and available from
 the local Admin server at `http://127.0.0.1:8787/licenses.txt` (use your selected
 Admin port if changed). They are also retained with the vendored source.
+
+The Mac installer uses built-in macOS tools. Advanced overrides are
+`SMARTSTAGE_VERSION` (release tag), `SMARTSTAGE_INSTALL_DIR` (parent folder for
+`Smart Stage.app`) and `SMARTSTAGE_NO_LAUNCH=1` (install without opening it).
+Its native CI check exercises real ZIP downloads, targeted quarantine removal,
+replacement/refusal behavior and Finder/Terminal-to-Admin startup on both Macs.
 
 ```sh
 go test -race ./...

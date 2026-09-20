@@ -17,6 +17,12 @@ Admin is now localhost-only and opens automatically, remote control uses a
 separate listener with a numeric token in a QR/link, and four single-executable
 ZIPs replace installers. See the [decision record](decisions.md#local-admin-and-camera-pairing-20-september-2026).
 
+The user subsequently reported that the Apple Silicon standalone download was
+blocked by Gatekeeper with Apple's unable-to-check-for-malware message. No
+successful physical launch or output observation follows from that report.
+The latest request adds a Mac curl installer that installs the icon-bearing app
+and removes quarantine only from that app. It does not establish notarization.
+
 Current release: preview 6, commit `4aa3529`.
 [Native/browser run 35500115900](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115900)
 passed on all four target runners. [Tag run 35500115581](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115581)

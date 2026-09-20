@@ -24,7 +24,9 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.6
   command-role path redaction.
 - Reproducible matching-OS builds, import audits, checksums, release automation,
   four portable ZIP downloads containing one executable each, and operating/API/
-  architecture documentation. Installer scripts are retired in the current source.
+  architecture documentation. A Mac-only curl installer verifies and installs
+  the icon-bearing app bundle, removes quarantine only from that app, and opens
+  Admin. Windows retains direct ZIP downloads.
 - Embedded Windows executable icons and optional Mac Finder apps with the same
   artwork; Finder starts the bundled executable in Terminal and opens local Admin.
 

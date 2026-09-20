@@ -9,8 +9,11 @@ Preview 6 changes the primary downloads to four ZIPs, each containing exactly
 one executable. Launch opens local Admin in the system browser. Admin binds
 only to `127.0.0.1:8787`; the separate remote-control listener uses port `8788`.
 Admin displays remote URLs and a QR code containing the per-launch numeric token.
-Installer scripts have been retired from the current source. Historical release
-and installer results below remain evidence for their named older versions.
+The original standalone-binary installers were retired in preview 6. A later
+Mac-only installer uses the existing preview 6 `.app.zip` assets, installs the
+app with its icon under `~/Applications`, and removes quarantine only from that
+app before launch. Historical release and installer results below remain
+evidence for their named older versions.
 
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin and report

@@ -48,9 +48,14 @@ fail explicitly; no fake backend is linked as a production fallback.
 
 The user additionally requested Windows ARM64 builds, pushing commits to
 `arizzi74/Smart-Stage` and GitHub binary publication. The later download request
-replaces curl/irm installation with direct architecture-specific ZIP links.
-Each primary ZIP contains one executable; browser assets, native playback and
-QR rendering are compiled in. Optional macOS app bundles provide a Finder icon.
+initially replaced curl/irm installation with direct architecture-specific ZIP
+links. The subsequent Mac launch request adds a Mac-only curl installer for the
+existing app bundle with its Finder icon. It verifies the published archive and
+removes quarantine only from that installed app, as explicitly requested by the
+user. ZIP downloads remain available, and Windows continues to use ZIPs. Each
+standalone ZIP contains one executable; browser assets, native playback and QR
+rendering are compiled in. The Mac app bundle adds a launcher and icon around
+the same executable; it is one Finder application, not one physical file.
 Preview publication remains explicitly incomplete acceptance until physical
 checks pass.
 

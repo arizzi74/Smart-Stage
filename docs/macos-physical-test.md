@@ -35,17 +35,20 @@ to be installed for this test.
 
 ## Download and start an isolated test show
 
-[Download the Apple Silicon ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-darwin-arm64.zip)
-and extract it. It contains just `smartstage`. Opening that executable starts
-the normal saved show and automatically opens Admin in the system browser.
-There is no installation command or additional runtime.
-
-For this isolated physical test, use Terminal to change to the folder containing
-the extracted executable, then run:
+Install the architecture-matched app with its icon, suppressing automatic launch
+so that this test can use its own saved-show directory:
 
 ```sh
-./smartstage --version
-./smartstage --config-dir "$HOME/Library/Application Support/SmartStage-Physical-Test"
+curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | SMARTSTAGE_NO_LAUNCH=1 sh
+```
+
+The installer verifies the app ZIP, installs into `~/Applications`, and removes
+quarantine only from Smart Stage. It requires no additional runtime. For this
+isolated physical test, run the bundled executable from Terminal:
+
+```sh
+"$HOME/Applications/Smart Stage.app/Contents/MacOS/smartstage" --version
+"$HOME/Applications/Smart Stage.app/Contents/MacOS/smartstage" --config-dir "$HOME/Library/Application Support/SmartStage-Physical-Test"
 ```
 
 Record the complete version line. Keep Terminal running. The separate test
@@ -54,10 +57,12 @@ Smart Stage instance first so local Admin port 8787 and remote-control port 8788
 are available. Admin opens automatically at `http://127.0.0.1:8787/admin` and is
 accessible only on the Mac itself.
 
-The optional Finder app starts the normal configuration. Use the Terminal
-command above for this isolated test. Mac builds are ad-hoc signed rather than
-Developer ID signed/notarized; record any per-app security or local-network
-prompt and whether launch succeeds. No developer tools are required.
+Opening the app in Finder starts the normal configuration. Use the Terminal
+command above for this isolated test. Direct [Apple Silicon standalone ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-darwin-arm64.zip)
+downloads also remain available, but browser-downloaded files may require
+**Privacy & Security → Open Anyway**. Mac builds remain ad-hoc signed rather than
+Developer ID signed/notarized; record any security or local-network prompt and
+whether launch succeeds. No developer tools are required.
 
 ## First pass: routing, STOP and restart
 
