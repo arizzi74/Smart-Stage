@@ -22,6 +22,10 @@ blocked by Gatekeeper with Apple's unable-to-check-for-malware message. No
 successful physical launch or output observation follows from that report.
 The latest request adds a Mac curl installer that installs the icon-bearing app
 and removes quarantine only from that app. It does not establish notarization.
+This path passed native installation, quarantine, preservation/rollback and
+app-to-Admin launch checks on both Mac architectures in
+[run 35501797274](https://github.com/arizzi74/Smart-Stage/actions/runs/35501797274).
+The user's own Mac launch and physical output observations remain pending.
 
 Current release: preview 6, commit `4aa3529`.
 [Native/browser run 35500115900](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115900)

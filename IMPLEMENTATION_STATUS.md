@@ -32,6 +32,14 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.6
 
 ## Built and automatically tested
 
+The Mac app installer passed on Apple Silicon and Intel in
+[run 35501797274](https://github.com/arizzi74/Smart-Stage/actions/runs/35501797274).
+It downloads the existing preview 6 bundles, verifies them, clears only the app's
+quarantine, preserves configuration and unrelated attributes, safely restores
+failed/interrupted replacements, and launches the installed app with local Admin.
+The [native reports](docs/verification/macos-app-install/) distinguish these
+hosted tests from physical and clean-machine acceptance.
+
 All four: macOS ARM64/AMD64, Windows ARM64/AMD64. Windows ARM64 was added by
 explicit user request. Preview 6 is source `4aa3529`; its localhost Admin,
 automatic browser launch, numeric QR/link pairing, isolated remote listener,

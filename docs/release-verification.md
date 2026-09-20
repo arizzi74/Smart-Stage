@@ -24,6 +24,20 @@ not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
 
+The Mac app installer at source `24777c368067d026379693b1ea16fdd8ed41924b` passed
+[run 35501797274](https://github.com/arizzi74/Smart-Stage/actions/runs/35501797274)
+on both native Mac architectures (macOS 15.7.9). Published installer bytes and
+preview 6 app archives matched their checksums. Tests injected real quarantine
+attributes before the normal per-app cleanup and verified that unrelated files,
+other attributes and saved configuration stayed intact. Corrupt downloads,
+unrelated/symlink destinations and running-app replacement were refused. Failed
+replacement and an interrupted backup rename restored the original app. The
+installer opened the icon-bearing app through Finder/Terminal, and the exact
+installed core served Admin only on loopback. Reports and scope:
+[`verification/macos-app-install/`](verification/macos-app-install/).
+The app binaries remain the already-published preview 6 builds; this adds an
+installation path and does not provide Apple notarization.
+
 [Preview 6](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.6)
 is source `4aa3529fb9695d7b9da870dae548a5400acb7758`.
 [Native/browser run 35500115900](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115900)
