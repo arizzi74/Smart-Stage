@@ -65,9 +65,13 @@ def admin_window_checks(executable, evidence_path):
                     helpers.wait_for(lambda: admin.get("/api/state")["state"], 30, "the isolated real Admin host")
                     environment["SMARTSTAGE_APP_LAUNCH"] = "1"
                     environment["SMARTSTAGE_APP_ICON"] = str(root / "assets/icon/smartstage.icns")
-                    result = subprocess.run([
-                        str(binary), f"http://127.0.0.1:{admin_port}/admin", str(original), str(second),
-                    ], env=environment, capture_output=True, text=True, timeout=80)
+                    # These are test-only probe inputs, not native application
+                    # command-line files that AppKit can dispatch on startup.
+                    environment["SMARTSTAGE_PROBE_ADMIN_URL"] = f"http://127.0.0.1:{admin_port}/admin"
+                    environment["SMARTSTAGE_PROBE_ORIGINAL_ONE"] = str(original)
+                    environment["SMARTSTAGE_PROBE_ORIGINAL_TWO"] = str(second)
+                    result = subprocess.run([str(binary)], env=environment,
+                                            capture_output=True, text=True, timeout=80)
                     report["probeLog"] = result.stderr[-16000:]
                     assert result.returncode == 0, f"Native Admin probe failed ({result.returncode}): {result.stderr}"
                     report.update(json.loads(result.stdout))

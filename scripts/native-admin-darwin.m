@@ -26,14 +26,22 @@ static NSUInteger adminWindowCount(NSWindow *admin) {
 
 int main(int argc, const char **argv) {
     @autoreleasepool {
-        if (argc != 4) return 2;
+        (void)argv;
+        // AppKit interprets positional process arguments as native file-open
+        // requests during finishLaunching. Keep probe data out of argv so the
+        // only file event in this test is the deliberate pasteboard drop.
+        const char *adminAddress = getenv("SMARTSTAGE_PROBE_ADMIN_URL");
+        const char *firstOriginal = getenv("SMARTSTAGE_PROBE_ORIGINAL_ONE");
+        const char *secondOriginal = getenv("SMARTSTAGE_PROBE_ORIGINAL_TWO");
+        if (argc != 1 || !adminAddress || !*adminAddress ||
+            !firstOriginal || !*firstOriginal || !secondOriginal || !*secondOriginal) return 2;
         setenv("SMARTSTAGE_APP_LAUNCH", "1", 1);
         char *error = ss_init();
         if (error) { fprintf(stderr, "%s\n", error); ss_free(error); return 3; }
-        NSString *address = [NSString stringWithUTF8String:argv[1]];
+        NSString *address = [NSString stringWithUTF8String:adminAddress];
         NSArray<NSURL *> *originals = @[
-            [NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[2]]],
-            [NSURL fileURLWithPath:[NSString stringWithUTF8String:argv[3]]]
+            [NSURL fileURLWithPath:[NSString stringWithUTF8String:firstOriginal]],
+            [NSURL fileURLWithPath:[NSString stringWithUTF8String:secondOriginal]]
         ];
         ss_desktop_admin(address.UTF8String);
         if (!ss_desktop_has_admin_window() || !ss_desktop_show_admin()) return 4;
@@ -121,6 +129,10 @@ int main(int argc, const char **argv) {
                         phase = 4;
                     }];
             } else if (phase == 4) {
+                if (ss_desktop_files_pending()) {
+                    fail(@"Native file queue was not empty before the deliberate drop"); return;
+                }
+                report[@"nativeFileQueueEmptyBeforeDrop"] = @YES;
                 NSPoint dropPoint = NSMakePoint(NSMidX(webView.bounds), NSMidY(webView.bounds));
                 // NSView hitTest: takes its superview's coordinates. Check
                 // public Cocoa targeting before exercising the drop primitive;
