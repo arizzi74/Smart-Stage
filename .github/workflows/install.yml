@@ -51,3 +51,68 @@ jobs:
             }
             if (-not $ok) { throw 'Installed application did not serve Command' }
           } finally { Stop-Process -Id $appProcess.Id -ErrorAction SilentlyContinue }
+      - name: Verify default installation and replacement with Windows PowerShell 5.1
+        if: runner.os == 'Windows'
+        shell: powershell
+        env:
+          EXPECTED_ARCH: ${{ runner.arch == 'ARM64' && 'arm64' || 'amd64' }}
+        run: |
+          if ($PSVersionTable.PSEdition -ne 'Desktop' -or $PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -ne 1) { throw 'Expected the built-in Windows PowerShell 5.1' }
+          if ($env:SMARTSTAGE_INSTALL_DIR -or $env:SMARTSTAGE_VERSION) { throw 'This check requires installer defaults' }
+          $reportPath = Join-Path $env:RUNNER_TEMP 'windows-powershell51-install.json'
+          $destination = Join-Path $env:LOCALAPPDATA 'SmartStage\bin'
+          $exe = Join-Path $destination 'smartstage.exe'
+          $report = [ordered]@{
+            status = 'incomplete'
+            powershellVersion = $PSVersionTable.PSVersion.ToString()
+            powershellEdition = $PSVersionTable.PSEdition
+            processArchitecture = $env:PROCESSOR_ARCHITECTURE
+            nativeArchitectureOverride = $env:PROCESSOR_ARCHITEW6432
+            expectedBinaryArchitecture = $env:EXPECTED_ARCH
+            defaultInstallDirectory = $destination
+            physicalRoutingVerified = $false
+            cleanMachineVerified = $false
+          }
+          $appProcess = $null
+          try {
+            if (Test-Path -LiteralPath $exe) { throw 'Expected a fresh default installation directory' }
+            irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | iex
+            $report.version = (& $exe --version | Out-String).Trim()
+            if ($LASTEXITCODE -ne 0 -or $report.version -notmatch ('windows/' + $env:EXPECTED_ARCH + '$')) { throw 'Published executable did not start in the native architecture' }
+            $report.sha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $exe).Hash.ToLowerInvariant()
+            $config = Join-Path $env:RUNNER_TEMP 'powershell51-config'
+            $appProcess = Start-Process -FilePath $exe -ArgumentList "--port 18788 --bind 127.0.0.1 --config-dir `"$config`"" -PassThru -RedirectStandardOutput (Join-Path $env:RUNNER_TEMP 'powershell51-app.log') -RedirectStandardError (Join-Path $env:RUNNER_TEMP 'powershell51-app-error.log')
+            $report.servedCommandPage = $false
+            for ($attempt = 0; $attempt -lt 30; $attempt++) {
+              try {
+                $page = Invoke-WebRequest -UseBasicParsing http://127.0.0.1:18788/command
+                if ($page.StatusCode -eq 200 -and $page.Content -match 'Smart Stage') { $report.servedCommandPage = $true; break }
+              } catch { Start-Sleep -Seconds 1 }
+            }
+            if (-not $report.servedCommandPage) { throw 'Default-installed application did not serve Command' }
+            Stop-Process -Id $appProcess.Id
+            $appProcess.WaitForExit()
+            $appProcess = $null
+            irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | iex
+            $report.reinstallSameHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $exe).Hash.ToLowerInvariant() -eq $report.sha256
+            if (-not $report.reinstallSameHash) { throw 'Reinstallation changed the published binary bytes' }
+            $userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
+            $report.userPathEntries = @(($userPath -split ';') | Where-Object { $_ -eq $destination }).Count
+            if ($report.userPathEntries -ne 1) { throw 'Default install directory is missing or duplicated in the user PATH' }
+            if (@(Get-ChildItem -LiteralPath $destination -Directory -Filter '.install-*').Count -ne 0) { throw 'Installer temporary directory was retained' }
+            $report.status = 'passed'
+          } catch {
+            $report.status = 'failed'
+            $report.error = $_.Exception.Message
+            throw
+          } finally {
+            if ($appProcess) { Stop-Process -Id $appProcess.Id -ErrorAction SilentlyContinue }
+            $report | ConvertTo-Json -Depth 4 | Set-Content -Encoding UTF8 -LiteralPath $reportPath
+          }
+      - name: Preserve built-in PowerShell installation evidence
+        if: always() && runner.os == 'Windows'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-powershell51-${{ runner.arch }}
+          path: ${{ runner.temp }}/windows-powershell51-install.json
+          if-no-files-found: warn
