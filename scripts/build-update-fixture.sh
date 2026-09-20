@@ -17,7 +17,7 @@ trap cleanup EXIT
 git worktree add --detach "$fixture_source" HEAD
 (
     cd "$fixture_source"
-    VERSION=v0.0.0-preview.0 bash scripts/build.sh "$target_os" "$target_arch"
+    VERSION=v0.0.0-preview.1 bash scripts/build.sh "$target_os" "$target_arch"
 )
 python3 - "$fixture_source" "$output" "$target_os" "$target_arch" <<'PY'
 import hashlib
@@ -35,7 +35,7 @@ archive = output / name
 shutil.copy2(source / "dist" / f"smartstage-{target_os}-{arch}{suffix}", archive)
 binary = source / "dist" / f"smartstage-{target_os}-{arch}{'.exe' if target_os == 'windows' else ''}"
 manifest = {
-    "version": "v0.0.0-preview.0",
+    "version": "v0.0.0-preview.1",
     "sourceSHA": subprocess.check_output(["git", "-C", str(source), "rev-parse", "HEAD"], text=True).strip(),
     "target": f"{target_os}/{arch}",
     "archive": name,

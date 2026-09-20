@@ -119,7 +119,7 @@ func TestNativeHelperReplacementAndStartupRollback(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			before, err := os.Stat(target.Path)
+			before, err := snapshotFileIdentity(target.Path)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -176,7 +176,7 @@ func TestNativeHelperReplacementAndStartupRollback(t *testing.T) {
 			if outcome.Version != p.Version {
 				t.Fatalf("wrong outcome version: %+v", outcome)
 			}
-			after, err := os.Stat(target.Path)
+			after, err := snapshotFileIdentity(target.Path)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -212,6 +212,17 @@ func TestNativeHelperReplacementAndStartupRollback(t *testing.T) {
 			}
 		})
 	}
+}
+
+func snapshotFileIdentity(path string) (os.FileInfo, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	// Windows os.Stat defers file-ID lookup until SameFile is called. A handle
+	// stat snapshots identity now, before the path can be replaced by the helper.
+	return file.Stat()
 }
 
 func TestStartupReceiptRejectsWrongVersionAndExecutable(t *testing.T) {

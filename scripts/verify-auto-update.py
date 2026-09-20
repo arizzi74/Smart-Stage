@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Exercise production startup updates on an ephemeral native CI runner.
 
-The fixture is the release's exact source, built as v0.0.0-preview.0. It uses
+The fixture is the release's exact source, built as v0.0.0-preview.1. It uses
 the real public GitHub API, downloads and updater. There is no alternate feed,
 transport, helper or startup acknowledgement. Firewall approval is explicitly
 skipped; its real rules and authorization are checked by installer verification.
@@ -28,7 +28,7 @@ import zipfile
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURE_VERSION = "v0.0.0-preview.0"
+FIXTURE_VERSION = "v0.0.0-preview.1"
 
 
 def digest(path):
