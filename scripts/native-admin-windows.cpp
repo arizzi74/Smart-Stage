@@ -10,6 +10,7 @@ namespace probe {
 std::map<std::string,std::string> report;
 void require(bool condition,const char* message) {if(!condition)throw std::string(message);}
 void passed(const char* name) {report[name]="true";std::cerr<<"Native Admin probe passed: "<<name<<"\n";}
+void emitReport() {std::cout<<"{";bool first=true;for(const auto& item:report) {if(!first)std::cout<<",";first=false;std::cout<<desktop::quote(item.first)<<":"<<item.second;}std::cout<<"}\n";}
 template<class F> auto ui(F fn) -> decltype(fn()) {
     using T=decltype(fn()); auto promise=std::make_shared<std::promise<T>>();auto result=promise->get_future();
     require(desktop::post([fn,promise]{try {if constexpr(std::is_void_v<T>) {fn();promise->set_value();} else promise->set_value(fn());}catch(...) {promise->set_exception(std::current_exception());}}),"Could not queue native observation");
@@ -113,10 +114,18 @@ bool trayDiagnostics() {
     });
 }
 struct DropHit {
-    bool matches=false,adminChild=false;
+    bool matches=false,adminChild=false,clientMatches=false,adminEnabled=false,external=false;
     POINT screen{};
     std::string evidence;
 };
+bool enabledWithParents(HWND handle) {
+    if(!handle)return false;
+    for(unsigned count=0;handle && count<64;++count) {
+        if(!IsWindowEnabled(handle))return false;
+        HWND parent=GetAncestor(handle,GA_PARENT);if(parent==handle)return false;handle=parent;
+    }
+    return handle==nullptr;
+}
 DropHit observeDropHit(int xPercent=50,int yPercent=50) {
     return ui([xPercent,yPercent]{
         HWND admin=desktop::window;RECT bounds{};GetClientRect(admin,&bounds);
@@ -126,38 +135,46 @@ DropHit observeDropHit(int xPercent=50,int yPercent=50) {
         auto describe=[](HWND handle) {
             wchar_t name[256]{};DWORD pid=0;RECT area{};
             if(handle) {GetClassNameW(handle,name,256);GetWindowThreadProcessId(handle,&pid);GetWindowRect(handle,&area);}
-            return "{\"hwnd\":"+std::to_string((uintptr_t)handle)+",\"class\":"+desktop::quote(desktop::utf8(name))+",\"pid\":"+std::to_string(pid)+",\"visible\":"+(IsWindowVisible(handle)?"true":"false")+",\"minimized\":"+(IsIconic(handle)?"true":"false")+",\"rect\":["+std::to_string(area.left)+","+std::to_string(area.top)+","+std::to_string(area.right)+","+std::to_string(area.bottom)+"]}";
+            return "{\"hwnd\":"+std::to_string((uintptr_t)handle)+",\"class\":"+desktop::quote(desktop::utf8(name))+",\"pid\":"+std::to_string(pid)+",\"visible\":"+(IsWindowVisible(handle)?"true":"false")+",\"minimized\":"+(IsIconic(handle)?"true":"false")+",\"enabled\":"+(IsWindowEnabled(handle)?"true":"false")+",\"ancestorsEnabled\":"+(enabledWithParents(handle)?"true":"false")+",\"rect\":["+std::to_string(area.left)+","+std::to_string(area.top)+","+std::to_string(area.right)+","+std::to_string(area.bottom)+"]}";
         };
         DropHit result;result.screen=screen;result.matches=hit==admin;result.adminChild=hit && hit!=admin && (root==admin || IsChild(admin,hit));
+        result.clientMatches=ChildWindowFromPointEx(admin,client,CWP_SKIPINVISIBLE|CWP_SKIPDISABLED|CWP_SKIPTRANSPARENT)==admin;
+        result.adminEnabled=enabledWithParents(admin);result.external=hit && root && root!=admin && !result.adminChild;
         result.evidence="{\"point\":["+std::to_string(screen.x)+","+std::to_string(screen.y)+"],\"clientPoint\":["+std::to_string(client.x)+","+std::to_string(client.y)+"],\"clientSize\":["+std::to_string(bounds.right)+","+std::to_string(bounds.bottom)+"],\"admin\":"+describe(admin)+",\"hit\":"+describe(hit)+",\"hitRoot\":"+describe(root)+",\"foreground\":"+describe(GetForegroundWindow())+",\"directChild\":"+describe(ChildWindowFromPointEx(admin,client,CWP_SKIPINVISIBLE|CWP_SKIPDISABLED|CWP_SKIPTRANSPARENT))+",\"exactAdminHit\":"+(result.matches?"true":"false")+",\"adminChildHit\":"+(result.adminChild?"true":"false")+"}";
         return result;
     });
 }
 struct DropSurface {
-    bool raised=false;
+    bool raised=false,globalExact=false,allGridExternal=true,allGridClient=true,allGridEnabled=true,gridChild=false;
+    unsigned gridCount=0;
     POINT point{};
     std::string initial,settled,beforeRaise="[]",afterRaise="[]";
     DropHit interiorGrid(DropHit previous,std::string& evidence) {
-        evidence="[";bool first=true,selected=false;
+        evidence="[";bool first=true,selected=false;DropHit firstSample;
         for(int y:{20,35,50,65,80})for(int x:{20,35,50,65,80}) {
             auto candidate=observeDropHit(x,y);
-            if(!first)evidence+=',';first=false;evidence+=candidate.evidence;
-            if(candidate.adminChild)std::cerr<<"Native interior drop sample intercepted by Admin child: "<<candidate.evidence<<"\n";
-            require(!candidate.adminChild,"An Admin child intercepts an interior drop sample; see class/PID diagnostics");
+            if(!first)evidence+=',';else firstSample=candidate;first=false;evidence+=candidate.evidence;
+            ++gridCount;allGridExternal=allGridExternal && candidate.external;allGridClient=allGridClient && candidate.clientMatches;
+            allGridEnabled=allGridEnabled && candidate.adminEnabled;gridChild=gridChild || candidate.adminChild;
             if(candidate.matches && !selected) {previous=candidate;selected=true;}
         }
-        evidence+=']';return previous;
+        evidence+=']';return selected?previous:firstSample;
+    }
+    void retain(const DropHit& hit) {
+        report["nativeDropHitTest"]="{\"initial\":"+initial+",\"afterRestoreSettled\":"+settled+",\"interiorCandidatesBeforeRaise\":"+beforeRaise+",\"interiorCandidatesAfterRaise\":"+afterRaise+",\"final\":"+hit.evidence+",\"temporarilyRaisedAboveExternalWindow\":"+(raised?"true":"false")+"}";
     }
     void prepare() {
         auto hit=observeDropHit();initial=hit.evidence;
         auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(3);
         while(!hit.matches && std::chrono::steady_clock::now()<deadline) {std::this_thread::sleep_for(std::chrono::milliseconds(100));hit=observeDropHit();}
         settled=hit.evidence;
+        retain(hit);
         if(!hit.matches)std::cerr<<"Native drop hit after restore: "<<settled<<"\n";
         require(!hit.adminChild,"A child of Admin intercepts the file-drop point; see class/PID hit diagnostics");
         // A shell dialog may cover only the center. Use a real uncovered point
         // within the middle 20–80% of the WebView client, never its frame/edge.
-        if(!hit.matches)hit=interiorGrid(hit,beforeRaise);
+        if(!hit.matches) {hit=interiorGrid(hit,beforeRaise);retain(hit);}
+        require(!gridChild,"An Admin child intercepts an interior drop sample; see retained hit evidence");
         if(!hit.matches) {
             // An unrelated runner window can cover the restored app. Establish
             // a controlled drop surface only in this own-process test observer.
@@ -166,13 +183,22 @@ struct DropSurface {
             require(raised,"Could not raise the owned probe window above unrelated desktop UI");
             deadline=std::chrono::steady_clock::now()+std::chrono::seconds(3);
             do {hit=observeDropHit();if(hit.matches || hit.adminChild)break;std::this_thread::sleep_for(std::chrono::milliseconds(100));}while(std::chrono::steady_clock::now()<deadline);
+            retain(hit);
             require(!hit.adminChild,"An Admin child intercepts the raised drop target; see hit diagnostics");
-            if(!hit.matches)hit=interiorGrid(hit,afterRaise);
+            if(!hit.matches) {hit=interiorGrid(hit,afterRaise);retain(hit);}
         }
         point=hit.screen;
-        report["nativeDropHitTest"]="{\"initial\":"+initial+",\"afterRestoreSettled\":"+settled+",\"interiorCandidatesBeforeRaise\":"+beforeRaise+",\"interiorCandidatesAfterRaise\":"+afterRaise+",\"final\":"+hit.evidence+",\"temporarilyRaisedAboveExternalWindow\":"+(raised?"true":"false")+"}";
+        retain(hit);
         if(!hit.matches)std::cerr<<"Native drop final hit: "<<hit.evidence<<"\n";
-        require(hit.matches,"The native Admin window is not the exact file-drop hit target");
+        require(!gridChild && hit.clientMatches && allGridClient,"An Admin child intercepts the native client drop target");
+        require(hit.adminEnabled && allGridEnabled,"Admin or an ancestor is disabled and cannot accept native drops");
+        globalExact=hit.matches;
+        if(!globalExact) {
+            require(raised && gridCount==50 && allGridExternal && allGridClient && hit.external,"Global drop hit testing failed without conclusive external desktop occlusion");
+            std::cerr<<"Native drop probe: unrelated desktop windows cover all 50 interior samples; verifying the enabled Admin client OLE handler without claiming a global desktop hit\n";
+        }
+        report["globalDesktopHitTest"]=desktop::quote(globalExact?"exact-admin-hit":"externally-occluded");
+        report["globalExactHit"]=globalExact?"true":"false";
     }
     void restore() {
         if(raised) {require(ui([]{return SetWindowPos(desktop::window,HWND_NOTOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)!=FALSE;}),"Could not remove test-only topmost positioning");raised=false;}
@@ -277,14 +303,19 @@ int main() {
         ui([&]{
             POINT location=dropSurface.point,client=location;RECT bounds{};GetClientRect(desktop::window,&bounds);ScreenToClient(desktop::window,&client);
             require(client.x>=32 && client.y>=32 && client.x<=bounds.right-32 && client.y<=bounds.bottom-32,"Selected drop point moved outside the client interior");
-            require(WindowFromPoint(location)==desktop::window,"Native drop target changed after the recorded hit test");
+            require(enabledWithParents(desktop::window),"Admin became disabled before native drop delivery");
+            require(ChildWindowFromPointEx(desktop::window,client,CWP_SKIPINVISIBLE|CWP_SKIPDISABLED|CWP_SKIPTRANSPARENT)==desktop::window,"An Admin child intercepted the selected delivery point");
+            HWND actual=WindowFromPoint(location),root=actual?GetAncestor(actual,GA_ROOT):nullptr;
+            if(dropSurface.globalExact)require(actual==desktop::window,"Native drop target changed after the recorded hit test");
+            else require(actual && root && root!=desktop::window && !IsChild(desktop::window,actual),"External desktop occlusion changed before native drop delivery");
             report["nativeDropDeliveryPoint"]="["+std::to_string(location.x)+","+std::to_string(location.y)+"]";
             auto* object=new Files({firstPath,secondPath});DWORD effect=DROPEFFECT_COPY;POINTL point{location.x,location.y};
             require(SUCCEEDED(desktop::dropTarget->DragEnter(object,0,point,&effect))&&effect==DROPEFFECT_COPY,"Native drop enter was rejected");
             effect=DROPEFFECT_COPY;require(SUCCEEDED(desktop::dropTarget->Drop(object,0,point,&effect))&&effect==DROPEFFECT_COPY,"Native Explorer-format drop was rejected");object->Release();
         });
         dropSurface.restore();
-        passed("publicHitTestTargetsNativeAdminDropWindow");passed("nativeCFHDROPDeliveredToProductionDropTarget");report["dropRequest"]=popRequest(2);
+        report["publicHitTestTargetsNativeAdminDropWindow"]=dropSurface.globalExact?"true":"false";
+        passed("nativeClientHitTestTargetsAdminDropWindow");passed("nativeCFHDROPDeliveredToProductionDropTarget");report["dropRequest"]=popRequest(2);
         ui([]{auto* text=new Files({},true);DWORD effect=DROPEFFECT_COPY;desktop::dropTarget->DragEnter(text,0,{0,0},&effect);require(effect==DROPEFFECT_NONE,"Text was accepted as original file paths");desktop::dropTarget->Drop(text,0,{0,0},&effect);text->Release();});require(!ss_desktop_poll_files(),"Text drop queued a file");passed("textCannotSupplyNativeOriginalPaths");
         require(ss_desktop_choose_files(),"Native media chooser was rejected");
         wait(chooserVisible,"Native Windows file dialog did not become visible");
@@ -305,7 +336,7 @@ int main() {
         ss_windows_desktop_shutdown();require(!IsWindow(original),"Native shutdown left Admin open");passed("nativeQuitClosedAdminWindow");
         require(!ss_desktop_files_pending(),"Cancelling the chooser during shutdown queued unexpected files");passed("shutdownWithOpenNativeChooserCompleted");
         require(!std::filesystem::exists(desktop::directory),"Normal WebView shutdown left its private browser profile behind");passed("privateWebViewProfileRemovedAfterShutdown");report["status"]="\"passed\"";
-        std::cout<<"{";bool firstField=true;for(auto& item:report) {if(!firstField)std::cout<<",";firstField=false;std::cout<<desktop::quote(item.first)<<":"<<item.second;}std::cout<<"}\n";return 0;
+        emitReport();return 0;
     } catch(const std::string& error) {std::cerr<<error<<"\n";} catch(const std::exception& error) {std::cerr<<error.what()<<"\n";}
-    ss_windows_desktop_shutdown();return 5;
+    ss_windows_desktop_shutdown();report["status"]="\"failed\"";emitReport();return 5;
 }

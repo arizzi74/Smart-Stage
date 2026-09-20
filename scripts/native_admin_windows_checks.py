@@ -67,8 +67,11 @@ def admin_window_checks(executable, evidence_path):
                         report["probeLog"] = (captured.decode("utf-8", "replace") if isinstance(captured, bytes) else captured)[-24000:]
                         raise AssertionError(f"Native Admin probe timed out; captured native progress:\n{report['probeLog']}") from error
                     report["probeLog"] = result.stderr[-18000:]
+                    # Preserve structured capability/grid evidence even when a
+                    # later assertion fails; a partial report is never success.
+                    if result.stdout.strip():
+                        report.update(json.loads(result.stdout))
                     assert result.returncode == 0, f"Native Admin probe failed ({result.returncode}): {result.stderr}"
-                    report.update(json.loads(result.stdout))
                     report["hiddenHelperLaunchDisplayedAdmin"] = True
                     dropped = report["dropRequest"]["paths"]
                     chosen = report["chooserRequest"]["paths"]

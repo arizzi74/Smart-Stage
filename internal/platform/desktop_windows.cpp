@@ -540,7 +540,36 @@ LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
     } catch(const std::string& error) {showError(error);} catch(...) {showError("Native Admin operation failed.");}
     return DefWindowProcW(hwnd,message,wp,lp);
 }
+// Unlike ordinary UI callbacks, this notification must run after stopping is
+// set. It marks the documented point when all WebView processes have released
+// this private profile, not merely when the browser's main process exits.
+class BrowserExit final : public ICoreWebView2BrowserProcessExitedEventHandler {
+    std::atomic<ULONG> refs{1};
+    UINT32 expectedPID;
+public:
+    bool completed = false;
+    explicit BrowserExit(UINT32 pid): expectedPID(pid) {}
+    HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid,void** out) override {
+        if(!out)return E_POINTER;
+        *out=nullptr;
+        if(iid==__uuidof(IUnknown) || iid==__uuidof(ICoreWebView2BrowserProcessExitedEventHandler)) {*out=this;AddRef();return S_OK;}
+        return E_NOINTERFACE;
+    }
+    ULONG STDMETHODCALLTYPE AddRef() override {return ++refs;}
+    ULONG STDMETHODCALLTYPE Release() override {auto count=--refs;if(!count)delete this;return count;}
+    HRESULT STDMETHODCALLTYPE Invoke(ICoreWebView2Environment*,ICoreWebView2BrowserProcessExitedEventArgs* args) override {
+        UINT32 pid=0;
+        if(args && SUCCEEDED(args->get_BrowserProcessId(&pid)) && (!expectedPID || pid==expectedPID))completed=true;
+        return S_OK;
+    }
+};
+Ptr<ICoreWebView2Environment5> shutdownEnvironment;
+Ptr<BrowserExit> browserExit;
+EventRegistrationToken browserExitToken{};
+bool browserExitRegistered=false, shutdownHadRuntime=false;
+
 void shutdownUI() {
+    if(uiQuit)return;
     if(!stopping.load())fprintf(stderr,"Closing native Admin: chooserActive=%d chooserShowing=%d\n",int(chooserActive),int(chooserShowing));
     stopping.store(true);ready.store(false);
     if(chooserActive) {
@@ -555,9 +584,21 @@ void shutdownUI() {
     UINT32 browserID=0;
     if(webview && SUCCEEDED(webview->get_BrowserProcessId(&browserID)) && browserID)
         browserProcess=OpenProcess(SYNCHRONIZE,FALSE,browserID);
+    shutdownHadRuntime=bool(environment) || creating;
+    if(environment) {
+        HRESULT observed=environment->QueryInterface(IID_PPV_ARGS(shutdownEnvironment.out()));
+        if(SUCCEEDED(observed)) {
+            browserExit.reset(new BrowserExit(browserID));
+            observed=shutdownEnvironment->add_BrowserProcessExited(browserExit.p,&browserExitToken);
+            browserExitRegistered=SUCCEEDED(observed);
+        }
+        if(FAILED(observed))fprintf(stderr,"Native Admin browser exit observation unavailable: 0x%lx\n",(unsigned long)observed);
+    }
     if(controller)controller->Close();
     fprintf(stderr,"Closed native Admin WebView\n");
-    webview.reset();controller.reset();composition.reset();environment.reset();
+    webview.reset();controller.reset();composition.reset();
+    // The environment must survive until BrowserProcessExited is delivered.
+    if(!browserExitRegistered) {shutdownEnvironment.reset();environment.reset();}
     visual.reset();target.reset();dcomp.reset();dropTarget.reset();
     if(window) {DestroyWindow(window);window=nullptr;errorLabel=nullptr;retryButton=nullptr;}
     uiQuit=true;
@@ -575,24 +616,40 @@ void uiMain() {
     if(!control.load()) {if(SUCCEEDED(apartment))OleUninitialize();return;}
     MSG message{};
     while(!uiQuit && GetMessageW(&message,nullptr,0,0)>0) {TranslateMessage(&message);DispatchMessageW(&message);}
-    // Browser profile locks are released asynchronously. Pump this STA while
-    // waiting only for this private profile's browser process, for at most 2s.
-    if(browserProcess) {
-        ULONGLONG deadline=GetTickCount64()+2000;
-        while(GetTickCount64()<deadline) {
-            DWORD status=MsgWaitForMultipleObjects(1,&browserProcess,FALSE,50,QS_ALLINPUT);
-            if(status==WAIT_OBJECT_0 || status==WAIT_FAILED)break;
+    // Keep pumping the owning STA after closing the controls. A main-process
+    // handle alone cannot prove that child processes have stopped writing the
+    // profile; BrowserProcessExited guarantees that the full group is done.
+    ULONGLONG cleanupStarted=GetTickCount64();
+    if(browserExitRegistered) {
+        while(!browserExit->completed && GetTickCount64()-cleanupStarted<10000) {
+            DWORD status=MsgWaitForMultipleObjectsEx(0,nullptr,50,QS_ALLINPUT,MWMO_INPUTAVAILABLE);
+            if(status==WAIT_FAILED) {fprintf(stderr,"Native Admin browser exit wait failed: %lu\n",GetLastError());break;}
             while(PeekMessageW(&message,nullptr,0,0,PM_REMOVE)) {TranslateMessage(&message);DispatchMessageW(&message);}
         }
-        CloseHandle(browserProcess);browserProcess=nullptr;
     }
+    bool profileReleased=!shutdownHadRuntime || (browserExitRegistered && browserExit->completed);
+    DWORD processStatus=browserProcess?WaitForSingleObject(browserProcess,0):WAIT_FAILED;
+    if(shutdownHadRuntime)fprintf(stderr,"Native Admin browser shutdown: profileReleased=%d eventObserved=%d processWait=%lu elapsedMs=%llu\n",
+        int(profileReleased),int(browserExitRegistered && browserExit->completed),processStatus,
+        static_cast<unsigned long long>(GetTickCount64()-cleanupStarted));
+    if(browserExitRegistered)shutdownEnvironment->remove_BrowserProcessExited(browserExitToken);
+    shutdownEnvironment.reset();environment.reset();browserExit.reset();browserExitRegistered=false;
+    if(browserProcess) {CloseHandle(browserProcess);browserProcess=nullptr;}
     DestroyWindow(control.exchange(nullptr));
     if(loader) {FreeLibrary(loader);loader=nullptr;}
     if(loaderFile!=INVALID_HANDLE_VALUE) {CloseHandle(loaderFile);loaderFile=INVALID_HANDLE_VALUE;}
-    if(!directory.empty()) {
-        std::error_code error;ULONGLONG deadline=GetTickCount64()+1000;
-        do {error.clear();std::filesystem::remove_all(directory,error);if(!error)break;Sleep(25);}while(GetTickCount64()<deadline);
+    if(!directory.empty() && profileReleased) {
+        std::error_code error;ULONGLONG deadline=GetTickCount64()+2000;
+        do {
+            error.clear();std::filesystem::remove_all(directory,error);
+            if(!error && !std::filesystem::exists(directory,error))break;
+            if(!error)error=std::make_error_code(std::errc::directory_not_empty);
+            Sleep(25);
+        }while(GetTickCount64()<deadline);
         if(error)fprintf(stderr,"Native Admin private profile cleanup deferred: %s\n",error.message().c_str());
+        else fprintf(stderr,"Removed native Admin private profile\n");
+    } else if(!directory.empty()) {
+        fprintf(stderr,"Native Admin private profile cleanup deferred: WebView processes have not confirmed release\n");
     }
     OleUninitialize();
 }
