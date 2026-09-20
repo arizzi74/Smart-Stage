@@ -1,0 +1,401 @@
+
+dist\native-harness-windows-arm64.exe:	file format coff-arm64
+Characteristics 0x22
+	executable
+	large address aware
+
+Time/Date               Wed Dec 31 16:00:00 1969
+Magic                   020b	(PE32+)
+MajorLinkerVersion      14
+MinorLinkerVersion      0
+SizeOfCode              000000000017e600
+SizeOfInitializedData   000000000016de00
+SizeOfUninitializedData 0000000000000000
+AddressOfEntryPoint     0000000000001404
+BaseOfCode              0000000000001000
+ImageBase               0000000140000000
+SectionAlignment        00001000
+FileAlignment           00000200
+MajorOSystemVersion     6
+MinorOSystemVersion     1
+MajorImageVersion       0
+MinorImageVersion       0
+MajorSubsystemVersion   6
+MinorSubsystemVersion   1
+Win32Version            00000000
+SizeOfImage             00344000
+SizeOfHeaders           00000400
+CheckSum                00000000
+Subsystem               00000003	(Windows CUI)
+DllCharacteristics      00008160
+					HIGH_ENTROPY_VA
+					DYNAMIC_BASE
+					NX_COMPAT
+					TERMINAL_SERVER_AWARE
+SizeOfStackReserve      0000000000100000
+SizeOfStackCommit       0000000000001000
+SizeOfHeapReserve       0000000000100000
+SizeOfHeapCommit        0000000000001000
+LoaderFlags             00000000
+NumberOfRvaAndSizes     00000010
+
+The Data Directory
+Entry 0 00000000002b9780 0000004d Export Directory [.edata (or where ever we found it)]
+Entry 1 00000000002b97d0 0000017c Import Directory [parts of .idata]
+Entry 2 0000000000000000 00000000 Resource Directory [.rsrc]
+Entry 3 0000000000336000 00003328 Exception Directory [.pdata]
+Entry 4 0000000000000000 00000000 Security Directory
+Entry 5 000000000033c000 00007218 Base Relocation Directory [.reloc]
+Entry 6 0000000000000000 00000000 Debug Directory
+Entry 7 0000000000000000 00000000 Description Directory
+Entry 8 0000000000000000 00000000 Special Directory
+Entry 9 00000000002b9720 00000028 Thread Storage Directory [.tls]
+Entry a 00000000002b95b0 00000138 Load Configuration Directory
+Entry b 0000000000000000 00000000 Bound Import Directory
+Entry c 00000000002ba148 000007f8 Import Address Table Directory
+Entry d 0000000000000000 00000000 Delay Import Directory
+Entry e 0000000000000000 00000000 CLR Runtime Header
+Entry f 0000000000000000 00000000 Reserved
+TLS directory:
+  StartAddressOfRawData: 0x0000014033b000
+  EndAddressOfRawData: 0x0000014033b018
+  AddressOfIndex: 0x000001402e32d0
+  AddressOfCallBacks: 0x000001402b9718
+  SizeOfZeroFill: 0
+  Characteristics: 4194304
+  Alignment: 8
+
+
+The Import Tables:
+  lookup 002b9950 time 00000000 fwd 00000000 name 002bb904 addr 002ba148
+
+    DLL Name: MFPlat.DLL
+    Hint/Ord  Name
+           0  MFCreateAttributes
+           0  MFCreateMediaType
+           0  MFCreateSourceResolver
+           0  MFShutdown
+           0  MFStartup
+
+  lookup 002b9980 time 00000000 fwd 00000000 name 002bb90f addr 002ba178
+
+    DLL Name: MF.dll
+    Hint/Ord  Name
+           0  MFCreateAudioRendererActivate
+           0  MFCreateMediaSession
+           0  MFCreateTopology
+           0  MFCreateTopologyNode
+           0  MFCreateVideoRendererActivate
+           0  MFGetService
+
+  lookup 002b99b8 time 00000000 fwd 00000000 name 002bb916 addr 002ba1b0
+
+    DLL Name: MFReadWrite.dll
+    Hint/Ord  Name
+           0  MFCreateSourceReaderFromURL
+
+  lookup 002b99c8 time 00000000 fwd 00000000 name 002bb926 addr 002ba1c0
+
+    DLL Name: ole32.dll
+    Hint/Ord  Name
+           0  CoCreateInstance
+           0  CoInitializeEx
+           0  CoTaskMemFree
+           0  CoUninitialize
+           0  PropVariantClear
+
+  lookup 002b99f8 time 00000000 fwd 00000000 name 002bb930 addr 002ba1f0
+
+    DLL Name: USER32.dll
+    Hint/Ord  Name
+           0  BeginPaint
+           0  CreateWindowExW
+           0  DefWindowProcW
+           0  DestroyWindow
+           0  DispatchMessageW
+           0  DisplayConfigGetDeviceInfo
+           0  EndPaint
+           0  EnumDisplayMonitors
+           0  FillRect
+           0  GetClientRect
+           0  GetDisplayConfigBufferSizes
+           0  GetMessageW
+           0  GetMonitorInfoW
+           0  PeekMessageW
+           0  PostMessageW
+           0  PostQuitMessage
+           0  QueryDisplayConfig
+           0  RedrawWindow
+           0  RegisterClassW
+           0  SendMessageW
+           0  SetCursor
+           0  SetProcessDpiAwarenessContext
+           0  SetTimer
+           0  SetWindowPos
+           0  ShowWindow
+           0  TranslateMessage
+
+  lookup 002b9ad0 time 00000000 fwd 00000000 name 002bb93b addr 002ba2c8
+
+    DLL Name: GDI32.dll
+    Hint/Ord  Name
+           0  GetStockObject
+
+  lookup 002b9ae0 time 00000000 fwd 00000000 name 002bb945 addr 002ba2d8
+
+    DLL Name: KERNEL32.dll
+    Hint/Ord  Name
+           0  AcquireSRWLockExclusive
+           0  AddVectoredContinueHandler
+           0  AddVectoredExceptionHandler
+           0  AreFileApisANSI
+           0  CloseHandle
+           0  CreateEventA
+           0  CreateIoCompletionPort
+           0  CreateThread
+           0  CreateWaitableTimerExW
+           0  DeleteCriticalSection
+           0  DuplicateHandle
+           0  EnterCriticalSection
+           0  ExitProcess
+           0  FlsAlloc
+           0  FlsGetValue
+           0  FlsSetValue
+           0  FormatMessageA
+           0  FormatMessageW
+           0  FreeEnvironmentStringsW
+           0  GetACP
+           0  GetActiveProcessorCount
+           0  GetConsoleMode
+           0  GetCurrentThreadId
+           0  GetEnvironmentStringsW
+           0  GetErrorMode
+           0  GetLastError
+           0  GetLocaleInfoEx
+           0  GetModuleHandleW
+           0  GetProcAddress
+           0  GetProcessAffinityMask
+           0  GetQueuedCompletionStatusEx
+           0  GetStdHandle
+           0  GetSystemDirectoryA
+           0  GetSystemInfo
+           0  GetSystemTimeAsFileTime
+           0  GetThreadContext
+           0  GetThreadId
+           0  GetTickCount64
+           0  InitOnceExecuteOnce
+           0  InitializeCriticalSection
+           0  LeaveCriticalSection
+           0  LoadLibraryExW
+           0  LocalFree
+           0  MultiByteToWideChar
+           0  PostQueuedCompletionStatus
+           0  QueryPerformanceCounter
+           0  QueryPerformanceFrequency
+           0  RaiseException
+           0  RaiseFailFastException
+           0  ReleaseSRWLockExclusive
+           0  ResumeThread
+           0  RtlCaptureContext
+           0  RtlLookupFunctionEntry
+           0  RtlRestoreContext
+           0  RtlUnwindEx
+           0  RtlVirtualUnwind
+           0  SetConsoleCtrlHandler
+           0  SetErrorMode
+           0  SetEvent
+           0  SetProcessPriorityBoost
+           0  SetThreadContext
+           0  SetThreadExecutionState
+           0  SetUnhandledExceptionFilter
+           0  SetWaitableTimer
+           0  Sleep
+           0  SleepConditionVariableSRW
+           0  SuspendThread
+           0  SwitchToThread
+           0  TlsAlloc
+           0  TryAcquireSRWLockExclusive
+           0  TryEnterCriticalSection
+           0  VirtualAlloc
+           0  VirtualFree
+           0  VirtualProtect
+           0  VirtualQuery
+           0  WaitForMultipleObjects
+           0  WaitForSingleObject
+           0  WaitForSingleObjectEx
+           0  WakeAllConditionVariable
+           0  WakeConditionVariable
+           0  WerGetFlags
+           0  WerSetFlags
+           0  WideCharToMultiByte
+           0  WriteConsoleW
+           0  WriteFile
+
+  lookup 002b9d90 time 00000000 fwd 00000000 name 002bb952 addr 002ba588
+
+    DLL Name: api-ms-win-crt-stdio-l1-1-0.dll
+    Hint/Ord  Name
+           0  __acrt_iob_func
+           0  __p__commode
+           0  __p__fmode
+           0  __stdio_common_vfprintf
+           0  __stdio_common_vsprintf
+           0  __stdio_common_vsscanf
+           0  __stdio_common_vswprintf
+           0  _fileno
+           0  _fseeki64
+           0  _ftelli64
+           0  _setmode
+           0  _wfopen
+           0  fclose
+           0  fflush
+           0  fopen
+           0  fputc
+           0  fputs
+           0  fread
+           0  fseek
+           0  fwrite
+           0  setbuf
+           0  setvbuf
+
+  lookup 002b9e48 time 00000000 fwd 00000000 name 002bb972 addr 002ba640
+
+    DLL Name: api-ms-win-crt-runtime-l1-1-0.dll
+    Hint/Ord  Name
+           0  _assert
+           0  __p___argc
+           0  __p___argv
+           0  __sys_nerr
+           0  _beginthreadex
+           0  _cexit
+           0  _configure_narrow_argv
+           0  _crt_atexit
+           0  _errno
+           0  _exit
+           0  _fpreset
+           0  _initialize_narrow_environment
+           0  _initterm
+           0  _initterm_e
+           0  _seh_filter_exe
+           0  _set_app_type
+           0  _set_invalid_parameter_handler
+           0  abort
+           0  exit
+           0  strerror_s
+
+  lookup 002b9ef0 time 00000000 fwd 00000000 name 002bb994 addr 002ba6e8
+
+    DLL Name: api-ms-win-crt-locale-l1-1-0.dll
+    Hint/Ord  Name
+           0  ___lc_codepage_func
+           0  ___mb_cur_max_func
+           0  __pctype_func
+           0  _configthreadlocale
+           0  _create_locale
+           0  _free_locale
+           0  localeconv
+           0  setlocale
+
+  lookup 002b9f38 time 00000000 fwd 00000000 name 002bb9b5 addr 002ba730
+
+    DLL Name: api-ms-win-crt-heap-l1-1-0.dll
+    Hint/Ord  Name
+           0  _aligned_free
+           0  _aligned_malloc
+           0  _set_new_mode
+           0  calloc
+           0  free
+           0  malloc
+           0  realloc
+
+  lookup 002b9f78 time 00000000 fwd 00000000 name 002bb9d4 addr 002ba770
+
+    DLL Name: api-ms-win-crt-private-l1-1-0.dll
+    Hint/Ord  Name
+           0  memchr
+           0  memcmp
+           0  memcpy
+           0  memmove
+
+  lookup 002b9fa0 time 00000000 fwd 00000000 name 002bb9f6 addr 002ba798
+
+    DLL Name: api-ms-win-crt-string-l1-1-0.dll
+    Hint/Ord  Name
+           0  _iswalpha_l
+           0  _iswcntrl_l
+           0  _iswdigit_l
+           0  _iswlower_l
+           0  _iswprint_l
+           0  _iswpunct_l
+           0  _iswspace_l
+           0  _iswupper_l
+           0  _iswxdigit_l
+           0  _strcoll_l
+           0  _strdup
+           0  _strxfrm_l
+           0  _tolower_l
+           0  _toupper_l
+           0  _towlower_l
+           0  _towupper_l
+           0  _wcscoll_l
+           0  _wcsxfrm_l
+           0  mbrlen
+           0  memset
+           0  strcmp
+           0  strlen
+           0  tolower
+           0  toupper
+           0  wcscmp
+           0  wcslen
+
+  lookup 002ba078 time 00000000 fwd 00000000 name 002bba17 addr 002ba870
+
+    DLL Name: api-ms-win-crt-math-l1-1-0.dll
+    Hint/Ord  Name
+           0  __setusermatherr
+
+  lookup 002ba088 time 00000000 fwd 00000000 name 002bba36 addr 002ba880
+
+    DLL Name: api-ms-win-crt-time-l1-1-0.dll
+    Hint/Ord  Name
+           0  _strftime_l
+
+  lookup 002ba098 time 00000000 fwd 00000000 name 002bba55 addr 002ba890
+
+    DLL Name: api-ms-win-crt-multibyte-l1-1-0.dll
+    Hint/Ord  Name
+           0  _mbtowc_l
+
+  lookup 002ba0a8 time 00000000 fwd 00000000 name 002bba79 addr 002ba8a0
+
+    DLL Name: api-ms-win-crt-convert-l1-1-0.dll
+    Hint/Ord  Name
+           0  _strtod_l
+           0  mbrtowc
+           0  mbsrtowcs
+           0  strtod
+           0  strtof
+           0  strtol
+           0  strtoll
+           0  strtoul
+           0  strtoull
+           0  wcrtomb
+           0  wcrtomb_s
+           0  wcstod
+           0  wcstol
+           0  wcstoll
+           0  wcstoul
+           0  wcstoull
+
+  lookup 002ba130 time 00000000 fwd 00000000 name 002bba9b addr 002ba928
+
+    DLL Name: api-ms-win-crt-environment-l1-1-0.dll
+    Hint/Ord  Name
+           0  __p__environ
+           0  getenv
+
+Export Table:
+ DLL name: a.out.exe
+ Ordinal base: 1
+ Ordinal      RVA  Name
+       1 0x32fa38  _cgo_stub_export

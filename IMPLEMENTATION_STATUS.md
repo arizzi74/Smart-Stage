@@ -38,8 +38,10 @@ also passed on all four targets without a version override.
 
 Preview 4 releases the Mac video layer with each cue while retaining the black
 stage window. [Memory evidence](docs/soak-results.md) supports the fix for
-caption-timer/timebase retention; the exact-source two-hour run is still in
-progress. [Virtual pixel evidence](docs/native-display-results.md) and its
+caption-timer/timebase retention. The exact-source two-hour run completed all
+four workloads and restart checks, with 121 samples per target. Mac fitted RSS
+trends after minute 15 fell from +8.76/+7.72 to +0.34/+1.08 MiB/hour on
+AMD64/ARM64. [Virtual pixel evidence](docs/native-display-results.md) and its
 Windows ARM64 limitation are recorded separately.
 
 Earlier preview 3 evidence is retained: tagged workflow
@@ -117,12 +119,15 @@ its cue at `ae439c8` removed those classes from stopped snapshots on both Macs
 and passed all four native regressions. A 20-minute release-style profile at
 `505a1e4` returned native allocation counts slightly below their starting levels
 after two stopped idle minutes on both Macs. The exact-source two-hour soak
-remains in progress; it must finish before long-run conclusions are drawn.
+[35478342253](https://github.com/arizzi74/Smart-Stage/actions/runs/35478342253)
+completed all four workloads and restart checks at `505a1e4`, with substantially
+flatter Mac RSS traces. Windows RSS and handle trends remained positive in
+this workload; the raw records and fitted statistics are retained.
 Windows per-type diagnostics showed substantial event/thread/I/O
 handle cleanup during two stopped idle minutes, with file counts unchanged;
-no Windows change was justified by these observations. Mac stability remains
-under investigation. None verifies physical A/V
-drift or Windows audio routing.
+no Windows change was justified by these observations. These measurements
+support the Mac renderer fix but do not prove stability for every workload.
+None verifies physical A/V drift or independent physical audio routing.
 
 See `docs/release-verification.md` for exact environments/evidence and the
 remaining checklist, and `docs/acceptance-audit.md` for a specification-wide

@@ -21,7 +21,7 @@ Go/module-version and clean-source-commit checks. The exact sizes, hashes and
 embedded build information are retained in
 [`verification/release-preview4/download-verification.json`](verification/release-preview4/download-verification.json).
 The one-command installers now default to this preview. The source's completed
-20-minute memory profile and ongoing two-hour soak are described in
+20-minute memory profile and completed four-target two-hour soak are described in
 [resource results](soak-results.md); captured native virtual pixels and the
 Windows ARM64 setup-screen limitation are in [display results](native-display-results.md).
 
@@ -208,25 +208,17 @@ These are **unverified**, not assumed passed:
 - Actual phones/tablets on a LAN; sleeping/reconnecting or slow controllers;
   validation/filesystem work under event conditions; inaccessible/protected
   folders and missing drives.
-- A two-hour native soak measuring resources, callback/handle growth, frozen
-  windows and audiovisual drift. [Preview 3 soak 35471045100](https://github.com/arizzi74/Smart-Stage/actions/runs/35471045100)
-  completed all four two-hour native transition/STOP loops and restart checks
-  at release commit `d70b3e2`. The earlier [run 35468888430](https://github.com/arizzi74/Smart-Stage/actions/runs/35468888430)
-  at `20bcf35` completed all four two-hour loops and restart checks. Its
-  [resource analysis](soak-results.md) shows continuing Mac RSS growth and
-  increased Windows handle counts; stability remains under investigation.
-  Preview 3 also shows continued Mac growth. A completed published-binary
-  profile points to native allocations while live Go heap remains around 1 MiB;
-  a Mac pool-boundary candidate did not reduce that retention. Heap attribution
-  identified accumulating caption timers/timebases. Releasing the video layer
-  with its cue removed those classes from stopped snapshots on both Macs;
-  a 20-minute release-style profile returned allocation counts slightly below
-  their initial snapshots after two idle minutes on both Macs. The exact-source
-  two-hour run at `505a1e4` is still in progress.
-  Windows per-type diagnostics show substantial
-  cleanup after STOP, unchanged file counts and a small remaining increase over
-  initial handle counts.
-  Even a passing CI result cannot establish physical A/V drift or routed sound.
+- Physical two-hour A/V stability, including drift and resource behavior on
+  event hardware. [Preview 4 soak 35478342253](https://github.com/arizzi74/Smart-Stage/actions/runs/35478342253)
+  completed all four native transition/STOP loops for at least 7,200 seconds,
+  with 121 resource samples and successful restart checks at exact source
+  `505a1e4`. [Resource analysis](soak-results.md) records substantially reduced
+  Mac RSS trends (+0.34/+1.08 MiB/hour after minute 15 on AMD64/ARM64), together
+  with the heap/idle evidence supporting the renderer fix. Windows memory and
+  handle traces fluctuate with positive fitted trends; the stock runners had
+  no audio endpoints. All earlier runs retain their own source identity and
+  evidence. These observations do not establish physical A/V drift, routed
+  sound, a two-hour Windows audio workload or leak-free behavior in every case.
 - Production signing/notarization and the bare-executable permission workflow.
 
 Windows 11 is the intended validation baseline. Mac deployment target 12.0 is

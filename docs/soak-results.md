@@ -1,7 +1,56 @@
 # Native soak results
 
-**Resource stability is not yet established.** Successful state assertions do
-not prove a stable native heap, physical blackout, routed sound or A/V drift.
+**Preview 4 completed the two-hour native workload on all four targets.** Its
+Mac resident-memory traces are substantially flatter after the renderer-lifetime
+fix. These measurements describe the tested workload; they do not prove absence
+of leaks in every workload, physical blackout, routed sound or A/V drift.
+
+## Published preview 4: `505a1e4`
+
+[Run 35478342253](https://github.com/arizzi74/Smart-Stage/actions/runs/35478342253)
+completed successfully on all four targets at exact release source
+`505a1e495075dcc01abe6d7367d3b57d3f8e60a9`. Every repeat loop ran for at least
+7,200 seconds, marked itself complete and retained 121 resource samples. All
+four saved-show restarts restored labels/order while stopped/stage-disabled,
+with a new process-instance identity.
+
+| Target | Completed cycles | Elapsed seconds | RSS first → final / sampled max (MiB) | Windows handles first → final / sampled max | RSS trend after minute 15 (MiB/hour) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Mac AMD64 | 13,570 | 7,200.52 | 32.7 → 40.8 / 40.9 | — | +0.34 |
+| Mac ARM64 | 13,760 | 7,200.08 | 49.2 → 59.0 / 59.5 | — | +1.08 |
+| Windows AMD64 | 17,568 | 7,200.28 | 62.6 → 98.8 / 105.2 | 563 → 603 / 611 | +4.98 |
+| Windows ARM64 | 18,174 | 7,200.13 | 71.1 → 68.5 / 80.2 | 558 → 590 / 599 | +3.97 |
+
+![Preview 4 full two-hour resource traces](verification/soak-505a1e4/resource-trends.png)
+
+Using the same fixed 15-minute startup exclusion as the earlier runs, the Mac
+RSS trends fell from preview 3's +8.76/+7.72 MiB/hour to +0.34/+1.08 on
+AMD64/ARM64. Final 15-minute medians were 40.84/58.97 MiB, versus 40.35/57.39
+in minutes 15–30. The final 15-minute ranges were 40.49–40.91 and 58.91–59.03
+MiB. Together with the stopped heap and idle profiles below, these observations
+support the fix for caption-timer/timebase retention. They are not a universal
+leak-free guarantee or proof that resident memory returns to its startup value.
+
+Windows RSS and handles fluctuate and have positive fitted trends in this run.
+Handle trends after minute 15 were +4.27/+6.29 per hour on AMD64/ARM64; final
+15-minute handle ranges were 597–611 and 588–599. The process initially warms up,
+so the first-to-final difference alone is not a leak measurement. Earlier
+per-type idle diagnostics below showed substantial delayed cleanup. This
+two-hour run did not include an idle phase or identify owners of every retained
+allocation/handle; it cannot establish that all Windows resource growth is bounded.
+
+Both Macs exercised all four fixture cues using virtual/null audio and one
+virtual display. Both stock Windows runners had zero audio endpoints and
+repeated silent video. The separate [Windows audio evaluation](windows-audio-results.md)
+observed actual native audio signal/STOP/replay but was not a two-hour audio
+workload. No physical A/V drift, independent speakers, projector or latency
+acceptance follows from these CI results.
+
+Raw reports, toolchain/import records, numerical summary and PNG/SVG plots are
+retained in [`verification/soak-505a1e4/`](verification/soak-505a1e4/). Regenerate
+the analysis with the command below, substituting directory `soak-505a1e4`,
+run `35478342253` and the full source commit above. All samples are retained;
+the fitted trends are descriptive statistics, not pass/fail thresholds.
 
 ## Earlier source: `20bcf35`
 
@@ -233,9 +282,10 @@ Raw reports, GC traces and before/after/idle OS snapshots are retained in
 [`verification/memory-profile-505a1e4/`](verification/memory-profile-505a1e4/).
 
 [Two-hour run 35478342253](https://github.com/arizzi74/Smart-Stage/actions/runs/35478342253)
-is collecting independent resource/restart evidence on all four targets.
-Both build exact candidate commit `505a1e495075dcc01abe6d7367d3b57d3f8e60a9`;
-the application code is unchanged from `ae439c8`. Its
+completed all four resource/restart checks; its full results are at the top of
+this document. The profile and two-hour run build exact source
+`505a1e495075dcc01abe6d7367d3b57d3f8e60a9`; application code is unchanged from
+`ae439c8`. Its
 [regular native regression 35478340978](https://github.com/arizzi74/Smart-Stage/actions/runs/35478340978)
 passed all four targets and shared race/vet checks. Preview 4 is tagged at this
 same source; its release workflow is
