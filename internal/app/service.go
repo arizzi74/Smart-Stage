@@ -75,6 +75,7 @@ type State struct {
 	StopEpoch        uint64        `json:"stopEpoch"`
 	Cues             []CueView     `json:"cues"`
 	ValidationJob    ValidationJob `json:"validationJob"`
+	UpdatePending    bool          `json:"updatePending"`
 }
 type cachedRequest struct {
 	fingerprint [32]byte
@@ -88,24 +89,25 @@ type loadJob struct {
 }
 
 type Service struct {
-	mu           sync.Mutex
-	editMu       sync.Mutex // only persistence operations; never acquired by STOP
-	backend      playback.Backend
-	files        *files.Browser
-	store        Persistence
-	config       model.Config
-	state        State
-	ctx          context.Context
-	cancel       context.CancelFunc
-	loadCancel   context.CancelFunc
-	loads        chan loadJob // latest-only mailbox, no cue queue
-	validation   chan struct{}
-	requests     map[string]cachedRequest
-	requestOrder []string
-	subscribers  map[chan struct{}]struct{}
-	removing     map[string]bool
-	configBusy   bool
-	closed       bool
+	mu                 sync.Mutex
+	editMu             sync.Mutex // only persistence operations; never acquired by STOP
+	backend            playback.Backend
+	files              *files.Browser
+	store              Persistence
+	config             model.Config
+	state              State
+	ctx                context.Context
+	cancel             context.CancelFunc
+	loadCancel         context.CancelFunc
+	loads              chan loadJob // latest-only mailbox, no cue queue
+	validation         chan struct{}
+	requests           map[string]cachedRequest
+	requestOrder       []string
+	subscribers        map[chan struct{}]struct{}
+	removing           map[string]bool
+	configBusy         bool
+	stageEnablePending bool
+	closed             bool
 }
 
 func New(backend playback.Backend, browser *files.Browser, store Persistence, config model.Config) *Service {
@@ -216,6 +218,7 @@ func (s *Service) rememberLocked(id string, hash [32]byte) Ack {
 	return a
 }
 func (s *Service) invalidateLocked() {
+	s.stageEnablePending = false
 	if s.loadCancel != nil {
 		s.loadCancel()
 		s.loadCancel = nil
@@ -243,6 +246,9 @@ func (s *Service) Play(r PlayRequest) (Ack, error) {
 	}
 	if s.closed {
 		return Ack{}, problem("unavailable", "Application is shutting down")
+	}
+	if s.state.UpdatePending {
+		return Ack{}, problem("updating", "An application update is being prepared; playback is temporarily unavailable")
 	}
 	if r.InstanceID != s.state.InstanceID {
 		return Ack{}, problem("stale_instance", "Refresh state from this application instance")
@@ -465,6 +471,9 @@ func (s *Service) nativeEvent(e playback.Event) {
 		return
 	}
 	s.state.StageEnabled = e.StageEnabled
+	if e.StageEnabled {
+		s.stageEnablePending = false
+	}
 	switch e.Kind {
 	case "playing":
 		if s.state.State != "loading" {

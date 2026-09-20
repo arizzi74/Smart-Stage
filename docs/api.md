@@ -96,7 +96,13 @@ State contains `instanceId`, `revision`, `playlistRevision`, `state`
 (`stopped|loading|playing|stopping|error`), `activeCueId`, `activePosition`
 (one-based, zero if inactive), `elapsed`, `duration` (seconds; zero unknown),
 `lastError`, `outputs`, `resolvedAudioId`, `stageEnabled`, `outputFault`,
-`generation`, `stopEpoch`, `cues`, `validationJob`.
+`generation`, `stopEpoch`, `cues`, `validationJob`, `updatePending`.
+
+`updatePending` reserves the host while a startup update is checked or an update
+is prepared. PLAY, show edits and enabling stage output are rejected during
+this reservation; STOP remains available. A failed check or preparation releases
+the reservation. The update cannot reserve playing/loading/stopping playback
+or an enabled stage, including a black stage between cues.
 
 Cue views contain `id,label,position,kind,duration,validation`. Validation jobs
 contain `running,completed,total`. Output preferences contain
@@ -112,6 +118,9 @@ expiry/logout ends them. Commands do not travel over SSE.
 
 | Route | Contract |
 | --- | --- |
+| `GET /api/update` | Update status: `currentVersion`, `latestVersion`, `phase`, `available`, `canInstall`, `message`, `releaseURL`, `checkedAt`, and optional `lastUpdate` outcome. |
+| `POST /api/update/check` | `{}` starts an asynchronous check of official GitHub releases; HTTP 202 with status. Checks within one minute reuse the existing result. |
+| `POST /api/update/install` | `{}` reserves stopped playback with stage output disabled and prepares the discovered update; HTTP 202 with status. The browser cannot supply a URL, version, executable or destination. |
 | `GET /api/remote-control` | `{token:"eight digits",links:[{label:"interface",url:"http://…/command#token=…",qrURL:"/api/remote-control/qr?index=0"}]}`. Links track reachable listener addresses; an empty list is `[]`. |
 | `GET /api/remote-control/qr?index=N` | PNG of the exact selected link, encoded locally with a four-module white quiet zone and `Cache-Control: no-store`. Requires the Admin session. Unknown/stale index returns 404; invalid query shape returns 400. |
 | `GET /api/files?path=...` | Canonical directory, parent, roots/volumes, breadcrumbs, at most 1,000 entries and truncation. Empty path chooses home or first permitted root. Entries include name/path/directory/bytes/modification nanoseconds. |
@@ -131,6 +140,17 @@ canonical paths/order, output preferences and playlist revision. Validation
 statuses: `unchecked`, `checking`, `ready`, `missing`, `unsupported`, `error`.
 Raw reasons/media cache metadata are available only to administrators.
 
+Updates are installed automatically during startup by default. Startup checks
+time out after ten seconds; an unavailable network does not prevent subsequent
+show use. Later checks run every six hours and never automatically restart the
+current session. A discovered update can be installed on the next launch or
+through the explicit Admin action. `phase` is one of
+`idle|checking|available|downloading|restarting|error|unsupported`.
+Development builds do not update themselves. Preview builds consider newer
+previews and stable releases; stable builds consider stable releases only.
+Restart invalidates sessions and remote codes; local Admin reconnects and shows
+the new QR code. Command sessions cannot inspect or trigger update operations.
+
 ## Errors and bounds
 
 Errors: `{"error":{"code":"...","message":"..."}}`.
@@ -142,11 +162,11 @@ Errors: `{"error":{"code":"...","message":"..."}}`.
 | 403 | `origin_denied`, `origin_required`, `csrf_denied`, `admin_required` |
 | 404 | `cue_not_found`, `link_not_found`, `unknown_route` |
 | 405 | `method`, `unknown_route` |
-| 409 | `revision_conflict`, `request_conflict`, `stale_epoch`, `stale_instance`, `active_cue`, `must_stop` |
+| 409 | `revision_conflict`, `request_conflict`, `stale_epoch`, `stale_instance`, `active_cue`, `must_stop`, `updating`, `update_unavailable` |
 | 415 | `content_type` |
 | 429 | `pair_failed` (guessing limit), `session_failed` (local session capacity) |
 | 500 | `save_failed`, `internal_error`, `stream_unavailable`, `qr_failed` |
-| 503 | `busy`, `overloaded`, `unavailable` |
+| 503 | `busy`, `overloaded`, `unavailable`, `updates_unavailable` |
 
 Each listener admits at most 256 accepted TCP connections (including idle
 connections) and 16 ordinary concurrent operations. At most 64 SSE streams are

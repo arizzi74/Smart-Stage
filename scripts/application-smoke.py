@@ -156,7 +156,9 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
             command=client(origins['Remote listener'],'/api/pair',{'key':remote['token']})
             command('POST','/api/local-session',{},expected=404)
             command('GET','/api/remote-control',expected=403)
-            initial=admin('GET','/api/state')['state']
+            # Release builds reserve controls for the bounded startup update
+            # check. Development/older builds omit this field entirely.
+            initial=wait_for(lambda: (lambda s:s if not s.get('updatePending',False) else None)(admin('GET','/api/state')['state']),20)
             assert initial['state']=='stopped' and not initial['stageEnabled'] and not initial['activeCueId']
             command('GET','/api/files',expected=(403,404))
             if restart:

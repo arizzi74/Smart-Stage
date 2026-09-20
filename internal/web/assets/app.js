@@ -8,6 +8,8 @@ let controlSequence = 0;
 let validationSignature = '', validationRefresh = false;
 let localSessionBusy = false, localSessionRetry = null;
 let remoteLinks = [], selectedRemoteURL = '', remoteRefresh = false;
+let updateStatus = null, updateBusy = false, updatePreparing = false;
+let updateRestartInstance = '', updateRestartComplete = false, updateRestartStarted = 0;
 const cueButtons = new Map(), playlistRows = new Map();
 $('page-heading').textContent = adminPage ? 'Set the stage' : 'Show control';
 
@@ -33,12 +35,13 @@ function notify(message, error = false) {
 }
 function connection(connected) {
   online = connected;
-  $('connection').textContent = connected ? 'Connected to host' : 'Disconnected · status may be stale';
+  $('connection').textContent = connected ? 'Connected to host' : expectingUpdateRestart() ? 'Restarting Smart Stage…' : 'Disconnected · status may be stale';
   $('connection').className = connected ? 'live' : 'stale';
   for (const [id, node] of cueButtons) {
     const cue = state?.cues.find(c => c.id === id);
-    node.disabled = !connected || !cue || ['missing', 'unsupported', 'error'].includes(cue.validation);
+    node.disabled = !connected || updatePending() || !cue || ['missing', 'unsupported', 'error'].includes(cue.validation);
   }
+  if (adminPage) { renderUpdateStatus(); renderEditAvailability(); }
 }
 function showPair() {
   connection(false); if (source) { source.close(); source = null; }
@@ -56,9 +59,12 @@ async function connectLocalAdmin() {
     role = session.role; csrf = session.csrfToken;
     if (role !== 'admin') throw new Error('Open Admin on the host computer.');
     if (!await initializeSession()) throw new Error('Could not load the host status.');
-    notify('');
+    notify(updateRestartComplete ? 'Smart Stage restarted. Use the new remote control link or QR code to reconnect phones and tablets.' : '');
+    updateRestartComplete = false;
   } catch (error) {
-    connection(false); notify(`Cannot connect to Admin. ${error.message} Retrying…`, true);
+    connection(false);
+    if (expectingUpdateRestart()) notify('Smart Stage is restarting. Admin will reconnect automatically.');
+    else notify(`Cannot connect to Admin. ${error.message} Retrying…`, true);
     localSessionRetry = setTimeout(() => { void connectLocalAdmin(); }, 5000);
   } finally { localSessionBusy = false; }
 }
@@ -89,7 +95,12 @@ async function refreshState() {
   try {
     const result = await api('GET', '/api/state'); role = result.role; csrf = result.csrfToken;
     applyState(result.state); return true;
-  } catch (error) { connection(false); if (!$('pairing').open) notify(error.message, true); return false; }
+  } catch (error) {
+    connection(false);
+    if (expectingUpdateRestart()) notify('Smart Stage is restarting. Admin will reconnect automatically.');
+    else if (!$('pairing').open) notify(error.message, true);
+    return false;
+  }
   finally { refreshing = false; }
 }
 function connectEvents() {
@@ -109,6 +120,9 @@ function connectEvents() {
 }
 function applyState(next) {
   if (state?.instanceId === next.instanceId && next.revision < state.revision) return;
+  if (updateRestartInstance && next.instanceId !== updateRestartInstance) {
+    updatePreparing = false; updateRestartInstance = ''; updateRestartStarted = 0; updateRestartComplete = true;
+  }
   state = next;
   const current = next.cues.find(c => c.id === next.activeCueId);
   $('play-state').textContent = next.state;
@@ -118,17 +132,13 @@ function applyState(next) {
   renderCues();
   if (adminPage && role === 'admin') {
     $('stage-state').textContent = next.stageEnabled ? 'Stage output enabled · STOP retains black' : 'Stage output disabled';
-    $('save-outputs').disabled = !['stopped', 'error'].includes(next.state);
-    $('enable-stage').disabled = !['stopped', 'error'].includes(next.state) || next.outputFault;
     const job = next.validationJob;
     $('validate').textContent = job.running ? `Validating ${job.completed}/${job.total}…` : 'Validate all cues';
-    $('validate').disabled = job.running;
     for (const c of next.cues) {
       const row = playlistRows.get(c.id);
       if (row) {
         const reason = playlist?.cues.find(item => item.id === c.id)?.cache.reason;
         row.validation.textContent = `${c.kind || 'Unknown type'} · ${c.duration ? clock(c.duration) : 'Duration unknown'} · ${c.validation}${reason ? ` · ${reason}` : ''}`;
-        row.remove.disabled = c.id === next.activeCueId;
       }
     }
     const signature = next.cues.map(c => `${c.id}:${c.validation}`).join('|');
@@ -146,6 +156,7 @@ function applyState(next) {
       if ($('playlist').contains(document.activeElement)) notify('The playlist changed in another tab. Finish or discard your edit, then Reload.', true);
       else void loadPlaylist();
     }
+    renderEditAvailability(); renderUpdateStatus();
   }
 }
 function renderCues() {
@@ -162,12 +173,13 @@ function renderCues() {
     const active = state.activeCueId === cue.id && ['loading', 'playing'].includes(state.state);
     node.lastChild.replaceChildren(element('span', `${String(cue.position).padStart(2, '0')} · ${cue.kind || 'unchecked'}`), element('span', active ? state.state : cue.validation === 'ready' ? 'Start cue ↗' : cue.validation));
     node.classList.toggle('active', active); node.setAttribute('aria-pressed', String(active));
-    node.disabled = !online || ['missing', 'unsupported', 'error'].includes(cue.validation);
+    node.disabled = !online || updatePending() || ['missing', 'unsupported', 'error'].includes(cue.validation);
     if (renderedOrder !== order) $('cue-grid').append(node);
   }
   renderedOrder = order; $('empty-cues').hidden = state.cues.length > 0;
 }
 async function trigger(cueId) {
+  if (updatePending()) { notify('Smart Stage is preparing an update. Playback is unavailable until it finishes.'); return; }
   if (!online || Date.now() - lastSeen > 18000 || !state) { connection(false); notify('Disconnected: PLAY was not sent. Reconnect before triggering a cue.', true); return; }
   const request = { requestId: requestID(), instanceId: state.instanceId, stopEpoch: state.stopEpoch, cueId };
   const sequence = ++controlSequence;
@@ -259,6 +271,102 @@ async function copyRemoteURL() {
 }
 $('copy-remote-url').addEventListener('click', () => { void copyRemoteURL(); });
 
+function updatePending() { return Boolean(state?.updatePending || updatePreparing); }
+function expectingUpdateRestart() {
+  return Boolean(updateRestartInstance && updateRestartStarted && Date.now() - updateRestartStarted < 180000);
+}
+function renderEditAvailability() {
+  if (!adminPage || !state) return;
+  const pending = updatePending();
+  $('save-outputs').disabled = pending || !['stopped', 'error'].includes(state.state);
+  $('enable-stage').disabled = pending || !['stopped', 'error'].includes(state.state) || state.outputFault;
+  $('disable-stage').disabled = pending;
+  $('validate').disabled = pending || state.validationJob.running;
+  for (const id of ['audio-output', 'display-output', 'allow-primary']) $(id).disabled = pending;
+  for (const [id, row] of playlistRows) {
+    row.input.disabled = pending;
+    row.play.disabled = pending || !online;
+    row.up.disabled = pending || row.first;
+    row.down.disabled = pending || row.last;
+    row.remove.disabled = pending || id === state.activeCueId;
+  }
+  updateSelected();
+}
+function releaseLink(value) {
+  try {
+    const url = new URL(value);
+    if (url.origin === 'https://github.com' && !url.username && !url.password && !url.search && !url.hash &&
+        /^\/arizzi74\/Smart-Stage\/releases\/tag\/v[0-9][A-Za-z0-9._-]*$/.test(url.pathname)) return url.href;
+  } catch { /* Only this project's release pages may be opened. */ }
+  return '';
+}
+function renderUpdateStatus() {
+  if (!adminPage) return;
+  const phase = updateStatus?.phase || 'idle';
+  const busy = updateBusy || updatePending() || ['checking', 'downloading', 'restarting'].includes(phase);
+  $('update-current').textContent = updateStatus?.currentVersion || 'Loading…';
+  $('update-latest').textContent = updateStatus?.latestVersion || 'Not checked yet';
+  const defaults = {
+    idle: 'No newer version is available.', checking: 'Checking for updates…',
+    available: 'A new version is available.', downloading: 'Downloading and verifying the update…',
+    restarting: 'Restarting Smart Stage. Admin will reconnect automatically.',
+    error: 'Could not check or install the update. Try again when connected.',
+    unsupported: 'Automatic updates are not available for this installation.'
+  };
+  $('update-message').textContent = updateStatus?.message || (updateStatus ? defaults[phase] || 'Update status unavailable.' : 'Loading update status…');
+  $('update-message').classList.toggle('error', phase === 'error');
+  const outcome = updateStatus?.lastUpdate;
+  $('update-outcome').hidden = !outcome?.message;
+  $('update-outcome').textContent = outcome?.message || '';
+  $('update-outcome').classList.toggle('error', ['error', 'rolled_back'].includes(outcome?.status));
+  const safeToInstall = state?.state === 'stopped' && !state.stageEnabled && !updatePending();
+  $('update-requirements').textContent = updatePending() ? (phase === 'checking' ? 'Checking for an update before starting. Playback and edits are temporarily unavailable; STOP remains available.' : 'Preparing the update. Playback and edits are temporarily unavailable; STOP remains available.') :
+    safeToInstall ? 'Ready to update when a new version is available.' : 'Stop playback and disable stage output before updating.';
+  $('check-update').disabled = !online || busy || phase === 'unsupported';
+  $('check-update').textContent = phase === 'checking' ? 'Checking…' : 'Check for updates';
+  $('install-update').disabled = !online || busy || !safeToInstall || !updateStatus?.available || !updateStatus?.canInstall;
+  $('install-update').textContent = phase === 'downloading' ? 'Downloading…' : phase === 'restarting' ? 'Restarting…' : 'Update and restart';
+  const href = releaseLink(updateStatus?.releaseURL);
+  $('update-release').hidden = !href;
+  if (href) $('update-release').href = href; else $('update-release').removeAttribute('href');
+}
+function applyUpdateStatus(result) {
+  if (!result || typeof result.phase !== 'string') return;
+  updateStatus = result;
+  if (['downloading', 'restarting'].includes(result.phase) && state && !updateRestartInstance) {
+    updatePreparing = true; updateRestartInstance = state.instanceId; updateRestartStarted = Date.now();
+  }
+  if (result.phase === 'restarting' && updateRestartInstance && !updateRestartStarted) updateRestartStarted = Date.now();
+  if (result.phase === 'error' || result.phase === 'unsupported') {
+    updatePreparing = false; updateRestartInstance = ''; updateRestartStarted = 0;
+  }
+}
+async function loadUpdateStatus() {
+  if (!adminPage || role !== 'admin' || updateBusy) return;
+  updateBusy = true;
+  try { applyUpdateStatus(await api('GET', '/api/update')); }
+  catch (error) {
+    if (!expectingUpdateRestart()) updateStatus = { ...updateStatus, phase: 'error', message: `Update status unavailable. ${error.message}` };
+  } finally { updateBusy = false; renderUpdateStatus(); renderEditAvailability(); }
+}
+async function updateAction(install) {
+  if (!adminPage || role !== 'admin' || updateBusy || $(install ? 'install-update' : 'check-update').disabled) return;
+  updateBusy = true; renderUpdateStatus();
+  try {
+    const result = await api('POST', `/api/update/${install ? 'install' : 'check'}`, {});
+    if (install) {
+      updatePreparing = true; updateRestartInstance = state.instanceId; updateRestartStarted = Date.now();
+      notify('Preparing the update. Smart Stage will restart and Admin will reconnect automatically.');
+    }
+    applyUpdateStatus(result);
+  } catch (error) {
+    updateStatus = { ...updateStatus, phase: 'error', message: error.message };
+    updatePreparing = false; updateRestartInstance = ''; updateRestartStarted = 0;
+  } finally { updateBusy = false; renderUpdateStatus(); renderEditAvailability(); }
+}
+$('check-update').addEventListener('click', () => { void updateAction(false); });
+$('install-update').addEventListener('click', () => { void updateAction(true); });
+
 async function loadPlaylist() {
   if (playlistRefresh) return;
   playlistRefresh = true;
@@ -283,6 +391,7 @@ async function refreshValidationDetails() {
 }
 function cueEdits() { return playlist.cues.map(({ id, label, path }) => ({ id, label, path })); }
 async function savePlaylist(cues) {
+  if (updatePending()) { notify('Smart Stage is preparing an update. Wait before editing the show.'); return false; }
   if (playlistBusy) { notify('An edit is being saved. Wait before making another edit.', true); return false; }
   playlistBusy = true;
   try {
@@ -309,10 +418,12 @@ function renderPlaylist() {
     const down = button('↓ Down', () => move(1)); down.disabled = index === playlist.cues.length - 1; down.setAttribute('aria-label', `Move cue ${index + 1} down`);
     const remove = button('Remove', () => { const edited = cueEdits(); edited.splice(index, 1); void savePlaylist(edited); });
     remove.disabled = state?.activeCueId === cue.id; remove.setAttribute('aria-label', `Remove cue ${index + 1} from playlist`);
-    tools.append(button('Play', () => trigger(cue.id)), up, down, remove);
+    const play = button('Play', () => trigger(cue.id));
+    tools.append(play, up, down, remove);
     row.append(element('span', String(index + 1).padStart(2, '0'), 'position'), info, tools);
-    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove });
+    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
   });
+  renderEditAvailability();
 }
 async function browse(path = '') {
   $('file-message').textContent = 'Reading the host folder…';
@@ -348,7 +459,7 @@ async function browse(path = '') {
     $('file-message').textContent = `${listing.entries.length} visible entries${listing.truncated ? ' · Listing limited to 1,000 entries; use a smaller folder.' : ''}`;
   } catch (error) { $('file-message').textContent = error.message; }
 }
-function updateSelected() { $('add-files').textContent = `Add selected (${fileSelection.size})`; $('add-files').disabled = fileSelection.size === 0; }
+function updateSelected() { $('add-files').textContent = `Add selected (${fileSelection.size})`; $('add-files').disabled = updatePending() || fileSelection.size === 0; }
 $('browse-form').addEventListener('submit', event => { event.preventDefault(); void browse($('host-path').value); });
 $('roots').addEventListener('change', () => browse($('roots').value));
 $('add-files').addEventListener('click', async () => {
@@ -397,11 +508,12 @@ async function initializeSession() {
   $('admin-view').hidden = !adminPage; $('command-view').hidden = adminPage;
   $('logout').hidden = adminPage;
   connectEvents();
-  if (adminPage) { await Promise.all([loadRemoteControl(), loadPlaylist(), loadDevices(), browse()]); }
+  if (adminPage) { await Promise.all([loadRemoteControl(), loadPlaylist(), loadDevices(), browse(), loadUpdateStatus()]); }
   return true;
 }
 setInterval(() => { if (Date.now() - lastSeen > 18000) connection(false); }, 2000);
 setInterval(() => { if (!document.hidden) void loadRemoteControl(); }, 10000);
+setInterval(() => { if (!document.hidden) void loadUpdateStatus(); }, 5000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && csrf) { connection(false); void refreshState(); connectEvents(); void loadRemoteControl(); }
 });

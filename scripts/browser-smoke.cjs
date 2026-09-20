@@ -10,10 +10,12 @@ const assert = require('node:assert/strict');
   const assets = path.resolve(__dirname, '../internal/web/assets');
   const output = path.resolve(__dirname, '../dist/browser-checks'); fs.mkdirSync(output, { recursive: true });
   const clients = new Set(), commands = [], errors = [], requests = [], sessions = new Map();
-  const token = '12345678';
+  let token = '12345678';
   // Image-loading fixture only: this one-pixel PNG is deliberately not a QR code.
   const imageFixture = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
   let stateGets = 0, holdPlay = false, remoteGets = 0, links = [], sessionCounter = 0;
+  let updateGets = 0, updateGetDelay = 0, failUpdateCheck = false, restarting = false;
+  let update = { currentVersion: 'v0.1.0-preview.8', latestVersion: 'v0.1.0-preview.9', phase: 'available', available: true, canInstall: true, message: 'A new version is available.', releaseURL: 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', checkedAt: new Date().toISOString() };
   const labels = ['Opening music', 'Welcome video with a deliberately long label that must wrap clearly', "Café's interlude", '<img src=x onerror="window.__xss=true">'];
   const state = { instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
   const config = { schema: 1, playlistRevision: 1, outputs: state.outputs, cues: state.cues.map(c => ({ id: c.id, label: c.label, path: `/Host/Show/${c.id}.mp4`, cache: { status: 'ready', media: { kind: c.kind, duration: 3 } } })) };
@@ -28,7 +30,8 @@ const assert = require('node:assert/strict');
     }
     let raw = ''; for await (const chunk of req) raw += chunk;
     const body = raw ? JSON.parse(raw) : {};
-    requests.push({ listenerRole, path: url.pathname, body, origin: req.headers.origin });
+    requests.push({ listenerRole, path: url.pathname, body, origin: req.headers.origin, csrf: req.headers['x-csrf-token'] });
+    if (restarting) { reply({ error: { message: 'Host restarting' } }, 503); return; }
     const cookieName = `smartstage_${listenerRole}_session`;
     const sessionID = (req.headers.cookie || '').split(';').map(part => part.trim()).find(part => part.startsWith(cookieName + '='))?.slice(cookieName.length + 1);
     const role = sessions.get(sessionID);
@@ -46,6 +49,27 @@ const assert = require('node:assert/strict');
     if (url.pathname === '/api/logout') { sessions.delete(sessionID); res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Max-Age=0`); reply({}); return; }
     if (url.pathname === '/api/state') { stateGets++; reply({ role, csrfToken: 'test-csrf', state }); return; }
     if (url.pathname === '/api/events') { res.writeHead(200, { 'Content-Type': 'text/event-stream' }); clients.add(res); res.on('close', () => clients.delete(res)); broadcast(); return; }
+    if (url.pathname.startsWith('/api/update')) {
+      if (role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
+      if (url.pathname === '/api/update') {
+        updateGets++;
+        if (updateGetDelay) await new Promise(resolve => setTimeout(resolve, updateGetDelay));
+        reply(update); return;
+      }
+      assert.equal(req.headers['x-csrf-token'], 'test-csrf', 'update mutation requires the active CSRF token');
+      if (url.pathname === '/api/update/check') {
+        update = { ...update, phase: 'checking', message: 'Checking for updates…' };
+        reply(update, 202);
+        setTimeout(() => { update = { ...update, phase: failUpdateCheck ? 'error' : 'available', available: !failUpdateCheck, message: failUpdateCheck ? 'GitHub is unavailable. Try again later.' : 'A new version is available.' }; }, 100);
+        return;
+      }
+      if (url.pathname === '/api/update/install') {
+        assert.equal(state.state, 'stopped'); assert.equal(state.stageEnabled, false);
+        state.updatePending = true; state.revision++; broadcast();
+        update = { ...update, phase: 'downloading', message: 'Downloading and verifying the update…' };
+        reply(update, 202); return;
+      }
+    }
     if (['/api/remote-control', '/api/remote-control/qr', '/api/playlist', '/api/devices', '/api/files'].includes(url.pathname) && role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
     if (url.pathname === '/api/remote-control') { remoteGets++; reply({ links, token }); return; }
     if (url.pathname === '/api/remote-control/qr') { res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' }); res.end(imageFixture); return; }
@@ -157,6 +181,89 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('#connection.live').isVisible(), true, 'opening Admin does not replace the remote session');
     assert.equal(requests.some(r => r.listenerRole === 'command' && r.path.startsWith('/api/remote-control')), false, 'remote UI never requests the private link or QR');
 
+    await admin.locator('#update-current').filter({ hasText: 'v0.1.0-preview.8' }).waitFor();
+    assert.equal(await page.locator('#updates-section').isVisible(), false, 'updates are local Admin only');
+    assert.equal(requests.some(r => r.listenerRole === 'command' && r.path.startsWith('/api/update')), false, 'remote UI never requests update status');
+    assert.equal(await admin.locator('#install-update').isDisabled(), true, 'update installation is unavailable during playback');
+    assert.match(await admin.locator('#update-requirements').textContent(), /Stop playback and disable stage/);
+    assert.equal(requests.some(r => r.path === '/api/update/install'), false, 'the browser must not trigger automatic installation during a session');
+    assert.match(await admin.locator('#updates-section').textContent(), /Updates install automatically when Smart Stage starts/);
+    state.state = 'stopped'; state.activeCueId = ''; state.updatePending = true; state.revision++; broadcast();
+    update = { ...update, phase: 'checking', message: 'Checking for updates before starting…' };
+    await admin.evaluate(() => loadUpdateStatus());
+    await admin.waitForFunction(() => document.getElementById('update-requirements').textContent.includes('before starting'));
+    assert.equal(await admin.locator('.playlist-row input').first().isDisabled(), true, 'automatic startup check reserves show editing');
+    assert.equal(await page.locator('.cue').first().isDisabled(), true, 'automatic startup check reserves remote playback');
+    assert.equal(await admin.locator('#stop').isDisabled(), false, 'STOP remains available during automatic startup checking');
+    state.updatePending = false;
+    update = { ...update, phase: 'available', message: 'A new version is available.' };
+    await admin.evaluate(() => loadUpdateStatus());
+    state.state = 'stopped'; state.activeCueId = ''; state.stageEnabled = true; state.revision++; broadcast();
+    await admin.waitForFunction(() => document.getElementById('stage-state').textContent.startsWith('Stage output enabled'));
+    assert.equal(await admin.locator('#install-update').isDisabled(), true, 'a stopped but enabled black stage still blocks installation');
+    state.stageEnabled = false; state.revision++; broadcast();
+    await admin.waitForFunction(() => !document.getElementById('install-update').disabled);
+    updateGetDelay = 150;
+    const beforeUpdateGets = updateGets;
+    await admin.evaluate(() => Promise.all([loadUpdateStatus(), loadUpdateStatus(), loadUpdateStatus()]));
+    assert.equal(updateGets, beforeUpdateGets + 1, 'concurrent refresh attempts share one in-flight request');
+    updateGetDelay = 0;
+    update.releaseURL = 'https://github.com.evil.invalid/arizzi74/Smart-Stage/releases/tag/v1';
+    update.latestVersion = '<img src=x onerror="window.__xss=true">';
+    await admin.evaluate(() => loadUpdateStatus());
+    assert.equal(await admin.locator('#update-release').isVisible(), false, 'untrusted release URLs are not linked');
+    assert.equal(await admin.locator('#update-latest img').count(), 0, 'version labels are rendered as text');
+    assert.equal(await admin.evaluate(() => window.__xss), undefined);
+    update.lastUpdate = { version: 'v0.1.0-preview.8', status: 'updated', message: 'Firewall approval was cancelled. Allow Smart Stage in Firewall Options. <img src=x>' };
+    await admin.evaluate(() => loadUpdateStatus());
+    assert.equal(await admin.locator('#update-outcome').isVisible(), true, 'last update warnings remain visible alongside the current check status');
+    assert.match(await admin.locator('#update-outcome').textContent(), /Firewall approval was cancelled/);
+    assert.equal(await admin.locator('#update-outcome img').count(), 0, 'update outcome is rendered as text');
+    update.releaseURL = 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9';
+    update.latestVersion = 'v0.1.0-preview.9';
+    failUpdateCheck = true;
+    await admin.locator('#check-update').click();
+    await admin.waitForFunction(() => document.getElementById('check-update').textContent === 'Checking…');
+    assert.equal(await admin.locator('#check-update').isDisabled(), true);
+    await admin.waitForFunction(() => document.getElementById('update-message').textContent.includes('GitHub is unavailable'), { timeout: 10000 });
+    assert.equal(await admin.locator('#check-update').isDisabled(), false, 'failed checks can be retried');
+    assert.equal(await admin.locator('#install-update').isDisabled(), true);
+    failUpdateCheck = false;
+    await admin.locator('#check-update').click();
+    await admin.waitForFunction(() => !document.getElementById('install-update').disabled, { timeout: 10000 });
+    assert.equal(await admin.locator('#update-release').getAttribute('href'), update.releaseURL);
+    await admin.locator('#file-list input[type=checkbox]').check();
+    await admin.locator('#install-update').click();
+    await admin.waitForFunction(() => document.getElementById('install-update').textContent === 'Downloading…');
+    assert.equal(requests.filter(r => r.path === '/api/update/install').length, 1, 'one click starts exactly one install');
+    assert.equal(await admin.locator('.playlist-row input').first().isDisabled(), true, 'playlist editing is disabled during preparation');
+    assert.equal(await admin.locator('.cue-tools button').first().isDisabled(), true, 'Admin PLAY is disabled during preparation');
+    assert.equal(await page.locator('.cue').first().isDisabled(), true, 'remote PLAY is disabled by authoritative updatePending state');
+    assert.equal(await admin.locator('#save-outputs').isDisabled(), true);
+    assert.equal(await admin.locator('#add-files').isDisabled(), true);
+    assert.equal(await admin.locator('#stop').isDisabled(), false, 'STOP remains available during update preparation');
+    update = { ...update, phase: 'restarting', message: 'Restarting Smart Stage. Admin will reconnect automatically.' };
+    await admin.evaluate(() => loadUpdateStatus());
+    const beforeRestartSessions = requests.filter(r => r.path === '/api/local-session').length;
+    const oldRemoteURL = await admin.locator('#remote-url').textContent();
+    restarting = true;
+    for (const client of clients) client.end();
+    await admin.waitForFunction(() => document.getElementById('connection').textContent.includes('Restarting'));
+    assert.equal(await admin.locator('#notice.error').count(), 0, 'expected restart is not presented as a connection failure');
+    sessions.clear(); token = '87654321';
+    state.instanceId = 'browser-fixture-after-update'; state.revision = 1; state.updatePending = false;
+    update = { ...update, currentVersion: 'v0.1.0-preview.9', phase: 'idle', available: false, message: 'Smart Stage is up to date.' };
+    links = [fixtureLink('Wi-Fi', commandBase, 0)]; restarting = false;
+    await admin.waitForFunction(() => document.getElementById('remote-code').textContent === '87654321', { timeout: 15000 });
+    await admin.locator('#connection.live').waitFor();
+    assert(requests.filter(r => r.path === '/api/local-session').length > beforeRestartSessions, 'Admin renews its session after restart');
+    assert.notEqual(await admin.locator('#remote-url').textContent(), oldRemoteURL, 'Admin replaces the obsolete phone link');
+    assert.equal(await admin.locator('#remote-url').textContent(), links[0].url);
+    await admin.waitForFunction(() => document.getElementById('update-current').textContent === 'v0.1.0-preview.9');
+    assert.equal(await admin.locator('.playlist-row input').first().isDisabled(), false, 'edits become available after the new host starts');
+    assert.equal(await admin.locator('#install-update').isDisabled(), true, 'installed version is no longer offered');
+    assert.equal(requests.filter(r => r.path === '/api/update/install').length, 1, 'reconnection does not repeat installation');
+
     const invalid = await browser.newPage(); invalid.on('pageerror', e => errors.push(e.message));
     await invalid.goto(commandBase + '/command#token=00000000'); await invalid.locator('#pairing').waitFor();
     await invalid.waitForFunction(() => document.getElementById('pair-error').textContent.includes('current link'));
@@ -170,8 +277,8 @@ const assert = require('node:assert/strict');
     await invalid.goto(commandBase + '/command'); await invalid.locator('#pairing').waitFor();
     assert.match(await invalid.locator('#pair-form').textContent(), /Scan the QR code/);
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, clipboardHTTPFallback: true, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
-    console.log('Browser checks passed: automatic Admin, token links/cookie resume/manual reconnect, link and QR panel/LAN refresh/clipboard fallback, four cues, escaping, STOP visibility/pending/offline behavior, reconnect, and responsive layouts.');
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    console.log('Browser checks passed: automatic Admin, token links/session reconnect, QR panel/LAN refresh/clipboard fallback, cues/escaping/STOP/responsive layouts, and update status/retry/startup reservation/install guards/restart session and QR refresh.');
     await context.close();
   } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer].map(server => new Promise(resolve => server.close(resolve)))); }
 })().catch(e => { console.error(e); process.exit(1); });

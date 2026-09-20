@@ -17,6 +17,31 @@ Quit command request graceful shutdown. The additional menu bar control reopens
 local Admin, reveals the log, and requests normal shutdown. Closing the browser
 leaves the host running.
 
+## Automatic updates
+
+`internal/update` checks the fixed GitHub repository on launch and every six
+hours. Startup alone can install automatically: the coordinator reserves stopped
+playback and a disabled stage before the first check, temporarily rejecting PLAY
+and configuration changes. A ten-second metadata timeout releases the reservation
+when offline. Subsequent checks never automatically stop/restart a running
+session. Authenticated local Admin can explicitly request an idle update.
+
+The updater selects a newer release for the running OS/architecture and package
+type, verifies its SHA-256 checksum, and validates a bounded archive before
+handoff. Staging is beside the installation so replacement stays on one volume.
+A temporary copy of the existing executable runs in helper mode without the
+native playback loop, waits for the original process to exit, and replaces the
+app with a backup for rollback. The replacement registers a private startup
+receipt and confirms its expected version after native initialization, saved-show
+loading and listener setup. Show configuration is never replaced by the updater.
+Mac bundles restart through LaunchServices to retain their Dock identity; Windows
+uses a detached helper to outlive the locked original executable. Update outcomes
+are shown in Admin, and a failed target is not retried automatically in a loop.
+
+The helper exists only during an update, with no extra downloaded runtime or
+permanent service. `--no-auto-update` keeps checks but disables installation on
+launch. Admin update routes retain loopback, session, Origin and CSRF restrictions.
+
 ## Threads and ownership
 
 `internal/app.Service` owns authoritative show/playback state. Its mutex covers

@@ -1,0 +1,52 @@
+name: Verify automatic updates against published native releases
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  update:
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            os: darwin
+            arch: arm64
+          - runner: macos-15-intel
+            os: darwin
+            arch: amd64
+          - runner: windows-2025
+            os: windows
+            arch: amd64
+          - runner: windows-11-arm
+            os: windows
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: update-fixture-${{ matrix.os }}-${{ matrix.arch }}
+          path: dist/update-fixture
+      - name: Exercise real automatic discovery, replacement and restart
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+          SMARTSTAGE_SKIP_FIREWALL: '1'
+        run: |
+          python3 scripts/verify-auto-update.py --version "$RELEASE_VERSION" \
+            --os '${{ matrix.os }}' --arch '${{ matrix.arch }}' \
+            --fixture dist/update-fixture --output 'dist/auto-update/${{ matrix.os }}-${{ matrix.arch }}'
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: auto-update-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            dist/auto-update/**/*.json
+            dist/auto-update/**/*.log
+          if-no-files-found: warn

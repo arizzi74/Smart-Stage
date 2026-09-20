@@ -40,6 +40,7 @@ type API struct {
 	role        string
 	cookieName  string
 	remoteLinks []RemoteLink
+	updater     UpdateController
 }
 
 // New defaults to the loopback-only Admin handler. A network controller must use
@@ -146,7 +147,7 @@ func respondError(w http.ResponseWriter, err error) {
 	}
 	status := 400
 	switch e.Code {
-	case "revision_conflict", "request_conflict", "stale_epoch", "stale_instance", "active_cue", "must_stop":
+	case "revision_conflict", "request_conflict", "stale_epoch", "stale_instance", "active_cue", "must_stop", "updating":
 		status = 409
 	case "cue_not_found":
 		status = 404
@@ -320,6 +321,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	key := r.Method + " " + path
 	switch key {
+	case "GET /api/update", "POST /api/update/check", "POST /api/update/install":
+		a.updateRequest(w, r)
 	case "GET /api/remote-control":
 		a.mu.RLock()
 		links := append([]RemoteLink{}, a.remoteLinks...)

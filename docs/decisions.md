@@ -84,6 +84,30 @@ STOP bypasses ordinary-operation admission. These bound memory/work without
 adding another service. No drag-and-drop is necessary because accessible Up/Down
 controls meet the ordering requirement.
 
+## Automatic application updates (20 September 2026)
+
+The user explicitly chose automatic installation. Smart Stage therefore checks
+official GitHub releases at startup and installs a newer compatible release
+before enabling playback. Startup reserves the same coordinator used by remote
+PLAY, so a phone cannot start a cue during update preparation. Saved edits finish
+before reservation. Failed/offline checks release controls. Checks later in the
+session advertise updates for the next launch; they never interrupt a show.
+Admin also offers an immediate update action while stopped with stage disabled.
+
+The update code is embedded in the existing executable. A temporary copy of that
+executable performs replacement after graceful shutdown and actual parent exit;
+there is no installed updater service or additional runtime. Mac updates replace
+the complete signed app bundle and relaunch through LaunchServices. Standalone
+Mac and Windows downloads replace their executable in place. The previous
+installation remains recoverable until the new instance confirms startup.
+
+Release discovery uses the release list because GitHub's latest endpoint omits
+prereleases. Numeric semantic-version ordering and stable/preview channel rules
+prevent downgrade or lexicographic mistakes. Downloads use the fixed repository,
+HTTPS and published SHA-256 checksums. Only local authenticated Admin exposes
+update actions; it accepts no caller-supplied feed URL, destination or version.
+Restart preserves show files and rotates the phone pairing code as usual.
+
 ## Local Admin and camera pairing (20 September 2026)
 
 The user's latest instruction is authoritative over the original prompt: launch

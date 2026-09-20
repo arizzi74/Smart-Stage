@@ -27,6 +27,7 @@ import (
 	"smartstage/internal/platform"
 	"smartstage/internal/playback"
 	"smartstage/internal/store"
+	"smartstage/internal/update"
 	"smartstage/internal/web"
 )
 
@@ -39,14 +40,24 @@ func (r *rootsFlag) String() string     { return strings.Join(*r, ", ") }
 func (r *rootsFlag) Set(v string) error { *r = append(*r, v); return nil }
 
 func main() {
+	// Helper mode performs replacement only after the original process exits.
+	if len(os.Args) == 3 && os.Args[1] == "--smartstage-apply-update" {
+		if err := update.RunHelper(os.Args[2]); err != nil {
+			fmt.Fprintln(os.Stderr, "Smart Stage update:", err)
+			os.Exit(1)
+		}
+		return
+	}
 	port := flag.Int("port", 8788, "remote-control HTTP port (0 selects an available port)")
 	adminPort := flag.Int("admin-port", 8787, "localhost Admin HTTP port (0 selects an available port)")
 	bind := flag.String("bind", "0.0.0.0", "remote-control listen IP; Admin always binds 127.0.0.1")
 	noBrowser := flag.Bool("no-browser", false, "do not automatically open Admin in the system browser")
+	noAutoUpdate := flag.Bool("no-auto-update", false, "check for updates without automatically installing them at launch")
 	advertise := flag.String("advertise-ip", "", "local address to prefer in Admin's remote-control links")
 	configDir := flag.String("config-dir", "", "configuration directory (default: per-user SmartStage directory)")
 	logLevel := flag.String("log-level", "info", "debug, info, warn or error")
 	showVersion := flag.Bool("version", false, "print build and platform information")
+	updateReceipt := flag.String("update-receipt", "", "internal update startup receipt")
 	var roots rootsFlag
 	flag.Var(&roots, "media-root", "allowed host media directory; repeat for several roots")
 	flag.Parse()
@@ -55,6 +66,11 @@ func main() {
 		return
 	}
 	var level slog.Level
+	if *updateReceipt != "" {
+		if err := update.RegisterStartup(*updateReceipt, version); err != nil {
+			exitError(err)
+		}
+	}
 	if err := level.UnmarshalText([]byte(*logLevel)); err != nil {
 		exitError(errors.New("invalid --log-level; use debug, info, warn or error"))
 	}
@@ -83,7 +99,20 @@ func main() {
 		}
 		*configDir = filepath.Join(dir, "SmartStage")
 	}
-	err := platform.Run(func(backend playback.Backend) error {
+	absoluteConfigDir, err := filepath.Abs(*configDir)
+	if err != nil {
+		exitError(err)
+	}
+	*configDir = absoluteConfigDir
+	for i, root := range roots {
+		absoluteRoot, err := filepath.Abs(root)
+		if err != nil {
+			exitError(err)
+		}
+		roots[i] = absoluteRoot
+	}
+	var pendingUpdate *update.Prepared
+	err = platform.Run(func(backend playback.Backend) error {
 		storage, config, err := store.Open(*configDir)
 		if err != nil {
 			return err
@@ -135,6 +164,40 @@ func main() {
 		adminServer, commandServer := newServer(adminAPI), newServer(commandAPI)
 		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer cancel()
+		updateReady := make(chan *update.Prepared, 1)
+		executable, _ := os.Executable()
+		// Normalize parsed options, retaining assigned ports and absolute media
+		// roots even when LaunchServices changes the working directory.
+		restartArgs := []string{"--port", fmt.Sprint(*port), "--admin-port", fmt.Sprint(*adminPort),
+			"--bind", *bind, "--config-dir", *configDir, "--log-level", *logLevel}
+		if *noBrowser {
+			restartArgs = append(restartArgs, "--no-browser")
+		}
+		if *noAutoUpdate {
+			restartArgs = append(restartArgs, "--no-auto-update")
+		}
+		if *advertise != "" {
+			restartArgs = append(restartArgs, "--advertise-ip", *advertise)
+		}
+		for _, root := range roots {
+			restartArgs = append(restartArgs, "--media-root", root)
+		}
+		updater := update.New(update.Options{CurrentVersion: version, Executable: executable,
+			Args: restartArgs, ConfigDir: *configDir, AutoInstall: !*noAutoUpdate && *updateReceipt == "", Reserve: service.ReserveUpdate,
+			Ready: func(prepared *update.Prepared) { updateReady <- prepared }})
+		defer func() {
+			updater.Close()
+			// A user Quit may win the select at the same time staging finishes.
+			// Do not leave an unclaimed prepared update behind in that case.
+			select {
+			case abandoned := <-updateReady:
+				_ = abandoned.Abort()
+			default:
+			}
+		}()
+		adminAPI.SetUpdater(updater)
+		_ = service.Validate()
+		updater.Start(ctx)
 		serveError := make(chan error, 2)
 		go func() { serveError <- adminServer.Serve(httpapi.BoundConnections(adminListener)) }()
 		go func() { serveError <- commandServer.Serve(httpapi.BoundConnections(listener)) }()
@@ -143,10 +206,15 @@ func main() {
 		fmt.Printf("Smart Stage %s\n", version)
 		adminURL := lan.URL("127.0.0.1", *adminPort, "/admin")
 		platform.DesktopAdmin(adminURL)
+		if *updateReceipt != "" {
+			if err := update.ConfirmStartup(*updateReceipt, version); err != nil {
+				return err
+			}
+		}
 		fmt.Printf("Admin: %s\nRemote listener: %s\n", adminURL, lan.URL(*bind, *port, "/command"))
 		exitHint := "Ctrl+C exits"
 		if runtime.GOOS == "darwin" && os.Getenv("SMARTSTAGE_APP_LAUNCH") == "1" {
-			exitHint = "Use the Smart Stage menu bar item to quit"
+			exitHint = "Right-click the Smart Stage Dock icon and choose Quit"
 		}
 		fmt.Printf("Open Admin to scan or copy the remote-control link. %s; STOP retains an enabled black stage.\n", exitHint)
 		if !*noBrowser {
@@ -158,11 +226,17 @@ func main() {
 				}
 			}()
 		}
-		_ = service.Validate()
 		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 		for {
 			select {
+			case pendingUpdate = <-updateReady:
+				service.Close()
+				shutdownCtx, done := context.WithTimeout(context.Background(), 3*time.Second)
+				_ = adminServer.Shutdown(shutdownCtx)
+				_ = commandServer.Shutdown(shutdownCtx)
+				done()
+				return nil
 			case <-ctx.Done():
 				service.Close()
 				shutdownCtx, done := context.WithTimeout(context.Background(), 3*time.Second)
@@ -191,7 +265,16 @@ func main() {
 		}
 	})
 	if err != nil {
+		if pendingUpdate != nil {
+			_ = pendingUpdate.Abort()
+		}
 		exitError(err)
+	}
+	if pendingUpdate != nil {
+		if err := pendingUpdate.Launch(); err != nil {
+			_ = pendingUpdate.Abort()
+			exitError(fmt.Errorf("could not start the updater; the installed app was retained: %w", err))
+		}
 	}
 }
 func newServer(handler http.Handler) *http.Server {

@@ -28,6 +28,10 @@ func (s *Service) EditPlaylist(edit PlaylistEdit) (model.Config, error) {
 	s.editMu.Lock()
 	defer s.editMu.Unlock()
 	s.mu.Lock()
+	if s.closed || s.state.UpdatePending {
+		s.mu.Unlock()
+		return model.Config{}, problem("updating", "Wait for the application update before editing the show")
+	}
 	base := s.config.Clone()
 	s.mu.Unlock()
 	if edit.ExpectedRevision != base.PlaylistRevision {
@@ -150,6 +154,10 @@ func (s *Service) ConfigureOutputs(ctx context.Context, out model.Outputs) error
 	s.editMu.Lock()
 	defer s.editMu.Unlock()
 	s.mu.Lock()
+	if s.closed || s.state.UpdatePending {
+		s.mu.Unlock()
+		return problem("updating", "Wait for the application update before changing outputs")
+	}
 	if s.state.State != "stopped" && s.state.State != "error" {
 		s.mu.Unlock()
 		return problem("must_stop", "STOP playback before changing outputs")
@@ -197,6 +205,9 @@ func (s *Service) Stage(ctx context.Context, enabled bool) error {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed || s.state.UpdatePending {
+		return problem("updating", "Wait for the application update before enabling the stage")
+	}
 	if s.state.Generation != gen || (s.state.State != "stopped" && s.state.State != "error") || s.configBusy {
 		return problem("must_stop", "Enable stage output while stopped")
 	}
@@ -204,7 +215,13 @@ func (s *Service) Stage(ctx context.Context, enabled bool) error {
 		return problem("output_unavailable", "Re-select and save available outputs before enabling the stage")
 	}
 	s.stopLocked()
-	return s.backend.Stage(s.state.Generation, out.DisplayID, true)
+	if err := s.backend.Stage(s.state.Generation, out.DisplayID, true); err != nil {
+		return err
+	}
+	// Stop and Stage produce separate native completions. The earlier stopped
+	// event may still say stage=false while the enable request is queued.
+	s.stageEnablePending = true
+	return nil
 }
 
 func (s *Service) queueValidation() {
@@ -216,6 +233,9 @@ func (s *Service) queueValidation() {
 func (s *Service) Validate() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.closed || s.state.UpdatePending {
+		return problem("updating", "Wait for the application update before validating cues")
+	}
 	if s.state.ValidationJob.Running || len(s.validation) > 0 {
 		return problem("busy", "Validation is already running")
 	}
