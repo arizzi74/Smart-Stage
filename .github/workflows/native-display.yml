@@ -1,8 +1,8 @@
-name: Candidate native Mac display pixels
+name: Candidate native display pixels
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/native-display.yml', 'scripts/native-display-smoke.py', 'scripts/pixel-count.go']
+    paths: ['.github/workflows/native-display.yml', 'scripts/native-display-smoke.py', 'scripts/windows_display_capture.py', 'scripts/pixel-count.go']
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,9 +15,21 @@ jobs:
       matrix:
         include:
           - runner: macos-15
+            os: darwin
             arch: arm64
+            suffix: ''
           - runner: macos-15-intel
+            os: darwin
             arch: amd64
+            suffix: ''
+          - runner: windows-2025
+            os: windows
+            arch: amd64
+            suffix: '.exe'
+          - runner: windows-11-arm
+            os: windows
+            arch: arm64
+            suffix: '.exe'
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -30,17 +42,19 @@ jobs:
         with:
           github-token: ${{ github.token }}
           run-id: '35478340978'
-          name: native-darwin-${{ matrix.arch }}
+          name: native-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/target-build
       - name: Build development-only PNG pixel analyzer
-        run: go build -o dist/pixel-count scripts/pixel-count.go
+        shell: bash
+        run: go build -o dist/pixel-count${{ matrix.suffix }} scripts/pixel-count.go
       - name: Capture actual native video, STOP, restart and natural end
+        shell: bash
         run: |
-          chmod +x dist/target-build/native-harness-darwin-${{ matrix.arch }}
-          python3 scripts/native-display-smoke.py dist/target-build/native-harness-darwin-${{ matrix.arch }} dist/pixel-count dist/native-display-${{ matrix.arch }}
+          chmod +x dist/target-build/native-harness-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.suffix }}
+          python3 scripts/native-display-smoke.py dist/target-build/native-harness-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.suffix }} dist/pixel-count${{ matrix.suffix }} dist/native-display-${{ matrix.arch }}
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
-          name: native-display-darwin-${{ matrix.arch }}
+          name: native-display-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/native-display-${{ matrix.arch }}/
           if-no-files-found: warn

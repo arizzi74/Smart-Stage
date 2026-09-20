@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Observe actual Mac runner display pixels through the native backend harness.
+"""Observe actual runner display pixels through the native backend harness.
 
 This is virtual-desktop evidence, not physical projector or latency acceptance.
 Screen-capture permission is not changed. Unavailable capture is reported as such.
@@ -13,7 +13,7 @@ import sys
 import threading
 import time
 
-assert sys.platform == 'darwin', 'This diagnostic currently supports Mac runners'
+assert sys.platform == 'darwin' or os.name == 'nt', 'Native display diagnostic requires Mac or Windows'
 exe, pixel_tool, destination = map(lambda s:Path(s).resolve(), sys.argv[1:4])
 destination.mkdir(parents=True,exist_ok=True)
 root = Path(__file__).resolve().parent.parent
@@ -27,9 +27,13 @@ def save():
 
 def capture(name):
     path=destination/(name+'.png')
-    result=subprocess.run(['screencapture','-x','-m','-t','png',str(path)],capture_output=True,text=True,timeout=10)
-    if result.returncode:
-        raise RuntimeError('Native screen capture unavailable: '+result.stderr.strip()[-500:])
+    if os.name == 'nt':
+        from windows_display_capture import capture_display
+        capture_display(path,report['display'])
+    else:
+        result=subprocess.run(['screencapture','-x','-m','-t','png',str(path)],capture_output=True,text=True,timeout=10)
+        if result.returncode:
+            raise RuntimeError('Native screen capture unavailable: '+result.stderr.strip()[-500:])
     metrics=json.loads(subprocess.check_output([str(pixel_tool),str(path)],text=True,timeout=10))
     report['captures'].append({'image':path.name,**metrics})
     save()
