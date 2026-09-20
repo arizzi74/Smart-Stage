@@ -9,7 +9,7 @@ The user has an **Apple Silicon Mac only**, an external audio output and a
 second monitor/projector available for physical testing. Its macOS version,
 exact output models and observations are not yet recorded.
 The [Mac physical procedure](macos-physical-test.md)
-uses preview 6 and a separate test configuration; it does not mark any physical
+uses preview 7 and a separate test configuration; it does not mark any physical
 check passed. Windows physical acceptance remains pending.
 
 The later user request supersedes the original networking/distribution design:
@@ -36,7 +36,15 @@ the app has not yet been recorded; this is not a passed physical network test.
 Physical output observations remain pending. The user also
 requested that the Mac app run without a Terminal window.
 
-Current release: preview 6, commit `4aa3529`.
+Current release: preview 7, commit `7ca8c06`. It adds no-Terminal Mac app launch
+and a scoped, administrator-authorized firewall allowance. Both Mac Finder
+checks and all four native release builds passed in
+[run 35503933513](https://github.com/arizzi74/Smart-Stage/actions/runs/35503933513).
+The installer's real blocked-to-permitted rule changes and preservation checks
+passed on both Mac runners. Interactive password entry and the user's physical
+LAN retest remain unverified.
+
+Previous release: preview 6, commit `4aa3529`.
 [Native/browser run 35500115900](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115900)
 passed on all four target runners. [Tag run 35500115581](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115581)
 published the release after native/application/icon/ZIP checks and passed fresh

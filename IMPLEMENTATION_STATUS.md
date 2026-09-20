@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.6
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.7
 
 ## Implemented
 
@@ -32,6 +32,21 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.6
   Admin. The Mac menu bar provides Admin, log access and graceful Quit.
 
 ## Built and automatically tested
+
+Preview 7 is source `7ca8c0685ed237849406fbf2371d44a9c500ce8d`. The Mac app
+runs without Terminal, saves logs and provides Admin/Quit in the menu bar.
+All four release builds and native application/icon checks passed in
+[run 35503933513](https://github.com/arizzi74/Smart-Stage/actions/runs/35503933513),
+which published the release. All six independently downloaded ZIPs match their
+checksums, architectures and clean source metadata. Native Mac checks observed
+no controlling terminal, log redirection, same-process reopen and graceful Quit.
+The entire tagged workflow passed, including all four published-browser and
+fresh-download checks plus both Mac installers. Default preview 7 installation
+passed on both Macs in [run 35504365951](https://github.com/arizzi74/Smart-Stage/actions/runs/35504365951).
+The installer also repairs Smart Stage's blocked app-firewall rule with
+administrator authorization; native rule/cancellation/preservation checks passed
+on both Mac architectures. Details and test limits are in
+[release verification](docs/release-verification.md).
 
 The Mac app installer passed on Apple Silicon and Intel in
 [run 35501797274](https://github.com/arizzi74/Smart-Stage/actions/runs/35501797274).

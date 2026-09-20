@@ -12,8 +12,12 @@ Admin displays remote URLs and a QR code containing the per-launch numeric token
 The original standalone-binary installers were retired in preview 6. A later
 Mac-only installer uses the existing preview 6 `.app.zip` assets, installs the
 app with its icon under `~/Applications`, and removes quarantine only from that
-app before launch. Historical release and installer results below remain
-evidence for their named older versions.
+app before launch. Preview 7 adds a Mac app that runs without Terminal, with
+menu bar controls for Admin, logs and Quit. The Mac installer now also requests
+administrator authorization to allow the installed executable through the app
+firewall, and repairs an existing blocked bundle rule. Global firewall settings
+and other applications' rules are preserved. Historical release and installer
+results below remain evidence for their named older versions.
 
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin and report
@@ -23,6 +27,49 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+[Preview 7](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.7)
+is source `7ca8c0685ed237849406fbf2371d44a9c500ce8d`.
+[Tagged run 35503933513](https://github.com/arizzi74/Smart-Stage/actions/runs/35503933513)
+completed all 16 jobs successfully: shared race/vet, four native builds and
+application/icon checks, publication of 36 assets, four fresh ZIP downloads and
+startup checks, four real browser/native control checks, and both published Mac
+app installers. Each Mac installer report records 54 true checks, including
+the no-Terminal lifecycle and real firewall-rule changes described below.
+All six independently downloaded ZIPs match their checksums; their executable
+architecture, Go 1.26.5 build metadata and clean source revision match the tag.
+The Mac app cores match the standalone executable bytes and retain the source
+icon. Reports and scope: [`verification/release-preview7/`](verification/release-preview7/).
+
+The installer default was switched to preview 7 at `f6ae30f`.
+[Default-install run 35504365951](https://github.com/arizzi74/Smart-Stage/actions/runs/35504365951)
+passed on both Mac architectures at verification source `84337bd`. Native CI
+fetches the immutable published installer source and checks its exact bytes;
+the unversioned public `main/install.sh` entry point was checked separately and
+matched SHA-256 `0970a14512627aab1cef624274ec41df9f57255edbf724dc3aac1f0c7079d409`.
+This separates reproducible native execution from mutable-branch/CDN timing.
+The `installer-default-*.json` and `public-bootstrap-verification.json` records
+retain both observations.
+
+The Mac menu bar implementation and all four native/browser targets passed
+[run 35503710100](https://github.com/arizzi74/Smart-Stage/actions/runs/35503710100)
+at source `c39a11e45a2eefe7f75ef2a19f6b24809a2b516a`. Both Mac checks launched
+the app through Finder without starting Terminal, verified no controlling TTY,
+observed stdout/stderr in the log file, reopened Admin with the same core PID,
+and sent a standard Quit event that closed the process and both HTTP ports.
+
+The firewall installer at source `7ca8c0685ed237849406fbf2371d44a9c500ce8d`
+passed [run 35503879234](https://github.com/arizzi74/Smart-Stage/actions/runs/35503879234)
+on both Mac architectures, using the published preview 6 app archives. Each
+report records 45 true checks, including real blocked-to-permitted firewall
+rule transitions for the core and bundle, unchanged global and unrelated app
+rules, cancellation recovery, and skipping elevation for an identical already
+allowed installation. The four global firewall settings were preserved; the
+hosted runners started with the firewall disabled. AppleScript command building
+and quoting ran normally, with only interactive elevation replaced by native
+passwordless sudo on the CI runner. These checks establish rule changes, not
+password-dialog interaction or physical packet filtering. Reports are retained
+under [`verification/release-preview7/`](verification/release-preview7/).
 
 The Mac app installer at source `24777c368067d026379693b1ea16fdd8ed41924b` passed
 [run 35501797274](https://github.com/arizzi74/Smart-Stage/actions/runs/35501797274)
