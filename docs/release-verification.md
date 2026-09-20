@@ -30,6 +30,15 @@ and [browser run 35480086365](https://github.com/arizzi74/Smart-Stage/actions/ru
 passed on all four targets at installer/test commit `a95a902`, without setting a
 version override. Public raw installer URLs were also checked to serve preview 4.
 
+[Windows audio run 35482038438](https://github.com/arizzi74/Smart-Stage/actions/runs/35482038438)
+adds actual native audio-renderer event checks on both Windows architectures:
+all four cues and 120 seconds of transitions passed against published preview 4,
+using a signed virtual endpoint on disposable runners. A subsequent endpoint
+meter check observed six signal/STOP/replay cycles per architecture but failed
+its isolation assertion on the shared virtual cable. [Audio results](windows-audio-results.md)
+retain the exact setup, raw samples, session diagnostics and pre-reboot limitation.
+The stock-runner release/browser coverage below remains unchanged.
+
 Earlier evidence follows, retained with its own source and release identity.
 
 [Preview 3](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.3),

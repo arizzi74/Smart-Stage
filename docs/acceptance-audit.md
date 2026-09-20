@@ -19,9 +19,14 @@ on each hosted machine, so this does not establish phone/Wi-Fi compatibility.
 
 [Windows capability run 35473613211](https://github.com/arizzi74/Smart-Stage/actions/runs/35473613211)
 confirmed both Windows audio services running but no installed sound devices or
-native audio endpoints on either runner architecture. The published preview's
-silent-video/restart checks passed in those same environments; Windows audio
-playback still needs machines with real render endpoints.
+native audio endpoints on either stock runner architecture. The published preview's
+silent-video/restart checks passed in those same environments. A separate
+[signed virtual-driver evaluation](windows-audio-results.md) passed all four
+native cue playback/STOP event checks on both Windows architectures, followed
+by 120 seconds of transitions and restart. A subsequent diagnostic observed
+six signal/STOP/replay cycles on each architecture, with the application session
+on the selected endpoint. Its strict isolation check failed on the shared
+virtual cable's driver-provided meters; physical audio acceptance remains open.
 
 [Captured-pixel checks](native-display-results.md) at source `505a1e4` observe
 video/restart and STOP/end black stage on both Macs and Windows AMD64, with a
@@ -36,7 +41,7 @@ the physical scenario or measure physical latency.
 | §§2–3: one host process, native playback, embedded offline web interfaces, no external runtime/player | `cmd/smartstage`, `internal/web/embed.go`, both compiled-in bridges; four executable import audits allow OS libraries only | Clean machines without developer tools or extra media runtimes; physical host playback |
 | §3: release architectures, metadata, stripped builds, checksums | `scripts/build.sh`, four native CI jobs and published Mac ARM64/AMD64 + Windows ARM64/AMD64 assets; downloaded headers/hashes checked | Physically established minimum OS versions; signing/notarization workflow |
 | §4: AVFoundation/AppKit/Core Audio on main thread, per-player routing | `bridge_darwin.m`, initial-thread lock in `platform_native.go`; four fixture cues natively play/stop on both Mac runners, including one non-default virtual endpoint | Real non-default speaker and video soundtrack routing; second screen |
-| §4: Windows native renderer, explicit endpoint, one timeline and compiled-in COM bridge | `bridge_windows.cpp`; documented Media Session/EVR fallback and common MTA; real format inspection and silent-video playback on both Windows runners. Source/API review corrected session-wide STOP mute to per-stream channel volume control | Windows runners expose no audio endpoints, so actual audio-renderer playback, successive-cue audibility, per-stream STOP and routing remain unverified |
+| §4: Windows native renderer, explicit endpoint, one timeline and compiled-in COM bridge | `bridge_windows.cpp`; documented Media Session/EVR fallback and common MTA; all four cue playback/STOP events and restart passed with a signed virtual endpoint on both Windows architectures. Six signal/STOP/replay cycles were observed on each architecture, with session signal on the selected endpoint | Strict isolation assertion failed on shared driver meters; physical sound, STOP and independent output isolation remain unverified |
 | §4: bounded bridge, ownership and orderly shutdown | C ABI ownership in `bridge.h`; capped native queues, latest command/load slots, Go inspection drain; shutdown-during-validation native smoke | Native heap/handle stability over the full soak and difficult OS/driver shutdown conditions |
 | §5: flags, launch keys, local URLs, interface refresh, port errors | `cmd/smartstage/main.go`, `internal/lan`; loopback native application launch, actual distinct keys; LAN unit checks include IPv4 link-local and IPv6 global URLs | Actual phone reachability and changing physical interfaces. IPv6 link-local scope URLs are deliberately not advertised |
 | §6: host browsing, roots, symlinks, Unicode, volumes, read-only files | `internal/files`; real target-OS path tests, native Unicode fixture inspection, root/symlink containment and 1,000-entry listing checks | Real disconnected drives, protected folders, Windows reparse configurations and OS permission prompts |
@@ -64,10 +69,10 @@ These are the specification's eleven steps, not a substitute scenario.
 | 2. Actual LAN URLs and separate keys | Real browser pairs using separate launch keys at a printed non-loopback host IPv4 URL on all four runners; LAN discovery has unit coverage. Physical remote LAN reachability pending. |
 | 3. Pair Admin and browse host filesystem | Real browser interacts with each published native application and selects actual host files. Physical remote browser-to-host check pending. |
 | 4. Add two audio/two video cues, labels and order | Real Admin browser and separate actual application HTTP checks pass on all four runners. |
-| 5. Non-default audio and second display | **Pending physical hardware**. Only Mac ARM64 has a tested non-default virtual endpoint. |
+| 5. Non-default audio and second display | **Pending physical hardware**. Mac ARM64 and both Windows virtual-driver evaluations select a non-default virtual endpoint; Windows meter isolation remains unresolved. |
 | 6. Pair a phone/tablet on the same LAN | **Pending**. Desktop Chromium and HTTP sessions are insufficient proof. |
 | 7. Four ordered labelled buttons and continuously visible STOP | Real Command browser checks pass at 390×844 on all four native hosts; synthetic layout checks cover the other listed sizes. Physical mobile browsers pending. |
-| 8. Each cue on chosen physical speakers/display | Mac virtual playback passes all four cues; Windows silent-video playback only. **Physical routing pending on both OSes**. |
+| 8. Each cue on chosen physical speakers/display | Mac virtual playback and Windows virtual-driver playback events pass all four cues. **Physical routing pending on both OSes**; Windows meter isolation remains unresolved. |
 | 9. STOP during audio/video/loading, no restart, silence/blackout | State/race/native events pass available checks. Physical output and latency pending. |
 | 10. Natural end without advance, silent/black | Native completion/stage-enabled events pass. Physical sound/pixels pending. |
 | 11. Restart restores configuration while silent/stage-disabled | Actual application checks pass on all four runners; physical observation pending. |

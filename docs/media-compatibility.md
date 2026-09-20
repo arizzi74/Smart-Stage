@@ -17,9 +17,13 @@ and invokes no encoder/player. The inspected baseline is:
 | MP4 with soundtrack | Same video plus AAC-LC stereo 48 kHz, 128 kbit/s | Passed on all four |
 | Damaged MP4 | Deliberate non-media bytes | Correctly rejected on all four |
 
-These are sample profiles, not guarantees for all MP3/WAV/MP4 files. The Windows
-runners have no audio render endpoints; their audio decoder inspection is not
-audio renderer routing evidence. Mac runner outputs are virtual/null devices.
+These are sample profiles, not guarantees for all MP3/WAV/MP4 files. Stock
+Windows runners have no audio render endpoints. A separate
+[signed virtual-driver evaluation](windows-audio-results.md) passed actual
+native playback/STOP events for all four cues on both Windows architectures,
+and observed signal/STOP/replay for WAV, MP3 and H.264/AAC. Its strict isolation
+test failed on the two driver-provided meters of the same virtual cable.
+Mac runner outputs are virtual/null devices.
 Physical speaker/projector results and full-file integrity remain unverified.
 
 Windows preflight uses Source Reader PCM/RGB32 output and requires a decoded

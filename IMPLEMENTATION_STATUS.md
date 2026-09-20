@@ -71,12 +71,20 @@ and compiled, but Windows audio playback remains unverified on real hardware.
 
 - Mac CI: all four fixture cues played/stopped through actual AVFoundation, on
   virtual/null audio devices and one virtual display; saved-show restart passed.
-- Windows CI: all four formats natively inspected; silent video played/stopped
-  on a Hyper-V display; restart passed. Runners have **no audio render endpoints**,
-  so Windows audio renderer playback/routing is still unverified.
+- Windows release CI: all four formats natively inspected; silent video
+  played/stopped on a Hyper-V display; restart passed. Stock runners have
+  **no audio render endpoints**.
   [Capability checks](https://github.com/arizzi74/Smart-Stage/actions/runs/35473613211)
   confirmed running Windows audio services but no installed sound devices on
   either runner. They tested the published preview without changing OS settings.
+- A separate [Windows virtual-audio evaluation](docs/windows-audio-results.md)
+  installed a signed vendor driver on disposable runners and passed actual
+  native audio/video playback/STOP for all four cues on AMD64 and ARM64, plus
+  120 seconds of transitions and restart. A later diagnostic observed signal,
+  STOP silence and replay across six audio cycles per architecture. Its strict
+  isolation check still failed: both endpoints expose driver-provided meters
+  with matching readings, while the application session was observed on the
+  selected endpoint. Physical sound and exclusive isolation are not claimed.
 - [Captured native pixels](docs/native-display-results.md) at source `505a1e4`
   show moving/restarted video and STOP/end blackout on both Macs and Windows
   AMD64. Mac captures retain a small OS indicator. Windows ARM64 captures show

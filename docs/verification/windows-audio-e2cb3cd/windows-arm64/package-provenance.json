@@ -1,0 +1,19 @@
+{
+  "source": "https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip",
+  "sha256": "b950e39f01af1d04ea623c8f6d8eb9b6ea5c477c637295fabf20631c85116bfb",
+  "licensing": "https://vb-audio.com/Services/licensing.htm",
+  "vendorRequiresReboot": true,
+  "rebootPerformed": false,
+  "installer": {
+    "Status": 0,
+    "StatusMessage": "Signature verified.",
+    "subject": "CN=BUREL VINCENT Entrepreneur individuel, O=BUREL VINCENT Entrepreneur individuel, STREET=21 avenue des Marguerites, L=Eymet, S=Dordogne, C=FR, OID.1.3.6.1.4.1.311.60.2.1.3=FR, SERIALNUMBER=423 734 177, OID.2.5.4.15=Private Organization",
+    "thumbprint": "A77952D93229D0EC36E2543081EEA7D125732B9C"
+  },
+  "catalog": {
+    "Status": 0,
+    "StatusMessage": "Signature verified.",
+    "subject": "CN=Microsoft Windows Hardware Compatibility Publisher, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+    "thumbprint": "9A4A6CFEE73C6B65945FCAA083DFBCC1E9077E7E"
+  }
+}
