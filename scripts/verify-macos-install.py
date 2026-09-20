@@ -34,6 +34,8 @@ CUSTOM_VALUE = "preserve-this-attribute"
 BUNDLE_NAME = "Smart Stage.app"
 BUNDLE_ID = "com.github.arizzi74.smartstage"
 ROOT = Path(__file__).resolve().parents[1]
+FIREWALL_TOOL = "/usr/libexec/ApplicationFirewall/socketfilterfw"
+FIREWALL_AUTH = "do shell script command with administrator privileges"
 
 
 def run(command, **kwargs):
@@ -67,7 +69,7 @@ def assert_no_quarantine(bundle):
             raise AssertionError(f"Quarantine remains on {path.relative_to(bundle.parent)}")
 
 
-def install(script, directory, version, launch=False, expect_failure=False):
+def install(script, directory, version, launch=False, expect_failure=False, configure_firewall=False):
     environment = os.environ.copy()
     environment["SMARTSTAGE_INSTALL_DIR"] = str(directory)
     if version is None:
@@ -78,6 +80,10 @@ def install(script, directory, version, launch=False, expect_failure=False):
         environment.pop("SMARTSTAGE_NO_LAUNCH", None)
     else:
         environment["SMARTSTAGE_NO_LAUNCH"] = "1"
+    if configure_firewall:
+        environment.pop("SMARTSTAGE_SKIP_FIREWALL", None)
+    else:
+        environment["SMARTSTAGE_SKIP_FIREWALL"] = "1"
     # stdin deliberately reproduces the documented curl | sh entry point.
     result = subprocess.run(["/bin/sh"], input=script, env=environment,
                             text=True, capture_output=True, timeout=240)
@@ -87,6 +93,109 @@ def install(script, directory, version, launch=False, expect_failure=False):
     elif result.returncode != 0:
         raise AssertionError(f"Installer failed ({result.returncode}):\n{result.stdout}\n{result.stderr}")
     return result
+
+
+def firewall_query(option, path=None):
+    command = [FIREWALL_TOOL, option]
+    if path is not None:
+        command.append(str(path))
+    environment = os.environ.copy()
+    environment["LC_ALL"] = "C"
+    return run(command, env=environment).stdout.strip()
+
+
+def firewall_globals():
+    return {option: firewall_query(option) for option in
+            ("--getglobalstate", "--getblockall", "--getallowsigned", "--getstealthmode")}
+
+
+def firewall_apps():
+    applications = {}
+    current = None
+    for line in firewall_query("--listapps").splitlines():
+        match = re.match(r"^\s*\d+\s*:\s*(.+?)\s*$", line)
+        if match:
+            current = match[1]
+        elif current and re.fullmatch(r"\s*\(.*\)\s*", line):
+            applications[current] = line.strip()
+            current = None
+    return applications
+
+
+def firewall_state(path):
+    text = firewall_query("--getappblocked", path)
+    if re.search(r" is not blocked\.?\s*$|^\s*\(\s*Allow incoming connections\s*\)\s*$", text, re.MULTILINE):
+        return "allowed", text
+    if re.search(r" is blocked\.?\s*$|^\s*\(\s*Block incoming connections\s*\)\s*$", text, re.MULTILINE):
+        return "blocked", text
+    return "unknown", text
+
+
+def firewall_checks(script, destination, version, report):
+    """Use real ALF rules; replace only interactive elevation on the CI runner."""
+    assert script.count(FIREWALL_AUTH) == 1, "Update the test-only elevation adapter for the installer"
+    bundle = destination / BUNDLE_NAME
+    core = bundle / "Contents/MacOS/smartstage"
+    targets = (bundle, core)
+    before_globals = firewall_globals()
+    before_apps = firewall_apps()
+    assert all(str(path) not in before_apps for path in targets), "Use unique fresh paths for firewall fixtures"
+    original_hash = digest(core.read_bytes())
+    created = []
+    report["firewallGlobalSettingsBefore"] = before_globals
+    try:
+        # These are the same two identities a user's existing block may refer
+        # to: the app bundle and the core that actually owns the TCP listener.
+        for path in targets:
+            created.append(path)
+            run(["/usr/bin/sudo", "-n", FIREWALL_TOOL, "--add", str(path)])
+            run(["/usr/bin/sudo", "-n", FIREWALL_TOOL, "--blockapp", str(path)])
+        blocked = {str(path): firewall_state(path) for path in targets}
+        report["firewallBlockedFixture"] = blocked
+        assert all(state[0] == "blocked" for state in blocked.values()), blocked
+
+        cancelled = script.replace(FIREWALL_AUTH, 'error "User canceled." number -128', 1)
+        result = install(cancelled, destination, version, expect_failure=True, configure_firewall=True)
+        assert "firewall approval was cancelled or denied" in result.stderr.lower(), result.stderr
+        assert "System Settings > Network > Firewall > Options" in result.stderr
+        assert digest(core.read_bytes()) == original_hash
+        assert all(firewall_state(path)[0] == "blocked" for path in targets)
+        assert not list(destination.glob(".smartstage-install*"))
+        report.update(firewallCancellationKeptInstalledApp=True,
+                      firewallCancellationExplainedRecovery=True,
+                      firewallCancellationKeptExistingRules=True)
+
+        # The CI account has passwordless sudo. AppleScript still constructs
+        # and quotes the exact production commands, and socketfilterfw itself
+        # performs and reports the real mutations. No production test hook.
+        elevated = script.replace(FIREWALL_AUTH,
+            'do shell script "/usr/bin/sudo -n /bin/sh -c " & quoted form of command', 1)
+        install(elevated, destination, version, configure_firewall=True)
+        allowed = {str(path): firewall_state(path) for path in targets}
+        report["firewallAllowedAfterInstaller"] = allowed
+        assert all(state[0] == "allowed" for state in allowed.values()), allowed
+        assert digest(core.read_bytes()) == original_hash
+
+        no_prompt = script.replace(FIREWALL_AUTH, 'error "Unexpected administrator prompt" number 99', 1)
+        result = install(no_prompt, destination, version, configure_firewall=True)
+        assert "already allowed by the macOS firewall" in result.stdout
+        assert firewall_globals() == before_globals, "Installer changed a global firewall setting"
+        remaining_apps = {path: state for path, state in firewall_apps().items()
+                          if path not in {str(target) for target in targets}}
+        assert remaining_apps == before_apps, "Installer changed an unrelated application rule"
+        report.update(realBlockedFirewallRulesUnblocked=True,
+                      actualListeningExecutableAllowed=True,
+                      existingBlockedBundleRuleUnblocked=True,
+                      alreadyAllowedIdenticalAppSkippedElevation=True,
+                      firewallGlobalSettingsUnchanged=True,
+                      unrelatedFirewallRulesUnchanged=True,
+                      firewallElevationTestMethod="AppleScript with test-only passwordless sudo adapter")
+    finally:
+        for path in reversed(created):
+            run(["/usr/bin/sudo", "-n", FIREWALL_TOOL, "--remove", str(path)])
+        assert firewall_globals() == before_globals, "Global firewall settings changed during verification"
+        assert firewall_apps() == before_apps, "Firewall fixture cleanup changed unrelated rules"
+        report["firewallTestRulesRemoved"] = True
 
 
 def quarantined_installer(script):
@@ -349,12 +458,14 @@ def main():
                 f.write(b"operator configuration must survive\n")
             xattr_write(config_marker, CUSTOM_ATTRIBUTE, CUSTOM_VALUE)
             expected = official_bundle(scratch, args.version, architecture, report)
-            install(script, destination, None if args.version == default_version else args.version)
+            first_install = install(script, destination, None if args.version == default_version else args.version)
+            assert "Firewall setup skipped (SMARTSTAGE_SKIP_FIREWALL=1)" in first_install.stdout
             assert bundle.is_dir() and not bundle.is_symlink()
             assert_no_quarantine(bundle)
             verify_bundle(bundle, expected, architecture, args.version, scratch, report)
             require_free_default_ports()
             report.update(noLaunchOptionRespected=True,
+                          firewallSkipOptionRespected=True,
                           defaultReleaseSelectionTested=args.version == default_version)
 
             install(quarantined_installer(script), destination, args.version)
@@ -377,6 +488,7 @@ def main():
             assert sibling.read_text() == "sibling survives installation\n"
             assert xattr_read(sibling, QUARANTINE) == QUARANTINE_VALUE
             assert config_marker.read_bytes() == b"operator configuration must survive\n"
+            firewall_checks(script, destination, args.version, report)
             if args.launch:
                 default_launch(script, destination, args.version, report)
             else:

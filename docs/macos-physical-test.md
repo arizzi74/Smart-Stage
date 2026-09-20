@@ -43,7 +43,8 @@ curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.s
 ```
 
 The installer verifies the app ZIP, installs into `~/Applications`, and removes
-quarantine only from Smart Stage. It requires no additional runtime. For this
+quarantine only from Smart Stage. Its per-app firewall rule can require an
+administrator authorization prompt. It requires no additional runtime. For this
 isolated physical test, run the bundled executable from Terminal:
 
 ```sh

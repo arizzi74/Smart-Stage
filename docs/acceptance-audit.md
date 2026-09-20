@@ -30,8 +30,9 @@ The user's Mac subsequently served both `127.0.0.1:8787/admin` and
 connection but reset it before an HTTP response; the browser failed on both the
 Mac and phone. Swapping HTTP Host headers confirmed the failure follows the
 LAN destination; the same Host is accepted through loopback. The Mac has its
-firewall and third-party network filters enabled. The component responsible has
-not been identified, and this is not a passed physical network test.
+firewall and third-party network filters enabled. The user then confirmed that
+Smart Stage was blocked in macOS Firewall. A successful LAN retest after allowing
+the app has not yet been recorded; this is not a passed physical network test.
 Physical output observations remain pending. The user also
 requested that the Mac app run without a Terminal window.
 

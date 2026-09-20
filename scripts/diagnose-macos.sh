@@ -52,6 +52,42 @@ smartstage_firewall=/usr/libexec/ApplicationFirewall/socketfilterfw
 if [ -x "$smartstage_firewall" ]; then
     "$smartstage_firewall" --getglobalstate || :
     "$smartstage_firewall" --getblockall || :
+    printf '\n%s\n' 'Firewall rules for the running Smart Stage executable:'
+    smartstage_listener_pids=$(/usr/sbin/lsof -nP "-iTCP:$smartstage_command_port" -sTCP:LISTEN -t 2>/dev/null || :)
+    for smartstage_listener_pid in $smartstage_listener_pids; do
+        case "$smartstage_listener_pid" in ''|*[!0-9]*) continue ;; esac
+        # lsof reads mapped executable paths from the kernel. Restrict the
+        # selection to the shipped core names and require the exact path to
+        # exist: never infer an executable from a truncated ps command line.
+        smartstage_core_paths=$(/usr/sbin/lsof -nP -a -p "$smartstage_listener_pid" -d txt -Fn 2>/dev/null |
+            /usr/bin/sed -n 's/^n//p' |
+            while IFS= read -r smartstage_mapped_path; do
+                case "$smartstage_mapped_path" in
+                    */smartstage|*/smartstage-darwin-arm64|*/smartstage-darwin-amd64)
+                        if [ -f "$smartstage_mapped_path" ] && [ -x "$smartstage_mapped_path" ]; then
+                            printf '%s\n' "$smartstage_mapped_path"
+                        fi
+                        ;;
+                esac
+            done)
+        smartstage_core_count=$(printf '%s\n' "$smartstage_core_paths" | /usr/bin/awk 'NF { count++ } END { print count+0 }')
+        if [ "$smartstage_core_count" -ne 1 ]; then
+            printf 'PID %s: cannot identify one exact Smart Stage executable path; rule lookup skipped.\n' "$smartstage_listener_pid"
+            continue
+        fi
+        printf 'PID %s executable: %s\n' "$smartstage_listener_pid" "$smartstage_core_paths"
+        "$smartstage_firewall" --getappblocked "$smartstage_core_paths" || :
+        case "$smartstage_core_paths" in
+            *.app/Contents/MacOS/smartstage)
+                smartstage_bundle_path=${smartstage_core_paths%/Contents/MacOS/smartstage}
+                printf 'Containing app: %s\n' "$smartstage_bundle_path"
+                "$smartstage_firewall" --getappblocked "$smartstage_bundle_path" || :
+                ;;
+        esac
+    done
+    if [ -z "$smartstage_listener_pids" ]; then
+        printf '%s\n' 'No visible process is listening on the Command port.'
+    fi
 fi
 
 smartstage_test_url() {

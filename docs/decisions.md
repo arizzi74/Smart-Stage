@@ -59,6 +59,11 @@ the same executable; it is one Finder application, not one physical file.
 The later request to run without Terminal changes the Mac app launcher to
 redirect logs and execute the core directly. A native menu bar control provides
 Open Admin, log access and Quit; quitting uses the existing graceful shutdown.
+After the user's Mac firewall blocked remote access, the user explicitly
+requested an installer step to allow Smart Stage's incoming connections. This
+uses per-application firewall rules with macOS administrator authorization; it
+does not disable the firewall or modify other applications' rules. Managed
+network filters may still require an IT policy change.
 Preview publication remains explicitly incomplete acceptance until physical
 checks pass.
 

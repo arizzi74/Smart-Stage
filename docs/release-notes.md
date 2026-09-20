@@ -8,7 +8,9 @@ curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.s
 
 The installer chooses Apple Silicon or Intel, verifies the download, installs in
 `~/Applications` and removes quarantine only from Smart Stage. Quit the old app
-before updating. The app opens Admin automatically and runs independently of
+before updating. It also allows Smart Stage's incoming connections through the
+macOS firewall, requesting administrator authorization when required. Other
+firewall rules stay intact. The app opens Admin automatically and runs independently of
 Terminal. Its menu bar control reopens Admin, reveals the log and quits the app.
 Logs are saved in `~/Library/Logs/Smart Stage/smartstage.log`.
 

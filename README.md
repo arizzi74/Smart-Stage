@@ -26,8 +26,11 @@ curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.s
 The installer detects Apple Silicon or Intel, downloads the matching preview 7
 app ZIP, verifies its SHA-256 checksum, and installs **Smart Stage.app** with its
 icon into `~/Applications`. It removes `com.apple.quarantine` only from that app
-and its contents, then launches it. No administrator password or extra runtime
-is required. It does not change your saved shows.
+and its contents, then launches it. Copying the app needs no administrator
+password, and no extra runtime is required. To allow phone/tablet connections, the installer
+also configures Smart Stage's incoming-connection rule in the macOS firewall.
+macOS may request administrator authorization for that rule. The firewall stays
+enabled and other applications' rules are preserved. Saved shows are retained.
 
 Admin opens automatically in your system browser. You can close Terminal after
 installation: the app runs independently, without a Terminal window. Use its
@@ -131,8 +134,9 @@ needs diagnosis before changing the token. For an app launch, use **View Log**
 in the menu bar control or inspect `~/Library/Logs/Smart Stage/smartstage.log`.
 
 Escape while the stage window has focus stops without exposing the desktop.
-Quit Smart Stage (or Ctrl+C for a Terminal launch) closes the stage window. Losing browser connections or a
-sleeping phone does not stop playback. Unacknowledged STOP is shown as unconfirmed;
+Quit Smart Stage (or Ctrl+C for a Terminal launch) closes the stage window.
+Losing browser connections or a sleeping phone does not stop playback.
+Unacknowledged STOP is shown as unconfirmed;
 PLAY is never queued or replayed on reconnect.
 
 ## Flags and saved data
@@ -181,7 +185,12 @@ Admin port if changed). They are also retained with the vendored source.
 
 The Mac installer uses built-in macOS tools. Advanced overrides are
 `SMARTSTAGE_VERSION` (release tag), `SMARTSTAGE_INSTALL_DIR` (parent folder for
-`Smart Stage.app`) and `SMARTSTAGE_NO_LAUNCH=1` (install without opening it).
+`Smart Stage.app`), `SMARTSTAGE_NO_LAUNCH=1` (install without opening it), and
+`SMARTSTAGE_SKIP_FIREWALL=1` (leave firewall configuration to you or your IT team).
+If firewall authorization is cancelled, the installed app remains available;
+allow its incoming connections in **System Settings → Network → Firewall →
+Options** before using phone/tablet controls. Managed network filters can require
+an additional policy exception from your IT team.
 Its native CI check exercises real ZIP downloads, targeted quarantine removal,
 replacement/refusal behavior and Finder-to-Admin startup on both Macs.
 

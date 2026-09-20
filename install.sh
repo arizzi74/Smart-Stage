@@ -1,5 +1,5 @@
 #!/bin/sh
-# Install the verified Finder bundle for this Mac, without administrator access.
+# Install the verified Finder bundle; request admin access only for its firewall rule.
 # Keep execution inside main so a truncated curl download cannot start an install.
 set -eu
 
@@ -39,6 +39,68 @@ clear_quarantine() {
             fi
         done
     ' sh {} +
+}
+
+firewall_app_state() {
+    state=$(LC_ALL=C /usr/libexec/ApplicationFirewall/socketfilterfw --getappblocked "$1" 2>/dev/null || :)
+    printf '%s\n' "$state" | /usr/bin/awk '
+        / is not blocked[.]?[[:space:]]*$/ || /^[[:space:]]*\([[:space:]]*Allow incoming connections[[:space:]]*\)[[:space:]]*$/ { allowed = 1 }
+        / is blocked[.]?[[:space:]]*$/ || /^[[:space:]]*\([[:space:]]*Block incoming connections[[:space:]]*\)[[:space:]]*$/ { blocked = 1 }
+        END { if (blocked) print "blocked"; else if (allowed) print "allowed"; else print "unknown" }
+    '
+}
+
+configure_firewall() {
+    if [ "$skip_firewall" = 1 ]; then
+        printf 'Firewall setup skipped (SMARTSTAGE_SKIP_FIREWALL=1).\n'
+        return 0
+    fi
+    firewall_core="$destination/Contents/MacOS/smartstage"
+    if [ ! -x /usr/libexec/ApplicationFirewall/socketfilterfw ]; then
+        printf 'Smart Stage is installed, but the macOS firewall tool is unavailable.\n' >&2
+        return 1
+    fi
+    core_state=$(firewall_app_state "$firewall_core")
+    bundle_state=$(firewall_app_state "$destination")
+    installed_core_sha=$(/usr/bin/shasum -a 256 "$firewall_core")
+    installed_core_sha=${installed_core_sha%% *}
+    # An allowed path for older ad-hoc signed bytes is not sufficient evidence
+    # for this release. Refresh the core rule whenever the installed bytes change.
+    if [ "$previous_core_sha" = "$installed_core_sha" ] && [ "$core_state" = allowed ] && [ "$bundle_state" != blocked ]; then
+        printf 'The installed Smart Stage executable is already allowed by the macOS firewall.\n'
+        return 0
+    fi
+    unblock_bundle=0
+    if [ "$bundle_state" = blocked ]; then unblock_bundle=1; fi
+    printf 'macOS will request administrator approval to allow incoming connections to this Smart Stage executable.\n'
+    printf 'Target: %s\n' "$firewall_core"
+    # Pass paths as argv, then use AppleScript's shell quoting. Never interpolate
+    # user-controlled paths into an elevated shell command or executable script.
+    if ! /usr/bin/osascript - "$firewall_core" "$destination" "$unblock_bundle" <<'SMARTSTAGE_FIREWALL_APPLESCRIPT'
+on run arguments
+    set firewallTool to "/usr/libexec/ApplicationFirewall/socketfilterfw"
+    set corePath to quoted form of (item 1 of arguments)
+    set command to "LC_ALL=C " & firewallTool & " --add " & corePath & " && LC_ALL=C " & firewallTool & " --unblockapp " & corePath
+    if item 3 of arguments is "1" then
+        set bundlePath to quoted form of (item 2 of arguments)
+        set command to command & " && LC_ALL=C " & firewallTool & " --unblockapp " & bundlePath
+    end if
+    do shell script command with administrator privileges
+end run
+SMARTSTAGE_FIREWALL_APPLESCRIPT
+    then
+        printf 'Smart Stage is installed, but firewall approval was cancelled or denied.\n' >&2
+        printf 'Open System Settings > Network > Firewall > Options and allow incoming connections for Smart Stage, or rerun this installer. A managed Mac may require your administrator.\n' >&2
+        return 1
+    fi
+    core_state=$(firewall_app_state "$firewall_core")
+    bundle_state=$(firewall_app_state "$destination")
+    if [ "$core_state" != allowed ] || [ "$bundle_state" = blocked ]; then
+        printf 'Smart Stage is installed, but its firewall allowance could not be verified.\n' >&2
+        printf 'Check System Settings > Network > Firewall > Options. A managed firewall policy may require your administrator.\n' >&2
+        return 1
+    fi
+    printf 'Verified: the installed Smart Stage executable allows incoming connections.\n'
 }
 
 cleanup() {
@@ -91,6 +153,8 @@ main() {
     esac
     no_launch=${SMARTSTAGE_NO_LAUNCH:-0}
     case "$no_launch" in 0|1) ;; *) fail 'SMARTSTAGE_NO_LAUNCH must be 0 or 1.' ;; esac
+    skip_firewall=${SMARTSTAGE_SKIP_FIREWALL:-0}
+    case "$skip_firewall" in 0|1) ;; *) fail 'SMARTSTAGE_SKIP_FIREWALL must be 0 or 1.' ;; esac
     case "$(/usr/bin/uname -m)" in
         arm64) arch=arm64 ;;
         x86_64)
@@ -187,7 +251,12 @@ main() {
     # Stage on the destination volume so these renames do not copy a half app.
     # Recheck immediately before replacement; never stop a running show.
     check_destination
+    previous_core_sha=''
     if [ -e "$destination" ]; then
+        if [ -f "$destination/Contents/MacOS/smartstage" ]; then
+            previous_core_sha=$(/usr/bin/shasum -a 256 "$destination/Contents/MacOS/smartstage")
+            previous_core_sha=${previous_core_sha%% *}
+        fi
         /bin/mv "$destination" "$work/previous.app"
     fi
     staged_identity=$(/usr/bin/stat -f '%d:%i' "$staged")
@@ -202,12 +271,17 @@ main() {
         $1 == "Smart" && $2 == "Stage" && $3 == version && $NF == "darwin/" arch { valid = 1 }
         END { exit (!valid || NR != 1) }
     ' || fail 'The installed executable reports an unexpected version or architecture.'
-    if [ "$no_launch" = 0 ]; then
-        /usr/bin/open "$destination" || fail 'macOS could not open the installed app.'
-    fi
+    # Installation is now complete. Cancelling the optional system permission
+    # prompt must leave these verified files installed, rather than roll back.
     complete=1
     printf 'Installed %s\n%s\n' "$destination" "$installed_version"
+    post_install_status=0
+    configure_firewall || post_install_status=1
     if [ "$no_launch" = 0 ]; then
+        if ! /usr/bin/open "$destination"; then
+            printf 'Smart Stage is installed, but macOS could not open it. Open Smart Stage.app manually.\n' >&2
+            post_install_status=1
+        fi
         if [ "$background_launch" = true ]; then
             printf 'Smart Stage runs from its menu bar icon and opens Admin in your browser. Use the icon to reopen Admin, view the log, or quit.\n'
             printf 'Log: %s/Library/Logs/Smart Stage/smartstage.log\n' "$HOME"
@@ -217,6 +291,7 @@ main() {
     else
         printf 'Open Smart Stage.app to start it.\n'
     fi
+    return "$post_install_status"
 }
 
 main "$@"
