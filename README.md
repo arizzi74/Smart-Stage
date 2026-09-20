@@ -6,7 +6,7 @@ browser interfaces and native bridge. No Go, Node, Python, database or media
 player installation is needed on the event computer. The Windows Admin
 window uses Microsoft WebView2; the Windows installer supplies it if missing.
 
-**Preview:** earlier releases were built and exercised through real OS APIs on all four target runners.
+**Preview:** built and exercised through real OS APIs on all four target runners.
 Physical routing, visible projector blackout, hotplug, latency, clean-machine
 acceptance and physical A/V stability remain unverified. Earlier previews completed a two-hour native CI workload; the new stage mixer
 has targeted native and browser checks. Mac memory growth was substantially

@@ -43,8 +43,14 @@ def quote(value):
 def powershell(shell, command, env=None, timeout=360):
     command = "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); $ErrorActionPreference='Stop'; " + command
     encoded = base64.b64encode(command.encode('utf-16le')).decode()
+    child_env = dict(os.environ if env is None else env)
+    if Path(shell).name.lower() in ('powershell', 'powershell.exe'):
+        # pwsh -> Python -> Windows PowerShell bypasses pwsh's normal module
+        # path conversion. Let 5.1 construct its own standard module paths so
+        # commands such as Get-FileHash do not resolve to incompatible PS7 modules.
+        child_env = {key: value for key, value in child_env.items() if key.upper() != 'PSMODULEPATH'}
     result = subprocess.run([shell, '-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
-                             '-EncodedCommand', encoded], env=env, capture_output=True, timeout=timeout)
+                             '-EncodedCommand', encoded], env=child_env, capture_output=True, timeout=timeout)
     return result.returncode, result.stdout.decode('utf-8', 'replace'), result.stderr.decode('utf-8', 'replace')
 
 
