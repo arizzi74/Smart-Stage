@@ -5,6 +5,32 @@ real native APIs but cannot verify what a human sees or hears on event hardware.
 
 ## Recorded evidence
 
+[Preview 5](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.5)
+is source `9e72b4cc614f675dd7e52fe863d7973f5fb3fb65`. Its packaging changes passed
+[native run 35492226235](https://github.com/arizzi74/Smart-Stage/actions/runs/35492226235)
+on all four targets, including shared race/vet, native imports/media/HTTP checks
+and the new icon verification. Windows Shell extracted large and small icons;
+all nine embedded image sizes matched the original ICO bytes. Both optional Mac
+app archives passed native ICNS decoding and strict ad-hoc signature checks,
+contained the exact standalone executable bytes and started through Finder in
+Terminal from a directory containing spaces, an apostrophe and Unicode. The
+test matched the HTTP listener to the bundled executable's kernel-reported path.
+
+[Tagged run 35492382186](https://github.com/arizzi74/Smart-Stage/actions/runs/35492382186)
+repeated those checks for the release-version binaries, published 36 assets and
+passed version-selected curl/irm installation and actual Admin/Command browser
+checks on all four targets. Independent downloads of all four executables and
+both Mac app archives passed SHA-256 checks; binary architecture, Go version,
+module release, clean VCS revision, bundled executable/icon identity and archive
+executable permissions were also verified. The native icon records refer to
+the same published file hashes. Retained reports:
+[`verification/release-preview5/`](verification/release-preview5/).
+
+The icon and optional launcher are packaging changes. Playback code is unchanged
+from preview 4; the longer memory/audio/display measurements below remain
+evidence for their explicitly named preview 4 binaries, not a new preview 5 soak
+or physical/clean-machine acceptance.
+
 [Preview 4](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.4),
 source `505a1e495075dcc01abe6d7367d3b57d3f8e60a9`, passed
 [tag run 35479742963](https://github.com/arizzi74/Smart-Stage/actions/runs/35479742963):
@@ -20,7 +46,7 @@ Downloaded files in `dist/releases/v0.1.0-preview.4/` passed checksum, architect
 Go/module-version and clean-source-commit checks. The exact sizes, hashes and
 embedded build information are retained in
 [`verification/release-preview4/download-verification.json`](verification/release-preview4/download-verification.json).
-The one-command installers now default to this preview. The source's completed
+The one-command installers defaulted to preview 4 at that release. The source's completed
 20-minute memory profile and completed four-target two-hour soak are described in
 [resource results](soak-results.md); captured native virtual pixels and the
 Windows ARM64 setup-screen limitation are in [display results](native-display-results.md).

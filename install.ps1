@@ -1,7 +1,7 @@
 # Smart Stage Windows installer. Runs in the current user's profile without elevation.
 & {
     $ErrorActionPreference = 'Stop'
-    $version = if ($env:SMARTSTAGE_VERSION) { $env:SMARTSTAGE_VERSION } else { 'v0.1.0-preview.4' }
+    $version = if ($env:SMARTSTAGE_VERSION) { $env:SMARTSTAGE_VERSION } else { 'v0.1.0-preview.5' }
     if ($version -notmatch '^[a-zA-Z0-9._-]+$') { throw 'Invalid SMARTSTAGE_VERSION' }
     $nativeArch = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
     $arch = switch ($nativeArch.ToUpperInvariant()) {

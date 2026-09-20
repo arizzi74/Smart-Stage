@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.4
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.5
 
 ## Implemented
 
@@ -22,11 +22,22 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.4
   Host enforcement, bounds, path restrictions and command-role path redaction.
 - Reproducible matching-OS builds, import audits, checksums, release automation,
   per-user curl/irm installers and operating/API/architecture documentation.
+- Embedded Windows executable icons and optional Mac Finder apps with the same
+  artwork; Finder starts the bundled executable in Terminal for pairing keys.
 
 ## Built and automatically tested
 
 All four: macOS ARM64/AMD64, Windows ARM64/AMD64. Windows ARM64 was added by
-explicit user request. Preview 4 is source `505a1e4`.
+explicit user request. Preview 5 is source `9e72b4c`; its icon and packaging
+checks passed on all four targets in
+[native run 35492226235](https://github.com/arizzi74/Smart-Stage/actions/runs/35492226235).
+Windows Shell extracted both icon sizes, and every embedded image matched the
+source. Both Mac apps passed signature/icon decoding, binary identity and real
+Finder-to-Terminal startup checks from paths with spaces, quotes and Unicode.
+The playback implementation is unchanged from preview 4. See
+[release verification](docs/release-verification.md) for publication evidence.
+
+Preview 4 is source `505a1e4`.
 [Tag run 35479742963](https://github.com/arizzi74/Smart-Stage/actions/runs/35479742963)
 passed shared race/vet, all four native build/import/media/HTTP checks,
 publication, curl/irm installation and real Admin/Command browser checks on all
