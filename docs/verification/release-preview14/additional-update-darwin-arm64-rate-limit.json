@@ -1,0 +1,52 @@
+{
+  "status": "failed",
+  "target": "darwin/arm64",
+  "release": "v0.1.0-preview.14",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "publishedDownload": {
+    "status": "passed",
+    "target": "darwin/arm64",
+    "release": "v0.1.0-preview.14",
+    "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.14/smartstage-darwin-arm64.zip",
+    "archive": "smartstage-darwin-arm64.zip",
+    "archiveSHA256": "59d707ff95296323335907299bd95d2c856472760704c9b5f1cacf8ca1984e38",
+    "archiveEntries": [
+      "smartstage"
+    ],
+    "executableSHA256": "b90bc620009888d811bc84d46feb45a1d99112d07daa46e76d558b3bf31158a6",
+    "executablePermissions": "0755"
+  },
+  "expectedFixtureSource": "49c9bf7051c2a5a70196dabc7e585690e7dee515",
+  "fixture": {
+    "version": "v0.0.0-preview.1",
+    "sourceSHA": "49c9bf7051c2a5a70196dabc7e585690e7dee515",
+    "target": "darwin/arm64",
+    "archive": "fixture-darwin-arm64.app.zip",
+    "archiveSHA256": "aafceb3e4a640b0fefec0aba14ae76164a05bc77e85351240b763e7f5c299a24",
+    "executableSHA256": "8aeb56f7970b56694dc3e8947aa93e266ed5da3e31564cca174ff10b8f579850",
+    "purpose": "Native production updater verification with older version metadata; not a published release"
+  },
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (49c9bf7051c2), go1.26.5, darwin/arm64",
+  "initialUpdateStatus": {
+    "currentVersion": "v0.0.0-preview.1",
+    "latestVersion": "",
+    "phase": "error",
+    "available": false,
+    "canInstall": false,
+    "message": "Update check failed: GitHub temporarily limited update checks; retry after 2026-09-20T17:38:21Z",
+    "releaseURL": "",
+    "checkedAt": "2026-09-20T17:31:38Z"
+  },
+  "oldInstanceID": "add0922f1848e6615ede7e3819b6a229a528720765d70d61",
+  "startupUpdatePending": false,
+  "initialUpdatePhase": "error",
+  "testDirectoryRemoved": true,
+  "testProcessCleanupPassed": true,
+  "error": "Automatic startup update must reserve playback before serving Admin",
+  "verificationWorkflow": {
+    "runID": 35526039627,
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35526039627",
+    "scope": "Additional default-pinned rerun after the successful four-target tagged-release verification"
+  }
+}

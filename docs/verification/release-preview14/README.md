@@ -13,6 +13,14 @@ Macs passed [default-install run 35526039651](https://github.com/arizzi74/Smart-
 without a version override; installed core/app/bootstrap hashes match the archive
 and public-installer records.
 
+An additional default-pinned updater rerun,
+[35526039627](https://github.com/arizzi74/Smart-Stage/actions/runs/35526039627),
+passed on Intel Mac and both Windows architectures. Its Apple Silicon runner hit
+GitHub's anonymous API rate limit before discovering the update; GitHub supplied
+17:38:21 UTC as the retry time. The tagged release's Apple Silicon update had
+already installed the same public bytes successfully. The failed rerun is retained
+in `additional-update-darwin-arm64-rate-limit.json`; it is not counted as a pass.
+
 Mac native scene probes observe AVPlayer volume overlap, timelines, looping,
 image layers, stage cursor configuration, retirement and hard-stop cleanup.
 They exercise background-to-cue, cue-to-cue and STOP-to-background crossfades,

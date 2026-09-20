@@ -130,5 +130,31 @@
         "conclusion": "success"
       }
     ]
+  },
+  {
+    "runID": 35526039627,
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35526039627",
+    "sourceRevision": "f88525dfb76ba746be337465cfe69f8f76932f8d",
+    "status": "failed",
+    "scope": "Additional default-pinned updater rerun",
+    "reason": "Apple Silicon runner reached the GitHub anonymous API rate limit; its exact-source tagged-release update already passed",
+    "jobs": [
+      {
+        "name": "update (windows-11-arm, windows, arm64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "update (macos-15-intel, darwin, amd64)",
+        "conclusion": "success"
+      },
+      {
+        "name": "update (macos-15, darwin, arm64)",
+        "conclusion": "failure"
+      },
+      {
+        "name": "update (windows-2025, windows, amd64)",
+        "conclusion": "success"
+      }
+    ]
   }
 ]

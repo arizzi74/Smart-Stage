@@ -106,6 +106,14 @@ installer hashes.
 Reports are retained in
 [`verification/release-preview14`](verification/release-preview14/).
 
+An additional default-pinned updater rerun,
+[35526039627](https://github.com/arizzi74/Smart-Stage/actions/runs/35526039627),
+passed on Intel Mac and both Windows architectures. Its Apple Silicon runner hit
+GitHub's anonymous API rate limit before discovering the update; GitHub supplied
+17:38:21 UTC as the retry time. The tagged release's Apple Silicon update had
+already installed the same public bytes successfully. The failed rerun is retained
+in [`additional-update-darwin-arm64-rate-limit.json`](verification/release-preview14/additional-update-darwin-arm64-rate-limit.json); it is not counted as a pass.
+
 Historical preview 13 evidence follows.
 
 [Preview 13](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.13)
