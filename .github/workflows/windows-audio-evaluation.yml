@@ -1,0 +1,89 @@
+name: Evaluate Windows native audio on a virtual endpoint
+on:
+  push:
+    branches: ['audio-evaluation/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  evaluate:
+    # One-off evaluation on disposable runners. Do not add this driver to product
+    # installers. Ongoing use must follow the vendor's licensing/setup requirements.
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            arch: amd64
+          - runner: windows-11-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    env:
+      SMARTSTAGE_EPHEMERAL_AUDIO_EVALUATION: '1'
+      SMARTSTAGE_VERSION: v0.1.0-preview.4
+      SMARTSTAGE_INSTALL_DIR: ${{ github.workspace }}/dist/published
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          github-token: ${{ github.token }}
+          run-id: '35479742963'
+          name: native-windows-${{ matrix.arch }}
+          path: dist/target-build
+      - name: Download and validate the vendor evaluation package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist/audio-evaluation | Out-Null
+          $archive = Join-Path $env:RUNNER_TEMP 'VBCABLE_Driver_Pack45.zip'
+          $destination = Join-Path $env:RUNNER_TEMP 'vbcable-evaluation'
+          $url = 'https://download.vb-audio.com/Download_CABLE/VBCABLE_Driver_Pack45.zip'
+          Invoke-WebRequest $url -OutFile $archive
+          $digest = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($digest -ne 'b950e39f01af1d04ea623c8f6d8eb9b6ea5c477c637295fabf20631c85116bfb') { throw 'Evaluation package checksum mismatch' }
+          Expand-Archive $archive -DestinationPath $destination
+          $setup = Join-Path $destination 'VBCABLE_Setup_x64.exe'
+          $catalog = Join-Path $destination 'vbaudio_cable64_win10.cat'
+          $setupSignature = Get-AuthenticodeSignature $setup
+          $catalogSignature = Get-AuthenticodeSignature $catalog
+          $provenance = [ordered]@{
+            source = $url; sha256 = $digest
+            licensing = 'https://vb-audio.com/Services/licensing.htm'
+            vendorRequiresReboot = $true; rebootPerformed = $false
+            installer = $setupSignature | Select-Object Status, StatusMessage, @{n='subject';e={$_.SignerCertificate.Subject}}, @{n='thumbprint';e={$_.SignerCertificate.Thumbprint}}
+            catalog = $catalogSignature | Select-Object Status, StatusMessage, @{n='subject';e={$_.SignerCertificate.Subject}}, @{n='thumbprint';e={$_.SignerCertificate.Thumbprint}}
+          }
+          $provenance | ConvertTo-Json -Depth 5 | Set-Content dist/audio-evaluation/package-provenance.json
+          if ($setupSignature.Status -ne 'Valid' -or $setupSignature.SignerCertificate.Subject -notlike '*BUREL VINCENT Entrepreneur individuel*') { throw 'Installer signer validation failed' }
+          if ($catalogSignature.Status -ne 'Valid' -or $catalogSignature.SignerCertificate.Subject -notlike '*Microsoft Windows Hardware Compatibility Publisher*') { throw 'Driver catalog signer validation failed' }
+          "SMARTSTAGE_AUDIO_SETUP=$setup" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Evaluate the recognized vendor installer UI on this disposable VM
+        id: device
+        shell: pwsh
+        run: python scripts/windows-driver-evaluation.py $env:SMARTSTAGE_AUDIO_SETUP dist/target-build/native-harness-windows-${{ matrix.arch }}.exe dist/audio-evaluation
+      - name: Install the exact published application
+        if: steps.device.outputs.available == 'true'
+        shell: pwsh
+        run: '& ./install.ps1'
+      - name: Exercise actual audio and video through native framework renderers
+        if: steps.device.outputs.available == 'true'
+        shell: pwsh
+        run: |
+          python scripts/native-smoke.py dist/target-build/native-harness-windows-${{ matrix.arch }}.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Native audio smoke failed' }
+          python scripts/application-smoke.py dist/published/smartstage.exe 120
+          if ($LASTEXITCODE -ne 0) { throw 'Published application audio smoke failed' }
+          $records = Get-Content dist/published/smartstage.exe.http-smoke.json -Raw | ConvertFrom-Json
+          $coverage = @($records | Where-Object { $_.cuesConfigured -eq 4 -and $_.cuesNativelyPlayedAndStopped -eq 4 -and $_.audioEndpoints -gt 0 })
+          if ($coverage.Count -ne 1) { throw 'Four native cues with audio were not exercised' }
+      - name: Preserve evaluation outcome and actual native records
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-virtual-audio-${{ matrix.arch }}
+          path: |
+            dist/audio-evaluation/
+            dist/published/*.http-smoke.json
+            dist/target-build/*.smoke.json
+          if-no-files-found: warn
