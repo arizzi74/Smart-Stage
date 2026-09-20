@@ -124,7 +124,7 @@ def firewall_apps():
         elif current and re.fullmatch(r"\s*\(.*\)\s*", line):
             applications[current] = line.strip()
             current = None
-    count = re.search(r"total number of apps\s*=\s*(\d+)", output)
+    count = re.search(r"total number of apps\s*=\s*(\d+)", output, re.IGNORECASE)
     assert count and len(applications) == int(count[1]), f"Unrecognized firewall rule listing: {output}"
     return applications
 
