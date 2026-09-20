@@ -1,5 +1,8 @@
 name: Verify Windows single-command app installation
 on:
+  push:
+    branches: [main]
+    paths: ['install.ps1', 'scripts/verify-windows-install.py', 'scripts/windows_app_checks.py', 'scripts/verify-network-mode.py', 'scripts/ensure-webview2.ps1', '.github/workflows/install-windows.yml']
   workflow_dispatch:
     inputs:
       version:
@@ -16,7 +19,7 @@ permissions:
   contents: read
 jobs:
   install:
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:

@@ -4,13 +4,15 @@ Smart Stage preview 17 brings the dedicated Admin app experience to Windows.
   drag-and-drop, **Choose Media…**, taskbar/tray controls and **Quit Smart Stage**.
   Closing the window keeps playback running; relaunching the shortcut restores
   the same window without opening a duplicate browser page or terminal.
+  If Windows cannot register a tray icon, closing Admin minimizes it to the
+  taskbar. Escape in Admin performs an emergency stop.
 - Restores a single PowerShell installation command that detects native ARM64
   or Intel/AMD64, verifies the release ZIP and installs per user with Desktop
   and Start menu shortcuts. It checks Microsoft WebView2 and installs the
   Microsoft-signed runtime for the current user if missing.
 - Retains automatic updates on launch, before playback starts, on both Windows
-  architectures. Updates preserve the window, icon, shortcuts, show and media
-  locations. Gateway mode leaves incoming firewall rules unchanged.
+  architectures. Updates reopen Admin and preserve the icon, shortcuts, show
+  and media locations. Gateway mode leaves incoming firewall rules unchanged.
 - Keeps **Public gateway** as the default, connection settings collapsed, and
   the remote link/QR visible. Select **Local LAN** explicitly for a local
   listener and the app-specific firewall setup.

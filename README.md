@@ -6,7 +6,7 @@ browser interfaces and native bridge. No Go, Node, Python, database or media
 player installation is needed on the event computer. The Windows Admin
 window uses Microsoft WebView2; the Windows installer supplies it if missing.
 
-**Preview:** built and exercised through real OS APIs on all four target runners.
+**Preview:** earlier releases were built and exercised through real OS APIs on all four target runners.
 Physical routing, visible projector blackout, hotplug, latency, clean-machine
 acceptance and physical A/V stability remain unverified. Earlier previews completed a two-hour native CI workload; the new stage mixer
 has targeted native and browser checks. Mac memory growth was substantially
@@ -24,7 +24,7 @@ Open Terminal, paste this command, and press Return:
 curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
 ```
 
-The installer detects Apple Silicon or Intel, downloads the matching preview 16
+The installer detects Apple Silicon or Intel, downloads the matching published
 app ZIP, verifies its SHA-256 checksum, and installs **Smart Stage.app** with its
 icon into `~/Applications`. It removes `com.apple.quarantine` only from that app
 and its contents, then launches it. Copying the app needs no administrator
@@ -95,8 +95,14 @@ the app's scoped incoming rule and can request administrator approval. An upgrad
 from preview 14 or earlier still runs that older version's updater, so that one
 upgrade can request its previous firewall approval; later gateway-mode updates
 skip it.
-Windows updates replace the executable in its current folder, preserving its
-icon, shortcuts and dedicated window. The installation folder must be writable
+Windows previews before 17 used the system browser. Their updater can install
+the new app window, but cannot install its WebView2 prerequisite. If the app
+reports that WebView2 is missing, choose **Quit Smart Stage**, run the Windows
+installer above, and reopen the app. The native menu also offers **Open Admin
+in Browser** for recovery.
+
+Windows updates replace the executable in its current folder, preserve its
+icon and shortcuts, and reopen the dedicated window. The installation folder must be writable
 by your user; the installer uses a per-user folder. No permanent updater service
 is installed. If a replacement cannot start, the updater attempts to
 restore the previous version and shows the result in Admin. Logs are in
@@ -111,7 +117,7 @@ a particular launch, use `--no-auto-update`.
 On your Linux server (AMD64 or ARM64, systemd), run:
 
 ```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/install-gateway.sh | sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/install-gateway.sh | sh
 ```
 
 The installer lists suitable **existing nginx HTTPS virtual hosts**. Choose one
@@ -146,15 +152,15 @@ executable, including both browser interfaces and native playback.
 
 | Computer | Download |
 | --- | --- |
-| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-darwin-arm64.zip) |
-| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-darwin-amd64.zip) |
-| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-windows-arm64.zip) |
-| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-windows-amd64.zip) |
+| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-darwin-arm64.zip) |
+| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-darwin-amd64.zip) |
+| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-windows-arm64.zip) |
+| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-windows-amd64.zip) |
 
-[Release notes and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.16).
+[Release notes and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.17).
 Windows executables include the Smart Stage icon. Mac app bundles with the icon
-are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-darwin-arm64.app.zip)
-and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/smartstage-darwin-amd64.app.zip).
+are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-darwin-arm64.app.zip)
+and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-darwin-amd64.app.zip).
 Each app bundle includes the same core executable plus its Finder launcher and
 icon. Opening `Smart Stage.app` runs it without Terminal and opens a dedicated
 Admin window with native Finder drag-and-drop. It uses the WebKit framework
@@ -219,8 +225,10 @@ acceptance testing.
    stops all sound and closes the stage. **Disconnect** is in the top bar.
 
 **Quit Smart Stage** in Admin stops playback, closes the stage and exits the app.
-Closing the Admin window only hides it. Click the Dock icon, reopen the Windows
-shortcut, or choose Open Admin to bring back that same window with its current interface state.
+Closing the Admin window keeps playback running. It hides the window, or
+minimizes it to the Windows taskbar if no tray icon is available. Click the Dock
+or taskbar icon, reopen the Windows shortcut, or choose Open Admin to bring back
+the same window with its current interface state.
 
 For the standalone Mac executable or an external browser, leave the Admin tab open to
 reconnect after relaunch. Smart Stage allows up to
