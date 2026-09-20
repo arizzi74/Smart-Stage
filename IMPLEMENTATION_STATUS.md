@@ -36,6 +36,9 @@ source. Both Mac apps passed signature/icon decoding, binary identity and real
 Finder-to-Terminal startup checks from paths with spaces, quotes and Unicode.
 The playback implementation is unchanged from preview 4. See
 [release verification](docs/release-verification.md) for publication evidence.
+The tagged release workflow, fresh-download checks, default curl/irm installers
+(including Windows PowerShell 5.1) and browser checks also passed on all four
+targets. Both installers now default to preview 5.
 
 Preview 4 is source `505a1e4`.
 [Tag run 35479742963](https://github.com/arizzi74/Smart-Stage/actions/runs/35479742963)

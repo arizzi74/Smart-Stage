@@ -1,0 +1,16 @@
+﻿{
+    "status":  "passed",
+    "powershellVersion":  "5.1.26100.33296",
+    "powershellEdition":  "Desktop",
+    "processArchitecture":  "AMD64",
+    "nativeArchitectureOverride":  null,
+    "expectedBinaryArchitecture":  "amd64",
+    "defaultInstallDirectory":  "C:\\Users\\runneradmin\\AppData\\Local\\SmartStage\\bin",
+    "physicalRoutingVerified":  false,
+    "cleanMachineVerified":  false,
+    "version":  "Smart Stage v0.1.0-preview.5 (9e72b4cc614f), go1.26.5, windows/amd64",
+    "sha256":  "b7f81341e9009ab6fef8ab1a2a8cf2ba53501b3420996fb23e0575c1ff4cdd02",
+    "servedCommandPage":  true,
+    "reinstallSameHash":  true,
+    "userPathEntries":  1
+}

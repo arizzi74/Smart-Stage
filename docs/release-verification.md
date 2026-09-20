@@ -26,6 +26,16 @@ executable permissions were also verified. The native icon records refer to
 the same published file hashes. Retained reports:
 [`verification/release-preview5/`](verification/release-preview5/).
 
+After the installer defaults changed at `1fc541f`,
+[installer run 35492612056](https://github.com/arizzi74/Smart-Stage/actions/runs/35492612056)
+and [browser run 35492612023](https://github.com/arizzi74/Smart-Stage/actions/runs/35492612023)
+passed on all four targets without a version override. Built-in Windows
+PowerShell 5.1 additionally installed and replaced the preview 5 executable in
+the default user directory on both architectures, served Command, retained the
+published hash and left one user PATH entry. The browser and PowerShell records
+are retained in the same verification directory. Public raw installer URLs
+were checked to select `v0.1.0-preview.5`.
+
 The icon and optional launcher are packaging changes. Playback code is unchanged
 from preview 4; the longer memory/audio/display measurements below remain
 evidence for their explicitly named preview 4 binaries, not a new preview 5 soak
