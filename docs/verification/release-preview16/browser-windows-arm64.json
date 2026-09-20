@@ -1,0 +1,46 @@
+{
+  "passed": true,
+  "application": "Smart Stage v0.1.0-preview.16 (918830774f1d), go1.26.5, windows/arm64",
+  "platform": "windows",
+  "architecture": "arm64",
+  "node": "v24.21.0",
+  "nodeArchitecture": "arm64",
+  "physicalRoutingVerified": false,
+  "checks": [
+    "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+    "Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible",
+    "Four real media fixtures were imported without copying; Admin saved four labels and reordered stable cue IDs",
+    "Embedded screen-wake-lock control truthfully reported Needs HTTPS and stayed disabled on real non-loopback HTTP",
+    "Admin saved a cue color through the real API; playlist/command reads and remote CSSOM styling agreed under production CSP",
+    "Missing native audio output produced a visible recoverable error; STOP remained usable",
+    "Remote Stage off preserved native video playback while hiding the stage; Stage on reopened it and emergency Escape stopped and hid it",
+    "Real native image selection, independent stage hiding/restoration, and image-only STOP passed; music/background soundtrack integration was unavailable because the runner has no audio endpoint",
+    "Admin saved/reloaded fade, background soundtrack and music-toggle settings; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available",
+    "Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap",
+    "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser",
+    "Admin Quit during real native video playback exited successfully and closed both HTTP listeners",
+    "Same Admin tab reconnected after relaunch, loaded new assets once, and suppressed automatic OS browser dispatch"
+  ],
+  "browser": "153.0.8010.12",
+  "origin": "Admin on 127.0.0.1; Command on an actual non-loopback host IPv4 address",
+  "sceneIntegration": {
+    "nativeImageInspected": true,
+    "savedVideoAndImageBackgrounds": true,
+    "hiddenBackgroundCueEditableInAdmin": true,
+    "persistedConfigReloaded": true,
+    "configuredFadeSeconds": 1.2,
+    "musicImageAndIndependentStage": false,
+    "backgroundSoundtrackEnabled": false,
+    "selectedMusicToggleKeepsImage": false,
+    "nativeAudioGainsMeasuredHere": false,
+    "audioUnavailableReason": "No enumerated native audio endpoint"
+  },
+  "fixtureImportMethods": [
+    "Original-path fallback UI"
+  ],
+  "nativeChooserDialogExecutionVerified": false,
+  "cuesNativelyPlayedAndStopped": 1,
+  "audioEndpoints": 0,
+  "displays": 1,
+  "audioSkipped": true
+}

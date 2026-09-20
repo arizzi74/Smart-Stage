@@ -78,6 +78,15 @@ previous firewall approval during the first upgrade. HTTPS permits the existing
 optional Keep awake feature in supported browsers while the page remains visible;
 the operating system can release the lock.
 
+Preview 16 removes the Host files panel, navigation entry and background folder
+listing requests. The Mac app retains native Finder/Dock imports and Choose Media;
+browser-only hosts without a native chooser have a compact absolute-path import
+form. Connection settings are collapsed on a fresh Admin page, with status,
+errors, the remote link and QR code outside the disclosure. Polling and reconnect
+preserve its state. Saved Local LAN mode shows firewall instructions outside the
+collapsed settings after restart. Gateway-mode installer/updater behavior remains
+unchanged: no firewall authorization or open LAN listener by default.
+
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin and report
 that the operating system accepted the automatic browser launch. Default gateway
@@ -87,6 +96,34 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+[Preview 16](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.16)
+is source `918830774f1ddefebed2551a28bcb9e499d939f4`.
+[Tagged run 35532965821](https://github.com/arizzi74/Smart-Stage/actions/runs/35532965821)
+passed **all 21 jobs**, publishing 48 assets and verifying public downloads,
+real browser controls, both Mac installers and actual automatic updates on all
+four desktop targets. All six independently downloaded ZIPs match checksums,
+architecture and clean source metadata; native, download, installer and update
+hashes agree. Both static Linux binaries and actual daemon startup checks pass.
+
+Admin UI checks establish removal of the Host files panel/nav and background
+folder requests, initially collapsed connection settings, preserved disclosure
+state through polling, visible link/QR and saved-mode LAN firewall guidance.
+The original-path fallback adds real files without copying on browser-only hosts;
+Mac scenarios with an available native chooser seed playback fixtures through
+the authenticated API and record that limitation. Separate native Mac probes
+retain real WebKit authentication, file-URL drops, chooser lifecycle, close/reopen
+and unsaved draft preservation. The real TLS gateway test also decodes the actual
+Admin QR while connection settings remain collapsed.
+
+The default Mac installer changes to preview 16 only after those public checks.
+Gateway-mode installation and actual update tests use no firewall-skip override
+and leave incoming LAN access closed. Physical Finder gestures, speaker/projector
+output and phone power behavior remain outside automated acceptance.
+Reports are retained in
+[`verification/release-preview16`](verification/release-preview16/).
+
+Historical preview 15 evidence follows.
 
 [Preview 15](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.15)
 is source `580cbb63db18e32b4946abe49c5363eb00e50cc2`.

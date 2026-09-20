@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.15
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.16
 
 ## Implemented
 
@@ -83,6 +83,24 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.15
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Preview 16 is source `918830774f1ddefebed2551a28bcb9e499d939f4`.
+[Release run 35532965821](https://github.com/arizzi74/Smart-Stage/actions/runs/35532965821)
+passed all 21 jobs: shared checks, gateway, four native builds, publication,
+four public downloads/browser checks, both Mac installers and four actual
+automatic updates. Independent public archive checks match the exact clean
+source, architecture and installed executable hashes. Both Linux binaries and
+daemon checks also pass.
+
+Browser checks verify that Admin has no Host files section or directory-listing
+requests, connection settings remain collapsed through polling, and the remote
+link/QR and saved Local LAN firewall instructions remain accessible. Original
+path imports, native chooser integration, same-window Mac reopening and saved
+drafts still pass. Gateway-mode installers and updaters require no firewall-skip
+override and leave LAN closed. Reports are in
+[`docs/verification/release-preview16`](docs/verification/release-preview16/).
+
+Historical preview 15 evidence follows.
 
 Preview 15 is source `580cbb63db18e32b4946abe49c5363eb00e50cc2`.
 [Candidate run 35530454441](https://github.com/arizzi74/Smart-Stage/actions/runs/35530454441)
