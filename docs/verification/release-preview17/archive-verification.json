@@ -1,0 +1,145 @@
+{
+  "status": "passed",
+  "release": "v0.1.0-preview.17",
+  "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+  "releaseURL": "https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.17",
+  "publishedAt": "2026-09-20T22:43:41Z",
+  "verifiedAt": "2026-09-20T22:44:41.023249+00:00",
+  "verificationScope": "Independent public downloads and static archive/binary checks; native execution is recorded separately.",
+  "targets": [
+    {
+      "target": "darwin/arm64",
+      "archive": {
+        "file": "smartstage-darwin-arm64.zip",
+        "bytes": 3384942,
+        "sha256": "ebc3d62ddd287ebaf14ede9f755e56c862c6381e1cfa2be92f2b8f533d4d9c27"
+      },
+      "executable": {
+        "file": "smartstage",
+        "bytes": 8248736,
+        "sha256": "f22cd7bc021a0013cb3f55b49e10f7c9ff12149a21a4c167aceeae63a91152ca",
+        "zipEntries": 1,
+        "permissions": "0755",
+        "header": "Mach-O 64-bit arm64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>"
+      },
+      "build": {
+        "goVersion": "go1.26.5",
+        "moduleVersion": "v0.1.0-preview.17",
+        "goOS": "darwin",
+        "goArch": "arm64",
+        "cgoEnabled": true,
+        "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+        "sourceModified": false
+      },
+      "optionalFinderBundle": {
+        "file": "smartstage-darwin-arm64.app.zip",
+        "bytes": 3526328,
+        "sha256": "8ca0e64446232477280d19983f8a160bac0663b4a870194c699546f1d4af57bc",
+        "standaloneBytesMatch": true,
+        "iconBytesMatch": true,
+        "executablePermissionsVerified": true,
+        "version": "v0.1.0-preview.17",
+        "iconPath": "Smart Stage.app/Contents/Resources/smartstage.icns",
+        "backgroundLaunch": true,
+        "dockIcon": true,
+        "uiElement": false,
+        "nativeAdminWindow": true,
+        "loopbackATSPolicyVerified": true,
+        "nativeFileAssociationsVerified": true,
+        "launcherArchitectureVerified": true
+      }
+    },
+    {
+      "target": "darwin/amd64",
+      "archive": {
+        "file": "smartstage-darwin-amd64.zip",
+        "bytes": 3753183,
+        "sha256": "ec6d1c0468a59f32a7fc4a12f00f6b840539188f8bc8903bce61579c8e530d0b"
+      },
+      "executable": {
+        "file": "smartstage",
+        "bytes": 8988944,
+        "sha256": "654501020f9c37458078437876a050cbf3892110345ddb3c036994fb447f5b24",
+        "zipEntries": 1,
+        "permissions": "0755",
+        "header": "Mach-O 64-bit x86_64 executable, flags:<NOUNDEFS|DYLDLINK|TWOLEVEL|PIE>"
+      },
+      "build": {
+        "goVersion": "go1.26.5",
+        "moduleVersion": "v0.1.0-preview.17",
+        "goOS": "darwin",
+        "goArch": "amd64",
+        "cgoEnabled": true,
+        "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+        "sourceModified": false
+      },
+      "optionalFinderBundle": {
+        "file": "smartstage-darwin-amd64.app.zip",
+        "bytes": 3894230,
+        "sha256": "935ac8a14799d21ecc29a8d313036944f19e4fd56a4d4e73559bcb0fccfe7d0e",
+        "standaloneBytesMatch": true,
+        "iconBytesMatch": true,
+        "executablePermissionsVerified": true,
+        "version": "v0.1.0-preview.17",
+        "iconPath": "Smart Stage.app/Contents/Resources/smartstage.icns",
+        "backgroundLaunch": true,
+        "dockIcon": true,
+        "uiElement": false,
+        "nativeAdminWindow": true,
+        "loopbackATSPolicyVerified": true,
+        "nativeFileAssociationsVerified": true,
+        "launcherArchitectureVerified": true
+      }
+    },
+    {
+      "target": "windows/arm64",
+      "archive": {
+        "file": "smartstage-windows-arm64.zip",
+        "bytes": 3805082,
+        "sha256": "2267cb1502e5d73e844452b10ba450824f5a91b540d0cad47ee48d2e84a9b0a0"
+      },
+      "executable": {
+        "file": "smartstage.exe",
+        "bytes": 9405952,
+        "sha256": "415bf6076e3ea2d0a8ede9621a8c33627d6087ef71c06171897e48d2b2d360c9",
+        "zipEntries": 1,
+        "permissions": "0755",
+        "header": "PE32+ executable (GUI) Aarch64, for MS Windows"
+      },
+      "build": {
+        "goVersion": "go1.26.5",
+        "moduleVersion": "v0.1.0-preview.17",
+        "goOS": "windows",
+        "goArch": "arm64",
+        "cgoEnabled": true,
+        "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+        "sourceModified": false
+      }
+    },
+    {
+      "target": "windows/amd64",
+      "archive": {
+        "file": "smartstage-windows-amd64.zip",
+        "bytes": 4270683,
+        "sha256": "e20670a286f52853402158d9b8926026607f313b8a26b1e8b1bfffb4e4083850"
+      },
+      "executable": {
+        "file": "smartstage.exe",
+        "bytes": 10286080,
+        "sha256": "120d70feb926aea494a506cbcea40ac02da3bff91932761eb6eaf638a44e1da4",
+        "zipEntries": 1,
+        "permissions": "0755",
+        "header": "PE32+ executable (GUI) x86-64, for MS Windows"
+      },
+      "build": {
+        "goVersion": "go1.26.5",
+        "moduleVersion": "v0.1.0-preview.17",
+        "goOS": "windows",
+        "goArch": "amd64",
+        "cgoEnabled": true,
+        "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+        "sourceModified": false
+      }
+    }
+  ]
+}

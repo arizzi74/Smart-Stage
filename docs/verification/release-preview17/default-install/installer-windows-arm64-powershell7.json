@@ -1,0 +1,86 @@
+{
+  "status": "passed",
+  "target": "windows/arm64",
+  "release": "v0.1.0-preview.17",
+  "installerSHA256": "9cd8b21a086d3826e2d251a1fccf3395d9c4926c21aa89cd7af3614f56e971d5",
+  "defaultVersionUsed": true,
+  "productionDownloads": true,
+  "shell": {
+    "local": "C:\\Users\\runneradmin\\AppData\\Local",
+    "config": "C:\\Users\\runneradmin\\AppData\\Roaming",
+    "desktop": "C:\\Users\\runneradmin\\Desktop",
+    "programs": "C:\\Users\\runneradmin\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs",
+    "shell": "7.6.6",
+    "process": "ARM64"
+  },
+  "installedPath": "C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe",
+  "bootstrapURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/600174ade4ec1a1b110fcfcabc79c5e0d9e57273/install.ps1",
+  "bootstrapVerificationURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/600174ade4ec1a1b110fcfcabc79c5e0d9e57273/install.ps1?smartstage_verify=9cd8b21a086d3826e2d251a1fccf3395d9c4926c21aa89cd7af3614f56e971d5-1789944785595609600",
+  "bootstrapSHA256": "9cd8b21a086d3826e2d251a1fccf3395d9c4926c21aa89cd7af3614f56e971d5",
+  "bootstrapFetchAttempts": 1,
+  "publishedBootstrapMatchesCheckout": true,
+  "installOutput": "Downloading Smart Stage v0.1.0-preview.17 for Windows arm64...\r\nWebView2 Runtime 153.0.4234.32 is available.\r\nInstalled Smart Stage v0.1.0-preview.17 (47f75a9d3e42), go1.26.5, windows/arm64\r\nApplication: C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe\r\nDesktop and Start menu shortcuts are ready. Your settings and media are preserved.\r\nPublic gateway access needs no administrator approval or incoming firewall rule.\r\n\n#< CLIXML\r\n<Objs Version=\"1.1.0.1\" xmlns=\"http://schemas.microsoft.com/powershell/2004/04\"><Obj S=\"information\" RefId=\"0\"><TN RefId=\"0\"><T>System.Management.Automation.InformationRecord</T><T>System.Object</T></TN><ToString>Downloading Smart Stage v0.1.0-preview.17 for Windows arm64...</ToString><Props><Obj N=\"MessageData\" RefId=\"1\"><TN RefId=\"1\"><T>System.Management.Automation.HostInformationMessage</T><T>System.Object</T></TN><ToString>Downloading Smart Stage v0.1.0-preview.17 for Windows arm64...</ToString><Props><S N=\"Message\">Downloading Smart Stage v0.1.0-preview.17 for Windows arm64...</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:13.5166347-07:00</DT><Obj N=\"Tags\" RefId=\"2\"><TN RefId=\"2\"><T>System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]</T><T>System.Object</T></TN><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">8444</U32><U32 N=\"NativeThreadId\">2020</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"information\" RefId=\"3\"><TNRef RefId=\"0\" /><ToString>WebView2 Runtime 153.0.4234.32 is available.</ToString><Props><Obj N=\"MessageData\" RefId=\"4\"><TNRef RefId=\"1\" /><ToString>WebView2 Runtime 153.0.4234.32 is available.</ToString><Props><S N=\"Message\">WebView2 Runtime 153.0.4234.32 is available.</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:14.1661983-07:00</DT><Obj N=\"Tags\" RefId=\"5\"><TNRef RefId=\"2\" /><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">8444</U32><U32 N=\"NativeThreadId\">2020</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"information\" RefId=\"6\"><TNRef RefId=\"0\" /><ToString>Installed Smart Stage v0.1.0-preview.17 (47f75a9d3e42), go1.26.5, windows/arm64</ToString><Props><Obj N=\"MessageData\" RefId=\"7\"><TNRef RefId=\"1\" /><ToString>Installed Smart Stage v0.1.0-preview.17 (47f75a9d3e42), go1.26.5, windows/arm64</ToString><Props><S N=\"Message\">Installed Smart Stage v0.1.0-preview.17 (47f75a9d3e42), go1.26.5, windows/arm64</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:14.3250823-07:00</DT><Obj N=\"Tags\" RefId=\"8\"><TNRef RefId=\"2\" /><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">8444</U32><U32 N=\"NativeThreadId\">2020</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"information\" RefId=\"9\"><TNRef RefId=\"0\" /><ToString>Application: C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe</ToString><Props><Obj N=\"MessageData\" RefId=\"10\"><TNRef RefId=\"1\" /><ToString>Application: C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe</ToString><Props><S N=\"Message\">Application: C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:14.3262783-07:00</DT><Obj N=\"Tags\" RefId=\"11\"><TNRef RefId=\"2\" /><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">8444</U32><U32 N=\"NativeThreadId\">2020</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"information\" RefId=\"12\"><TNRef RefId=\"0\" /><ToString>Desktop and Start menu shortcuts are ready. Your settings and media are preserved.</ToString><Props><Obj N=\"MessageData\" RefId=\"13\"><TNRef RefId=\"1\" /><ToString>Desktop and Start menu shortcuts are ready. Your settings and media are preserved.</ToString><Props><S N=\"Message\">Desktop and Start menu shortcuts are ready. Your settings and media are preserved.</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:14.3273612-07:00</DT><Obj N=\"Tags\" RefId=\"14\"><TNRef RefId=\"2\" /><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">8444</U32><U32 N=\"NativeThreadId\">2020</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"information\" RefId=\"15\"><TNRef RefId=\"0\" /><ToString>Public gateway access needs no administrator approval or incoming firewall rule.</ToString><Props><Obj N=\"MessageData\" RefId=\"16\"><TNRef RefId=\"1\" /><ToString>Public gateway access needs no administrator approval or incoming firewall rule.</ToString><Props><S N=\"Message\">Public gateway access needs no administrator approval or incoming firewall rule.</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:14.3283578-07:00</DT><Obj N=\"Tags\" RefId=\"17\"><TNRef RefId=\"2\" /><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">8444</U32><U32 N=\"NativeThreadId\">2020</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"progress\" RefId=\"18\"><TN RefId=\"3\"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N=\"SourceId\">1</I64><PR N=\"Record\"><AV> </AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>",
+  "publicIRMEntryPointVerified": true,
+  "executableSHA256": "415bf6076e3ea2d0a8ede9621a8c33627d6087ef71c06171897e48d2b2d360c9",
+  "shortcuts": [
+    {
+      "path": "C:\\Users\\runneradmin\\Desktop\\Smart Stage.lnk",
+      "target": "C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe",
+      "icon": "C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe,0",
+      "arguments": "",
+      "workingDirectory": "C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage"
+    },
+    {
+      "path": "C:\\Users\\runneradmin\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Smart Stage.lnk",
+      "target": "C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe",
+      "icon": "C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe,0",
+      "arguments": "",
+      "workingDirectory": "C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage"
+    }
+  ],
+  "rejectedCorruptArchiveTraversalAndWrongArchitecture": true,
+  "rollbackRestoredPreviousBinaryAndShortcuts": true,
+  "rollbackRemovedFailedCandidateAndWorkDirectory": true,
+  "reinstallIsIdempotent": true,
+  "unsignedWebView2InstallerRejectedWithoutExecution": true,
+  "launchOutput": "Downloading Smart Stage v0.1.0-preview.17 for Windows arm64...\r\nWebView2 Runtime 153.0.4234.32 is available.\r\nInstalled Smart Stage v0.1.0-preview.17 (47f75a9d3e42), go1.26.5, windows/arm64\r\nApplication: C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe\r\nDesktop and Start menu shortcuts are ready. Your settings and media are preserved.\r\nPublic gateway access needs no administrator approval or incoming firewall rule.\r\n\n#< CLIXML\r\n<Objs Version=\"1.1.0.1\" xmlns=\"http://schemas.microsoft.com/powershell/2004/04\"><Obj S=\"information\" RefId=\"0\"><TN RefId=\"0\"><T>System.Management.Automation.InformationRecord</T><T>System.Object</T></TN><ToString>Downloading Smart Stage v0.1.0-preview.17 for Windows arm64...</ToString><Props><Obj N=\"MessageData\" RefId=\"1\"><TN RefId=\"1\"><T>System.Management.Automation.HostInformationMessage</T><T>System.Object</T></TN><ToString>Downloading Smart Stage v0.1.0-preview.17 for Windows arm64...</ToString><Props><S N=\"Message\">Downloading Smart Stage v0.1.0-preview.17 for Windows arm64...</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:25.244199-07:00</DT><Obj N=\"Tags\" RefId=\"2\"><TN RefId=\"2\"><T>System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]</T><T>System.Object</T></TN><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">6912</U32><U32 N=\"NativeThreadId\">5764</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"information\" RefId=\"3\"><TNRef RefId=\"0\" /><ToString>WebView2 Runtime 153.0.4234.32 is available.</ToString><Props><Obj N=\"MessageData\" RefId=\"4\"><TNRef RefId=\"1\" /><ToString>WebView2 Runtime 153.0.4234.32 is available.</ToString><Props><S N=\"Message\">WebView2 Runtime 153.0.4234.32 is available.</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:25.8739953-07:00</DT><Obj N=\"Tags\" RefId=\"5\"><TNRef RefId=\"2\" /><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">6912</U32><U32 N=\"NativeThreadId\">5764</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"information\" RefId=\"6\"><TNRef RefId=\"0\" /><ToString>Installed Smart Stage v0.1.0-preview.17 (47f75a9d3e42), go1.26.5, windows/arm64</ToString><Props><Obj N=\"MessageData\" RefId=\"7\"><TNRef RefId=\"1\" /><ToString>Installed Smart Stage v0.1.0-preview.17 (47f75a9d3e42), go1.26.5, windows/arm64</ToString><Props><S N=\"Message\">Installed Smart Stage v0.1.0-preview.17 (47f75a9d3e42), go1.26.5, windows/arm64</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:26.0367417-07:00</DT><Obj N=\"Tags\" RefId=\"8\"><TNRef RefId=\"2\" /><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">6912</U32><U32 N=\"NativeThreadId\">5764</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"information\" RefId=\"9\"><TNRef RefId=\"0\" /><ToString>Application: C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe</ToString><Props><Obj N=\"MessageData\" RefId=\"10\"><TNRef RefId=\"1\" /><ToString>Application: C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe</ToString><Props><S N=\"Message\">Application: C:\\Users\\runneradmin\\AppData\\Local\\Programs\\SmartStage\\smartstage.exe</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:26.037782-07:00</DT><Obj N=\"Tags\" RefId=\"11\"><TNRef RefId=\"2\" /><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">6912</U32><U32 N=\"NativeThreadId\">5764</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"information\" RefId=\"12\"><TNRef RefId=\"0\" /><ToString>Desktop and Start menu shortcuts are ready. Your settings and media are preserved.</ToString><Props><Obj N=\"MessageData\" RefId=\"13\"><TNRef RefId=\"1\" /><ToString>Desktop and Start menu shortcuts are ready. Your settings and media are preserved.</ToString><Props><S N=\"Message\">Desktop and Start menu shortcuts are ready. Your settings and media are preserved.</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:26.0387099-07:00</DT><Obj N=\"Tags\" RefId=\"14\"><TNRef RefId=\"2\" /><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">6912</U32><U32 N=\"NativeThreadId\">5764</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"information\" RefId=\"15\"><TNRef RefId=\"0\" /><ToString>Public gateway access needs no administrator approval or incoming firewall rule.</ToString><Props><Obj N=\"MessageData\" RefId=\"16\"><TNRef RefId=\"1\" /><ToString>Public gateway access needs no administrator approval or incoming firewall rule.</ToString><Props><S N=\"Message\">Public gateway access needs no administrator approval or incoming firewall rule.</S><B N=\"NoNewLine\">false</B><S N=\"ForegroundColor\">Gray</S><S N=\"BackgroundColor\">Black</S></Props></Obj><S N=\"Source\">Write-Host</S><DT N=\"TimeGenerated\">2026-09-20T15:53:26.0395872-07:00</DT><Obj N=\"Tags\" RefId=\"17\"><TNRef RefId=\"2\" /><LST><S>PSHOST</S></LST></Obj><S N=\"User\">runnervmcwwn2\\runneradmin</S><S N=\"Computer\">runnervmcwwn2</S><U32 N=\"ProcessId\">6912</U32><U32 N=\"NativeThreadId\">5764</U32><U32 N=\"ManagedThreadId\">13</U32></Props></Obj><Obj S=\"progress\" RefId=\"18\"><TN RefId=\"3\"><T>System.Management.Automation.PSCustomObject</T><T>System.Object</T></TN><MS><I64 N=\"SourceId\">1</I64><PR N=\"Record\"><AV> </AV><AI>0</AI><Nil /><PI>-1</PI><PC>-1</PC><T>Completed</T><SR>-1</SR><SD> </SD></PR></MS></Obj></Objs>",
+  "appPID": 6160,
+  "instanceID": "63a5820ad661b0a5290a2afac0d4b048c962b2b702e2f979",
+  "updateStatus": {
+    "currentVersion": "v0.1.0-preview.17",
+    "latestVersion": "",
+    "phase": "checking",
+    "available": false,
+    "canInstall": false,
+    "message": "Checking for a startup update before enabling playback\u2026",
+    "releaseURL": "",
+    "checkedAt": ""
+  },
+  "installedLocationSupportsAutomaticUpdates": true,
+  "nativeWindows": [
+    {
+      "hwnd": 196850,
+      "title": "Smart Stage \u2014 Admin",
+      "class": "SmartStageAdmin-View"
+    }
+  ],
+  "webView2Children": {
+    "ProcessId": 5360,
+    "ParentProcessId": 6160,
+    "ExecutablePath": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\153.0.4234.32\\msedgewebview2.exe"
+  },
+  "nativeEscapeReachedEmergencyStop": true,
+  "nativeEscapeMethod": "WM_KEYDOWN/WM_KEYUP posted to the installed app Admin HWND; observed through authenticated HTTP state",
+  "nativeEscapeStopEpochBefore": 2,
+  "nativeEscapeStopEpochAfter": 3,
+  "nativeEscapeStageDisabled": true,
+  "runningAppRefusedWithoutReplacement": true,
+  "shortcutRelaunchReusesRunningApp": true,
+  "adminQuitWaitedForNativeProcessExit": true,
+  "configPreserved": true,
+  "defaultGatewayHasNoLANListener": true,
+  "firewallRulesUnchanged": true,
+  "noElevationRequested": true,
+  "adminQuitClosedServer": true,
+  "testInstallationAndConfigRemoved": true
+}

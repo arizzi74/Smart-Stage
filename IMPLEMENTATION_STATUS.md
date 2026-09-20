@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.16
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.17
 
 ## Implemented
 
@@ -91,6 +91,46 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.16
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Preview 17 is source `47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e`.
+[Release run 35541865946](https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946)
+published 50 assets and passed 21 of 23 jobs. Both Windows installer verification
+jobs failed during PowerShell module initialization before installation. After
+the test environment was corrected,
+[replacement run 35542685239](https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239)
+passed both Windows jobs, covering PowerShell 5.1 and 7 on each architecture;
+production `install.ps1` bytes were unchanged. Independent archive checks and
+32 collected native reports agree on the published release bytes. The four
+replacement installer reports identify their separate test source. Public
+downloads, Mac installers and actual automatic updates passed on all matching
+architectures. Default gateway startup keeps LAN closed; explicit LAN restart
+and graceful Quit remain verified. Before tagging,
+[candidate run 35541498973](https://github.com/arizzi74/Smart-Stage/actions/runs/35541498973)
+at `5f7a060` passed all six jobs.
+
+Both Windows architectures passed the dedicated WebView2 Admin checks, including
+hidden-helper startup, authenticated controls, retained window/drafts, original
+file drops and chooser selection, and shutdown with a chooser open. AMD64 tray
+registration and exact global drop targeting passed. The ARM64 hosted shell
+rejected all six valid independent tray baselines; its report records the tray
+as unavailable and verifies minimized taskbar restoration. Its global desktop
+hit testing was externally occluded: an enabled, unowned, topmost plain Win32
+baseline also hit `Shell_SystemDim` in all 28 observations. Admin client hit
+testing and the production OLE handler passed, with `globalExactHit: false`.
+These checks do not establish a physical Explorer drag gesture.
+
+[Default Mac installer run 35542685215](https://github.com/arizzi74/Smart-Stage/actions/runs/35542685215)
+and [default Windows installer run 35542685239](https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239)
+executed commit-pinned public bootstraps from
+`600174ade4ec1a1b110fcfcabc79c5e0d9e57273` without a version override and installed the
+exact published preview 17 binaries. Separate downloads verified that the
+canonical `main` curl/irm bootstrap bytes matched that source; the native jobs
+did not execute a mutable raw-`main` URL. Reports are in
+[`docs/verification/release-preview17`](docs/verification/release-preview17/).
+Physical file-drag gestures, speakers/projectors and phone screen-lock behavior
+remain outside automated acceptance.
+
+Historical preview 16 evidence follows.
 
 Preview 16 is source `918830774f1ddefebed2551a28bcb9e499d939f4`.
 [Release run 35532965821](https://github.com/arizzi74/Smart-Stage/actions/runs/35532965821)

@@ -1,0 +1,50 @@
+{
+  "release": "v0.1.0-preview.17",
+  "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+  "status": "passed",
+  "architectures": [
+    {
+      "arch": "amd64",
+      "sha256": "423eff5cdbed60cdf20d81fcb81be5e6ebdb4f6d8a768132d333f477d8645b84",
+      "bytes": 7086206,
+      "staticELF": true,
+      "buildMetadataVerified": true
+    },
+    {
+      "arch": "arm64",
+      "sha256": "3e88a97dae44f760bc313029ce6c92208313c3636bce3ee449d928e9eb8bab76",
+      "bytes": 6553726,
+      "staticELF": true,
+      "buildMetadataVerified": true
+    }
+  ],
+  "arm64DaemonSmoke": {
+    "binary": "smartstage-gateway-linux-arm64",
+    "sha256": "3e88a97dae44f760bc313029ce6c92208313c3636bce3ee449d928e9eb8bab76",
+    "version": "v0.1.0-preview.17 (47f75a9d3e42)",
+    "actualDaemonProcess": true,
+    "privateConfigurationAndExistingTokenPreserved": true,
+    "dedicatedGroupConfigurationAccepted": true,
+    "worldReadableConfigurationRejected": true,
+    "loopbackHealthReady": true,
+    "plaintextWithoutProxyOriginRejected": true,
+    "cleanSIGTERMShutdown": true,
+    "registrationSecretNotLogged": true,
+    "embeddedDependencyLicense": true
+  },
+  "publishedAMD64DaemonSmoke": {
+    "binary": "smartstage-gateway-linux-amd64",
+    "sha256": "423eff5cdbed60cdf20d81fcb81be5e6ebdb4f6d8a768132d333f477d8645b84",
+    "version": "v0.1.0-preview.17 (47f75a9d3e42)",
+    "actualDaemonProcess": true,
+    "privateConfigurationAndExistingTokenPreserved": true,
+    "dedicatedGroupConfigurationAccepted": true,
+    "worldReadableConfigurationRejected": true,
+    "loopbackHealthReady": true,
+    "plaintextWithoutProxyOriginRejected": true,
+    "cleanSIGTERMShutdown": true,
+    "registrationSecretNotLogged": true,
+    "embeddedDependencyLicense": true
+  },
+  "installerSHA256": "5f5a4f0e0628b45e92b4bdee4844b0d4ae44c1531dc7f1868ce22b0d4b1cdd3c"
+}

@@ -103,6 +103,88 @@ not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
 
+[Preview 17](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.17)
+is source `47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e`.
+[Tagged run 35541865946](https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946)
+published 50 assets and finished with **21 successful jobs and two failed Windows
+installer verification jobs**. PowerShell 5.1 inherited incompatible PowerShell 7
+module paths through the Python verifier and could not load `Get-FileHash`.
+The failures occurred before installation. Public downloads, real browser
+controls and actual automatic updates passed on all four desktop targets;
+installation passed on both Macs. After correcting the test environment,
+[replacement installer run 35542685239](https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239)
+at `600174ade4ec1a1b110fcfcabc79c5e0d9e57273` passed both Windows jobs, covering
+PowerShell 5.1 and 7 on each architecture. It used production `install.ps1` bytes
+identical to the tagged source and the same published binaries. Independent
+archive inspection and 32 collected native reports agree on architecture and
+published executable hashes. The four Windows installer reports identify the
+replacement run and test source; all other reports come from the tagged run or
+its public assets. The original tagged workflow remains recorded as failed.
+The separate Linux gateway, network-mode and real TLS/QR reports retain their
+verification boundaries. The preceding
+[candidate run 35541498973](https://github.com/arizzi74/Smart-Stage/actions/runs/35541498973)
+at `5f7a060` passed all six jobs; final release claims use tagged evidence and
+the explicitly identified replacement installer reports.
+
+Windows downloads and updated installations show a responsive, icon-bearing
+GUI window without an external-browser launch. Relaunch retains its PID/HWND;
+authenticated Quit closes the process and listeners. The separate observer
+compiles the production desktop implementation and uses the real release
+executable as its HTTP host. Both architectures pass real Admin session/CSRF/SSE
+and STOP, hidden-helper startup, retained drafts, original-path CF_HDROP and
+IFileOpenDialog selection, navigation/resource restrictions, and shutdown with
+an open chooser followed by private-profile removal. This observer is separate
+from the shipped executable and does not perform a physical Explorer drag.
+
+Notification-area capability is recorded explicitly. AMD64 registered its tray
+icon. The ARM64 hosted shell rejected Smart Stage and all six independent
+baselines with valid window/system-icon inputs; the report records
+`trayIconRegistered: false` and verifies minimized taskbar restore with the
+WebView visible. A successful independent baseline would still make production
+registration failure an error.
+
+AMD64 global hit testing reached the exact native Admin drop window. On ARM64,
+unrelated shell windows covered all 50 interior samples even after the probe
+window was temporarily raised. An independent enabled, unowned, topmost
+128×128 plain Win32 window using `DefWindowProcW` was then placed over the same
+recorded interior point, `[227, 201]`. All 28 observations returned the unrelated
+full-desktop `Shell_SystemDim`; the baseline's own client hit testing and
+`HTCLIENT` response worked, and the baseline was destroyed afterward. The report
+records `globalDesktopHitTest: "externally-occluded"` and `globalExactHit: false`.
+Admin remained enabled, every sampled direct client hit reached Admin, and real
+CF_HDROP data exercised its production OLE handler at that same point with
+original paths and bytes preserved. Any Admin-child interception, disabled
+Admin, or globally hittable independent baseline would fail verification.
+Test-only positioning was removed. This establishes neither a physical global
+Explorer drop on that runner nor a working ARM64 tray icon, and does not change
+production focus behavior.
+
+Windows installer checks verify commit-pinned public bootstrap bytes, per-user
+shortcuts, checksum/architecture checks, rollback, rejection of an unsigned
+runtime installer, window reuse and graceful Quit. Gateway-mode installation
+and updates leave firewall rules unchanged and LAN closed. The
+[default Mac run 35542685215](https://github.com/arizzi74/Smart-Stage/actions/runs/35542685215)
+and [default Windows run 35542685239](https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239)
+executed bootstraps fetched from immutable source
+`600174ade4ec1a1b110fcfcabc79c5e0d9e57273` without version overrides; installed binaries
+match the tagged hashes. Separately fetched canonical `main` curl/irm scripts
+were byte-verified against that source. These are distinct checks: the native
+jobs executed commit-pinned bootstraps, not mutable raw-`main` URLs.
+Evidence and provenance are retained in
+[`verification/release-preview17`](verification/release-preview17/).
+An additional default-pinned updater run,
+[35542685186](https://github.com/arizzi74/Smart-Stage/actions/runs/35542685186),
+passed on both Windows architectures and Intel Mac. Its Apple Silicon job hit
+GitHub's anonymous API rate limit before updating, with retry time
+`2026-09-20T22:55:56Z`. All four tagged updater jobs had already passed against
+the same published bytes; those successful tagged reports remain the release
+update evidence, and the additional run is recorded with this limitation.
+
+Physical Finder/Explorer gestures, speaker/projector routing and phone
+screen-lock behavior remain unverified.
+
+Historical preview 16 evidence follows.
+
 [Preview 16](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.16)
 is source `918830774f1ddefebed2551a28bcb9e499d939f4`.
 [Tagged run 35532965821](https://github.com/arizzi74/Smart-Stage/actions/runs/35532965821)

@@ -1,0 +1,71 @@
+{
+  "status": "partial",
+  "workflowRunID": 35542685186,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685186",
+  "workflowConclusion": "failure",
+  "verifierSourceRevision": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+  "fixtureRunID": 35541865946,
+  "fixtureAndPublishedSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+  "release": "v0.1.0-preview.17",
+  "verifiedAt": "2026-09-20T22:53:36.368055+00:00",
+  "successfulTargets": [
+    "darwin/amd64",
+    "windows/amd64",
+    "windows/arm64"
+  ],
+  "failedTargets": [
+    "darwin/arm64"
+  ],
+  "failureCategory": "External GitHub API rate limit before replacement; retry after 2026-09-20T22:55:56Z",
+  "scope": "Additional default-pinned verification; this partial run does not replace the four successful tagged updater reports.",
+  "results": [
+    {
+      "target": "darwin/amd64",
+      "jobID": 106163083914,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685186/job/106163083914",
+      "jobConclusion": "success",
+      "artifactID": 10615522182,
+      "artifactReportPath": "darwin-amd64/result.json",
+      "report": "additional-auto-update-darwin-amd64.json",
+      "reportSHA256": "6f25a529c0c32168710106c6e5363782673231ba3eb78030f58fbfaa7a9066d5",
+      "status": "passed",
+      "publicDownloadHashesMatchIndependentVerification": true
+    },
+    {
+      "target": "windows/amd64",
+      "jobID": 106163083928,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685186/job/106163083928",
+      "jobConclusion": "success",
+      "artifactID": 10615337637,
+      "artifactReportPath": "windows-amd64/result.json",
+      "report": "additional-auto-update-windows-amd64.json",
+      "reportSHA256": "9dcd90f7b3e47a4fce4c269d94d5fc0f13a1b3199e3d295b3d304b8338ae4390",
+      "status": "passed",
+      "publicDownloadHashesMatchIndependentVerification": true
+    },
+    {
+      "target": "darwin/arm64",
+      "jobID": 106163083843,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685186/job/106163083843",
+      "jobConclusion": "failure",
+      "artifactID": 10615212793,
+      "artifactReportPath": "darwin-arm64/result.json",
+      "report": "additional-auto-update-darwin-arm64.json",
+      "reportSHA256": "8a78ae79a30890763061279bd0c397a4bd08bee15680f18c0d9f8edb874ce0ea",
+      "status": "failed",
+      "publicDownloadHashesMatchIndependentVerification": true
+    },
+    {
+      "target": "windows/arm64",
+      "jobID": 106163083948,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685186/job/106163083948",
+      "jobConclusion": "success",
+      "artifactID": 10615053308,
+      "artifactReportPath": "windows-arm64/result.json",
+      "report": "additional-auto-update-windows-arm64.json",
+      "reportSHA256": "100d0179b3b476f26369f3b1edfdca559fec898005945cd1cb91e53190b21d25",
+      "status": "passed",
+      "publicDownloadHashesMatchIndependentVerification": true
+    }
+  ]
+}

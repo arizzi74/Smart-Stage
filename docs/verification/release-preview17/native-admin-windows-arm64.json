@@ -1,0 +1,7606 @@
+{
+  "status": "passed",
+  "method": "Production Windows STA/DirectComposition WebView2 with real loopback Admin HTTP/session/CSRF/SSE; own-process COM observation, CF_HDROP delivery to the production OLE target and actual IFileOpenDialog selection; not a physical Explorer mouse gesture",
+  "probeMachine": "arm64",
+  "sourceExecutableSha256": "415bf6076e3ea2d0a8ede9621a8c33627d6087ef71c06171897e48d2b2d360c9",
+  "probeLog": "opBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true},{\"point\":[227,201],\"clientPoint\":[64,64],\"clientSize\":[128,128],\"baseline\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"hit\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"hitRoot\":{\"hwnd\":262614,\"class\":\"Shell_SystemDim\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":false,\"ancestorsEnabled\":false,\"rect\":[0,0,1024,768]},\"directChild\":{\"hwnd\":196644,\"class\":\"SmartStageProbe-PlainDropBaseline\",\"pid\":9292,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[163,137,291,265]},\"foreground\":{\"hwnd\":131790,\"class\":\"Shell_SystemDialog\",\"pid\":7552,\"visible\":true,\"minimized\":false,\"enabled\":true,\"ancestorsEnabled\":true,\"rect\":[285,151,739,568]},\"unowned\":true,\"topmost\":true,\"nonClientHitIsClient\":true,\"exactBaselineHit\":false,\"externalHit\":true}]}\nNative drop probe: unrelated desktop windows cover all 50 interior samples; verifying the enabled Admin client OLE handler without claiming a global desktop hit\nShowed native Admin window\nNative Admin probe passed: nativeDropTestPositioningRestored\nNative Admin probe passed: nativeClientHitTestTargetsAdminDropWindow\nNative Admin probe passed: nativeCFHDROPDeliveredToProductionDropTarget\nNative Admin probe passed: textCannotSupplyNativeOriginalPaths\nShowed native Admin window\nOpened native media chooser\nShowed native Admin window\nNative Admin probe passed: nativeFileDialogOriginalSelectionAccepted\nNative Admin probe passed: navigationOutsideAdminBlocked\nNative Admin probe passed: crossOriginResourcesBlocked\nQuitting Smart Stage from the app menu\nNative Admin probe passed: nativeQuitRequestPolled\nNative Admin probe passed: realAdminQuitAcknowledged\nShowed native Admin window\nOpened native media chooser\nRequested native Admin shutdown: queued=1\nClosing native Admin: chooserActive=1 chooserShowing=1\nNative media chooser returned during shutdown: 0x800704c7\nCancelled native media chooser\nClosed native Admin WebView\nNative Admin browser shutdown: profileReleased=1 eventObserved=1 processWait=0 elapsedMs=594\nRemoved native Admin private profile\nNative Admin shutdown completed\nNative Admin probe passed: nativeQuitClosedAdminWindow\nNative Admin probe passed: shutdownWithOpenNativeChooserCompleted\nNative Admin probe passed: privateWebViewProfileRemovedAfterShutdown\n",
+  "authenticatedEventSourceConnected": true,
+  "chooserRequest": {
+    "id": 2,
+    "paths": [
+      "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\smartstage-native-admin-bqrakck3\\Originals – café\\Second original – 演出.wav"
+    ]
+  },
+  "closeBehavior": "minimized-to-taskbar",
+  "closeMinimizedToTaskbarWithoutTerminating": true,
+  "compositionMouseInputActivatedStop": true,
+  "compositionWindowVisible": true,
+  "crossOriginResourcesBlocked": true,
+  "dropRequest": {
+    "id": 1,
+    "paths": [
+      "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\smartstage-native-admin-bqrakck3\\Originals – café\\Operator's opening – café.wav",
+      "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\smartstage-native-admin-bqrakck3\\Originals – café\\Second original – 演出.wav"
+    ]
+  },
+  "explorerNotificationAreaAvailable": true,
+  "globalDesktopHitTest": "externally-occluded",
+  "globalDropHitBaseline": {
+    "class": "SmartStageProbe-PlainDropBaseline",
+    "windowProcedure": "DefWindowProcW",
+    "point": [
+      227,
+      201
+    ],
+    "validInputs": true,
+    "anyExactGlobalHit": false,
+    "allGlobalHitsExternal": true,
+    "observations": [
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      },
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          64,
+          64
+        ],
+        "clientSize": [
+          128,
+          128
+        ],
+        "baseline": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "directChild": {
+          "hwnd": 196644,
+          "class": "SmartStageProbe-PlainDropBaseline",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            163,
+            137,
+            291,
+            265
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "unowned": true,
+        "topmost": true,
+        "nonClientHitIsClient": true,
+        "exactBaselineHit": false,
+        "externalHit": true
+      }
+    ]
+  },
+  "globalDropHitBaselineDestroyed": true,
+  "globalExactHit": false,
+  "liveStateAfterStopObserved": true,
+  "localSessionAndCSRFInitialized": true,
+  "nativeAdminEscapePolledWithoutJavaScript": true,
+  "nativeCFHDROPDeliveredToProductionDropTarget": true,
+  "nativeClientHitTestTargetsAdminDropWindow": true,
+  "nativeDropDeliveryPoint": [
+    227,
+    201
+  ],
+  "nativeDropHitTest": {
+    "initial": {
+      "point": [
+        512,
+        381
+      ],
+      "clientPoint": [
+        474,
+        300
+      ],
+      "clientSize": [
+        948,
+        601
+      ],
+      "admin": {
+        "hwnd": 328386,
+        "class": "SmartStageAdmin-View",
+        "pid": 9292,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "hit": {
+        "hwnd": 131790,
+        "class": "Shell_SystemDialog",
+        "pid": 7552,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          285,
+          151,
+          739,
+          568
+        ]
+      },
+      "hitRoot": {
+        "hwnd": 131790,
+        "class": "Shell_SystemDialog",
+        "pid": 7552,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          285,
+          151,
+          739,
+          568
+        ]
+      },
+      "foreground": {
+        "hwnd": 131790,
+        "class": "Shell_SystemDialog",
+        "pid": 7552,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          285,
+          151,
+          739,
+          568
+        ]
+      },
+      "directChild": {
+        "hwnd": 328386,
+        "class": "SmartStageAdmin-View",
+        "pid": 9292,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "exactAdminHit": false,
+      "adminChildHit": false
+    },
+    "afterRestoreSettled": {
+      "point": [
+        512,
+        381
+      ],
+      "clientPoint": [
+        474,
+        300
+      ],
+      "clientSize": [
+        948,
+        601
+      ],
+      "admin": {
+        "hwnd": 328386,
+        "class": "SmartStageAdmin-View",
+        "pid": 9292,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "hit": {
+        "hwnd": 131790,
+        "class": "Shell_SystemDialog",
+        "pid": 7552,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          285,
+          151,
+          739,
+          568
+        ]
+      },
+      "hitRoot": {
+        "hwnd": 131790,
+        "class": "Shell_SystemDialog",
+        "pid": 7552,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          285,
+          151,
+          739,
+          568
+        ]
+      },
+      "foreground": {
+        "hwnd": 131790,
+        "class": "Shell_SystemDialog",
+        "pid": 7552,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          285,
+          151,
+          739,
+          568
+        ]
+      },
+      "directChild": {
+        "hwnd": 328386,
+        "class": "SmartStageAdmin-View",
+        "pid": 9292,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "exactAdminHit": false,
+      "adminChildHit": false
+    },
+    "interiorCandidatesBeforeRaise": [
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          189,
+          120
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          369,
+          201
+        ],
+        "clientPoint": [
+          331,
+          120
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          512,
+          201
+        ],
+        "clientPoint": [
+          474,
+          120
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          654,
+          201
+        ],
+        "clientPoint": [
+          616,
+          120
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          796,
+          201
+        ],
+        "clientPoint": [
+          758,
+          120
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          227,
+          291
+        ],
+        "clientPoint": [
+          189,
+          210
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          369,
+          291
+        ],
+        "clientPoint": [
+          331,
+          210
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          512,
+          291
+        ],
+        "clientPoint": [
+          474,
+          210
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          654,
+          291
+        ],
+        "clientPoint": [
+          616,
+          210
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          796,
+          291
+        ],
+        "clientPoint": [
+          758,
+          210
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          227,
+          381
+        ],
+        "clientPoint": [
+          189,
+          300
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          369,
+          381
+        ],
+        "clientPoint": [
+          331,
+          300
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          512,
+          381
+        ],
+        "clientPoint": [
+          474,
+          300
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          654,
+          381
+        ],
+        "clientPoint": [
+          616,
+          300
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          796,
+          381
+        ],
+        "clientPoint": [
+          758,
+          300
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          227,
+          471
+        ],
+        "clientPoint": [
+          189,
+          390
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          369,
+          471
+        ],
+        "clientPoint": [
+          331,
+          390
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          512,
+          471
+        ],
+        "clientPoint": [
+          474,
+          390
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          654,
+          471
+        ],
+        "clientPoint": [
+          616,
+          390
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          796,
+          471
+        ],
+        "clientPoint": [
+          758,
+          390
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          227,
+          561
+        ],
+        "clientPoint": [
+          189,
+          480
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          369,
+          561
+        ],
+        "clientPoint": [
+          331,
+          480
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          512,
+          561
+        ],
+        "clientPoint": [
+          474,
+          480
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          654,
+          561
+        ],
+        "clientPoint": [
+          616,
+          480
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          796,
+          561
+        ],
+        "clientPoint": [
+          758,
+          480
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      }
+    ],
+    "interiorCandidatesAfterRaise": [
+      {
+        "point": [
+          227,
+          201
+        ],
+        "clientPoint": [
+          189,
+          120
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          369,
+          201
+        ],
+        "clientPoint": [
+          331,
+          120
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          512,
+          201
+        ],
+        "clientPoint": [
+          474,
+          120
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          654,
+          201
+        ],
+        "clientPoint": [
+          616,
+          120
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          796,
+          201
+        ],
+        "clientPoint": [
+          758,
+          120
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          227,
+          291
+        ],
+        "clientPoint": [
+          189,
+          210
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          369,
+          291
+        ],
+        "clientPoint": [
+          331,
+          210
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          512,
+          291
+        ],
+        "clientPoint": [
+          474,
+          210
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          654,
+          291
+        ],
+        "clientPoint": [
+          616,
+          210
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          796,
+          291
+        ],
+        "clientPoint": [
+          758,
+          210
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          227,
+          381
+        ],
+        "clientPoint": [
+          189,
+          300
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          369,
+          381
+        ],
+        "clientPoint": [
+          331,
+          300
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          512,
+          381
+        ],
+        "clientPoint": [
+          474,
+          300
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          654,
+          381
+        ],
+        "clientPoint": [
+          616,
+          300
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          796,
+          381
+        ],
+        "clientPoint": [
+          758,
+          300
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          227,
+          471
+        ],
+        "clientPoint": [
+          189,
+          390
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          369,
+          471
+        ],
+        "clientPoint": [
+          331,
+          390
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          512,
+          471
+        ],
+        "clientPoint": [
+          474,
+          390
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          654,
+          471
+        ],
+        "clientPoint": [
+          616,
+          390
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          796,
+          471
+        ],
+        "clientPoint": [
+          758,
+          390
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          227,
+          561
+        ],
+        "clientPoint": [
+          189,
+          480
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          369,
+          561
+        ],
+        "clientPoint": [
+          331,
+          480
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          512,
+          561
+        ],
+        "clientPoint": [
+          474,
+          480
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          654,
+          561
+        ],
+        "clientPoint": [
+          616,
+          480
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      },
+      {
+        "point": [
+          796,
+          561
+        ],
+        "clientPoint": [
+          758,
+          480
+        ],
+        "clientSize": [
+          948,
+          601
+        ],
+        "admin": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "hit": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "hitRoot": {
+          "hwnd": 262614,
+          "class": "Shell_SystemDim",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": false,
+          "ancestorsEnabled": false,
+          "rect": [
+            0,
+            0,
+            1024,
+            768
+          ]
+        },
+        "foreground": {
+          "hwnd": 131790,
+          "class": "Shell_SystemDialog",
+          "pid": 7552,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            285,
+            151,
+            739,
+            568
+          ]
+        },
+        "directChild": {
+          "hwnd": 328386,
+          "class": "SmartStageAdmin-View",
+          "pid": 9292,
+          "visible": true,
+          "minimized": false,
+          "enabled": true,
+          "ancestorsEnabled": true,
+          "rect": [
+            30,
+            30,
+            994,
+            690
+          ]
+        },
+        "exactAdminHit": false,
+        "adminChildHit": false
+      }
+    ],
+    "final": {
+      "point": [
+        227,
+        201
+      ],
+      "clientPoint": [
+        189,
+        120
+      ],
+      "clientSize": [
+        948,
+        601
+      ],
+      "admin": {
+        "hwnd": 328386,
+        "class": "SmartStageAdmin-View",
+        "pid": 9292,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "hit": {
+        "hwnd": 262614,
+        "class": "Shell_SystemDim",
+        "pid": 7552,
+        "visible": true,
+        "minimized": false,
+        "enabled": false,
+        "ancestorsEnabled": false,
+        "rect": [
+          0,
+          0,
+          1024,
+          768
+        ]
+      },
+      "hitRoot": {
+        "hwnd": 262614,
+        "class": "Shell_SystemDim",
+        "pid": 7552,
+        "visible": true,
+        "minimized": false,
+        "enabled": false,
+        "ancestorsEnabled": false,
+        "rect": [
+          0,
+          0,
+          1024,
+          768
+        ]
+      },
+      "foreground": {
+        "hwnd": 131790,
+        "class": "Shell_SystemDialog",
+        "pid": 7552,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          285,
+          151,
+          739,
+          568
+        ]
+      },
+      "directChild": {
+        "hwnd": 328386,
+        "class": "SmartStageAdmin-View",
+        "pid": 9292,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "exactAdminHit": false,
+      "adminChildHit": false
+    },
+    "temporarilyRaisedAboveExternalWindow": true
+  },
+  "nativeDropTestPositioningRestored": true,
+  "nativeFileDialogOriginalSelectionAccepted": true,
+  "nativeQuitClosedAdminWindow": true,
+  "nativeQuitRequestPolled": true,
+  "nativeUserAgentAndPlaylistRendered": true,
+  "navigationOutsideAdminBlocked": true,
+  "privateWebViewProfileRemovedAfterShutdown": true,
+  "publicHitTestTargetsNativeAdminDropWindow": false,
+  "realAdminAssetsLoadedInWebView2": true,
+  "realAdminQuitAcknowledged": true,
+  "realCSRFProtectedStopAccepted": true,
+  "reopenKeptSameWindowAndWebView": true,
+  "shutdownWithOpenNativeChooserCompleted": true,
+  "taskbarRestoreKeptWebViewVisible": true,
+  "textCannotSupplyNativeOriginalPaths": true,
+  "trayBaselineResults": [
+    {
+      "name": "unicode-minimal",
+      "added": false,
+      "lastError": 2147500037,
+      "size": 976,
+      "flags": 6,
+      "validWindow": true,
+      "validSystemIcon": true,
+      "windowVisible": false
+    },
+    {
+      "name": "unicode-callback",
+      "added": false,
+      "lastError": 2147500037,
+      "size": 976,
+      "flags": 7,
+      "validWindow": true,
+      "validSystemIcon": true,
+      "windowVisible": false
+    },
+    {
+      "name": "unicode-guid",
+      "added": false,
+      "lastError": 2147500037,
+      "size": 976,
+      "flags": 39,
+      "validWindow": true,
+      "validSystemIcon": true,
+      "windowVisible": false
+    },
+    {
+      "name": "unicode-v2",
+      "added": false,
+      "lastError": 2147500037,
+      "size": 952,
+      "flags": 7,
+      "validWindow": true,
+      "validSystemIcon": true,
+      "windowVisible": false
+    },
+    {
+      "name": "unicode-visible",
+      "added": false,
+      "lastError": 2147500037,
+      "size": 976,
+      "flags": 7,
+      "validWindow": true,
+      "validSystemIcon": true,
+      "windowVisible": true
+    },
+    {
+      "name": "ansi-minimal",
+      "added": false,
+      "lastError": 2147500037,
+      "size": 528,
+      "flags": 6,
+      "validWindow": true,
+      "validSystemIcon": true,
+      "windowVisible": true
+    }
+  ],
+  "trayCapability": "unavailable",
+  "trayIconRegistered": false,
+  "trayIndependentInputsValid": true,
+  "trayProductionReadback": {
+    "rectangleHRESULT": 2147500037,
+    "modifySucceeded": false,
+    "lastError": 2147500037
+  },
+  "trayUnavailableReason": "The host shell rejected all six independent Win32 registrations with valid window and system icon; this run verifies the taskbar fallback instead of claiming tray registration.",
+  "unsavedUIAndLiveConnectionPreserved": true,
+  "hiddenHelperLaunchDisplayedAdmin": true,
+  "originalDropPathsAndBytesPreserved": true,
+  "nativeChooserOriginalPathPreserved": true,
+  "realAdminQuitStoppedHost": true,
+  "hostLog": "Smart Stage v0.1.0-preview.17\nAdmin: http://127.0.0.1:59109/admin\nRemote mode: gateway\nOpen Admin to scan or copy the remote-control link. Use Quit Smart Stage in Admin or the tray menu to exit; STOP returns to the stage background.\nNative Admin notification icon registration failed: attempt=1 shell=000000000002012A visible=1 error=2147500037 size=976 hwndOffset=8 iconOffset=32 control=000000000005001C validControl=1 icon=000000000006012F validIcon=1 selfPID=1840 selfSession=2 shellPID=1752 shellSession=2\nNative Admin notification icon registration failed: attempt=10 shell=000000000002012A visible=1 error=2147500037 size=976 hwndOffset=8 iconOffset=32 control=000000000005001C validControl=1 icon=000000000006012F validIcon=1 selfPID=1840 selfSession=2 shellPID=1752 shellSession=2\nRequested native Admin shutdown: queued=1\nClosing native Admin: chooserActive=0 chooserShowing=0\nClosed native Admin WebView\nNative Admin shutdown completed\n"
+}

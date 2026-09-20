@@ -1,0 +1,218 @@
+{
+  "status": "passed",
+  "release": "v0.1.0-preview.17",
+  "releaseSource": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+  "defaultInstallerCommit": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+  "verifiedAt": "2026-09-20T22:54:38.835684+00:00",
+  "reportCount": 6,
+  "workflows": {
+    "darwin": {
+      "runID": 35542685215,
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685215",
+      "path": ".github/workflows/install-macos.yml",
+      "sourceCommit": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "conclusion": "success",
+      "startedAt": "2026-09-20T22:46:37Z",
+      "completedAt": "2026-09-20T22:47:49Z",
+      "emptyReleaseVersionEnvironmentCount": 2,
+      "workflowLogSHA256": "a46324a3603afe594c524284d33989d16c26c693a7c19789b446833830f23e24",
+      "jobs": [
+        {
+          "id": 106163083802,
+          "name": "install (macos-15-intel, amd64)",
+          "conclusion": "success"
+        },
+        {
+          "id": 106163083913,
+          "name": "install (macos-15, arm64)",
+          "conclusion": "success"
+        }
+      ]
+    },
+    "windows": {
+      "runID": 35542685239,
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239",
+      "path": ".github/workflows/install-windows.yml",
+      "sourceCommit": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "conclusion": "success",
+      "startedAt": "2026-09-20T22:46:37Z",
+      "completedAt": "2026-09-20T22:53:42Z",
+      "emptyReleaseVersionEnvironmentCount": 4,
+      "workflowLogSHA256": "afc3f10de120049034dd5ed96bff1ba9665e5eced9f85ccf616385a86cece6d1",
+      "jobs": [
+        {
+          "id": 106163083790,
+          "name": "install (windows-2025, amd64)",
+          "conclusion": "success"
+        },
+        {
+          "id": 106163083940,
+          "name": "install (windows-11-arm, arm64)",
+          "conclusion": "success"
+        }
+      ]
+    }
+  },
+  "bootstraps": {
+    "darwin": {
+      "sourceCommit": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "filename": "install.sh",
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/600174ade4ec1a1b110fcfcabc79c5e0d9e57273/install.sh",
+      "sha256": "93e2571d31898bd31a24185a363604e546536a094bdc37755df71509f87b500c",
+      "sourceKind": "commit-pinned",
+      "publicPinnedBytesMatchCommit": true
+    },
+    "windows": {
+      "sourceCommit": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "filename": "install.ps1",
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/600174ade4ec1a1b110fcfcabc79c5e0d9e57273/install.ps1",
+      "sha256": "9cd8b21a086d3826e2d251a1fccf3395d9c4926c21aa89cd7af3614f56e971d5",
+      "sourceKind": "commit-pinned",
+      "publicPinnedBytesMatchCommit": true
+    }
+  },
+  "publishedArchives": {
+    "darwin/arm64": {
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-darwin-arm64.app.zip",
+      "archive": "smartstage-darwin-arm64.app.zip",
+      "archiveSHA256": "8ca0e64446232477280d19983f8a160bac0663b4a870194c699546f1d4af57bc",
+      "executableSHA256": "f22cd7bc021a0013cb3f55b49e10f7c9ff12149a21a4c167aceeae63a91152ca",
+      "checksumVerified": true,
+      "matchesIndependentReleaseArchiveReport": true
+    },
+    "darwin/amd64": {
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-darwin-amd64.app.zip",
+      "archive": "smartstage-darwin-amd64.app.zip",
+      "archiveSHA256": "935ac8a14799d21ecc29a8d313036944f19e4fd56a4d4e73559bcb0fccfe7d0e",
+      "executableSHA256": "654501020f9c37458078437876a050cbf3892110345ddb3c036994fb447f5b24",
+      "checksumVerified": true,
+      "matchesIndependentReleaseArchiveReport": true
+    },
+    "windows/arm64": {
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-windows-arm64.zip",
+      "archive": "smartstage-windows-arm64.zip",
+      "archiveSHA256": "2267cb1502e5d73e844452b10ba450824f5a91b540d0cad47ee48d2e84a9b0a0",
+      "executableSHA256": "415bf6076e3ea2d0a8ede9621a8c33627d6087ef71c06171897e48d2b2d360c9",
+      "checksumVerified": true,
+      "matchesIndependentReleaseArchiveReport": true
+    },
+    "windows/amd64": {
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-windows-amd64.zip",
+      "archive": "smartstage-windows-amd64.zip",
+      "archiveSHA256": "e20670a286f52853402158d9b8926026607f313b8a26b1e8b1bfffb4e4083850",
+      "executableSHA256": "120d70feb926aea494a506cbcea40ac02da3bff91932761eb6eaf638a44e1da4",
+      "checksumVerified": true,
+      "matchesIndependentReleaseArchiveReport": true
+    }
+  },
+  "reports": {
+    "installer-darwin-arm64.json": {
+      "target": "darwin/arm64",
+      "powerShellMajorVersion": null,
+      "workflowRunID": 35542685215,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685215",
+      "artifactID": 10614738952,
+      "artifactName": "mac-app-install-arm64",
+      "artifactReportPath": "arm64/result.json",
+      "reportSHA256": "311034f09c81af726915e4763d1e91535076b746db692058e5c75032db5fdeab",
+      "bootstrapURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/600174ade4ec1a1b110fcfcabc79c5e0d9e57273/install.sh",
+      "bootstrapSHA256": "93e2571d31898bd31a24185a363604e546536a094bdc37755df71509f87b500c",
+      "bootstrapSourceKind": "commit-pinned",
+      "releaseArchive": "smartstage-darwin-arm64.app.zip",
+      "releaseArchiveSHA256": "8ca0e64446232477280d19983f8a160bac0663b4a870194c699546f1d4af57bc",
+      "installedExecutableSHA256": "f22cd7bc021a0013cb3f55b49e10f7c9ff12149a21a4c167aceeae63a91152ca"
+    },
+    "installer-darwin-amd64.json": {
+      "target": "darwin/amd64",
+      "powerShellMajorVersion": null,
+      "workflowRunID": 35542685215,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685215",
+      "artifactID": 10615123010,
+      "artifactName": "mac-app-install-amd64",
+      "artifactReportPath": "amd64/result.json",
+      "reportSHA256": "1812e0f3fa54fd93e0190f22ef929bba0ff34cb3728487daf524ffbaae8d6df0",
+      "bootstrapURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/600174ade4ec1a1b110fcfcabc79c5e0d9e57273/install.sh",
+      "bootstrapSHA256": "93e2571d31898bd31a24185a363604e546536a094bdc37755df71509f87b500c",
+      "bootstrapSourceKind": "commit-pinned",
+      "releaseArchive": "smartstage-darwin-amd64.app.zip",
+      "releaseArchiveSHA256": "935ac8a14799d21ecc29a8d313036944f19e4fd56a4d4e73559bcb0fccfe7d0e",
+      "installedExecutableSHA256": "654501020f9c37458078437876a050cbf3892110345ddb3c036994fb447f5b24"
+    },
+    "installer-windows-arm64.json": {
+      "target": "windows/arm64",
+      "powerShellMajorVersion": "5",
+      "workflowRunID": 35542685239,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239",
+      "artifactID": 10614559687,
+      "artifactName": "windows-app-install-arm64",
+      "artifactReportPath": "arm64/result.json",
+      "reportSHA256": "02bcc01be5de8bf08d3dbbf413367a4bd830efb34742325e9866278c8cf9deb7",
+      "bootstrapURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/600174ade4ec1a1b110fcfcabc79c5e0d9e57273/install.ps1",
+      "bootstrapSHA256": "9cd8b21a086d3826e2d251a1fccf3395d9c4926c21aa89cd7af3614f56e971d5",
+      "bootstrapSourceKind": "commit-pinned",
+      "releaseArchive": "smartstage-windows-arm64.zip",
+      "releaseArchiveSHA256": "2267cb1502e5d73e844452b10ba450824f5a91b540d0cad47ee48d2e84a9b0a0",
+      "installedExecutableSHA256": "415bf6076e3ea2d0a8ede9621a8c33627d6087ef71c06171897e48d2b2d360c9"
+    },
+    "installer-windows-arm64-powershell7.json": {
+      "target": "windows/arm64",
+      "powerShellMajorVersion": "7",
+      "workflowRunID": 35542685239,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239",
+      "artifactID": 10614559687,
+      "artifactName": "windows-app-install-arm64",
+      "artifactReportPath": "arm64/powershell7.json",
+      "reportSHA256": "884bbdd558c0a3cfd5662978069da0e09386735e020e4da8303bca14973568a3",
+      "bootstrapURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/600174ade4ec1a1b110fcfcabc79c5e0d9e57273/install.ps1",
+      "bootstrapSHA256": "9cd8b21a086d3826e2d251a1fccf3395d9c4926c21aa89cd7af3614f56e971d5",
+      "bootstrapSourceKind": "commit-pinned",
+      "releaseArchive": "smartstage-windows-arm64.zip",
+      "releaseArchiveSHA256": "2267cb1502e5d73e844452b10ba450824f5a91b540d0cad47ee48d2e84a9b0a0",
+      "installedExecutableSHA256": "415bf6076e3ea2d0a8ede9621a8c33627d6087ef71c06171897e48d2b2d360c9"
+    },
+    "installer-windows-amd64.json": {
+      "target": "windows/amd64",
+      "powerShellMajorVersion": "5",
+      "workflowRunID": 35542685239,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239",
+      "artifactID": 10614942995,
+      "artifactName": "windows-app-install-amd64",
+      "artifactReportPath": "amd64/result.json",
+      "reportSHA256": "34d07e29ce202eca367fb8bac1ec0eca9cb391c3d45ea6bb7ed1e0760c38bb5a",
+      "bootstrapURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/600174ade4ec1a1b110fcfcabc79c5e0d9e57273/install.ps1",
+      "bootstrapSHA256": "9cd8b21a086d3826e2d251a1fccf3395d9c4926c21aa89cd7af3614f56e971d5",
+      "bootstrapSourceKind": "commit-pinned",
+      "releaseArchive": "smartstage-windows-amd64.zip",
+      "releaseArchiveSHA256": "e20670a286f52853402158d9b8926026607f313b8a26b1e8b1bfffb4e4083850",
+      "installedExecutableSHA256": "120d70feb926aea494a506cbcea40ac02da3bff91932761eb6eaf638a44e1da4"
+    },
+    "installer-windows-amd64-powershell7.json": {
+      "target": "windows/amd64",
+      "powerShellMajorVersion": "7",
+      "workflowRunID": 35542685239,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239",
+      "artifactID": 10614942995,
+      "artifactName": "windows-app-install-amd64",
+      "artifactReportPath": "amd64/powershell7.json",
+      "reportSHA256": "c00f9a425e56072b4d48054ab1c978fb83b1a65158d5b1bdbc743ea4ec221ecb",
+      "bootstrapURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/600174ade4ec1a1b110fcfcabc79c5e0d9e57273/install.ps1",
+      "bootstrapSHA256": "9cd8b21a086d3826e2d251a1fccf3395d9c4926c21aa89cd7af3614f56e971d5",
+      "bootstrapSourceKind": "commit-pinned",
+      "releaseArchive": "smartstage-windows-amd64.zip",
+      "releaseArchiveSHA256": "e20670a286f52853402158d9b8926026607f313b8a26b1e8b1bfffb4e4083850",
+      "installedExecutableSHA256": "120d70feb926aea494a506cbcea40ac02da3bff91932761eb6eaf638a44e1da4"
+    }
+  },
+  "independentReleaseArchiveReportSHA256": "33747439b11ca92985fd38c2c45638e04c63cda85e641c2315949237cac2ed33",
+  "defaultReleaseUsedWithoutVersionOverride": true,
+  "defaultGatewayInstallWithoutFirewallOverride": true,
+  "defaultFirewallRulesUnchanged": true,
+  "publicArchiveAndExecutableHashesMatchIndependentVerification": true,
+  "scope": {
+    "bootstrap": "Both native workflows fetched and executed commit-pinned public HTTPS bootstrap URLs; the raw main URL was not exercised by these runs.",
+    "macDefault": "The workflow RELEASE_VERSION was empty and the verifier removed SMARTSTAGE_VERSION for its default installation; separate explicit-LAN firewall fixtures remain distinct.",
+    "windowsDefault": "Both native architectures used PowerShell 5.1 and 7 without a release override, fetched the real irm bootstrap and downloaded public release assets. Failure fixtures adapt only private script copies.",
+    "windowsArchiveHash": "Windows reports retain installed executable hashes; this collector independently downloaded each public ZIP and checksum and matched its executable to both shell reports.",
+    "physicalHardwareAcceptanceVerified": false
+  }
+}

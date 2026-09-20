@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "defaultInstallerCommit": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+  "verifiedAt": "2026-09-20T22:46:49.127504+00:00",
+  "bootstraps": [
+    {
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+      "sha256": "93e2571d31898bd31a24185a363604e546536a094bdc37755df71509f87b500c",
+      "bytes": 17526,
+      "matchesDefaultPin": true,
+      "defaultRelease": "v0.1.0-preview.17"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1",
+      "sha256": "9cd8b21a086d3826e2d251a1fccf3395d9c4926c21aa89cd7af3614f56e971d5",
+      "bytes": 16651,
+      "matchesDefaultPin": true,
+      "defaultRelease": "v0.1.0-preview.17"
+    }
+  ],
+  "scope": "Independent byte comparison of the canonical main URLs; installation execution is established separately by native commit-pinned workflow reports."
+}

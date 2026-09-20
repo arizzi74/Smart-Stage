@@ -1,0 +1,509 @@
+{
+  "status": "passed",
+  "release": "v0.1.0-preview.17",
+  "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+  "releaseWorkflowRunID": 35541865946,
+  "updaterWorkflowRunID": 35541865946,
+  "windowsInstallerWorkflowRunID": 35542685239,
+  "releaseWorkflowConclusion": "failure",
+  "allTaggedJobsPassed": false,
+  "workflowEvidence": {
+    "35541865946": {
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "headSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "status": "completed",
+      "conclusion": "failure",
+      "jobCount": 23,
+      "successfulJobCount": 21,
+      "failedJobs": [
+        {
+          "jobID": 106162704689,
+          "name": "verify-windows-install / install (windows-2025, amd64)",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946/job/106162704689",
+          "conclusion": "failure",
+          "failedSteps": [
+            {
+              "name": "Install the published app using built-in Windows PowerShell",
+              "number": 3,
+              "conclusion": "failure"
+            }
+          ]
+        },
+        {
+          "jobID": 106162704738,
+          "name": "verify-windows-install / install (windows-11-arm, arm64)",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946/job/106162704738",
+          "conclusion": "failure",
+          "failedSteps": [
+            {
+              "name": "Install the published app using built-in Windows PowerShell",
+              "number": 3,
+              "conclusion": "failure"
+            }
+          ]
+        }
+      ]
+    },
+    "35542685239": {
+      "workflowRunID": 35542685239,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239",
+      "headSHA": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "status": "completed",
+      "conclusion": "success",
+      "jobCount": 2,
+      "successfulJobCount": 2,
+      "failedJobs": []
+    }
+  },
+  "windowsInstallerSupersession": {
+    "originalWorkflow": {
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "headSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "status": "completed",
+      "conclusion": "failure",
+      "jobCount": 23,
+      "successfulJobCount": 21,
+      "failedJobs": [
+        {
+          "jobID": 106162704689,
+          "name": "verify-windows-install / install (windows-2025, amd64)",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946/job/106162704689",
+          "conclusion": "failure",
+          "failedSteps": [
+            {
+              "name": "Install the published app using built-in Windows PowerShell",
+              "number": 3,
+              "conclusion": "failure"
+            }
+          ]
+        },
+        {
+          "jobID": 106162704738,
+          "name": "verify-windows-install / install (windows-11-arm, arm64)",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946/job/106162704738",
+          "conclusion": "failure",
+          "failedSteps": [
+            {
+              "name": "Install the published app using built-in Windows PowerShell",
+              "number": 3,
+              "conclusion": "failure"
+            }
+          ]
+        }
+      ]
+    },
+    "replacementWorkflow": {
+      "workflowRunID": 35542685239,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239",
+      "headSHA": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "status": "completed",
+      "conclusion": "success",
+      "jobCount": 2,
+      "successfulJobCount": 2,
+      "failedJobs": []
+    },
+    "replacedReportCount": 4,
+    "replacedReports": [
+      "installer-windows-arm64.json",
+      "installer-windows-arm64-powershell7.json",
+      "installer-windows-amd64.json",
+      "installer-windows-amd64-powershell7.json"
+    ],
+    "releaseSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+    "verificationSourceRevision": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+    "productionInstallerBytesUnchanged": true,
+    "productionInstallerSHA256": "9cd8b21a086d3826e2d251a1fccf3395d9c4926c21aa89cd7af3614f56e971d5",
+    "executedBootstrapURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/600174ade4ec1a1b110fcfcabc79c5e0d9e57273/install.ps1",
+    "verifierPath": "scripts/verify-windows-install.py",
+    "originalVerifierSHA256": "9e05ca5bff0b3ea55b76a962d3348e16f0e94a2cd92703069a5feeefb0a979a8",
+    "replacementVerifierSHA256": "597388f828a8db874caebd0254864145b9726d3c5f84daeac25ecd3a241dc9aa",
+    "verificationSourceChanged": true,
+    "changedRepositoryPaths": [
+      ".github/workflows/update.yml",
+      "README.md",
+      "scripts/verify-windows-install.py"
+    ],
+    "scope": "Only the four Windows installer reports are superseded. The tagged workflow remains failed; all its other jobs must have succeeded. Replacement tests execute an immutable bootstrap with identical release install.ps1 bytes and install the same published executable hashes. This is not a claim that all tagged jobs passed or all test scripts used the release source."
+  },
+  "verifiedAt": "2026-09-20T22:54:22.023111+00:00",
+  "reportCount": 32,
+  "reports": {
+    "download-darwin-arm64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615651077,
+      "artifactName": "download-darwin-arm64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "download-verification.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "aa0e899b9682cda8a873c42e8fd4e071aa4aa0ad378f1f66cd6575b0c00ca80d"
+    },
+    "download-darwin-amd64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615202678,
+      "artifactName": "download-darwin-amd64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "download-verification.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "5076b8986deb5dbc23cf56f12911d1d816d2c45a8d90cb8b47896dcb997aeb69"
+    },
+    "auto-update-darwin-arm64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615442190,
+      "artifactName": "auto-update-darwin-arm64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "darwin-arm64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "8d54d9ea278bbadea70a18ea61c02adf72d43867b0021cbf87770eb89384813b"
+    },
+    "browser-darwin-arm64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10614718973,
+      "artifactName": "browser-native-darwin-arm64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "darwin-arm64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "8049e44aa0f1c445a67d14f398fa6ec67c5ff2e08110994036e76ea25793410e"
+    },
+    "download-windows-arm64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615417257,
+      "artifactName": "download-windows-arm64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "download-verification.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "4a031c743f8def026759ab28443b277062b33426640c1370629d55ba1534f6ca"
+    },
+    "auto-update-darwin-amd64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615611548,
+      "artifactName": "auto-update-darwin-amd64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "darwin-amd64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "fe68d1df9834de6e880fea2c11c248987648edce465cc65b7c01b7e102e2fb6f"
+    },
+    "browser-darwin-amd64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615502156,
+      "artifactName": "browser-native-darwin-amd64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "darwin-amd64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "5e2e876260fd2d84587996d36c2d25bca34660299878783a45a9bda2b10a07f6"
+    },
+    "download-windows-amd64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615367296,
+      "artifactName": "download-windows-amd64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "download-verification.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "561d4fc0d7561567085365d8d6b6b00d6bcaab157547a16ff7eb3370f423ab18"
+    },
+    "auto-update-windows-arm64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615087941,
+      "artifactName": "auto-update-windows-arm64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "windows-arm64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "b2253a7b901336f0c81bef99c0f72902da97729e304519468534e4e473cd40c0"
+    },
+    "browser-windows-arm64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615407415,
+      "artifactName": "browser-native-windows-arm64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "windows-arm64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "a1ed0fceeb108113140659c3ee1af678a168a740fe0046ced92f407ead3df80b"
+    },
+    "auto-update-windows-amd64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615442137,
+      "artifactName": "auto-update-windows-amd64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "windows-amd64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "47a7076e65ee0d45ac55090ba811cec925a7cf65d8efdaf84e5cdf84ea413961"
+    },
+    "installer-darwin-arm64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615462079,
+      "artifactName": "mac-app-install-arm64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "arm64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "6b078a9e30e245807a4189d4cde53c65868d0e711d415d1c8974e8e15cd3de1d"
+    },
+    "browser-windows-amd64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615412275,
+      "artifactName": "browser-native-windows-amd64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "windows-amd64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "a050b0fe495f9e91cc1cab79d32104176743f1cffe2f0a2fed5ad08f48ffda18"
+    },
+    "installer-windows-arm64-powershell7.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35542685239,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239",
+      "artifactID": 10614559687,
+      "artifactName": "windows-app-install-arm64",
+      "artifactHeadSHA": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "artifactReportPath": "arm64/powershell7.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "supersedesFailedTaggedInstallerReport": true,
+      "reportSHA256": "884bbdd558c0a3cfd5662978069da0e09386735e020e4da8303bca14973568a3"
+    },
+    "installer-windows-arm64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35542685239,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239",
+      "artifactID": 10614559687,
+      "artifactName": "windows-app-install-arm64",
+      "artifactHeadSHA": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "artifactReportPath": "arm64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "supersedesFailedTaggedInstallerReport": true,
+      "reportSHA256": "02bcc01be5de8bf08d3dbbf413367a4bd830efb34742325e9866278c8cf9deb7"
+    },
+    "installer-windows-amd64-powershell7.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35542685239,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239",
+      "artifactID": 10614942995,
+      "artifactName": "windows-app-install-amd64",
+      "artifactHeadSHA": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "artifactReportPath": "amd64/powershell7.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "supersedesFailedTaggedInstallerReport": true,
+      "reportSHA256": "c00f9a425e56072b4d48054ab1c978fb83b1a65158d5b1bdbc743ea4ec221ecb"
+    },
+    "installer-windows-amd64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35542685239,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35542685239",
+      "artifactID": 10614942995,
+      "artifactName": "windows-app-install-amd64",
+      "artifactHeadSHA": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "artifactReportPath": "amd64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "600174ade4ec1a1b110fcfcabc79c5e0d9e57273",
+      "supersedesFailedTaggedInstallerReport": true,
+      "reportSHA256": "34d07e29ce202eca367fb8bac1ec0eca9cb391c3d45ea6bb7ed1e0760c38bb5a"
+    },
+    "installer-darwin-amd64.json": {
+      "kind": "workflowArtifact",
+      "workflowRunID": 35541865946,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946",
+      "artifactID": 10615038016,
+      "artifactName": "mac-app-install-amd64",
+      "artifactHeadSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "artifactReportPath": "amd64/result.json",
+      "releaseExecutableSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "verificationSourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "supersedesFailedTaggedInstallerReport": false,
+      "reportSHA256": "e2e4b929aec3e322a620ba69406af0ac8fef870093ea73dcd34d4f0cf9c8c59b"
+    },
+    "native-icon-darwin-amd64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-darwin-amd64.icon.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "df5efa144728676a844aa24def12f54b9f0c3deeb8a64ab612cc15e417048aae"
+    },
+    "native-smoke-darwin-arm64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/native-harness-darwin-arm64.smoke.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "7f3c5f16ef014afe62d7240a7855f1c0039a89b29d3d54ccdf89266188af81b4"
+    },
+    "native-icon-darwin-arm64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-darwin-arm64.icon.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "5890decb9323680d063217d5c89e092548ad476c2479e1cebdd459a5af456003"
+    },
+    "native-http-darwin-arm64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-darwin-arm64.http-smoke.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "c4e4149a5256e3f64d28f9c15d5763dc4e2a1b448f6c9a0e0eac9df77b559c2e"
+    },
+    "native-http-darwin-amd64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-darwin-amd64.http-smoke.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "12cc015f1631b8ad8169c5cd0704f466c98a5c3716e6a0403ed146e9886b3f86"
+    },
+    "native-icon-windows-arm64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-windows-arm64.exe.icon.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "515b621436061e29e7c3c09faaccfd7c106b73032426349488af0cd9297af804"
+    },
+    "native-smoke-darwin-amd64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/native-harness-darwin-amd64.smoke.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "0e974fb94a89c7a25d84c64f0759f3b6dd8fd4d8070b198b074935a3f23aefd8"
+    },
+    "native-http-windows-arm64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-windows-arm64.exe.http-smoke.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "8a41d646cdd38237628770f56625e1bafc86c31e57dddfc3dd863ff5ff74fa40"
+    },
+    "native-smoke-windows-arm64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/native-harness-windows-arm64.exe.smoke.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "29e01405fb9cdaca34358ee959262fd1500f73b2cffe93978e9d6090654c888a"
+    },
+    "native-http-windows-amd64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-windows-amd64.exe.http-smoke.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "64e50e5eb75a1709144c8b5490c6d041203f9740560d0d10b3372a017b91b3e0"
+    },
+    "native-admin-windows-arm64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-windows-arm64.exe.native-admin.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "8713c5f47ae13e1873d024c5ddfa492098ecb3512234b677720cdf7c0186524a"
+    },
+    "native-icon-windows-amd64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-windows-amd64.exe.icon.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "76524b3a8a28f037fac4052329ab1b318b901f94df1f96155ae1c8218114dfcb"
+    },
+    "native-smoke-windows-amd64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/native-harness-windows-amd64.exe.smoke.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "7d078203acc31dec7acc097fffb2cbde8ae06a4aba289eafbdac17e1b5a5ee4b"
+    },
+    "native-admin-windows-amd64.json": {
+      "kind": "publicReleaseAsset",
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-windows-amd64.exe.native-admin.json",
+      "release": "v0.1.0-preview.17",
+      "sourceRevision": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+      "reportSHA256": "0c7955bf912644214a7b9d7c45475890c80d1dc486c12ab7318841d61b5f788c"
+    }
+  },
+  "crossReportArchiveAndExecutableHashesMatch": true,
+  "windowsInstallerBootstrapMatchesReleaseSource": true,
+  "windowsNotificationArea": {
+    "arm64": {
+      "capability": "unavailable",
+      "trayIconRegistered": false,
+      "closeBehavior": "minimized-to-taskbar",
+      "evidenceReport": "native-admin-windows-arm64.json"
+    },
+    "amd64": {
+      "capability": "available",
+      "trayIconRegistered": true,
+      "closeBehavior": "hidden-to-tray",
+      "evidenceReport": "native-admin-windows-amd64.json"
+    }
+  },
+  "windowsControlledDropSurface": {
+    "arm64": {
+      "temporarilyRaisedAboveExternalWindow": true,
+      "testPositioningRestored": true,
+      "globalDesktopHitTest": "externally-occluded",
+      "globalExactHit": false,
+      "evidenceReport": "native-admin-windows-arm64.json"
+    },
+    "amd64": {
+      "temporarilyRaisedAboveExternalWindow": false,
+      "testPositioningRestored": true,
+      "globalDesktopHitTest": "exact-admin-hit",
+      "globalExactHit": true,
+      "evidenceReport": "native-admin-windows-amd64.json"
+    }
+  },
+  "scope": {
+    "publicBytes": "Independent archive inspection, native public downloads, actual updater replacement, icon extraction and both Windows PowerShell installer reports agree on executable hashes.",
+    "windowsShippedWindow": "Published executable is a GUI PE; actual native HWND/title/icon visibility is checked by downloads and after update, with same-PID/HWND relaunch and authenticated Quit checked after update.",
+    "windowsDeepProbe": "Own-process COM observer compiles the unchanged production Windows desktop implementation at this release source and connects to the real release executable running its HTTP host. It exercises WebView2 authentication/SSE, input, retained UI, CF_HDROP and IFileOpenDialog. It is not an Explorer mouse gesture or instrumentation inside the shipped executable.",
+    "windowsNotificationArea": "Tray registration is required when any independent Win32 baseline succeeds. When all six valid baseline registrations and production readback fail, the report records tray unavailable and requires minimized taskbar restore; this is not a claim of a working tray icon.",
+    "windowsDropSurface": "The own-process observer waits for restoration to settle and can temporarily raise its test window above unrelated desktop UI. It can select an uncovered point within the middle 20–80% of the client when unrelated desktop UI covers the center. An available exact global Admin hit must be used for CF_HDROP. If unrelated roots cover all 50 samples despite controlled positioning, an independent enabled, unowned, topmost plain DefWindowProcW window must also remain externally occluded at the same point while its own client hit testing works. The report then explicitly records globalExactHit=false and verifies the enabled Admin client hit target and production OLE handler at that recorded point; a globally hittable baseline fails the probe. The baseline is destroyed afterward. Every sampled Admin-child interception or disabled Admin fails; test-only positioning is removed. This does not change production focus behavior or establish a physical Explorer drag gesture.",
+    "windowsInstaller": "Commit-pinned public HTTPS irm bootstrap with bytes identical to the release install.ps1 and GitHub downloads run on native ephemeral Windows users in PowerShell 5.1 and 7; validation and rollback failure cases use private test-script copies. Any replacement workflow and test-source revision are recorded separately from the tagged workflow; canonical-main bootstrap byte verification is a separate check.",
+    "macPortable": "Portable Mac executable uses the system browser; its dedicated window is checked separately through the installed Finder bundle.",
+    "windowIconArtwork": "Win32 window inspection proves a valid icon bitmap, while exact embedded icon pixels are checked by the separate icon report.",
+    "physicalSpeakersDisplaysAndPhoneScreenLockVerified": false
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "binary": "smartstage-gateway-linux-amd64",
+  "sha256": "423eff5cdbed60cdf20d81fcb81be5e6ebdb4f6d8a768132d333f477d8645b84",
+  "version": "v0.1.0-preview.17 (47f75a9d3e42)",
+  "actualDaemonProcess": true,
+  "privateConfigurationAndExistingTokenPreserved": true,
+  "dedicatedGroupConfigurationAccepted": true,
+  "worldReadableConfigurationRejected": true,
+  "loopbackHealthReady": true,
+  "plaintextWithoutProxyOriginRejected": true,
+  "cleanSIGTERMShutdown": true,
+  "registrationSecretNotLogged": true,
+  "embeddedDependencyLicense": true
+}

@@ -1,0 +1,52 @@
+{
+  "status": "passed",
+  "target": "windows/arm64",
+  "release": "v0.1.0-preview.17",
+  "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-windows-arm64.zip",
+  "archive": "smartstage-windows-arm64.zip",
+  "archiveSHA256": "2267cb1502e5d73e844452b10ba450824f5a91b540d0cad47ee48d2e84a9b0a0",
+  "archiveEntries": [
+    "smartstage.exe"
+  ],
+  "executableSHA256": "415bf6076e3ea2d0a8ede9621a8c33627d6087ef71c06171897e48d2b2d360c9",
+  "executablePermissions": "0755",
+  "windowsExecutable": {
+    "format": "PE32+",
+    "architecture": "arm64",
+    "subsystem": "Windows GUI",
+    "subsystemID": 2,
+    "guiSubsystemVerified": true,
+    "consoleSubsystem": false,
+    "embeddedResourceDirectoryPresent": true,
+    "resourceDirectoryRVA": 43769856,
+    "resourceDirectoryBytes": 39136
+  },
+  "headlessStartupErrorsExitWithoutDialog": true,
+  "version": "Smart Stage v0.1.0-preview.17 (47f75a9d3e42), go1.26.5, windows/arm64",
+  "adminServedOnLoopback": true,
+  "adminURL": "http://127.0.0.1:51137/admin",
+  "nativeAdminWindow": {
+    "pid": 9104,
+    "hwnd": 262812,
+    "className": "SmartStageAdmin-View",
+    "title": "Smart Stage \u2014 Admin",
+    "visible": true,
+    "minimized": false,
+    "responsive": true,
+    "singleAdminWindow": true,
+    "clientWidth": 948,
+    "clientHeight": 601,
+    "icon": {
+      "present": true,
+      "source": "classBig",
+      "width": 32,
+      "height": 32,
+      "artworkIdentityVerified": false
+    },
+    "nativePageJavaScriptVerified": false
+  },
+  "automaticDedicatedAdminWindowVisible": true,
+  "automaticSystemBrowserDispatchAccepted": false,
+  "gatewayModeDefault": true,
+  "lanListenerClosedByDefault": true
+}

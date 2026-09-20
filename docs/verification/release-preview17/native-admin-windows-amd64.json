@@ -1,0 +1,338 @@
+{
+  "status": "passed",
+  "method": "Production Windows STA/DirectComposition WebView2 with real loopback Admin HTTP/session/CSRF/SSE; own-process COM observation, CF_HDROP delivery to the production OLE target and actual IFileOpenDialog selection; not a physical Explorer mouse gesture",
+  "probeMachine": "amd64",
+  "sourceExecutableSha256": "120d70feb926aea494a506cbcea40ac02da3bff91932761eb6eaf638a44e1da4",
+  "probeLog": "Created native Admin window\nShowed native Admin window\nLoaded native Admin page\nNative Admin probe passed: realAdminAssetsLoadedInWebView2\nNative Admin probe passed: localSessionAndCSRFInitialized\nNative Admin probe passed: authenticatedEventSourceConnected\nNative Admin probe passed: nativeUserAgentAndPlaylistRendered\nNative Admin probe passed: compositionWindowVisible\nNative Admin probe passed: compositionMouseInputActivatedStop\nNative Admin probe passed: realCSRFProtectedStopAccepted\nNative Admin probe passed: liveStateAfterStopObserved\nHid native Admin window\nNative Admin probe passed: closeHidWindowWithoutTerminating\nShowed native Admin window\nShowed native Admin window\nNative Admin probe passed: reopenKeptSameWindowAndWebView\nNative Admin probe passed: unsavedUIAndLiveConnectionPreserved\nNative Admin probe passed: nativeAdminEscapePolledWithoutJavaScript\nShowed native Admin window\nNative Admin probe passed: nativeDropTestPositioningRestored\nNative Admin probe passed: nativeClientHitTestTargetsAdminDropWindow\nNative Admin probe passed: nativeCFHDROPDeliveredToProductionDropTarget\nNative Admin probe passed: textCannotSupplyNativeOriginalPaths\nShowed native Admin window\nOpened native media chooser\nShowed native Admin window\nNative Admin probe passed: nativeFileDialogOriginalSelectionAccepted\nNative Admin probe passed: navigationOutsideAdminBlocked\nNative Admin probe passed: crossOriginResourcesBlocked\nQuitting Smart Stage from the app menu\nNative Admin probe passed: nativeQuitRequestPolled\nNative Admin probe passed: realAdminQuitAcknowledged\nShowed native Admin window\nOpened native media chooser\nRequested native Admin shutdown: queued=1\nClosing native Admin: chooserActive=1 chooserShowing=1\nNative media chooser returned during shutdown: 0x800704c7\nCancelled native media chooser\nClosed native Admin WebView\nNative Admin browser shutdown: profileReleased=1 eventObserved=1 processWait=0 elapsedMs=2391\nRemoved native Admin private profile\nNative Admin shutdown completed\nNative Admin probe passed: nativeQuitClosedAdminWindow\nNative Admin probe passed: shutdownWithOpenNativeChooserCompleted\nNative Admin probe passed: privateWebViewProfileRemovedAfterShutdown\n",
+  "authenticatedEventSourceConnected": true,
+  "chooserRequest": {
+    "id": 2,
+    "paths": [
+      "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\smartstage-native-admin-izi7ilda\\Originals – café\\Second original – 演出.wav"
+    ]
+  },
+  "closeBehavior": "hidden-to-tray",
+  "closeHidWindowWithoutTerminating": true,
+  "compositionMouseInputActivatedStop": true,
+  "compositionWindowVisible": true,
+  "crossOriginResourcesBlocked": true,
+  "dropRequest": {
+    "id": 1,
+    "paths": [
+      "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\smartstage-native-admin-izi7ilda\\Originals – café\\Operator's opening – café.wav",
+      "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\smartstage-native-admin-izi7ilda\\Originals – café\\Second original – 演出.wav"
+    ]
+  },
+  "explorerNotificationAreaAvailable": true,
+  "globalDesktopHitTest": "exact-admin-hit",
+  "globalExactHit": true,
+  "liveStateAfterStopObserved": true,
+  "localSessionAndCSRFInitialized": true,
+  "nativeAdminEscapePolledWithoutJavaScript": true,
+  "nativeCFHDROPDeliveredToProductionDropTarget": true,
+  "nativeClientHitTestTargetsAdminDropWindow": true,
+  "nativeDropDeliveryPoint": [
+    512,
+    381
+  ],
+  "nativeDropHitTest": {
+    "initial": {
+      "point": [
+        512,
+        381
+      ],
+      "clientPoint": [
+        474,
+        300
+      ],
+      "clientSize": [
+        948,
+        601
+      ],
+      "admin": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "hit": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "hitRoot": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "foreground": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "directChild": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "exactAdminHit": true,
+      "adminChildHit": false
+    },
+    "afterRestoreSettled": {
+      "point": [
+        512,
+        381
+      ],
+      "clientPoint": [
+        474,
+        300
+      ],
+      "clientSize": [
+        948,
+        601
+      ],
+      "admin": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "hit": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "hitRoot": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "foreground": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "directChild": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "exactAdminHit": true,
+      "adminChildHit": false
+    },
+    "interiorCandidatesBeforeRaise": [],
+    "interiorCandidatesAfterRaise": [],
+    "final": {
+      "point": [
+        512,
+        381
+      ],
+      "clientPoint": [
+        474,
+        300
+      ],
+      "clientSize": [
+        948,
+        601
+      ],
+      "admin": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "hit": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "hitRoot": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "foreground": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "directChild": {
+        "hwnd": 131466,
+        "class": "SmartStageAdmin-View",
+        "pid": 3004,
+        "visible": true,
+        "minimized": false,
+        "enabled": true,
+        "ancestorsEnabled": true,
+        "rect": [
+          30,
+          30,
+          994,
+          690
+        ]
+      },
+      "exactAdminHit": true,
+      "adminChildHit": false
+    },
+    "temporarilyRaisedAboveExternalWindow": false
+  },
+  "nativeDropTestPositioningRestored": true,
+  "nativeFileDialogOriginalSelectionAccepted": true,
+  "nativeQuitClosedAdminWindow": true,
+  "nativeQuitRequestPolled": true,
+  "nativeUserAgentAndPlaylistRendered": true,
+  "navigationOutsideAdminBlocked": true,
+  "privateWebViewProfileRemovedAfterShutdown": true,
+  "publicHitTestTargetsNativeAdminDropWindow": true,
+  "realAdminAssetsLoadedInWebView2": true,
+  "realAdminQuitAcknowledged": true,
+  "realCSRFProtectedStopAccepted": true,
+  "reopenKeptSameWindowAndWebView": true,
+  "shutdownWithOpenNativeChooserCompleted": true,
+  "textCannotSupplyNativeOriginalPaths": true,
+  "trayCapability": "available",
+  "trayIconRegistered": true,
+  "unsavedUIAndLiveConnectionPreserved": true,
+  "hiddenHelperLaunchDisplayedAdmin": true,
+  "originalDropPathsAndBytesPreserved": true,
+  "nativeChooserOriginalPathPreserved": true,
+  "realAdminQuitStoppedHost": true,
+  "hostLog": "Smart Stage v0.1.0-preview.17\nAdmin: http://127.0.0.1:61509/admin\nRemote mode: gateway\nOpen Admin to scan or copy the remote-control link. Use Quit Smart Stage in Admin or the tray menu to exit; STOP returns to the stage background.\nRequested native Admin shutdown: queued=1\nClosing native Admin: chooserActive=0 chooserShowing=0\nClosed native Admin WebView\nNative Admin shutdown completed\n"
+}

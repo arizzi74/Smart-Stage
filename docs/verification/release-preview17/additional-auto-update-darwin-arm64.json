@@ -1,0 +1,47 @@
+{
+  "status": "failed",
+  "target": "darwin/arm64",
+  "release": "v0.1.0-preview.17",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "publishedDownload": {
+    "status": "passed",
+    "target": "darwin/arm64",
+    "release": "v0.1.0-preview.17",
+    "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/smartstage-darwin-arm64.zip",
+    "archive": "smartstage-darwin-arm64.zip",
+    "archiveSHA256": "ebc3d62ddd287ebaf14ede9f755e56c862c6381e1cfa2be92f2b8f533d4d9c27",
+    "archiveEntries": [
+      "smartstage"
+    ],
+    "executableSHA256": "f22cd7bc021a0013cb3f55b49e10f7c9ff12149a21a4c167aceeae63a91152ca",
+    "executablePermissions": "0755"
+  },
+  "expectedFixtureSource": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+  "fixture": {
+    "version": "v0.0.0-preview.1",
+    "sourceSHA": "47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e",
+    "target": "darwin/arm64",
+    "archive": "fixture-darwin-arm64.app.zip",
+    "archiveSHA256": "a16705ef0febbb63122d06bf2a1268c8395afec118dcd039dff4f1d662f60aa7",
+    "executableSHA256": "68fdfe6d106f83ffee0e056503b6c33ed49702f15a4c5609d3a34edebf76a574",
+    "purpose": "Native production updater verification with older version metadata; not a published release"
+  },
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (47f75a9d3e42), go1.26.5, darwin/arm64",
+  "initialUpdateStatus": {
+    "currentVersion": "v0.0.0-preview.1",
+    "latestVersion": "",
+    "phase": "error",
+    "available": false,
+    "canInstall": false,
+    "message": "Update check failed: GitHub temporarily limited update checks; retry after 2026-09-20T22:55:56Z",
+    "releaseURL": "",
+    "checkedAt": "2026-09-20T22:46:53Z"
+  },
+  "oldInstanceID": "263f94dc5c282123a884d92b19b5b093ba8748a52a268283",
+  "startupUpdatePending": false,
+  "initialUpdatePhase": "error",
+  "testDirectoryRemoved": true,
+  "testProcessCleanupPassed": true,
+  "error": "Automatic startup update must reserve playback before serving Admin"
+}
