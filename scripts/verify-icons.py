@@ -176,8 +176,8 @@ def mac_icon(executable, source, test_finder):
         assert info.get("LSUIElement", False) is False, "The Finder app must be visible in the Dock"
         document_types = info.get("CFBundleDocumentTypes", [])
         assert any(item.get("CFBundleTypeRole") == "Viewer" and item.get("LSHandlerRank") == "None"
-                   and set(item.get("LSItemContentTypes", [])) == {"public.audio", "public.movie"}
-                   for item in document_types), "Finder app must accept audio/video drops without taking default file associations"
+                   and set(item.get("LSItemContentTypes", [])) == {"public.audio", "public.movie", "public.image"}
+                   for item in document_types), "Finder app must accept audio/video/image drops without taking default file associations"
         subprocess.run(["codesign", "--verify", "--deep", "--strict", str(bundle)], check=True)
         decoded = parent / "decoded.iconset"
         subprocess.run(["iconutil", "--convert", "iconset", "--output", str(decoded), str(icon)], check=True)
