@@ -111,8 +111,13 @@ func main() {
 		}
 		roots[i] = absoluteRoot
 	}
-	var pendingUpdate *update.Prepared
-	err = platform.Run(func(backend playback.Backend) error {
+	err = platform.Run(func(backend playback.Backend) (runErr error) {
+		var pendingUpdate updateHandoff
+		// Register first so this runs after HTTP, updater, service and storage
+		// cleanup. AppKit can terminate directly during the following native
+		// cleanup, so the helper must already own the handoff at that point.
+		// It waits for this process to exit before replacing any installed file.
+		defer func() { runErr = finishUpdateHandoff(pendingUpdate, runErr) }()
 		storage, config, err := store.Open(*configDir)
 		if err != nil {
 			return err
@@ -230,7 +235,14 @@ func main() {
 		defer ticker.Stop()
 		for {
 			select {
-			case pendingUpdate = <-updateReady:
+			case prepared := <-updateReady:
+				if ctx.Err() != nil {
+					_ = prepared.Abort()
+					return nil
+				}
+				// This is the commit boundary. A later Quit still allows the
+				// verified update to finish after all cleanup and process exit.
+				pendingUpdate = prepared
 				service.Close()
 				shutdownCtx, done := context.WithTimeout(context.Background(), 3*time.Second)
 				_ = adminServer.Shutdown(shutdownCtx)
@@ -265,17 +277,28 @@ func main() {
 		}
 	})
 	if err != nil {
-		if pendingUpdate != nil {
-			_ = pendingUpdate.Abort()
-		}
 		exitError(err)
 	}
-	if pendingUpdate != nil {
-		if err := pendingUpdate.Launch(); err != nil {
-			_ = pendingUpdate.Abort()
-			exitError(fmt.Errorf("could not start the updater; the installed app was retained: %w", err))
-		}
+}
+
+type updateHandoff interface {
+	Launch() error
+	Abort() error
+}
+
+func finishUpdateHandoff(prepared updateHandoff, shutdownErr error) error {
+	if prepared == nil {
+		return shutdownErr
 	}
+	if shutdownErr != nil {
+		_ = prepared.Abort()
+		return shutdownErr
+	}
+	if err := prepared.Launch(); err != nil {
+		_ = prepared.Abort()
+		return fmt.Errorf("could not start the updater; the installed app was retained: %w", err)
+	}
+	return nil
 }
 func newServer(handler http.Handler) *http.Server {
 	return &http.Server{Handler: handler, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 15 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 * 1024}

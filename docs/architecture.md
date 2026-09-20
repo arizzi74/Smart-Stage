@@ -31,7 +31,11 @@ type, verifies its SHA-256 checksum, and validates a bounded archive before
 handoff. Staging is beside the installation so replacement stays on one volume.
 A temporary copy of the existing executable runs in helper mode without the
 native playback loop, waits for the original process to exit, and replaces the
-app with a backup for rollback. The replacement registers a private startup
+app with a backup for rollback. The original process hands ownership to this
+helper after closing Go services and storage, before final native shutdown:
+AppKit can terminate directly while completing a pending Quit request. The
+helper must observe the original process's actual exit before replacing files.
+The replacement registers a private startup
 receipt and confirms its expected version after native initialization, saved-show
 loading and listener setup. Show configuration is never replaced by the updater.
 Mac bundles restart through LaunchServices to retain their Dock identity; Windows

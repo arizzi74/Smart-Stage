@@ -30,7 +30,8 @@ type Options struct {
 	// prevents either starting until the returned release function is called.
 	Reserve func() (release func(), err error)
 	// Ready takes ownership of the prepared update and must return promptly.
-	// The caller shuts the app down gracefully, then calls Prepared.Launch.
+	// The caller closes HTTP/storage, then calls Prepared.Launch before native
+	// shutdown can terminate its process. Replacement waits for actual exit.
 	Ready func(*Prepared)
 }
 
