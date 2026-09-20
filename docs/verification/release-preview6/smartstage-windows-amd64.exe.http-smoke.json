@@ -1,0 +1,41 @@
+[
+  {
+    "cuesConfigured": 4,
+    "cuesNativelyPlayedAndStopped": 1,
+    "audioEndpoints": 0,
+    "displays": 1,
+    "physicalRoutingVerified": false
+  },
+  {
+    "soak": {
+      "requestedSeconds": 10,
+      "elapsedSeconds": 10.26600000000002,
+      "cycles": 25,
+      "completed": true,
+      "samples": [
+        {
+          "seconds": 0.12,
+          "cycles": 1,
+          "residentBytes": 65548288,
+          "peakResidentBytes": 168321024,
+          "pagefileUsageBytes": 81805312,
+          "handles": 556
+        },
+        {
+          "seconds": 10.27,
+          "cycles": 25,
+          "residentBytes": 68218880,
+          "peakResidentBytes": 171102208,
+          "pagefileUsageBytes": 84979712,
+          "handles": 566
+        }
+      ],
+      "physicalRoutingOrAVDriftVerified": false
+    }
+  },
+  {
+    "restart": "saved labels/order restored; silent and stage disabled",
+    "instanceChanged": true,
+    "pairingTokenRotated": true
+  }
+]

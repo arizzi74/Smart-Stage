@@ -1,0 +1,21 @@
+{
+  "passed": true,
+  "application": "Smart Stage v0.1.0-preview.6 (4aa3529fb969), go1.26.5, darwin/arm64",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "node": "v22.23.2",
+  "nodeArchitecture": "arm64",
+  "physicalRoutingVerified": false,
+  "checks": [
+    "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+    "Admin browser selected four real host files, saved four labels and reordered stable cue IDs",
+    "Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap",
+    "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser"
+  ],
+  "browser": "153.0.8010.12",
+  "origin": "Admin on 127.0.0.1; Command on an actual non-loopback host IPv4 address",
+  "cuesNativelyPlayedAndStopped": 4,
+  "audioEndpoints": 2,
+  "displays": 1,
+  "audioSkipped": false
+}

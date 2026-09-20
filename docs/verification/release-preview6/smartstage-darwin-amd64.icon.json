@@ -1,0 +1,16 @@
+{
+  "executable": "smartstage-darwin-amd64",
+  "sha256": "d4dc3a3bc0b49ea11bf1d1e15ccbba11742fd72df3d7064ef1c80a169440a794",
+  "platform": "darwin",
+  "status": "passed",
+  "archive": "smartstage-darwin-amd64.app.zip",
+  "archiveSha256": "acfc94a395ee4143e79def7d7d2d1b92c9fd0dd36c12e1543c54de23cc84528f",
+  "iconDecodedByMacOS": true,
+  "adHocSignatureVerified": true,
+  "standaloneBytesMatch": true,
+  "spacesQuotesUnicodePathPassed": true,
+  "version": "Smart Stage v0.1.0-preview.6 (4aa3529fb969), go1.26.5, darwin/amd64",
+  "finderLaunchedTerminalAndCore": true,
+  "servedAdminPage": true,
+  "kernelExecutablePathMatched": true
+}

@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.5
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.6
 
 ## Implemented
 
@@ -31,7 +31,20 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.5
 ## Built and automatically tested
 
 All four: macOS ARM64/AMD64, Windows ARM64/AMD64. Windows ARM64 was added by
-explicit user request. Preview 5 is source `9e72b4c`; its icon and packaging
+explicit user request. Preview 6 is source `4aa3529`; its localhost Admin,
+automatic browser launch, numeric QR/link pairing, isolated remote listener,
+single-executable ZIPs and native playback controls passed on all four targets in
+[native/browser run 35500115900](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115900).
+[Tagged run 35500115581](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115581)
+published the verified release and passed fresh ZIP downloads/startup on all
+four target OS/architectures. Browser checks against those published ZIPs also
+passed on all four targets, and the complete tagged workflow succeeded.
+Independent archive checks confirm one executable,
+permissions, checksums, native architecture and clean source metadata. QR decode,
+session isolation and spoofed-header denial tests passed. Physical camera,
+phone/LAN and event-output acceptance remain open.
+
+Preview 5 is source `9e72b4c`; its icon and packaging
 checks passed on all four targets in
 [native run 35492226235](https://github.com/arizzi74/Smart-Stage/actions/runs/35492226235).
 Windows Shell extracted both icon sizes, and every embedded image matched the
@@ -154,4 +167,4 @@ None verifies physical A/V drift or independent physical audio routing.
 See `docs/release-verification.md` for exact environments/evidence and the
 remaining checklist, and `docs/acceptance-audit.md` for a specification-wide
 evidence audit. Local final release files are downloaded under
-`dist/releases/v0.1.0-preview.4/`; local cross-build outputs are under `dist/`.
+`dist/releases/v0.1.0-preview.6/`; local cross-build outputs are under `dist/`.

@@ -5,17 +5,26 @@ the specification to current implementation and evidence. An automated result
 is credited only for what it observes; native events do not prove physical
 sound, black pixels, routing or timing.
 
-The user has an **Apple Silicon Mac only** available for physical testing. Its
-macOS version, connected outputs and observations are not yet recorded.
+The user has an **Apple Silicon Mac only**, an external audio output and a
+second monitor/projector available for physical testing. Its macOS version,
+exact output models and observations are not yet recorded.
 The [Mac physical procedure](macos-physical-test.md)
-uses preview 5 and a separate test configuration; it does not mark any physical
+uses preview 6 and a separate test configuration; it does not mark any physical
 check passed. Windows physical acceptance remains pending.
 
-Current release evidence: [preview 5 tag run 35492382186](https://github.com/arizzi74/Smart-Stage/actions/runs/35492382186),
-commit `9e72b4c`, passed native/application, icon/packaging, installer and browser
-checks on all four target runners. Download and default-installer records are
-in [release verification](release-verification.md). Preview 5 changes packaging;
-physical output observations are still required.
+The later user request supersedes the original networking/distribution design:
+Admin is now localhost-only and opens automatically, remote control uses a
+separate listener with a numeric token in a QR/link, and four single-executable
+ZIPs replace installers. See the [decision record](decisions.md#local-admin-and-camera-pairing-20-september-2026).
+
+Current release: preview 6, commit `4aa3529`.
+[Native/browser run 35500115900](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115900)
+passed on all four target runners. [Tag run 35500115581](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115581)
+published the release after native/application/icon/ZIP checks and passed fresh
+download/startup verification on all four targets. The same published binaries
+passed the four native browser jobs as well. Records are in
+[release verification](release-verification.md). Physical output observations
+are still required.
 
 Earlier native/application evidence: [preview 4 tag run 35479742963](https://github.com/arizzi74/Smart-Stage/actions/runs/35479742963),
 commit `505a1e4`, passed all four OS/architecture build/native/installation/browser
@@ -55,7 +64,7 @@ the physical scenario or measure physical latency.
 | §4: AVFoundation/AppKit/Core Audio on main thread, per-player routing | `bridge_darwin.m`, initial-thread lock in `platform_native.go`; four fixture cues natively play/stop on both Mac runners, including one non-default virtual endpoint | Real non-default speaker and video soundtrack routing; second screen |
 | §4: Windows native renderer, explicit endpoint, one timeline and compiled-in COM bridge | `bridge_windows.cpp`; documented Media Session/EVR fallback and common MTA; all four cue playback/STOP events and restart passed with a signed virtual endpoint on both Windows architectures. Six signal/STOP/replay cycles were observed on each architecture, with session signal on the selected endpoint | Strict isolation assertion failed on shared driver meters; physical sound, STOP and independent output isolation remain unverified |
 | §4: bounded bridge, ownership and orderly shutdown | C ABI ownership in `bridge.h`; capped native queues, latest command/load slots, Go inspection drain; shutdown-during-validation native smoke and four completed two-hour workloads/restarts at exact preview 4 source | Broader native heap/handle bounds, physical audio workloads and difficult OS/driver shutdown conditions |
-| §5: flags, launch keys, local URLs, interface refresh, port errors | `cmd/smartstage/main.go`, `internal/lan`; loopback native application launch, actual distinct keys; LAN unit checks include IPv4 link-local and IPv6 global URLs | Actual phone reachability and changing physical interfaces. IPv6 link-local scope URLs are deliberately not advertised |
+| §5, updated by later request: flags, local Admin, numeric remote URL, QR, interface refresh, port errors | Two real listeners; Admin auto-session and OS browser dispatch; eight-digit fragment pairing; QR decode and cross-listener denial tests; LAN checks include IPv4 link-local and IPv6 global URLs | Actual phone camera/reachability and changing physical interfaces. IPv6 link-local scope URLs are deliberately not advertised |
 | §6: host browsing, roots, symlinks, Unicode, volumes, read-only files | `internal/files`; real target-OS path tests, native Unicode fixture inspection, root/symlink containment and 1,000-entry listing checks | Real disconnected drives, protected folders, Windows reparse configurations and OS permission prompts |
 | §6: cue IDs, labels, duplicate sources, order, revisions, automatic persistence, active-cue protection | `internal/app/edit.go`, store and app tests; native application creates/reorders four cues and restores them after restart; browser escaping/layout checks | Full operator workflow on event machines |
 | §6: output selectors, stable IDs, primary warning, explicit stage enable/disable, stopped-only changes | Admin UI and coordinator checks; both bridges enumerate native outputs and pin concrete identities; invalid output IDs cause native error without playing | Primary/secondary and mirrored layouts, default-device changes, physical stage transitions |
@@ -65,21 +74,22 @@ the physical scenario or measure physical latency.
 | §10: output loss, disarm, no fallback/resume, Escape, power assertions | Native notifications, explicit identities and fault state; local Escape race test; unavailable-ID native rejection on all four targets | Unplug/replug/default changes during playback, window relocation, physical Escape focus and idle-sleep behavior |
 | §11: MP3/PCM WAV/H.264+AAC/silent H.264, native preflight, metadata, revalidation | All four real native decoders inspect the documented fixtures and reject damaged media; no preflight renderers; cache and bounded validation paths inspected | Additional real show files, long-file integrity and physical rehearsal; only the documented fixture profiles are proven |
 | §12: schema, per-user storage, atomic replacement, backup, corruption, instance lock, silent restart | Store tests run on all four target OS jobs; corrupt originals retained; native app restart restores labels/order and remains stopped/stage-disabled. The 4 MiB limit is enforced before saving so successful edits stay readable on restart | Sudden power-loss/storage failure and clean-user permission scenarios |
-| §13: documented API, roles, random keys/cookies, CSRF/Host/Origin, logout/expiry, safe text | `internal/httpapi`, `internal/auth`, tests and [API contracts](api.md); controller path redaction and browser escaping checked | Real deployment/LAN security review; HTTP intentionally provides no confidentiality |
-| §13: bounded requests, connections and SSE; reconnect and overload-independent STOP | 256 TCP connections, 64 SSE streams, 16 ordinary operations; connection-cap shutdown test; STOP bypass, malformed-body and authoritative reconnect tests | Pathological network floods cannot guarantee remote STOP; local emergency control is still required |
+| §13, updated by later request: documented API, numeric remote token, separate-role cookies, CSRF/Host/Origin, logout/expiry, safe text | `internal/httpapi`, `internal/auth` and [API contracts](api.md); actual LAN-to-Admin denial, forged-cookie/Host rejection, private QR/link access, guessing limits, controller path redaction and browser escaping checked | Real deployment/LAN security review; HTTP intentionally provides no confidentiality |
+| §13: bounded requests, connections and SSE; reconnect and overload-independent STOP | 256 TCP connections and 16 ordinary operations per listener, 64 total SSE streams; connection-cap shutdown test; STOP bypass, malformed-body and authoritative reconnect tests | Pathological network floods cannot guarantee remote STOP; local emergency control is still required |
 | §§14–15: no production fake, builds, debug artifacts, toolchains, dependency records | Unsupported-build test refuses to start; all four native builds and import audits; build/debug scripts and metadata | Missing native framework/driver initialization on affected real OS installations; transitive runtime behavior on clean machines |
 | §§16–18: native harness, fixtures/provenance, source and required documents | Real harness, CC0 fixtures/encoding/hashes, all named documents, Git history and preview assets exist | Physical feasibility and acceptance gates remain open despite the implemented later milestones |
 | §19: manual single-cue scope | Source/UI contain manual PLAY/restart/STOP and separate stage enablement; no automatic playlist advancement, streaming, uploads or parallel outputs | Confirm final behavior in the physical scenario below |
 
 ## Required end-to-end scenario
 
-These are the specification's eleven steps, not a substitute scenario.
+These are the specification's eleven steps, with steps 2–3 adjusted to the
+user's later localhost-Admin and camera-pairing instructions.
 
 | Step | Current evidence / status |
 | --- | --- |
-| 1. Run on clean supported machines | **Pending**. Hosted runner installs pass but runners contain development tools. |
-| 2. Actual LAN URLs and separate keys | Real browser pairs using separate launch keys at a printed non-loopback host IPv4 URL on all four runners; LAN discovery has unit coverage. Physical remote LAN reachability pending. |
-| 3. Pair Admin and browse host filesystem | Real browser interacts with each published native application and selects actual host files. Physical remote browser-to-host check pending. |
+| 1. Run on clean supported machines | **Pending**. Extracted ZIP startup passes on hosted runners, which contain development tools. |
+| 2. Local Admin and remote URL/QR | All four native hosts open Admin through the OS and expose the remote link/QR only there; the actual browser uses a non-loopback remote link and numeric token. Physical phone camera/LAN reachability pending. |
+| 3. Automatic Admin session and host filesystem | Real local browser creates an Admin session without a key and selects actual host files. Physical operator workflow pending. |
 | 4. Add two audio/two video cues, labels and order | Real Admin browser and separate actual application HTTP checks pass on all four runners. |
 | 5. Non-default audio and second display | **Pending physical hardware**. Mac ARM64 and both Windows virtual-driver evaluations select a non-default virtual endpoint; Windows meter isolation remains unresolved. |
 | 6. Pair a phone/tablet on the same LAN | **Pending**. Desktop Chromium and HTTP sessions are insufficient proof. |
@@ -89,7 +99,7 @@ These are the specification's eleven steps, not a substitute scenario.
 | 10. Natural end without advance, silent/black | Native completion/stage-enabled events pass. Physical sound/pixels pending. |
 | 11. Restart restores configuration while silent/stage-disabled | Actual application checks pass on all four runners; physical observation pending. |
 
-The exact Windows installation command additionally passed under built-in
+The previous Windows installation command passed under built-in
 PowerShell 5.1 on both architectures in
 [run 35484067090](https://github.com/arizzi74/Smart-Stage/actions/runs/35484067090),
 using its default destination and version. Correct native startup, HTTP serving,

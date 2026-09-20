@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "browser": "153.0.8010.12",
+  "viewportWidths": [
+    320,
+    390,
+    768,
+    844,
+    1280
+  ],
+  "adminAutomaticSession": true,
+  "remoteFragmentPairing": true,
+  "cookieResume": true,
+  "manualReconnect": true,
+  "remoteLinkRefresh": true,
+  "clipboardHTTPFallback": true,
+  "physicalPlaybackVerified": false,
+  "qrContentVerified": false
+}

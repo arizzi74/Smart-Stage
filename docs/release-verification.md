@@ -16,11 +16,38 @@ The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin and report
 that the operating system accepted the automatic browser launch; the separate
 remote listener must reject Admin. Published-archive checksum/extraction/startup
-and native browser checks run for the explicit new release tag. Their resulting
-run IDs and reports must be recorded once that release finishes. These checks
-do not establish physical output routing or clean-machine acceptance.
+and native browser checks run for the explicit new release tag. These checks do
+not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+[Preview 6](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.6)
+is source `4aa3529fb9695d7b9da870dae548a5400acb7758`.
+[Native/browser run 35500115900](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115900)
+passed on all four targets, including extracted single-file ZIP startup,
+automatic system-browser dispatch, local Admin bootstrap, remote link/QR display,
+numeric URL pairing, fragment removal, LAN-to-Admin rejection and real native
+playback controls. Shared race/vet, native import/media/HTTP checks, Windows icon
+extraction and both Finder launch paths also passed.
+
+[Tagged run 35500115581](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115581)
+repeated the native checks for the release-version binaries and published 36
+assets. Freshly downloaded ZIPs passed checksum/extraction/startup and automatic
+browser dispatch on all four target runners. The same published binaries also
+passed all four real Admin/Command browser jobs, including native PLAY/STOP and
+natural completion over SSE. The entire tagged workflow completed successfully.
+Independently downloaded primary
+ZIPs each contained exactly one executable with 0755 permissions, the expected
+native architecture, Go 1.26.5 and a clean matching source revision. Both optional
+Mac app ZIPs contain the same core executable bytes and the expected icons.
+Retained reports: [`verification/release-preview6/`](verification/release-preview6/).
+
+The QR API's PNGs were decoded back to their exact fragment URLs in Go tests.
+The separate synthetic Chromium check covered responsive layouts, LAN link
+refresh, clipboard fallback, cookie resumption, invalid-link recovery, same-tab
+token navigation and STOP/reconnect behavior. Camera scanning and physical
+phone/Wi-Fi compatibility remain unverified. Playback code is unchanged from
+preview 4; its two-hour/resource evidence below has not been rerun for preview 6.
 
 [Preview 5](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.5)
 is source `9e72b4cc614f675dd7e52fe863d7973f5fb3fb65`. Its packaging changes passed
