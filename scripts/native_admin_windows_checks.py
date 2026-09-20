@@ -35,7 +35,7 @@ def admin_window_checks(executable, evidence_path):
             hashes = [helpers.digest(path) for path in (original, second)]
             binary = work / "native-admin-probe.exe"
             command = [compiler, "-std=c++17", "-D_WIN32_WINNT=0x0A00", "-DUNICODE", "-D_UNICODE", "-Wall", "-Wextra",
-                       "-I" + str(root / "internal/platform/webview2"), str(root / "scripts/native-admin-windows.cpp"), "-o", str(binary),
+                       str(root / "scripts/native-admin-windows.cpp"), "-o", str(binary),
                        "-static-libstdc++", "-static-libgcc", "-Wl,-Bstatic", "-lwinpthread", "-Wl,-Bdynamic", "-lole32", "-loleaut32",
                        "-luuid", "-luser32", "-lgdi32", "-lshell32", "-ldcomp", "-lbcrypt", "-ladvapi32"]
             built = subprocess.run(command, capture_output=True, text=True, timeout=180)
