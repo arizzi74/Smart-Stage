@@ -63,7 +63,7 @@ func request(api *API, method, path, body string, session auth.Session, origin s
 		r.Header.Set("Content-Type", "application/json")
 	}
 	if session.ID != "" {
-		r.AddCookie(&http.Cookie{Name: "smartstage_session", Value: session.ID})
+		r.AddCookie(&http.Cookie{Name: api.cookieName, Value: session.ID})
 		r.Header.Set("X-CSRF-Token", session.CSRF)
 	}
 	if origin != "" {
@@ -75,18 +75,18 @@ func request(api *API, method, path, body string, session auth.Session, origin s
 }
 func TestRoleBoundaryAndPathRedaction(t *testing.T) {
 	api, authn, _, path := setupAPI(t)
-	adminKey, commandKey := authn.Keys()
-	admin, _ := authn.Pair(adminKey, "one")
-	command, _ := authn.Pair(commandKey, "two")
+	admin, _ := authn.LocalAdmin("")
+	command, _ := authn.PairCommand(authn.CommandToken(), "two")
+	commandAPI := NewCommand(api.app, authn, web.Handler(), []string{"127.0.0.1"}, 8787)
 	for _, route := range []string{"/api/playlist", "/api/files", "/api/devices"} {
-		if w := request(api, "GET", route, "", command, ""); w.Code != 403 {
+		if w := request(commandAPI, "GET", route, "", command, ""); w.Code != 403 {
 			t.Fatalf("command accessed %s: %d", route, w.Code)
 		}
 		if w := request(api, "GET", route, "", admin, ""); w.Code != 200 {
 			t.Fatalf("admin denied %s: %d %s", route, w.Code, w.Body.String())
 		}
 	}
-	w := request(api, "GET", "/api/state", "", command, "")
+	w := request(commandAPI, "GET", "/api/state", "", command, "")
 	if w.Code != 200 || strings.Contains(w.Body.String(), path) || strings.Contains(w.Body.String(), "PRIVATE_PATH") {
 		t.Fatalf("controller path leak: %s", w.Body.String())
 	}
@@ -100,8 +100,7 @@ func TestRoleBoundaryAndPathRedaction(t *testing.T) {
 }
 func TestHostOriginCSRFAndMalformedBodies(t *testing.T) {
 	api, authn, _, _ := setupAPI(t)
-	key, _ := authn.Keys()
-	session, _ := authn.Pair(key, "host")
+	session, _ := authn.LocalAdmin("")
 	for _, origin := range []string{"https://evil.test", "http://127.0.0.1:1234", "null", ""} {
 		w := request(api, "POST", "/api/stop", `{"requestId":"stop-request"}`, session, origin)
 		if w.Code != 403 {
@@ -114,7 +113,7 @@ func TestHostOriginCSRFAndMalformedBodies(t *testing.T) {
 		t.Fatal("CSRF bypass")
 	}
 	r := httptest.NewRequest("GET", "http://attacker.test:8787/api/state", nil)
-	r.AddCookie(&http.Cookie{Name: "smartstage_session", Value: session.ID})
+	r.AddCookie(&http.Cookie{Name: api.cookieName, Value: session.ID})
 	w := httptest.NewRecorder()
 	api.ServeHTTP(w, r)
 	if w.Code != 403 {
@@ -128,8 +127,8 @@ func TestHostOriginCSRFAndMalformedBodies(t *testing.T) {
 }
 func TestPairCookieSecurityLogoutAndNoMediaEndpoint(t *testing.T) {
 	api, authn, _, _ := setupAPI(t)
-	_, key := authn.Keys()
-	body, _ := json.Marshal(map[string]string{"key": key})
+	api = NewCommand(api.app, authn, web.Handler(), []string{"127.0.0.1"}, 8787)
+	body, _ := json.Marshal(map[string]string{"key": authn.CommandToken()})
 	w := request(api, "POST", "/api/pair", string(body), auth.Session{}, "http://127.0.0.1:8787")
 	if w.Code != 200 {
 		t.Fatal(w.Body.String())
@@ -163,8 +162,8 @@ func TestPairCookieSecurityLogoutAndNoMediaEndpoint(t *testing.T) {
 }
 func TestStopBypassesOrdinaryCapacityAndDuplicateRetry(t *testing.T) {
 	api, authn, s, _ := setupAPI(t)
-	_, key := authn.Keys()
-	session, _ := authn.Pair(key, "controller")
+	api = NewCommand(api.app, authn, web.Handler(), []string{"127.0.0.1"}, 8787)
+	session, _ := authn.PairCommand(authn.CommandToken(), "controller")
 	for i := 0; i < cap(api.ordinary); i++ {
 		api.ordinary <- struct{}{}
 	}
@@ -181,15 +180,15 @@ func TestStopBypassesOrdinaryCapacityAndDuplicateRetry(t *testing.T) {
 }
 func TestSSEAuthoritativeInitialStateAndReconnect(t *testing.T) {
 	api, authn, s, _ := setupAPI(t)
-	_, key := authn.Keys()
-	session, _ := authn.Pair(key, "controller")
+	api = NewCommand(api.app, authn, web.Handler(), []string{"127.0.0.1"}, 8787)
+	session, _ := authn.PairCommand(authn.CommandToken(), "controller")
 	// Keep production Host validation active through an actual HTTP stream.
 	server := httptest.NewServer(api)
 	defer server.Close()
 	for i := 0; i < 2; i++ {
 		r, _ := http.NewRequest("GET", server.URL+"/api/events", nil)
 		r.Host = "127.0.0.1:8787"
-		r.AddCookie(&http.Cookie{Name: "smartstage_session", Value: session.ID})
+		r.AddCookie(&http.Cookie{Name: api.cookieName, Value: session.ID})
 		response, err := server.Client().Do(r)
 		if err != nil {
 			t.Fatal(err)

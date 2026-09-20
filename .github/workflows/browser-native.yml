@@ -1,18 +1,15 @@
 name: Browser controls against published native binaries
 on:
-  push:
-    branches: [main]
-    paths: ['scripts/browser-native-smoke.cjs', 'scripts/browser/**', 'install.sh', 'install.ps1', '.github/workflows/browser-native.yml']
   workflow_dispatch:
     inputs:
       version:
-        description: 'Published release tag; empty uses the installer default'
-        required: false
+        description: 'Published ZIP release tag (preview 6 or newer)'
+        required: true
         type: string
   workflow_call:
     inputs:
       version:
-        required: false
+        required: true
         type: string
 permissions:
   contents: read
@@ -38,17 +35,14 @@ jobs:
     runs-on: ${{ matrix.runner }}
     env:
       SMARTSTAGE_VERSION: ${{ inputs.version }}
-      SMARTSTAGE_INSTALL_DIR: ${{ github.workspace }}/dist/browser-installed
+      SMARTSTAGE_DOWNLOAD_DIR: ${{ github.workspace }}/dist/browser-downloaded
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Install published macOS executable
-        if: runner.os == 'macOS'
+      - name: Download and extract the checksum-verified release ZIP
         shell: bash
-        run: sh install.sh
-      - name: Install published Windows executable
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: '& ./install.ps1'
+        run: |
+          python3 scripts/verify-download.py --version "$SMARTSTAGE_VERSION" \
+            --os '${{ matrix.os }}' --arch '${{ matrix.arch }}' --destination "$SMARTSTAGE_DOWNLOAD_DIR"
       - name: Install pinned development-only browser tools
         shell: bash
         run: |
@@ -60,7 +54,7 @@ jobs:
         run: |
           suffix=''
           if [[ '${{ matrix.os }}' == windows ]]; then suffix=.exe; fi
-          node scripts/browser-native-smoke.cjs "$SMARTSTAGE_INSTALL_DIR/smartstage$suffix"
+          node scripts/browser-native-smoke.cjs "$SMARTSTAGE_DOWNLOAD_DIR/smartstage$suffix"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

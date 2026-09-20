@@ -1,9 +1,11 @@
 # Architecture
 
 Smart Stage is one Go process with a compiled-in native bridge. It embeds the
-HTML/CSS/JavaScript with `go:embed` and never starts a media player, browser
-engine, helper process, transcoder or separate service. The native harness is a
-development artifact, not an application dependency. Unsupported platforms or
+HTML/CSS/JavaScript with `go:embed` and uses OS-native playback without a media
+player, transcoder or separate service. After both HTTP listeners are ready, it
+asks the operating system to open local Admin in the default system browser;
+`--no-browser` disables that launch. A browser engine is not bundled. The native
+harness is a development artifact, not an application dependency. Unsupported platforms or
 builds without cgo fail initialization; there is no production fake backend.
 
 ## Threads and ownership
@@ -80,16 +82,44 @@ filesystem mutation/download endpoint. The signed-in host user and local
 filesystem are trusted: the native path-based media APIs are not an isolation
 boundary against a hostile local process racing replacement of ancestor paths.
 
-Pairing/session/CSRF secrets have 192 random bits. Sessions expire after 24
-hours, with HttpOnly and SameSite=Strict cookies. Host and Origin are validated.
-HTTP on the trusted LAN does not encrypt traffic. At most 128 sessions, 256
-accepted TCP connections, 64 SSE streams and 16 ordinary concurrent operations
-are admitted; STOP bypasses the ordinary-operation limit. The TCP cap includes
-idle keep-alive connections and requests still sending their headers. Excess
-connections wait in the OS listen backlog. Header/read/idle timeouts release
-stalled connections; a network or connection-exhaustion attack can still prevent
-remote commands, so local Escape remains the emergency control. JSON, paths,
-labels, cue counts and listings are bounded.
+Two listeners share the service while keeping separate HTTP roles. Admin binds
+only `127.0.0.1:8787` by default; its handler additionally checks the actual TCP
+peer is loopback and Host is exactly `127.0.0.1` with its configured port. An
+explicit same-origin `POST /api/local-session {}` creates/reuses an Admin session.
+Remote control binds `0.0.0.0:8788` by default and exposes only Command routes;
+changing `--bind` cannot make Admin listen on the network. Forwarded-IP headers
+never grant local access. The signed-in host user and local processes are
+trusted. Host/Origin and fetch-metadata checks prevent a foreign browser origin
+from using local auto-login.
+
+Each process generates an eight-digit code using `crypto/rand`. Local Admin
+shows discovered remote URLs and a QR code. Links use `/command#token=…`; the
+controller removes the fragment before posting the code to `/api/pair`. A
+successful exchange issues a Command session, regardless of other credentials
+presented. Pairing has per-IP (ten/minute) and global (100/minute) attempt budgets.
+`smartstage_admin_session` and `smartstage_command_session` are separate
+HttpOnly, SameSite=Strict cookies, with a mandatory matching role check on each
+listener. Session/CSRF secrets retain 192 random bits and expire after 24 hours.
+Codes and sessions rotate at process restart. Only authenticated local Admin
+can retrieve remote links, the code and QR images; Command state/events keep
+source paths and raw native errors redacted. This design implements the user's
+later localhost-Admin/camera-pairing request, as recorded in
+[decisions](decisions.md#local-admin-and-camera-pairing-20-september-2026).
+
+QR rendering uses the pinned, vendored, pure-Go `github.com/piglig/go-qr` v1.1.0
+encoder. It generates PNGs in memory with no network service or runtime package.
+Its full MIT copyright/license notice is embedded and served at `/licenses.txt`
+on either listener, preserving the one-executable distribution.
+
+HTTP on the trusted LAN does not encrypt traffic. At most 128 sessions and 64
+SSE streams are shared across the process. Each listener admits 256 accepted TCP
+connections and 16 ordinary concurrent operations; STOP bypasses ordinary and
+pairing limits. The TCP cap includes idle keep-alive connections and requests
+still sending headers. Excess connections wait in the OS listen backlog.
+Header/read/idle timeouts release stalled connections; network or connection
+exhaustion can still prevent remote commands, so local Escape remains the
+emergency control. JSON, paths, labels, cue counts, listings and QR payloads are
+bounded.
 
 SSE supplies full snapshots and ten-second heartbeats. One notification slot
 per subscriber and stream write deadlines isolate slow clients. The controller

@@ -18,12 +18,15 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.5
   backup, corruption diagnostics and native process lock.
 - Embedded responsive Admin/Command pages, host filesystem browsing/inspection,
   cue CRUD/labels/order/revisions, separate output controls and stage enablement.
-- LAN startup URLs/address refresh, admin/command pairing, session/CSRF/Origin/
-  Host enforcement, bounds, path restrictions and command-role path redaction.
+- Localhost-only Admin with automatic system-browser launch and local session;
+  separate LAN remote listener with an eight-digit per-launch token in its URL,
+  Admin QR code/address selection, session/CSRF/Origin/Host enforcement and
+  command-role path redaction.
 - Reproducible matching-OS builds, import audits, checksums, release automation,
-  per-user curl/irm installers and operating/API/architecture documentation.
+  four portable ZIP downloads containing one executable each, and operating/API/
+  architecture documentation. Installer scripts are retired in the current source.
 - Embedded Windows executable icons and optional Mac Finder apps with the same
-  artwork; Finder starts the bundled executable in Terminal for pairing keys.
+  artwork; Finder starts the bundled executable in Terminal and opens local Admin.
 
 ## Built and automatically tested
 
@@ -38,7 +41,7 @@ The playback implementation is unchanged from preview 4. See
 [release verification](docs/release-verification.md) for publication evidence.
 The tagged release workflow, fresh-download checks, default curl/irm installers
 (including Windows PowerShell 5.1) and browser checks also passed on all four
-targets. Both installers now default to preview 5.
+targets. Those installer results describe preview 5; current distribution uses ZIPs.
 
 Preview 4 is source `505a1e4`.
 [Tag run 35479742963](https://github.com/arizzi74/Smart-Stage/actions/runs/35479742963)
@@ -86,7 +89,7 @@ ran on each host, not on a physical phone across Wi-Fi.
 
 The current release includes draining native inspection before framework
 shutdown, a bounded inspection timeout, IPv4 link-local discovery, a 256 TCP
-connection cap, and a save-time configuration size limit. Windows STOP now uses
+connection cap per listener, and a save-time configuration size limit. Windows STOP now uses
 per-stream channel volume instead of shared session mute; this is implemented
 and compiled, but Windows audio playback remains unverified on real hardware.
 

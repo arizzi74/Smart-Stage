@@ -1,7 +1,5 @@
 name: Evaluate Windows native audio on a virtual endpoint
 on:
-  push:
-    branches: ['audio-evaluation/**']
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,6 +24,9 @@ jobs:
       SMARTSTAGE_INSTALL_DIR: ${{ github.workspace }}/dist/published
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        # Historical experiment: keep its matching installer and HTTP test protocol.
+        with:
+          ref: de3da9567ac275f5d0ac8d1a2f0d82993b2c7784
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
         with:
           github-token: ${{ github.token }}

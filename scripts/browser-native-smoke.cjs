@@ -31,10 +31,6 @@ async function until(check, message, timeout = 30000) {
   assert(fs.statSync(exe).isFile(), 'Pass a real supported-OS Smart Stage executable');
   const root = path.resolve(__dirname, '..');
   const config = fs.mkdtempSync(path.join(os.tmpdir(), 'smartstage-browser-'));
-  const probe = net.createServer();
-  await new Promise((resolve, reject) => { probe.once('error', reject); probe.listen(0, '0.0.0.0', resolve); });
-  const port = probe.address().port;
-  await new Promise(resolve => probe.close(resolve));
   const version = spawnSync(exe, ['--version'], { encoding: 'utf8' });
   assert.equal(version.status, 0, 'Published executable must report its version');
   const target = version.stdout.match(/, (darwin|windows)\/(arm64|amd64)/);
@@ -45,9 +41,10 @@ async function until(check, message, timeout = 30000) {
   const record = { passed: false, application: version.stdout.trim(), platform: target[1],
     architecture: target[2], node: process.version, nodeArchitecture: process.arch,
     physicalRoutingVerified: false, checks: [] };
-  const keys = {}, origins = [], errors = [];
+  const errors = [];
+  let adminBase = '';
   let stderr = '', browser, admin, command;
-  const application = spawn(exe, ['--port', String(port), '--bind', '0.0.0.0', '--config-dir', config,
+  const application = spawn(exe, ['--port', '0', '--admin-port', '0', '--bind', '0.0.0.0', '--no-browser', '--config-dir', config,
     '--media-root', path.join(root, 'testdata', 'media')], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
   let exited = false, startError = null;
   application.on('error', error => { startError = error; });
@@ -56,44 +53,64 @@ async function until(check, message, timeout = 30000) {
   application.stderr.on('data', data => { stderr = (stderr + data).slice(-8192); });
   const lines = readline.createInterface({ input: application.stdout });
   lines.on('line', line => {
-    const key = line.match(/^(Admin|Command) pairing key:\s+(\S+)/);
-    if (key) { keys[key[1]] = key[2]; secrets.add(key[2]); }
     const address = line.match(/^Admin:\s+(http:\/\/[^\s]+)\/admin$/);
     if (address) {
       const url = new URL(address[1]);
-      if (net.isIPv4(url.hostname) && !url.hostname.startsWith('127.')) origins.push(url.origin);
+      assert.equal(url.hostname, '127.0.0.1', 'Admin must advertise only IPv4 localhost');
+      adminBase = url.origin;
     }
   });
   try {
     await until(() => {
       if (startError) throw startError;
       if (exited) throw new Error(`Native application exited during startup: ${redact(stderr)}`);
-      return keys.Admin && keys.Command;
-    }, 'Native application did not print pairing keys');
-    assert.notEqual(keys.Admin, keys.Command);
-    assert(origins.length > 0, 'A real non-loopback IPv4 address is required; do not substitute localhost');
-    const base = origins[0];
+      return adminBase;
+    }, 'Native application did not print the local Admin URL');
     browser = await chromium.launch({ headless: true });
     record.browser = await browser.version();
-    record.origin = 'HTTP on an actual non-loopback host IPv4 address';
+    record.origin = 'Admin on 127.0.0.1; Command on an actual non-loopback host IPv4 address';
     const adminContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const commandContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
     admin = await adminContext.newPage(); command = await commandContext.newPage();
     for (const page of [admin, command]) page.on('pageerror', error => errors.push(error.message));
     const apiPath = response => new URL(response.url()).pathname;
-    async function pair(page, context, route, key) {
-      await page.goto(base + route, { waitUntil: 'domcontentloaded' });
-      await page.locator('#pair-key').fill(key);
-      const paired = page.waitForResponse(response => apiPath(response) === '/api/pair');
-      await page.getByRole('button', { name: 'Pair browser' }).click();
-      const response = await paired;
-      assert.equal(response.status(), 200);
-      secrets.add((await response.json()).csrfToken);
-      for (const cookie of await context.cookies()) secrets.add(cookie.value);
-      await page.locator('#connection.live').waitFor();
-      assert.equal(await page.evaluate(() => window.isSecureContext), false, 'Exercise plain LAN HTTP, not a trusted localhost origin');
+    const localSession = admin.waitForResponse(response => apiPath(response) === '/api/local-session');
+    await admin.goto(adminBase + '/admin', { waitUntil: 'domcontentloaded' });
+    assert.equal((await localSession).status(), 200);
+    secrets.add((await (await localSession).json()).csrfToken);
+    for (const cookie of await adminContext.cookies()) secrets.add(cookie.value);
+    await admin.locator('#connection.live').waitFor();
+    assert.equal(await admin.locator('#pairing').isVisible(), false);
+    assert.equal(await admin.evaluate(() => window.isSecureContext), true);
+    const remote = await (await admin.request.get(adminBase + '/api/remote-control')).json();
+    assert.match(remote.token, /^\d{8}$/); secrets.add(remote.token);
+    const link = remote.links.find(item => {
+      const hostname = new URL(item.url).hostname;
+      return net.isIPv4(hostname) && !hostname.startsWith('127.');
+    });
+    assert(link, 'A real non-loopback IPv4 remote link is required; do not substitute localhost');
+    const remoteURL = new URL(link.url), commandBase = remoteURL.origin;
+    assert.equal(remoteURL.hash, '#token=' + remote.token);
+    assert.notEqual(remoteURL.port, new URL(adminBase).port);
+    await admin.locator('#remote-ready').waitFor();
+    if (remote.links.length > 1) await admin.locator('#remote-network').selectOption(link.url);
+    assert.equal(await admin.locator('#remote-url').getAttribute('href'), link.url);
+    await admin.waitForFunction(() => document.getElementById('remote-qr').naturalWidth > 100);
+    assert.equal(await admin.locator('#remote-code').textContent(), remote.token);
+    const lanAdminOpen = await new Promise(resolve => {
+      const socket = net.connect({ host: remoteURL.hostname, port: Number(new URL(adminBase).port) });
+      const done = result => { socket.destroy(); resolve(result); };
+      socket.once('connect', () => done(true)); socket.once('error', () => done(false));
+      socket.setTimeout(2000, () => done(false));
+    });
+    assert.equal(lanAdminOpen, false, 'Admin port must not accept a LAN connection');
+    for (const denied of ['/admin', '/api/local-session']) {
+      const response = await command.request.get(commandBase + denied);
+      assert.equal(response.status(), 404, 'Remote listener must not expose Admin routes');
     }
-    await pair(admin, adminContext, '/admin', keys.Admin);
+    assert.equal((await command.request.get(commandBase + '/api/remote-control')).status(), 401);
+    assert.equal((await command.request.get(commandBase + '/api/state')).status(), 401);
+    record.checks.push('Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access');
     await admin.locator('#file-list .file-row').first().waitFor();
     assert.equal(await admin.locator('#admin-view').isVisible(), true);
     const filenames = ["Opening – café's tone.wav", 'silent-1080p.mp4', 'tone.mp3', 'video-aac-1080p.mp4'];
@@ -113,7 +130,7 @@ async function until(check, message, timeout = 30000) {
       await refreshed;
       await admin.waitForFunction(revision => document.getElementById('playlist-revision').textContent.endsWith(`revision ${revision}`), expectedRevision);
     }
-    const initial = await (await admin.request.get(base + '/api/playlist')).json();
+    const initial = await (await admin.request.get(adminBase + '/api/playlist')).json();
     await edit(() => admin.locator('#add-files').click(), initial.playlistRevision + 1);
     assert.equal(saved.cues.length, 4);
     const names = new Map([[filenames[0], 'Opening music'], [filenames[1], 'Finale'],
@@ -131,14 +148,14 @@ async function until(check, message, timeout = 30000) {
     assert.deepEqual(saved.cues.map(cue => cue.id), [before[0], before[1], before[3], before[2]]);
     const labels = saved.cues.map(cue => cue.label);
     async function snapshot(page = admin) {
-      const response = await page.request.get(base + '/api/state');
+      const response = await page.request.get((page === admin ? adminBase : commandBase) + '/api/state');
       assert.equal(response.status(), 200);
       const result = await response.json(); secrets.add(result.csrfToken);
       return result.state;
     }
     await until(async () => (await snapshot()).cues.every(cue => cue.validation === 'ready'), 'Native cue validation did not finish', 90000);
     record.checks.push('Admin browser selected four real host files, saved four labels and reordered stable cue IDs');
-    const devices = await (await admin.request.get(base + '/api/devices')).json();
+    const devices = await (await admin.request.get(adminBase + '/api/devices')).json();
     const audio = devices.audio.find(device => !device.default) || devices.audio[0];
     const display = devices.displays.find(device => !device.primary) || devices.displays[0];
     assert(display, 'This native browser scenario requires an actual enumerated display');
@@ -153,13 +170,23 @@ async function until(check, message, timeout = 30000) {
 
     const requests = [];
     command.on('request', request => requests.push({ url: request.url(), type: request.resourceType() }));
-    await pair(command, commandContext, '/command', keys.Command);
+    const paired = command.waitForResponse(response => apiPath(response) === '/api/pair');
+    await command.goto(link.url, { waitUntil: 'domcontentloaded' });
+    const pairingResponse = await paired;
+    assert.equal(pairingResponse.status(), 200);
+    secrets.add((await pairingResponse.json()).csrfToken);
+    for (const cookie of await commandContext.cookies()) secrets.add(cookie.value);
+    await command.locator('#connection.live').waitFor();
+    assert.equal(command.url(), commandBase + '/command', 'Pairing fragment must be removed from browser history');
+    assert.equal(await command.evaluate(() => window.isSecureContext), false, 'Exercise plain LAN HTTP');
+    assert.equal(await command.locator('a[href$="/admin"]').count(), 0);
+    assert.equal((await command.request.get(commandBase + '/api/remote-control')).status(), 403);
     await command.locator('.cue').nth(3).waitFor();
     assert.deepEqual(await command.locator('.cue-title').allTextContents(), labels);
     const controllerState = await snapshot(command);
     const strings = value => typeof value === 'string' ? [value] : value && typeof value === 'object' ? Object.values(value).flatMap(strings) : [];
     for (const cue of saved.cues) assert(!strings(controllerState).includes(cue.path), 'Command state disclosed a host file path');
-    assert.equal((await command.request.get(base + '/api/files')).status(), 403);
+    assert.equal((await command.request.get(commandBase + '/api/files')).status(), 403);
     assert.equal(await command.locator('audio,video').count(), 0);
     const waitState = value => command.waitForFunction(expected => document.getElementById('play-state').textContent === expected, value, { polling: 20, timeout: 30000 });
     let played = 0;
@@ -196,16 +223,18 @@ async function until(check, message, timeout = 30000) {
     assert(bounds && bounds.y >= 0 && bounds.y + bounds.height <= 844);
     assert(await command.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     await command.screenshot({ path: path.join(output, 'command-phone.png'), fullPage: true });
-    await admin.screenshot({ path: path.join(output, 'admin-desktop.png'), fullPage: true });
+    await admin.screenshot({ path: path.join(output, 'admin-desktop.png'), fullPage: true,
+      mask: [admin.locator('#remote-url'), admin.locator('#remote-code'), admin.locator('#remote-qr')] });
     const allowed = new Set(['/command', '/assets/app.js', '/assets/style.css', '/favicon.ico', '/api/pair', '/api/state', '/api/events', '/api/play', '/api/stop']);
     for (const request of requests) {
       const url = new URL(request.url);
-      assert.equal(url.origin, base);
+      assert.equal(url.origin, commandBase);
+      assert.equal(url.hash, '', 'Pairing fragment must not be transmitted in HTTP requests');
       assert(allowed.has(url.pathname), `Unexpected browser resource: ${url.pathname}`);
       assert.notEqual(request.type, 'media');
     }
     assert.deepEqual(errors, []);
-    record.checks.push('Command paired separately on plain HTTP, rendered the saved order, and sent one PLAY per tap');
+    record.checks.push('Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap');
     record.checks.push('Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser');
     record.cuesNativelyPlayedAndStopped = played;
     record.audioEndpoints = devices.audio.length; record.displays = devices.displays.length;
@@ -219,7 +248,8 @@ async function until(check, message, timeout = 30000) {
   } catch (error) {
     record.error = redact(error.stack || error);
     for (const [name, page] of [['admin', admin], ['command', command]]) {
-      if (page) try { await page.screenshot({ path: path.join(output, `${name}-failure.png`), fullPage: true }); } catch {}
+      if (page) try { await page.screenshot({ path: path.join(output, `${name}-failure.png`), fullPage: true,
+        mask: name === 'admin' ? [page.locator('#remote-url'), page.locator('#remote-code'), page.locator('#remote-qr')] : [] }); } catch {}
     }
     throw error;
   } finally {

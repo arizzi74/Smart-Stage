@@ -11,7 +11,6 @@ import os
 from pathlib import Path
 import queue
 import signal
-import socket
 import subprocess
 import sys
 import tempfile
@@ -19,6 +18,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import urllib.parse
 
 exe = str(Path(sys.argv[1]).resolve())
 root = Path(__file__).resolve().parent.parent
@@ -95,10 +95,7 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
     stderr_thread = None
     try:
         for restart in range(2):
-            with socket.socket() as sock:
-                sock.bind(('127.0.0.1',0)); port = sock.getsockname()[1]
-            origin = f'http://127.0.0.1:{port}'
-            process = subprocess.Popen([exe,'--port',str(port),'--bind','127.0.0.1','--config-dir',config,'--media-root',str(root/'testdata'/'media')],
+            process = subprocess.Popen([exe,'--port','0','--admin-port','0','--bind','127.0.0.1','--no-browser','--config-dir',config,'--media-root',str(root/'testdata'/'media')],
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8',
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name=='nt' else 0)
             lines = queue.Queue()
@@ -121,20 +118,23 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                     if trace: trace.close()
             stderr_thread = threading.Thread(target=read_stderr,daemon=True)
             stderr_thread.start()
-            keys = {}
+            origins = {}
             end=time.monotonic()+20
-            while len(keys)<2 and time.monotonic()<end:
+            while len(origins)<2 and time.monotonic()<end:
                 if process.poll() is not None:
                     stderr_thread.join(timeout=2)
                     with stderr_lock: details=''.join(stderr_tail)
                     raise AssertionError('Application startup failed: '+details)
                 try: line=lines.get(timeout=.2)
                 except queue.Empty: continue
-                for role in ('Admin','Command'):
-                    if line.startswith(role+' pairing key:'): keys[role]=line.split(':',1)[1].strip()
-            assert len(keys)==2, 'Missing startup pairing keys'
-            assert keys['Admin']!=keys['Command']
-            def client(key):
+                for role in ('Admin','Remote listener'):
+                    if line.startswith(role+': '):
+                        address=urllib.parse.urlsplit(line.split(': ',1)[1].strip())
+                        assert address.hostname=='127.0.0.1' and not address.fragment and not address.query
+                        origins[role]=f'{address.scheme}://{address.netloc}'
+                assert 'pairing key:' not in line, 'Pairing credentials must not appear in startup logs'
+            assert len(origins)==2 and origins['Admin']!=origins['Remote listener'], 'Missing separate startup listeners'
+            def client(origin, route, payload):
                 opener=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
                 token=''
                 def call(method,path,body=None,expected=200):
@@ -146,15 +146,22 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
                     statuses = expected if isinstance(expected, tuple) else (expected,)
                     assert response.status in statuses,(method,path,response.status,value)
                     return value
-                token=call('POST','/api/pair',{'key':key})['csrfToken']
+                token=call('POST',route,payload)['csrfToken']
                 return call
-            admin=client(keys['Admin']);command=client(keys['Command'])
+            admin=client(origins['Admin'],'/api/local-session',{})
+            remote=admin('GET','/api/remote-control')
+            assert len(remote['token'])==8 and remote['token'].isascii() and remote['token'].isdigit()
+            if restart: assert remote['token']!=previous_token, 'Restart must rotate the pairing token'
+            previous_token=remote['token']
+            command=client(origins['Remote listener'],'/api/pair',{'key':remote['token']})
+            command('POST','/api/local-session',{},expected=404)
+            command('GET','/api/remote-control',expected=403)
             initial=admin('GET','/api/state')['state']
             assert initial['state']=='stopped' and not initial['stageEnabled'] and not initial['activeCueId']
-            command('GET','/api/files',expected=403)
+            command('GET','/api/files',expected=(403,404))
             if restart:
                 assert [c['label'] for c in initial['cues']]==['Finale','Opening music','Welcome video','Interlude']
-                records.append({'restart':'saved labels/order restored; silent and stage disabled','instanceChanged':initial['instanceId']!=previous_instance})
+                records.append({'restart':'saved labels/order restored; silent and stage disabled','instanceChanged':initial['instanceId']!=previous_instance,'pairingTokenRotated':True})
                 assert initial['instanceId']!=previous_instance
             else:
                 listing=admin('GET','/api/files')

@@ -6,7 +6,10 @@ let playlist = null, devices = null, fileSelection = new Set(), fileEntries = []
 let playlistBusy = false, refreshing = false, renderedOrder = '', playlistRefresh = false;
 let controlSequence = 0;
 let validationSignature = '', validationRefresh = false;
+let localSessionBusy = false, localSessionRetry = null;
+let remoteLinks = [], selectedRemoteURL = '', remoteRefresh = false;
 const cueButtons = new Map(), playlistRows = new Map();
+$('page-heading').textContent = adminPage ? 'Set the stage' : 'Show control';
 
 function element(tag, text, className) {
   const node = document.createElement(tag);
@@ -39,7 +42,25 @@ function connection(connected) {
 }
 function showPair() {
   connection(false); if (source) { source.close(); source = null; }
+  if (adminPage) { void connectLocalAdmin(); return; }
   if (!$('pairing').open) $('pairing').showModal();
+}
+function pairError(message = '') {
+  $('pair-error').textContent = message; $('pair-error').hidden = !message;
+}
+async function connectLocalAdmin() {
+  if (localSessionBusy) return;
+  localSessionBusy = true; clearTimeout(localSessionRetry);
+  try {
+    const session = await api('POST', '/api/local-session', {});
+    role = session.role; csrf = session.csrfToken;
+    if (role !== 'admin') throw new Error('Open Admin on the host computer.');
+    if (!await initializeSession()) throw new Error('Could not load the host status.');
+    notify('');
+  } catch (error) {
+    connection(false); notify(`Cannot connect to Admin. ${error.message} Retrying…`, true);
+    localSessionRetry = setTimeout(() => { void connectLocalAdmin(); }, 5000);
+  } finally { localSessionBusy = false; }
 }
 async function api(method, path, body) {
   const controller = new AbortController();
@@ -162,16 +183,81 @@ $('stop').addEventListener('click', async () => {
 });
 $('pairing').addEventListener('cancel', event => event.preventDefault());
 $('pair-form').addEventListener('submit', async event => {
-  event.preventDefault(); $('pair-error').textContent = '';
+  event.preventDefault(); pairError();
+  const submit = $('pair-form').querySelector('button[type=submit]'); submit.disabled = true;
+  let token = $('pair-key').value.trim(); $('pair-key').value = '';
   try {
-    const result = await api('POST', '/api/pair', { key: $('pair-key').value.trim() });
-    $('pair-key').value = ''; role = result.role; csrf = result.csrfToken; $('pairing').close();
+    const result = await api('POST', '/api/pair', { key: token });
+    role = result.role; csrf = result.csrfToken; $('pairing').close();
     await initializeSession();
-  } catch (error) { $('pair-error').textContent = error.message; }
+  } catch (error) { pairError(error.message); }
+  finally { token = ''; submit.disabled = false; }
 });
 $('logout').addEventListener('click', async () => {
-  try { await api('POST', '/api/logout', {}); csrf = ''; showPair(); } catch (error) { notify(error.message, true); }
+  try { await api('POST', '/api/logout', {}); csrf = ''; role = ''; pairError(); showPair(); } catch (error) { notify(error.message, true); }
 });
+
+function renderRemoteLink() {
+  const index = remoteLinks.findIndex(link => link.url === $('remote-network').value);
+  const link = remoteLinks[index];
+  if (!link) return;
+  const changed = selectedRemoteURL !== link.url;
+  selectedRemoteURL = link.url;
+  $('remote-url').textContent = link.url; $('remote-url').href = link.url;
+  $('open-remote-url').href = link.url;
+  // The QR is served by the host, without sending the link to another service.
+  if (changed || $('remote-qr').getAttribute('src') !== link.qrURL || ($('remote-qr').complete && !$('remote-qr').naturalWidth)) {
+    $('remote-qr').src = link.qrURL;
+    $('remote-message').textContent = '';
+  }
+}
+async function loadRemoteControl() {
+  if (!adminPage || role !== 'admin' || remoteRefresh) return;
+  remoteRefresh = true;
+  try {
+    const result = await api('GET', '/api/remote-control');
+    remoteLinks = result.links;
+    $('remote-code').textContent = result.token;
+    $('remote-ready').hidden = !remoteLinks.length;
+    $('remote-unavailable').hidden = remoteLinks.length > 0;
+    if (!remoteLinks.length) {
+      selectedRemoteURL = ''; $('remote-network').replaceChildren();
+      $('remote-url').removeAttribute('href'); $('remote-url').textContent = '';
+      $('open-remote-url').removeAttribute('href'); $('remote-qr').removeAttribute('src');
+      $('remote-unavailable').textContent = 'No network address is available. Connect this computer to Wi-Fi or Ethernet to use remote control.';
+      $('remote-message').textContent = ''; return;
+    }
+    $('remote-network').replaceChildren(...remoteLinks.map(link => option(link.url, link.label)));
+    $('remote-network-choice').hidden = remoteLinks.length < 2;
+    $('remote-network').value = remoteLinks.some(link => link.url === selectedRemoteURL) ? selectedRemoteURL : remoteLinks[0].url;
+    renderRemoteLink();
+  } catch (error) {
+    $('remote-message').textContent = `Could not refresh the remote control link. ${error.message}`;
+  } finally { remoteRefresh = false; }
+}
+$('remote-network').addEventListener('change', renderRemoteLink);
+$('remote-qr').addEventListener('error', () => {
+  if (selectedRemoteURL) $('remote-message').textContent = 'The QR code could not load. Use the remote control link above.';
+});
+async function copyRemoteURL() {
+  if (!selectedRemoteURL) return;
+  try {
+    if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+    await navigator.clipboard.writeText(selectedRemoteURL);
+  } catch {
+    // Clipboard API is absent on ordinary HTTP LAN pages in many browsers.
+    const previousFocus = document.activeElement;
+    const copy = element('textarea'); copy.value = selectedRemoteURL; copy.readOnly = true;
+    copy.className = 'clipboard-copy'; copy.setAttribute('aria-label', 'Remote control link');
+    document.body.append(copy); copy.select(); copy.setSelectionRange(0, copy.value.length);
+    let copied = false;
+    try { copied = document.execCommand('copy'); } catch { /* Show the manual fallback below. */ }
+    finally { copy.remove(); previousFocus?.focus(); }
+    if (!copied) { $('remote-message').textContent = 'Select and copy the link above to share it.'; return; }
+  }
+  $('remote-message').textContent = 'Remote control link copied.';
+}
+$('copy-remote-url').addEventListener('click', () => { void copyRemoteURL(); });
 
 async function loadPlaylist() {
   if (playlistRefresh) return;
@@ -306,18 +392,40 @@ for (const [id, enabled] of [['enable-stage', true], ['disable-stage', false]]) 
   catch (error) { notify(error.message, true); }
 });
 async function initializeSession() {
-  if (!await refreshState()) return;
-  if (adminPage && role !== 'admin') { location.replace('/command'); return; }
+  if (!await refreshState()) return false;
+  if (adminPage && role !== 'admin') { notify('Open Admin on the host computer.', true); return false; }
   $('admin-view').hidden = !adminPage; $('command-view').hidden = adminPage;
-  $('page-heading').textContent = adminPage ? 'Set the stage' : 'Show control';
-  $('other-page').href = adminPage ? '/command' : '/admin'; $('other-page').textContent = adminPage ? 'Open Command' : 'Admin';
+  $('logout').hidden = adminPage;
   connectEvents();
-  if (adminPage) { await Promise.all([loadPlaylist(), loadDevices(), browse()]); }
+  if (adminPage) { await Promise.all([loadRemoteControl(), loadPlaylist(), loadDevices(), browse()]); }
+  return true;
 }
 setInterval(() => { if (Date.now() - lastSeen > 18000) connection(false); }, 2000);
+setInterval(() => { if (!document.hidden) void loadRemoteControl(); }, 10000);
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && csrf) { connection(false); void refreshState(); connectEvents(); }
+  if (!document.hidden && csrf) { connection(false); void refreshState(); connectEvents(); void loadRemoteControl(); }
 });
 window.addEventListener('offline', () => connection(false));
-window.addEventListener('online', () => { if (csrf) { void refreshState(); connectEvents(); } });
-void initializeSession();
+window.addEventListener('online', () => {
+  if (csrf) { void refreshState(); connectEvents(); void loadRemoteControl(); }
+  else if (adminPage) void connectLocalAdmin();
+});
+window.addEventListener('hashchange', () => { if (!adminPage && location.hash) void start(); });
+async function start() {
+  if (adminPage) { await connectLocalAdmin(); return; }
+  let token = new URLSearchParams(location.hash.slice(1)).get('token');
+  // Consume a shared link before making requests; never retain its token in browser storage.
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  if (token === null) { await initializeSession(); return; }
+  try {
+    if (!/^[0-9]{8}$/.test(token)) throw new Error('This link has an invalid connection code. Scan the current QR code in Admin.');
+    const session = await api('POST', '/api/pair', { key: token });
+    role = session.role; csrf = session.csrfToken;
+    if ($('pairing').open) $('pairing').close();
+    pairError();
+    await initializeSession();
+  } catch (error) {
+    showPair(); pairError(`${error.message} Use the current link or QR code from Admin on the host computer.`);
+  } finally { token = ''; }
+}
+void start();

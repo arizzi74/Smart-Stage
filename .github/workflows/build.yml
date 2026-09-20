@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
     tags: ['v*']
-    paths-ignore: ['docs/**', 'README.md', 'IMPLEMENTATION_STATUS.md', 'install.sh', 'install.ps1', '.github/workflows/install.yml', '.github/workflows/soak.yml', '.github/workflows/browser-native.yml', '.github/workflows/windows-audio.yml', 'scripts/browser-native-smoke.cjs', 'scripts/browser/**']
+    paths-ignore: ['docs/**', 'README.md', 'IMPLEMENTATION_STATUS.md', '.github/workflows/downloads.yml', '.github/workflows/soak.yml', '.github/workflows/browser-native.yml', '.github/workflows/windows-audio.yml']
   pull_request:
   workflow_dispatch:
 permissions:
@@ -79,6 +79,14 @@ jobs:
           "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix" --list > "dist/native-enumeration-${{ matrix.os }}-${{ matrix.arch }}.json"
           python3 scripts/native-smoke.py "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix"
           python3 scripts/application-smoke.py "./dist/smartstage-${{ matrix.os }}-${{ matrix.arch }}$suffix" 10
+      - name: Verify the ZIP, automatic system browser launch and local Admin
+        shell: bash
+        env:
+          VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'dev' }}
+        run: |
+          python3 scripts/verify-download.py --version "$VERSION" --os '${{ matrix.os }}' --arch '${{ matrix.arch }}' \
+            --archive 'dist/smartstage-${{ matrix.os }}-${{ matrix.arch }}.zip' \
+            --destination 'dist/extracted-${{ matrix.os }}-${{ matrix.arch }}' --smoke
       - name: Verify embedded icon and optional Finder app
         shell: bash
         run: |
@@ -87,6 +95,21 @@ jobs:
           else
             python3 scripts/verify-icons.py './dist/smartstage-windows-${{ matrix.arch }}.exe'
           fi
+      - name: Install pinned development-only browser tools
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        shell: bash
+        run: |
+          node --version
+          npm ci --prefix scripts/browser --ignore-scripts --no-audit --no-fund
+          node scripts/browser/node_modules/playwright/cli.js install chromium
+      - name: Exercise Admin and remote controls through the built native host
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          suffix=''
+          if [[ '${{ matrix.os }}' == windows ]]; then suffix=.exe; fi
+          node scripts/browser-native-smoke.cjs "./dist/smartstage-${{ matrix.os }}-${{ matrix.arch }}$suffix"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
@@ -111,56 +134,16 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release create "$RELEASE_TAG" dist/smartstage-* dist/toolchain-* dist/native-enumeration-* dist/native-harness-*.smoke.json \
+          gh release create "$RELEASE_TAG" dist/smartstage-*.zip dist/smartstage-*.zip.sha256 \
+            dist/smartstage-*.imports.txt dist/smartstage-*.icon.json dist/smartstage-*.http-smoke.json \
+            dist/toolchain-* dist/native-enumeration-* dist/native-harness-*.smoke.json \
             --verify-tag --prerelease --title "Smart Stage $RELEASE_TAG" --notes-file docs/release-notes.md
-  verify-install:
+  verify-download:
     needs: publish
     if: startsWith(github.ref, 'refs/tags/')
-    strategy:
-      fail-fast: false
-      matrix:
-        runner: [macos-15, macos-15-intel, windows-2025, windows-11-arm]
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - name: Install the published Mac binary using curl
-        if: runner.os == 'macOS'
-        shell: bash
-        env:
-          SMARTSTAGE_VERSION: ${{ github.ref_name }}
-          SMARTSTAGE_INSTALL_DIR: ${{ runner.temp }}/smartstage-installed
-        run: |
-          curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
-          "$SMARTSTAGE_INSTALL_DIR/smartstage" --version
-          "$SMARTSTAGE_INSTALL_DIR/smartstage" --port 18787 --bind 127.0.0.1 --config-dir "$RUNNER_TEMP/smartstage-installed-config" > "$RUNNER_TEMP/smartstage-installed.log" 2>&1 &
-          app_pid=$!
-          trap 'kill -INT "$app_pid" 2>/dev/null || true' EXIT
-          for attempt in {1..30}; do
-            if curl -fsS http://127.0.0.1:18787/command -o "$RUNNER_TEMP/command.html"; then break; fi
-            sleep 1
-          done
-          grep -q 'Smart Stage' "$RUNNER_TEMP/command.html"
-          kill -INT "$app_pid"
-          wait "$app_pid"
-      - name: Install the published Windows binary using irm
-        if: runner.os == 'Windows'
-        shell: pwsh
-        env:
-          SMARTSTAGE_VERSION: ${{ github.ref_name }}
-          SMARTSTAGE_INSTALL_DIR: ${{ runner.temp }}/smartstage-installed
-        run: |
-          irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | iex
-          $exe = Join-Path $env:SMARTSTAGE_INSTALL_DIR 'smartstage.exe'
-          & $exe --version
-          if ($LASTEXITCODE -ne 0) { throw 'Installed binary version check failed' }
-          $config = Join-Path $env:RUNNER_TEMP 'smartstage-installed-config'
-          $appProcess = Start-Process -FilePath $exe -ArgumentList "--port 18787 --bind 127.0.0.1 --config-dir `"$config`"" -PassThru -RedirectStandardOutput (Join-Path $env:RUNNER_TEMP 'installed.log') -RedirectStandardError (Join-Path $env:RUNNER_TEMP 'installed-error.log')
-          try {
-            $ok = $false
-            for ($attempt=0; $attempt -lt 30; $attempt++) {
-              try { $page = (Invoke-WebRequest http://127.0.0.1:18787/command).Content; $ok = $page -match 'Smart Stage'; if ($ok) { break } } catch { Start-Sleep -Seconds 1 }
-            }
-            if (-not $ok) { throw 'Installed application did not serve Command' }
-          } finally { Stop-Process -Id $appProcess.Id -ErrorAction SilentlyContinue }
+    uses: ./.github/workflows/downloads.yml
+    with:
+      version: ${{ github.ref_name }}
   verify-browser:
     needs: publish
     if: startsWith(github.ref, 'refs/tags/')

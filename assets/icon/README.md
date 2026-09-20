@@ -23,9 +23,10 @@ temporary object. The icon is inside the executable; no sidecar is needed.
 Mac builds also create `smartstage-darwin-<arch>.app.zip`. The optional
 `Smart Stage.app` includes the same standalone executable, a native launcher,
 the ICNS icon and bundle metadata. Opening it in Finder starts Smart Stage in
-Terminal so pairing keys, logs and Ctrl+C remain available. The persistent
+Terminal so logs and Ctrl+C remain available; the core opens local Admin in the
+system browser automatically. The persistent
 custom icon belongs to the Finder app; the running terminal uses Terminal's
-Dock icon. The curl installer continues to install the standalone CLI.
+Dock icon. The primary Mac ZIP contains only the standalone executable.
 
 References: [Windows ICON resources](https://learn.microsoft.com/en-us/windows/win32/menurc/icon-resource),
 [Apple bundle structure and icon metadata](https://developer.apple.com/library/archive/documentation/CoreFoundation/Conceptual/CFBundles/BundleTypes/BundleTypes.html).

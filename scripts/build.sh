@@ -53,6 +53,8 @@ p.with_name(p.name + '.sha256').write_text(hashlib.sha256(p.read_bytes()).hexdig
 PY
 done
 
+python3 scripts/package-release.py "$target_os" "$target_arch"
+
 if [[ "$target_os" == darwin ]]; then
   python3 scripts/package-macos.py "$target_arch" "$build_version"
 fi

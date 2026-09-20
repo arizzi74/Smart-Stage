@@ -1,9 +1,9 @@
 # Mac physical test
 
-Use the published **v0.1.0-preview.5** on the Mac that will run the show.
+Use the published **v0.1.0-preview.6** on the Mac that will run the show.
 The available physical test machine is an **Apple Silicon Mac**; its macOS
-version and attached outputs are not yet recorded. Use the **darwin/arm64**
-release. Windows physical checks remain pending. This is a procedure and result
+version is not yet recorded. An external audio output and a second
+monitor/projector are available. Use the **darwin/arm64** release. Windows physical checks remain pending. This is a procedure and result
 template, not a record of passed tests.
 See the [acceptance audit](acceptance-audit.md) for the full remaining scope.
 
@@ -33,22 +33,26 @@ Those fixtures are only three seconds long; longer show files are needed for
 extended playback and A/V drift observations. No encoder or media player needs
 to be installed for this test.
 
-## Install and start an isolated test show
+## Download and start an isolated test show
 
-In Mac Terminal:
+[Download the Apple Silicon ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.6/smartstage-darwin-arm64.zip)
+and extract it. It contains just `smartstage`. Opening that executable starts
+the normal saved show and automatically opens Admin in the system browser.
+There is no installation command or additional runtime.
+
+For this isolated physical test, use Terminal to change to the folder containing
+the extracted executable, then run:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | SMARTSTAGE_VERSION=v0.1.0-preview.5 sh
-"$HOME/.local/bin/smartstage" --version
-"$HOME/.local/bin/smartstage" --config-dir "$HOME/Library/Application Support/SmartStage-Physical-Test"
+./smartstage --version
+./smartstage --config-dir "$HOME/Library/Application Support/SmartStage-Physical-Test"
 ```
 
-These commands use the installer's default location. If you previously set
-`SMARTSTAGE_INSTALL_DIR`, use the executable path printed by the installer.
-Record the version line; this procedure expects preview 5 and commit
-`9e72b4cc614f`. Keep Terminal running. The separate test configuration preserves
-the normal Smart Stage show's saved data. Stop any other Smart Stage instance
-first so port 8787 is available.
+Record the complete version line. Keep Terminal running. The separate test
+configuration preserves the normal Smart Stage show's saved data. Stop any other
+Smart Stage instance first so local Admin port 8787 and remote-control port 8788
+are available. Admin opens automatically at `http://127.0.0.1:8787/admin` and is
+accessible only on the Mac itself.
 
 The optional Finder app starts the normal configuration. Use the Terminal
 command above for this isolated test. Mac builds are ad-hoc signed rather than
@@ -57,15 +61,18 @@ prompt and whether launch succeeds. No developer tools are required.
 
 ## First pass: routing, STOP and restart
 
-1. Open the **Admin URL printed by this Mac** and pair with the Admin key.
+1. Confirm **Admin opens automatically on this Mac** in the system browser.
    Browse the Mac's files, add the four cues, give each a custom label and change
    their order. Native validation should finish without sound or video playback.
 2. In Outputs, select the intended external audio device and second display,
    then Save outputs. Enable stage output: the selected screen should turn
    black while the Mac's control screen remains usable.
-3. On a phone/tablet connected to the same LAN, open the printed **Command URL**
-   and pair using the separate Command key. Check that four labelled buttons
-   appear in the saved order and STOP remains visible without scrolling.
+3. On a phone/tablet connected to the same LAN, scan the QR code displayed in
+   Admin using the camera, or open the displayed **Remote control URL**. The
+   numeric token is already included; no pairing key should need typing. Check
+   that four labelled buttons appear in the saved order and STOP remains visible
+   without scrolling. Confirm that replacing `/command` with `/admin` on that
+   remote address does not expose Admin.
 4. Play each audio cue. Confirm sound comes only from the selected physical
    output. Press STOP during playback and listen for silence. The enabled stage
    should remain black.
@@ -84,7 +91,8 @@ prompt and whether launch succeeds. No developer tools are required.
    next cue; sound should be silent and an enabled stage should remain black.
 9. Exit with Ctrl+C in Terminal, then repeat the same start command. Verify the
    labels, order and output choices return, but playback stays stopped and the
-   stage stays disabled. Pair again with the newly printed keys.
+   stage stays disabled. Scan the new QR code; the previous launch's remote URL
+   should no longer grant control.
 
 For the first report, record pass/fail/not tested for each step and describe any
 unexpected sound or visible frame. Observing a stopped label alone does not
@@ -140,6 +148,6 @@ Latency / A/V drift (method and measurements, or not measured):
 Remaining equipment or scenarios:
 ```
 
-Pairing keys and cookies are not needed in the report. Keep unavailable tests
+Remote-control tokens and cookies are not needed in the report. Keep unavailable tests
 pending; a pass on this Mac establishes results for its recorded hardware and
 macOS version, not for untested Macs or Windows.

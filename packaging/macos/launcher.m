@@ -1,4 +1,4 @@
-// Finder launcher: keep the core executable's pairing keys and Ctrl+C in Terminal.
+// Finder launcher: keep the core executable's logs and Ctrl+C in Terminal.
 #import <Foundation/Foundation.h>
 #include <stdio.h>
 #include <unistd.h>

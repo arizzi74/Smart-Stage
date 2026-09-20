@@ -3,6 +3,23 @@
 Status: **preview; physical/clean-machine acceptance incomplete**. CI executes
 real native APIs but cannot verify what a human sees or hears on event hardware.
 
+## Current distribution and control access
+
+Preview 6 changes the primary downloads to four ZIPs, each containing exactly
+one executable. Launch opens local Admin in the system browser. Admin binds
+only to `127.0.0.1:8787`; the separate remote-control listener uses port `8788`.
+Admin displays remote URLs and a QR code containing the per-launch numeric token.
+Installer scripts have been retired from the current source. Historical release
+and installer results below remain evidence for their named older versions.
+
+The native release workflow verifies ZIP contents/permissions and runs the
+extracted binary before publication. Startup must serve local Admin and report
+that the operating system accepted the automatic browser launch; the separate
+remote listener must reject Admin. Published-archive checksum/extraction/startup
+and native browser checks run for the explicit new release tag. Their resulting
+run IDs and reports must be recorded once that release finishes. These checks
+do not establish physical output routing or clean-machine acceptance.
+
 ## Recorded evidence
 
 [Preview 5](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.5)

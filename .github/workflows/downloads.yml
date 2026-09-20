@@ -1,0 +1,54 @@
+name: Verify published single-executable ZIP downloads
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Published ZIP release tag (preview 6 or newer)'
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  download:
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            os: darwin
+            arch: arm64
+          - runner: macos-15-intel
+            os: darwin
+            arch: amd64
+          - runner: windows-2025
+            os: windows
+            arch: amd64
+          - runner: windows-11-arm
+            os: windows
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Verify downloaded ZIP, automatic browser launch and local Admin
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          python3 scripts/verify-download.py --version "$RELEASE_VERSION" \
+            --os '${{ matrix.os }}' --arch '${{ matrix.arch }}' \
+            --destination dist/download-verified --smoke
+      - name: Preserve archive and startup verification
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: download-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            dist/download-verified/download-verification.json
+            dist/download-verified/startup.log
+          if-no-files-found: warn

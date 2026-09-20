@@ -102,9 +102,10 @@ def finder_launch(bundle):
     expected_executable = (bundle / "Contents/MacOS/smartstage").resolve()
     # This deliberately uses the real default user configuration. Opt in only
     # on an ephemeral CI runner, never silently start an operator's saved show.
-    with socket.socket() as probe:
-        if probe.connect_ex(("127.0.0.1", 8787)) == 0:
-            raise RuntimeError("Finder launch check needs port 8787 to be unused")
+    for port in (8787, 8788):
+        with socket.socket() as probe:
+            if probe.connect_ex(("127.0.0.1", port)) == 0:
+                raise RuntimeError(f"Finder launch check needs port {port} to be unused")
     subprocess.run(["open", "-n", str(bundle)], check=True, timeout=15)
     pid = None
     observed = {}
@@ -125,9 +126,9 @@ def finder_launch(bundle):
                     pid = candidate
             if pid:
                 try:
-                    with urllib.request.urlopen("http://127.0.0.1:8787/command", timeout=2) as response:
+                    with urllib.request.urlopen("http://127.0.0.1:8787/admin", timeout=2) as response:
                         assert response.status == 200 and b"Smart Stage" in response.read()
-                    return {"finderLaunchedTerminalAndCore": True, "servedCommandPage": True,
+                    return {"finderLaunchedTerminalAndCore": True, "servedAdminPage": True,
                             "kernelExecutablePathMatched": True}
                 except (OSError, AssertionError):
                     pass

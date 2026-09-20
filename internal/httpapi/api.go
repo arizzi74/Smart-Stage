@@ -17,32 +17,88 @@ import (
 	"smartstage/internal/app"
 	"smartstage/internal/auth"
 	"smartstage/internal/model"
+	"smartstage/internal/qrcode"
 )
 
-type API struct {
-	app      *app.Service
-	auth     *auth.Manager
-	assets   http.Handler
-	mu       sync.RWMutex
-	hosts    map[string]bool
-	port     string
-	ordinary chan struct{}
+const AdminCookie = "smartstage_admin_session"
+const CommandCookie = "smartstage_command_session"
+
+type RemoteLink struct {
+	Label string `json:"label"`
+	URL   string `json:"url"`
+	QRURL string `json:"qrURL"`
 }
 
+type API struct {
+	app         *app.Service
+	auth        *auth.Manager
+	assets      http.Handler
+	mu          sync.RWMutex
+	hosts       map[string]bool
+	port        string
+	ordinary    chan struct{}
+	role        string
+	cookieName  string
+	remoteLinks []RemoteLink
+}
+
+// New defaults to the loopback-only Admin handler. A network controller must use
+// NewCommand; no handler combines Admin and Command privileges.
 func New(service *app.Service, authentication *auth.Manager, assets http.Handler, hosts []string, port int) *API {
-	a := &API{app: service, auth: authentication, assets: assets, port: strconv.Itoa(port), ordinary: make(chan struct{}, 16)}
+	return NewAdmin(service, authentication, assets, hosts, port)
+}
+
+func NewAdmin(service *app.Service, authentication *auth.Manager, assets http.Handler, hosts []string, port int) *API {
+	return newAPI(service, authentication, assets, []string{"127.0.0.1"}, port, "admin", AdminCookie)
+}
+
+func NewCommand(service *app.Service, authentication *auth.Manager, assets http.Handler, hosts []string, port int) *API {
+	return newAPI(service, authentication, assets, hosts, port, "command", CommandCookie)
+}
+
+func newAPI(service *app.Service, authentication *auth.Manager, assets http.Handler, hosts []string, port int, role, cookie string) *API {
+	a := &API{app: service, auth: authentication, assets: assets, port: strconv.Itoa(port), ordinary: make(chan struct{}, 16), role: role, cookieName: cookie}
 	a.SetHosts(hosts)
 	return a
 }
 func (a *API) SetHosts(hosts []string) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
+	if a.role == "admin" {
+		hosts = []string{"127.0.0.1"}
+	}
 	a.hosts = map[string]bool{}
 	for _, h := range hosts {
 		a.hosts[strings.ToLower(h)] = true
 	}
 }
+
+// SetRemoteLinks copies host-discovered links; they are never included in
+// Command state or events. Limit the local discovery list and QR payload size.
+func (a *API) SetRemoteLinks(links []RemoteLink) {
+	if a.role != "admin" {
+		return
+	}
+	next := make([]RemoteLink, 0, min(len(links), 64))
+	for _, link := range links {
+		if len(link.URL) > 1024 || len(next) == 64 {
+			continue
+		}
+		link.QRURL = "/api/remote-control/qr?index=" + strconv.Itoa(len(next))
+		next = append(next, link)
+	}
+	a.mu.Lock()
+	a.remoteLinks = next
+	a.mu.Unlock()
+}
+
 func (a *API) trusted(r *http.Request) bool {
+	if a.role == "admin" {
+		peer, _, err := net.SplitHostPort(r.RemoteAddr)
+		if err != nil || !net.ParseIP(peer).IsLoopback() {
+			return false
+		}
+	}
 	host, port, err := net.SplitHostPort(r.Host)
 	if err != nil {
 		host = r.Host
@@ -68,7 +124,8 @@ func (a *API) trusted(r *http.Request) bool {
 			return false
 		}
 	}
-	if r.Header.Get("Sec-Fetch-Site") == "cross-site" || r.Header.Get("Sec-Fetch-Site") == "same-site" {
+	publicCommandPage := a.role == "command" && (r.Method == http.MethodGet || r.Method == http.MethodHead) && (r.URL.Path == "/command" || r.URL.Path == "/")
+	if !publicCommandPage && (r.Header.Get("Sec-Fetch-Site") == "cross-site" || r.Header.Get("Sec-Fetch-Site") == "same-site") {
 		return false
 	}
 	return true
@@ -130,15 +187,69 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, 403, "origin_denied", "Host or Origin is not an allowed local address")
 		return
 	}
+	if r.URL.Path == "/licenses.txt" {
+		if r.Method != http.MethodGet && r.Method != http.MethodHead {
+			fail(w, 405, "method", "Use GET or HEAD")
+			return
+		}
+		text := qrcode.Licenses()
+		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+		w.Header().Set("Content-Length", strconv.Itoa(len(text)))
+		if r.Method == http.MethodGet {
+			_, _ = io.WriteString(w, text)
+		}
+		return
+	}
 	if !strings.HasPrefix(r.URL.Path, "/api/") {
+		if a.role == "command" && r.URL.Path == "/" {
+			http.Redirect(w, r, "/command", http.StatusSeeOther)
+			return
+		}
+		if a.role == "command" && r.URL.Path == "/admin" || a.role == "admin" && r.URL.Path == "/command" {
+			http.NotFound(w, r)
+			return
+		}
 		a.assets.ServeHTTP(w, r)
 		return
 	}
-	if r.URL.RawQuery != "" && r.URL.Path != "/api/files" {
+	if r.URL.RawQuery != "" && r.URL.Path != "/api/files" && r.URL.Path != "/api/remote-control/qr" {
 		fail(w, 400, "invalid_request", "Query parameters are not accepted on this route")
 		return
 	}
+	if r.URL.Path == "/api/local-session" {
+		if a.role != "admin" {
+			fail(w, 404, "unknown_route", "Unknown route")
+			return
+		}
+		if r.Method != http.MethodPost {
+			fail(w, 405, "method", "Use POST")
+			return
+		}
+		if r.Header.Get("Origin") == "" {
+			fail(w, 403, "origin_required", "Open the local Smart Stage Admin page")
+			return
+		}
+		var body struct{}
+		if !decode(w, r, &body) {
+			return
+		}
+		existing := ""
+		if previous, err := r.Cookie(a.cookieName); err == nil {
+			existing = previous.Value
+		}
+		s, err := a.auth.LocalAdmin(existing)
+		if err != nil {
+			fail(w, 429, "session_failed", err.Error())
+			return
+		}
+		a.setSession(w, r, s)
+		return
+	}
 	if r.URL.Path == "/api/pair" {
+		if a.role != "command" {
+			fail(w, 404, "unknown_route", "Unknown route")
+			return
+		}
 		if r.Method != http.MethodPost {
 			fail(w, 405, "method", "Use POST")
 			return
@@ -159,25 +270,31 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		remote, _, _ := net.SplitHostPort(r.RemoteAddr)
-		s, err := a.auth.Pair(body.Key, remote)
+		s, err := a.auth.PairCommand(body.Key, remote)
 		if err != nil {
-			fail(w, 429, "pair_failed", err.Error())
+			status := http.StatusUnauthorized
+			if errors.Is(err, auth.ErrTooManyAttempts) {
+				status = http.StatusTooManyRequests
+				w.Header().Set("Retry-After", "60")
+			}
+			fail(w, status, "pair_failed", err.Error())
 			return
 		}
-		if previous, err := r.Cookie("smartstage_session"); err == nil {
-			a.auth.Logout(previous.Value)
+		if previous, err := r.Cookie(a.cookieName); err == nil {
+			if old, ok := a.auth.Get(previous.Value); ok && old.Role == a.role {
+				a.auth.Logout(previous.Value)
+			}
 		}
-		http.SetCookie(w, &http.Cookie{Name: "smartstage_session", Value: s.ID, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: int(auth.Lifetime.Seconds())})
-		writeJSON(w, 200, map[string]any{"role": s.Role, "csrfToken": s.CSRF, "expires": s.Expires})
+		a.setSession(w, r, s)
 		return
 	}
-	cookie, err := r.Cookie("smartstage_session")
+	cookie, err := r.Cookie(a.cookieName)
 	if err != nil {
 		fail(w, 401, "unpaired", "Pair this browser session first")
 		return
 	}
 	session, ok := a.auth.Get(cookie.Value)
-	if !ok {
+	if !ok || session.Role != a.role {
 		fail(w, 401, "unpaired", "Session expired or was logged out; pair again")
 		return
 	}
@@ -203,13 +320,42 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	key := r.Method + " " + path
 	switch key {
+	case "GET /api/remote-control":
+		a.mu.RLock()
+		links := append([]RemoteLink{}, a.remoteLinks...)
+		a.mu.RUnlock()
+		writeJSON(w, 200, map[string]any{"token": a.auth.CommandToken(), "links": links})
+	case "GET /api/remote-control/qr":
+		query, err := url.ParseQuery(r.URL.RawQuery)
+		if err != nil || len(query) != 1 || len(query["index"]) != 1 {
+			fail(w, 400, "invalid_index", "Choose one remote control link")
+			return
+		}
+		index, err := strconv.Atoi(query.Get("index"))
+		a.mu.RLock()
+		link := ""
+		if err == nil && index >= 0 && index < len(a.remoteLinks) {
+			link = a.remoteLinks[index].URL
+		}
+		a.mu.RUnlock()
+		if link == "" {
+			fail(w, 404, "link_not_found", "Remote control link is no longer available")
+			return
+		}
+		png, err := qrcode.PNG(link)
+		if err != nil {
+			fail(w, 500, "qr_failed", "Could not create the remote control QR code")
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		_, _ = w.Write(png)
 	case "GET /api/state":
 		writeJSON(w, 200, map[string]any{"role": session.Role, "csrfToken": session.CSRF, "state": a.app.Snapshot(admin)})
 	case "GET /api/events":
 		a.events(w, r, session)
 	case "POST /api/logout":
 		a.auth.Logout(session.ID)
-		http.SetCookie(w, &http.Cookie{Name: "smartstage_session", Value: "", Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: -1})
+		http.SetCookie(w, &http.Cookie{Name: a.cookieName, Value: "", Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: -1})
 		writeJSON(w, 200, map[string]bool{"loggedOut": true})
 	case "POST /api/play":
 		var body app.PlayRequest
@@ -308,6 +454,11 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, 405, "unknown_route", "Unknown route or unsupported HTTP method")
 	}
 }
+func (a *API) setSession(w http.ResponseWriter, r *http.Request, s auth.Session) {
+	http.SetCookie(w, &http.Cookie{Name: a.cookieName, Value: s.ID, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: int(auth.Lifetime.Seconds())})
+	writeJSON(w, 200, map[string]any{"role": s.Role, "csrfToken": s.CSRF, "expires": s.Expires})
+}
+
 func (a *API) events(w http.ResponseWriter, r *http.Request, session auth.Session) {
 	flusher, ok := w.(http.Flusher)
 	if !ok {

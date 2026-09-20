@@ -1,8 +1,5 @@
 name: Windows audio capability check
 on:
-  push:
-    branches: [main]
-    paths: ['.github/workflows/windows-audio.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,9 +16,13 @@ jobs:
             arch: arm64
     runs-on: ${{ matrix.runner }}
     env:
+      SMARTSTAGE_VERSION: v0.1.0-preview.5
       SMARTSTAGE_INSTALL_DIR: ${{ github.workspace }}/dist/audio-check-bin
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        # Historical experiment: keep its matching installer and HTTP test protocol.
+        with:
+          ref: de3da9567ac275f5d0ac8d1a2f0d82993b2c7784
       - name: Record actual audio services and installed devices without changing them
         shell: pwsh
         run: |
