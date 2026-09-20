@@ -438,8 +438,8 @@ static SSApplicationDelegate *applicationDelegate;
 - (void)openAdmin:(id)sender {
     (void)sender;
     if (self.quitStarted || atomic_load(&shuttingDown)) return;
-    // Go owns tab-presence/reconnect policy for every entry point. Keep one
-    // pending request even when Finder delivers reopen before Go is ready.
+    // Go routes every entry point to the retained native Admin window or
+    // browser policy. Keep one request when Finder reopens before Go is ready.
     atomic_store(&desktopAdminRequested, true);
     fputs("Requested native Admin window\n", stderr);
 }

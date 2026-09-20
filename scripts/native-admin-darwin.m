@@ -121,13 +121,22 @@ int main(int argc, const char **argv) {
                         phase = 4;
                     }];
             } else if (phase == 4) {
+                NSPoint dropPoint = NSMakePoint(NSMidX(webView.bounds), NSMidY(webView.bounds));
+                // NSView hitTest: takes its superview's coordinates. Check
+                // public Cocoa targeting before exercising the drop primitive;
+                // this does not simulate a physical Finder dragging session.
+                NSPoint hitPoint = [webView convertPoint:dropPoint toView:window.contentView.superview];
+                if ([window.contentView hitTest:hitPoint] != webView) {
+                    fail(@"Admin drop point did not hit the native WebKit destination"); return;
+                }
+                report[@"publicHitTestTargetsNativeAdminDropView"] = @YES;
                 NSPasteboard *pasteboard = [NSPasteboard pasteboardWithUniqueName];
                 [pasteboard clearContents];
                 if (![pasteboard writeObjects:originals]) { fail(@"Could not create native file URL pasteboard"); return; }
                 SSProbeDraggingInfo *drag = [SSProbeDraggingInfo new];
                 drag.draggingPasteboard = pasteboard;
                 drag.draggingDestinationWindow = window;
-                drag.draggingLocation = NSMakePoint(NSMidX(webView.bounds), NSMidY(webView.bounds));
+                drag.draggingLocation = [webView convertPoint:dropPoint toView:nil];
                 id<NSDraggingInfo> info = (id<NSDraggingInfo>)drag;
                 BOOL accepted = [webView draggingEntered:info] != NSDragOperationNone &&
                                 [webView prepareForDragOperation:info] && [webView performDragOperation:info];
