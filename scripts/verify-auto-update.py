@@ -112,8 +112,12 @@ def listener_pid(port, executable):
         candidates = values if isinstance(values, list) else [values]
     for pid in candidates:
         image = process_image(pid)
-        if image and image.resolve() == executable.resolve():
-            return pid
+        if image:
+            try:
+                if os.path.samefile(image, executable):
+                    return pid
+            except OSError:
+                pass
     return None
 
 
@@ -167,27 +171,44 @@ def wait_for(predicate, timeout, description):
     raise AssertionError(f"Timed out waiting for {description}; last connection error: {last_error}")
 
 
+def belongs_to_installation(executable, installation):
+    if not executable:
+        return False
+    # Compare directory identity rather than spelling: Windows short/long paths
+    # and macOS NFC/NFD names can identify the same private installation.
+    for parent in executable.resolve().parents:
+        try:
+            if os.path.samefile(parent, installation):
+                return True
+        except OSError:
+            continue
+    return False
+
+
 def owned_pids(installation):
     if os.name == "nt":
+        # Enumerate numeric IDs only. PowerShell's UTF-8 path output decoded
+        # with a Windows locale can corrupt accented names and hide the test's
+        # processes. Read executable paths through the Unicode kernel API.
         result = run(["pwsh", "-NoLogo", "-NoProfile", "-NonInteractive", "-Command",
-                      "Get-CimInstance Win32_Process | Where-Object { $_.ExecutablePath } | Select-Object ProcessId,ExecutablePath | ConvertTo-Json -Compress"], timeout=30)
-        rows = json.loads(result.stdout) if result.stdout.strip() else []
-        if isinstance(rows, dict):
-            rows = [rows]
-        candidates = [(row["ProcessId"], Path(row["ExecutablePath"])) for row in rows]
+                      "@(Get-Process | Select-Object -ExpandProperty Id) | ConvertTo-Json -Compress"], timeout=30)
+        pids = json.loads(result.stdout) if result.stdout.strip() else []
+        if isinstance(pids, int):
+            pids = [pids]
+        candidates = [(pid, process_image(pid)) for pid in pids]
     else:
         result = run(["/bin/ps", "-axo", "pid="], timeout=10)
         candidates = [(int(value), process_image(int(value))) for value in result.stdout.split()]
     result = []
     for pid, executable in candidates:
-        if executable and executable.is_relative_to(installation):
+        if belongs_to_installation(executable, installation):
             result.append(pid)
     return result
 
 
 def stop_owned(pid, installation):
     executable = process_image(pid)
-    if not executable or not executable.is_relative_to(installation):
+    if not belongs_to_installation(executable, installation):
         return
     if os.name == "nt":
         # Cleanup applies only to a verified fixture/replacement path in this
@@ -197,6 +218,7 @@ def stop_owned(pid, installation):
                                 capture_output=True, text=True, timeout=15)
         if result.returncode and process_alive(pid):
             raise RuntimeError(f"Could not stop test process {pid}: {result.stderr}")
+        wait_for(lambda: not process_alive(pid), 10, f"test process {pid} to exit")
         return
     try:
         os.kill(pid, signal.SIGTERM)
@@ -227,13 +249,15 @@ def seed_show(config, media):
     return show
 
 
-def prepare_fixture(fixture, installation, target_os, arch, report):
+def prepare_fixture(fixture, installation, target_os, arch, report, fixture_source=None):
     manifest = json.loads((fixture / "fixture.json").read_text())
     name = f"fixture-{target_os}-{arch}{'.app.zip' if target_os == 'darwin' else '.zip'}"
     assert manifest["version"] == FIXTURE_VERSION and manifest["target"] == f"{target_os}/{arch}", manifest
     assert manifest["archive"] == name, manifest
-    if os.environ.get("GITHUB_SHA"):
-        assert manifest["sourceSHA"] == os.environ["GITHUB_SHA"], "Fixture must use this release's exact source commit"
+    expected_source = fixture_source or os.environ.get("GITHUB_SHA")
+    if expected_source:
+        assert manifest["sourceSHA"] == expected_source, "Fixture must use the selected release's exact source commit"
+        report["expectedFixtureSource"] = expected_source
     archive = fixture / name
     assert digest(archive) == manifest["archiveSHA256"], "Fixture archive checksum mismatch"
     installation.mkdir()
@@ -273,7 +297,7 @@ def verify(args, output, report):
         expected_show = seed_show(config, media)
         note_hash = digest(config / "operator-note.txt")
         audio_hash = digest(Path(expected_show["cues"][0]["path"]))
-        target, core = prepare_fixture(args.fixture.resolve(), installation, args.os, args.arch, report)
+        target, core = prepare_fixture(args.fixture.resolve(), installation, args.os, args.arch, report, args.fixture_source)
         admin_port, command_port = unused_port(), unused_port()
         while command_port == admin_port:
             command_port = unused_port()
@@ -297,6 +321,7 @@ def verify(args, output, report):
                     old_pid = process.pid
                 old_state = wait_for(lambda: admin.get("/api/state")["state"], 45, "the fixture's local Admin")
                 old_update = admin.get("/api/update")
+                report["initialUpdateStatus"] = old_update
                 assert old_update["currentVersion"] == FIXTURE_VERSION, old_update
                 report.update(oldInstanceID=old_state["instanceId"],
                               startupUpdatePending=old_state.get("updatePending", False), initialUpdatePhase=old_update["phase"])
@@ -322,6 +347,7 @@ def verify(args, output, report):
                         break
                     try:
                         status = admin.get("/api/update")
+                        report["lastUpdateStatus"] = status
                         if status["phase"] not in observed_phases:
                             observed_phases.append(status["phase"])
                         if status["phase"] in ("error", "unsupported"):
@@ -342,6 +368,7 @@ def verify(args, output, report):
                 assert new_state["state"] == "stopped" and not new_state["activeCueId"] and not new_state["stageEnabled"], new_state
                 assert not new_state["updatePending"], "Updated application is still reserved"
                 current = admin.get("/api/update")
+                report["finalUpdateStatus"] = current
                 assert current["currentVersion"] == args.version, current
                 assert digest(core) == reference_report["executableSHA256"], "Updated executable differs from the independently verified public release"
                 version = run([str(core), "--version"]).stdout.strip()
@@ -392,14 +419,21 @@ def verify(args, output, report):
             cleanup_errors = []
             # Stop helpers first, so they cannot relaunch during test cleanup.
             try:
-                pids = owned_pids(installation)
+                known_pids = {pid for pid in (old_pid, new_pid) if pid}
+                outcome_file = config / "update-result.json"
+                if outcome_file.is_file():
+                    helper_pid = json.loads(outcome_file.read_text()).get("helperPID")
+                    if helper_pid:
+                        known_pids.add(helper_pid)
+                pids = list(set(owned_pids(installation)) | known_pids)
                 pids.sort(key=lambda pid: "update-helper" not in str(process_image(pid)))
                 for pid in pids:
                     try:
                         stop_owned(pid, installation)
-                    except (OSError, subprocess.SubprocessError, RuntimeError) as error:
+                    except (OSError, subprocess.SubprocessError, RuntimeError, AssertionError) as error:
                         cleanup_errors.append(str(error))
                 remaining = owned_pids(installation)
+                remaining = sorted(set(remaining) | {pid for pid in known_pids if process_alive(pid)})
                 if remaining:
                     cleanup_errors.append(f"Test-owned processes still running: {remaining}")
             except (OSError, subprocess.SubprocessError) as error:
@@ -410,6 +444,17 @@ def verify(args, output, report):
                 except subprocess.TimeoutExpired:
                     process.kill()
                     process.wait(timeout=5)
+            if not cleanup_errors:
+                deadline = time.monotonic() + 8
+                while work.exists():
+                    try:
+                        shutil.rmtree(work)
+                    except OSError as error:
+                        if time.monotonic() >= deadline:
+                            cleanup_errors.append(f"Test directory could not be removed after process exit: {error}")
+                            break
+                        time.sleep(0.1)
+                report["testDirectoryRemoved"] = not work.exists()
             report["testProcessCleanupPassed"] = not cleanup_errors
             if cleanup_errors:
                 report["cleanupErrors"] = cleanup_errors
@@ -422,10 +467,13 @@ def main():
     parser.add_argument("--os", choices=("darwin", "windows"), required=True)
     parser.add_argument("--arch", choices=("amd64", "arm64"), required=True)
     parser.add_argument("--fixture", type=Path, required=True)
+    parser.add_argument("--fixture-source", help="Expected source commit for a fixture downloaded from an earlier release run")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if not re.fullmatch(r"v\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?", args.version):
         parser.error("Expected a published release version")
+    if args.fixture_source and not re.fullmatch(r"[0-9a-f]{40}", args.fixture_source):
+        parser.error("Expected a full lowercase fixture source commit SHA")
     actual_os = "windows" if os.name == "nt" else sys.platform
     actual_arch = {"aarch64": "arm64", "arm64": "arm64", "amd64": "amd64", "x86_64": "amd64"}.get(platform.machine().lower())
     if (args.os, args.arch) != (actual_os, actual_arch):

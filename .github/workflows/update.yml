@@ -1,5 +1,25 @@
 name: Verify automatic updates against published native releases
 on:
+  push:
+    branches: [main]
+    paths: ['scripts/verify-auto-update.py', 'scripts/macos_app_checks.py', '.github/workflows/update.yml']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Published release to verify'
+        required: true
+        type: string
+        default: 'v0.1.0-preview.10'
+      fixture-run:
+        description: 'Tagged build run containing the older-version fixtures'
+        required: true
+        type: string
+        default: '35512155124'
+      fixture-source:
+        description: 'Expected source commit of the published release and fixtures'
+        required: true
+        type: string
+        default: '3c8492f036840f64612cef12045bd718a96c9d81'
   workflow_call:
     inputs:
       version:
@@ -7,6 +27,7 @@ on:
         type: string
 permissions:
   contents: read
+  actions: read
 jobs:
   update:
     timeout-minutes: 15
@@ -33,14 +54,18 @@ jobs:
         with:
           name: update-fixture-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/update-fixture
+          run-id: ${{ inputs.fixture-run || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '35512155124') || github.run_id }}
+          github-token: ${{ github.token }}
       - name: Exercise real automatic discovery, replacement and restart
         shell: bash
         env:
-          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_VERSION: ${{ inputs.version || 'v0.1.0-preview.10' }}
+          FIXTURE_SOURCE: ${{ inputs.fixture-source || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '3c8492f036840f64612cef12045bd718a96c9d81') || github.sha }}
           SMARTSTAGE_SKIP_FIREWALL: '1'
         run: |
           python3 scripts/verify-auto-update.py --version "$RELEASE_VERSION" \
             --os '${{ matrix.os }}' --arch '${{ matrix.arch }}' \
+            --fixture-source "$FIXTURE_SOURCE" \
             --fixture dist/update-fixture --output 'dist/auto-update/${{ matrix.os }}-${{ matrix.arch }}'
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()

@@ -66,7 +66,10 @@ def dock_app_checks(bundle, pid):
 
     assert observation["processIdentifier"] == pid, observation
     assert observation["bundleIdentifier"] == BUNDLE_ID, "Running app lost its bundle identity"
-    assert Path(observation["bundlePath"]).resolve() == bundle.resolve(), "Running app points to another bundle"
+    # AppKit and Python can spell the same APFS path with different Unicode
+    # normalization (or /var versus /private/var). Compare filesystem identity.
+    assert Path(observation["bundlePath"]).samefile(bundle), (
+        f"Running app points to another bundle: observed={observation['bundlePath']!r}, expected={str(bundle)!r}")
     actual = base64.b64decode(observation.pop("runtimeIconRGBA"), validate=True)
     expected = base64.b64decode(observation.pop("sourceIconRGBA"), validate=True)
     assert len(actual) == len(expected) == 128 * 128 * 4, "Runtime icon must render as 128-pixel RGBA"
@@ -77,7 +80,8 @@ def dock_app_checks(bundle, pid):
     assert difference <= 5.0, f"Runtime Dock icon does not match Smart Stage artwork (mean channel difference {difference:.3f}/255)"
     return {"runtimeAppObservedByNSRunningApplication": True,
             "runtimeActivationPolicyRegular": True, "runtimeAppEligibleForDock": True,
-            "runtimeBundleIdentityMatched": True, "runtimeIconMatchesBundledArtwork": True,
+            "runtimeBundleIdentityMatched": True, "runtimeBundleFilesystemIdentityMatched": True,
+            "runtimeIconMatchesBundledArtwork": True,
             "runtimeIconMeanAbsoluteChannelDifference": round(difference, 6),
             "runtimeIconRenderedRGBA128SHA256": hashlib.sha256(actual).hexdigest(),
             "sourceIconRenderedRGBA128SHA256": hashlib.sha256(expected).hexdigest(),
