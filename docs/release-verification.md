@@ -5,6 +5,26 @@ real native APIs but cannot verify what a human sees or hears on event hardware.
 
 ## Recorded evidence
 
+[Preview 4](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.4),
+source `505a1e495075dcc01abe6d7367d3b57d3f8e60a9`, passed
+[tag run 35479742963](https://github.com/arizzi74/Smart-Stage/actions/runs/35479742963):
+shared Go race/vet checks, four native builds/import audits/media checks,
+HTTP/native application checks and release publication, followed by curl/irm
+installation and real browser checks on all four targets. The browser tests
+use the same workflow and coverage described below, against the published
+preview 4 executables. Runtime output reports `v0.1.0-preview.4 (505a1e495075)`.
+
+Downloaded files in `dist/releases/v0.1.0-preview.4/` passed checksum, architecture,
+Go/module-version and clean-source-commit checks. The exact sizes, hashes and
+embedded build information are retained in
+[`verification/release-preview4/download-verification.json`](verification/release-preview4/download-verification.json).
+The one-command installers now default to this preview. The source's completed
+20-minute memory profile and ongoing two-hour soak are described in
+[resource results](soak-results.md); captured native virtual pixels and the
+Windows ARM64 setup-screen limitation are in [display results](native-display-results.md).
+
+Earlier evidence follows, retained with its own source and release identity.
+
 [Preview 3](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.3),
 commit `d70b3e2`, passed [tag run 35471043955](https://github.com/arizzi74/Smart-Stage/actions/runs/35471043955):
 Go race/vet checks, all four native builds/import audits/media checks, real

@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.3
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.4
 
 ## Implemented
 
@@ -26,7 +26,20 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.3
 ## Built and automatically tested
 
 All four: macOS ARM64/AMD64, Windows ARM64/AMD64. Windows ARM64 was added by
-explicit user request. Tagged workflow
+explicit user request. Preview 4 is source `505a1e4`.
+[Tag run 35479742963](https://github.com/arizzi74/Smart-Stage/actions/runs/35479742963)
+passed shared race/vet, all four native build/import/media/HTTP checks,
+publication, curl/irm installation and real Admin/Command browser checks on all
+four targets. The downloaded files passed SHA-256, architecture, Go/module
+version and source-commit checks. The installers now default to preview 4.
+
+Preview 4 releases the Mac video layer with each cue while retaining the black
+stage window. [Memory evidence](docs/soak-results.md) supports the fix for
+caption-timer/timebase retention; the exact-source two-hour run is still in
+progress. [Virtual pixel evidence](docs/native-display-results.md) and its
+Windows ARM64 limitation are recorded separately.
+
+Earlier preview 3 evidence is retained: tagged workflow
 [`35471043955`](https://github.com/arizzi74/Smart-Stage/actions/runs/35471043955)
 passed builds, dependency checks, native media checks and real-application
 HTTP/native smoke tests, published `v0.1.0-preview.3`, and then verified curl/irm
@@ -67,7 +80,7 @@ and compiled, but Windows audio playback remains unverified on real hardware.
   first-run Windows setup, so its visual test failed. No physical projector,
   sound or latency claim follows from these virtual-desktop checks.
 - Unavailable audio/display IDs cause native errors without a playing event on
-  all four targets. Detailed harness records are attached to preview 3.
+  all four targets. Detailed harness records are attached to preview 4.
 - Linux ARM64: `go test -race ./...`, `go vet ./...`, Chromium browser checks.
   Shared tests also passed on the four target OS runners. Browser checks cover
   widths 320/390/768/844/1280, STOP usability, escaping and reconnect semantics.
@@ -103,4 +116,4 @@ drift or Windows audio routing.
 See `docs/release-verification.md` for exact environments/evidence and the
 remaining checklist, and `docs/acceptance-audit.md` for a specification-wide
 evidence audit. Local final release files are downloaded under
-`dist/releases/v0.1.0-preview.3/`; local cross-build outputs are under `dist/`.
+`dist/releases/v0.1.0-preview.4/`; local cross-build outputs are under `dist/`.

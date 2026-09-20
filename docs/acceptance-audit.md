@@ -5,9 +5,9 @@ the specification to current implementation and evidence. An automated result
 is credited only for what it observes; native events do not prove physical
 sound, black pixels, routing or timing.
 
-Native/application evidence: [preview 3 tag run 35471043955](https://github.com/arizzi74/Smart-Stage/actions/runs/35471043955),
-commit `d70b3e2`, passed all four OS/architecture jobs. Linux Go race/vet also
-passed. Publication/installation evidence for the currently published preview
+Current native/application evidence: [preview 4 tag run 35479742963](https://github.com/arizzi74/Smart-Stage/actions/runs/35479742963),
+commit `505a1e4`, passed all four OS/architecture build/native/installation/browser
+jobs, plus shared Go race/vet. Publication/installation evidence for this preview
 is in [release verification](release-verification.md). That document records
 the exact runner OS, compiler, SDK and available outputs.
 

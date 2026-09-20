@@ -14,7 +14,7 @@ production release.
 
 ## Install or download
 
-[Executables and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.3)
+[Executables and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.4)
 are provided for macOS ARM64 (Apple Silicon), macOS AMD64 (Intel), Windows ARM64
 and Windows AMD64. Windows 11 is the intended baseline. Mac builds target 12.0
 and have been exercised on macOS 15.7.9 CI, not every intervening OS version.
@@ -120,7 +120,7 @@ bash scripts/build.sh windows arm64
 ```
 
 Build on matching OS runners normally. `DEBUG=1` retains symbols;
-`VERSION=v0.1.0-preview.3` sets metadata. Output:
+`VERSION=v0.1.0-preview.4` sets metadata. Output:
 `dist/smartstage-<os>-<arch>[.exe]` and engineering harness
 `dist/native-harness-<os>-<arch>[.exe]`, with adjacent checksums, import audits
 and toolchain records. Apple system frameworks remain dynamic; Windows compiler
