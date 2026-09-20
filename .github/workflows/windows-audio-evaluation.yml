@@ -72,6 +72,8 @@ jobs:
       - name: Exercise actual audio and video through native framework renderers
         if: steps.device.outputs.available == 'true'
         shell: pwsh
+        env:
+          SMARTSTAGE_AUDIO_METER: '1'
         run: |
           python scripts/native-smoke.py dist/target-build/native-harness-windows-${{ matrix.arch }}.exe
           if ($LASTEXITCODE -ne 0) { throw 'Native audio smoke failed' }
@@ -88,5 +90,6 @@ jobs:
           path: |
             dist/audio-evaluation/
             dist/published/*.http-smoke.json
+            dist/published/*.audio-meter.json
             dist/target-build/*.smoke.json
           if-no-files-found: warn
