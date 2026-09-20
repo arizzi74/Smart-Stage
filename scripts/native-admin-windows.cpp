@@ -32,10 +32,11 @@ bool chooserVisible() {
         HWND dialog=nullptr;return SUCCEEDED(native->GetWindow(&dialog)) && dialog && IsWindowVisible(dialog);
     });
 }
-// Failure-only independent Win32 baselines. They never substitute for the
-// production tray assertion, and each temporary icon/window is removed here.
-void trayDiagnostics() {
-    ui([]{
+// Failure-only independent Win32 baselines distinguish an app failure from a
+// shell that rejects every valid icon. Temporary icons/windows are removed.
+// Return true if any independent registration or production readback works.
+bool trayDiagnostics() {
+    return ui([]{
         HWND shell=FindWindowW(L"Shell_TrayWnd",nullptr);DWORD shellPID=0;
         if(shell)GetWindowThreadProcessId(shell,&shellPID);
         auto process=[](DWORD pid,const char* label) {
@@ -68,29 +69,46 @@ void trayDiagnostics() {
         HRESULT rectangle=Shell_NotifyIconGetRect(&existing,&rect);
         SetLastError(0);BOOL modify=Shell_NotifyIconW(NIM_MODIFY,&desktop::tray);DWORD modifyError=GetLastError();
         std::cerr<<"Tray diagnostic production readback rectHRESULT="<<(unsigned long)rectangle<<" modify="<<modify<<" modifyError="<<modifyError<<"\n";
+        report["trayProductionReadback"]="{\"rectangleHRESULT\":"+std::to_string((unsigned long)rectangle)+",\"modifySucceeded\":"+(modify?"true":"false")+",\"lastError\":"+std::to_string(modifyError)+"}";
         HWND baseline=CreateWindowExW(0,L"STATIC",L"Smart Stage tray diagnostic",WS_OVERLAPPED,0,0,100,100,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+        struct WindowCleanup {HWND handle;~WindowCleanup(){if(handle)DestroyWindow(handle);}} cleanup{baseline};
         std::cerr<<"Tray diagnostic baseline window="<<baseline<<" valid="<<IsWindow(baseline)<<" sizeW="<<sizeof(NOTIFYICONDATAW)<<" sizeA="<<sizeof(NOTIFYICONDATAA)<<"\n";
-        if(!baseline)return;
+        require(baseline && IsWindow(baseline) && IsWindow(desktop::tray.hWnd),"Tray baseline has an invalid window; host capability could not be determined");
+        HICON systemIcon=LoadIconW(nullptr,IDI_APPLICATION);ICONINFO information{};
+        BOOL validIcon=systemIcon && GetIconInfo(systemIcon,&information);
+        if(information.hbmColor)DeleteObject(information.hbmColor);if(information.hbmMask)DeleteObject(information.hbmMask);
+        require(validIcon,"Tray baseline has an invalid system icon; host capability could not be determined");
+        bool supported=modify || SUCCEEDED(rectangle);unsigned count=0;std::string results="[";
+        auto record=[&](const char* label,BOOL added,DWORD error,UINT bytes,UINT flags) {
+            if(count++)results+=',';
+            results+="{\"name\":"+desktop::quote(label)+",\"added\":"+(added?"true":"false")+",\"lastError\":"+std::to_string(error)+",\"size\":"+std::to_string(bytes)+",\"flags\":"+std::to_string(flags)+",\"validWindow\":true,\"validSystemIcon\":true,\"windowVisible\":"+(IsWindowVisible(baseline)?"true":"false")+"}";
+            supported=supported || added;
+        };
         auto attempt=[&](const char* label,UINT bytes,UINT flags,bool guid) {
             NOTIFYICONDATAW item{};item.cbSize=bytes;item.hWnd=baseline;item.uID=71;item.uFlags=flags;
-            item.uCallbackMessage=WM_APP+117;item.hIcon=LoadIconW(nullptr,IDI_APPLICATION);wcscpy_s(item.szTip,L"Smart Stage tray diagnostic");
-            if(guid) {CoCreateGuid(&item.guidItem);item.uFlags|=NIF_GUID;}
+            item.uCallbackMessage=WM_APP+117;item.hIcon=systemIcon;wcscpy_s(item.szTip,L"Smart Stage tray diagnostic");
+            if(guid) {require(SUCCEEDED(CoCreateGuid(&item.guidItem)),"Could not create tray baseline GUID");item.uFlags|=NIF_GUID;}
             SetLastError(0);BOOL added=Shell_NotifyIconW(NIM_ADD,&item);DWORD error=GetLastError();
             std::cerr<<"Tray diagnostic baseline "<<label<<" added="<<added<<" error="<<error<<" icon="<<item.hIcon<<" size="<<bytes<<" flags="<<item.uFlags<<"\n";
-            if(added)Shell_NotifyIconW(NIM_DELETE,&item);
+            record(label,added,error,bytes,item.uFlags);
+            if(added)require(Shell_NotifyIconW(NIM_DELETE,&item)!=FALSE,"Could not remove temporary tray baseline icon");
         };
         attempt("unicode-minimal",sizeof(NOTIFYICONDATAW),NIF_ICON|NIF_TIP,false);
         attempt("unicode-callback",sizeof(NOTIFYICONDATAW),NIF_MESSAGE|NIF_ICON|NIF_TIP,false);
         attempt("unicode-guid",sizeof(NOTIFYICONDATAW),NIF_MESSAGE|NIF_ICON|NIF_TIP,true);
         attempt("unicode-v2",NOTIFYICONDATAW_V2_SIZE,NIF_MESSAGE|NIF_ICON|NIF_TIP,false);
         ShowWindow(baseline,SW_SHOWNOACTIVATE);
+        require(IsWindowVisible(baseline),"Visible-window tray baseline could not be shown");
         attempt("unicode-visible",sizeof(NOTIFYICONDATAW),NIF_MESSAGE|NIF_ICON|NIF_TIP,false);
         NOTIFYICONDATAA narrow{};narrow.cbSize=sizeof(narrow);narrow.hWnd=baseline;narrow.uID=71;narrow.uFlags=NIF_ICON|NIF_TIP;
-        narrow.hIcon=LoadIconW(nullptr,IDI_APPLICATION);strcpy_s(narrow.szTip,"Smart Stage tray diagnostic");
+        narrow.hIcon=systemIcon;strcpy_s(narrow.szTip,"Smart Stage tray diagnostic");
         SetLastError(0);BOOL added=Shell_NotifyIconA(NIM_ADD,&narrow);DWORD error=GetLastError();
         std::cerr<<"Tray diagnostic baseline ansi-minimal added="<<added<<" error="<<error<<"\n";
-        if(added)Shell_NotifyIconA(NIM_DELETE,&narrow);
-        DestroyWindow(baseline);
+        record("ansi-minimal",added,error,narrow.cbSize,narrow.uFlags);
+        if(added)require(Shell_NotifyIconA(NIM_DELETE,&narrow)!=FALSE,"Could not remove temporary ANSI tray baseline icon");
+        require(count==6,"Tray baseline evidence is incomplete");
+        report["trayBaselineResults"]=results+"]";report["trayIndependentInputsValid"]="true";
+        return supported;
     });
 }
 class Files final: public IDataObject {
@@ -132,7 +150,8 @@ int main() {
         auto* addressWide=_wgetenv(L"SMARTSTAGE_PROBE_ADMIN_URL");auto* first=_wgetenv(L"SMARTSTAGE_PROBE_ORIGINAL_ONE");auto* second=_wgetenv(L"SMARTSTAGE_PROBE_ORIGINAL_TWO");
         require(addressWide&&first&&second,"Missing test-only probe environment");
         auto address=desktop::utf8(addressWide);
-        ss_desktop_identity("native-probe");ss_desktop_admin(address.c_str());require(ss_desktop_show_admin(),"Native Admin show was rejected");
+        ss_desktop_identity("native-probe");ss_desktop_admin(address.c_str());ui([]{});
+        require(ss_desktop_show_admin(),"Native Admin show was rejected");
         wait([]{return js(L"typeof role!=='undefined' && role==='admin' && !localSessionBusy && typeof csrf!=='undefined' && csrf.length>0 && source?.readyState===EventSource.OPEN && state?.cues?.length===1 && document.getElementById('connection')?.textContent==='Connected to host'")=="true";},"Real Admin did not authenticate and connect its EventSource");
         passed("realAdminAssetsLoadedInWebView2");passed("localSessionAndCSRFInitialized");passed("authenticatedEventSourceConnected");
         require(js(L"navigator.userAgent.includes('SmartStageDesktop') && navigator.userAgent.includes('SmartStageWindowsDesktop') && document.getElementById('playlist').children.length>0 && !document.getElementById('choose-files').hidden && document.getElementById('media-path-settings').hidden")=="true","Desktop UI identity or chooser capability missing");
@@ -142,15 +161,32 @@ int main() {
         bool notificationArea=FindWindowW(L"Shell_TrayWnd",nullptr)!=nullptr;
         report["explorerNotificationAreaAvailable"]=notificationArea?"true":"false";
         try {wait([]{return ui([]{return desktop::trayAdded;});},"Smart Stage notification icon was not registered; see native shell diagnostics");}
-        catch(...) {trayDiagnostics();throw;}
+        catch(...) {
+            require(!trayDiagnostics(),"Smart Stage tray registration failed although an independent tray baseline or production readback succeeded");
+            report["trayUnavailableReason"]=desktop::quote("The host shell rejected all six independent Win32 registrations with valid window and system icon; this run verifies the taskbar fallback instead of claiming tray registration.");
+            std::cerr<<"Native Admin probe: host notification area unavailable; verifying minimized taskbar fallback\n";
+        }
         report["trayIconRegistered"]=ui([]{return desktop::trayAdded;})?"true":"false";
+        report["trayCapability"]=desktop::quote(report["trayIconRegistered"]=="true"?"available":"unavailable");
         js(L"window.__probeEpoch=state.stopEpoch;window.__probeDraft='preserved';document.getElementById('remote-connection-settings').open=true;document.getElementById('gateway-url').value='https://unsaved.example/smartstage';document.getElementById('gateway-url').dispatchEvent(new Event('input',{bubbles:true}));true");
         auto stopPosition=js(L"(()=>{const r=document.getElementById('stop').getBoundingClientRect();return [Math.round((r.left+r.width/2)*devicePixelRatio),Math.round((r.top+r.height/2)*devicePixelRatio)]})()");
         long stopX=0,stopY=0;require(sscanf(stopPosition.c_str(),"[%ld,%ld]",&stopX,&stopY)==2,"Could not locate rendered STOP button");
         ui([&]{SendMessageW(desktop::window,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(stopX,stopY));SendMessageW(desktop::window,WM_LBUTTONUP,0,MAKELPARAM(stopX,stopY));});
         wait([]{return js(L"state.stopEpoch>window.__probeEpoch && online && source.readyState===EventSource.OPEN")=="true";},"Native mouse input did not activate real CSRF-protected STOP");passed("compositionMouseInputActivatedStop");passed("realCSRFProtectedStopAccepted");passed("liveStateAfterStopObserved");
-        ui([]{SendMessageW(desktop::window,WM_CLOSE,0,0);});require(!IsWindowVisible(original),"Closing Admin did not hide its window");passed("closeHidWindowWithoutTerminating");
-        ss_desktop_show_admin();ss_desktop_show_admin();wait([&]{return IsWindowVisible(original)!=FALSE;},"Reopen did not restore Admin");
+        bool closedToTray=ui([]{bool available=desktop::trayAdded;SendMessageW(desktop::window,WM_CLOSE,0,0);return available;});
+        if(closedToTray) {
+            require(!IsWindowVisible(original),"Closing Admin with its notification icon did not hide the window");passed("closeHidWindowWithoutTerminating");
+            report["closeBehavior"]=desktop::quote("hidden-to-tray");
+        } else {
+            require(IsWindowVisible(original) && IsIconic(original),"Closing Admin without a notification icon did not retain its minimized window");
+            require(!(GetWindowLongPtrW(original,GWL_EXSTYLE)&WS_EX_TOOLWINDOW) && GetWindow(original,GW_OWNER)==nullptr,"Minimized Admin is not eligible for a taskbar entry");
+            passed("closeMinimizedToTaskbarWithoutTerminating");report["closeBehavior"]=desktop::quote("minimized-to-taskbar");
+            ui([]{SendMessageW(desktop::window,WM_SYSCOMMAND,SC_RESTORE,0);});
+            require(IsWindowVisible(original) && !IsIconic(original),"Taskbar restore did not restore the existing Admin window");
+            require(ui([]{BOOL visible=FALSE;return desktop::controller && SUCCEEDED(desktop::controller->get_IsVisible(&visible)) && visible;}),"Taskbar restore left Admin's WebView hidden");
+            passed("taskbarRestoreKeptWebViewVisible");
+        }
+        ss_desktop_show_admin();ss_desktop_show_admin();wait([&]{return IsWindowVisible(original)!=FALSE && !IsIconic(original);},"Reopen did not restore Admin");
         require(ui([&]{return desktop::window==original&&desktop::webview.p==web;}),"Reopen replaced Admin or its WebView");
         require(js(L"window.__probeDraft==='preserved' && document.getElementById('gateway-url').value==='https://unsaved.example/smartstage' && document.getElementById('remote-connection-settings').open && online")=="true","Reopen lost unsaved UI or its connection");passed("reopenKeptSameWindowAndWebView");passed("unsavedUIAndLiveConnectionPreserved");
         ui([]{SendMessageW(desktop::window,WM_KEYDOWN,VK_ESCAPE,1);});

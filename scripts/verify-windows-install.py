@@ -334,7 +334,9 @@ def main():
             install(args.powershell, failing, work, version, failure='Injected shortcut failure')
             assert executable.read_bytes() == old_binary
             assert all(link.read_bytes() == old_links[link] for link in links)
+            assert not list(directory.glob('.install-*')), 'Rollback left its failed candidate or work directory behind'
             report['rollbackRestoredPreviousBinaryAndShortcuts'] = True
+            report['rollbackRemovedFailedCandidateAndWorkDirectory'] = True
             install(args.powershell, adapted, work, version)
             assert executable.read_bytes() == binary
             report['reinstallIsIdempotent'] = True

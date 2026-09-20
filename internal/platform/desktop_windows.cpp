@@ -446,7 +446,12 @@ void showWindow() {
         dropTarget.reset(new DropTarget()); check(RegisterDragDrop(window,dropTarget.p),"Enable Explorer file drops");
         fprintf(stderr,"Created native Admin window\n");
     }
-    ShowWindow(window,IsIconic(window)?SW_RESTORE:SW_SHOW); SetForegroundWindow(window);
+    ShowWindow(window,IsIconic(window)?SW_RESTORE:SW_SHOW);
+    // Installer/update helpers may supply SW_HIDE to avoid a console. Windows
+    // applies that startup hint to the first ShowWindow call; an explicit
+    // request for Admin must still display its dedicated window.
+    if(!IsWindowVisible(window) || IsIconic(window))ShowWindow(window,SW_RESTORE);
+    SetForegroundWindow(window);
     if(controller) { controller->put_IsVisible(TRUE); controller->MoveFocus(COREWEBVIEW2_MOVE_FOCUS_REASON_PROGRAMMATIC); }
     else createWebView();
     fprintf(stderr,"Showed native Admin window\n");
@@ -505,7 +510,16 @@ LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
             if(!(lp & (LPARAM(1)<<30)))emergencyRequested.store(true);
             return 0;
         }
-        if(message==WM_CLOSE && hwnd==window) { ShowWindow(window,SW_HIDE);if(controller)controller->put_IsVisible(FALSE);fprintf(stderr,"Hid native Admin window\n");return 0; }
+        if(message==WM_CLOSE && hwnd==window) {
+            // Retain a taskbar entry when the shell has rejected the tray icon,
+            // so closing Admin never hides the user's only way back to the app.
+            ShowWindow(window,trayAdded?SW_HIDE:SW_MINIMIZE);
+            // A minimized window can be restored directly by the taskbar,
+            // without showWindow(), so keep its WebView visible in that case.
+            if(controller && trayAdded)controller->put_IsVisible(FALSE);
+            fprintf(stderr,trayAdded?"Hid native Admin window\n":"Minimized native Admin window; notification icon unavailable\n");
+            return 0;
+        }
         if(message==WM_QUERYENDSESSION) { quitRequested.store(true);return TRUE; }
         if(message==WM_SIZE && hwnd==window) { resize();return 0; }
         if(message==WM_MOVE && controller && hwnd==window)controller->NotifyParentWindowPositionChanged();

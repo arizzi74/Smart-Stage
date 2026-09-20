@@ -268,7 +268,13 @@ namespace SmartStageInstaller {
                 }
             }
             if ($installed) {
-                if ($backup -and (Test-Path -LiteralPath $backup)) { [IO.File]::Replace($backup, $executable, $null) }
+                if ($backup -and (Test-Path -LiteralPath $backup)) {
+                    # PowerShell 5.1 binds $null to an empty String here, which
+                    # File.Replace rejects. Keep the failed candidate in the
+                    # private work directory while restoring the previous file.
+                    $failedCandidate = Join-Path $work 'failed-install.exe'
+                    [IO.File]::Replace($backup, $executable, $failedCandidate)
+                }
                 elseif (Test-Path -LiteralPath $executable) { Remove-Item -LiteralPath $executable -Force }
             }
         }

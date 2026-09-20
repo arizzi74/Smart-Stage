@@ -56,9 +56,12 @@ def admin_window_checks(executable, evidence_path):
                     helpers.wait_for(lambda: admin.get("/api/state")["state"], 40, "the isolated real Admin host")
                     environment.update(SMARTSTAGE_PROBE_ADMIN_URL=f"http://127.0.0.1:{admin_port}/admin",
                                        SMARTSTAGE_PROBE_ORIGINAL_ONE=str(original), SMARTSTAGE_PROBE_ORIGINAL_TWO=str(second))
+                    startup = subprocess.STARTUPINFO()
+                    startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                    startup.wShowWindow = subprocess.SW_HIDE
                     try:
                         result = subprocess.run([str(binary)], env=environment, capture_output=True, text=True,
-                                                encoding="utf-8", errors="replace", timeout=150)
+                                                encoding="utf-8", errors="replace", timeout=150, startupinfo=startup)
                     except subprocess.TimeoutExpired as error:
                         captured = error.stderr or b""
                         report["probeLog"] = (captured.decode("utf-8", "replace") if isinstance(captured, bytes) else captured)[-24000:]
@@ -66,6 +69,7 @@ def admin_window_checks(executable, evidence_path):
                     report["probeLog"] = result.stderr[-18000:]
                     assert result.returncode == 0, f"Native Admin probe failed ({result.returncode}): {result.stderr}"
                     report.update(json.loads(result.stdout))
+                    report["hiddenHelperLaunchDisplayedAdmin"] = True
                     dropped = report["dropRequest"]["paths"]
                     chosen = report["chooserRequest"]["paths"]
                     assert len(dropped) == 2 and len(chosen) == 1
