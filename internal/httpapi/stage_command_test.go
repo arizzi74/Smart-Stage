@@ -3,8 +3,10 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -22,6 +24,7 @@ type commandStageBackend struct {
 	mu         sync.Mutex
 	enabled    bool
 	stageCalls int
+	stopError  error
 }
 
 func (*commandStageBackend) Devices(context.Context) (playback.Devices, error) {
@@ -33,7 +36,11 @@ func (*commandStageBackend) Devices(context.Context) (playback.Devices, error) {
 func (b *commandStageBackend) Stop(generation uint64) error {
 	b.mu.Lock()
 	enabled := b.enabled
+	stopError := b.stopError
 	b.mu.Unlock()
+	if stopError != nil {
+		return stopError
+	}
 	b.events <- playback.Event{Kind: "stopped", Generation: generation, StageEnabled: enabled}
 	return nil
 }
@@ -150,5 +157,21 @@ func TestRemoteStageRetainsSessionOriginCSRFBorders(t *testing.T) {
 	backend.mu.Unlock()
 	if calls != 0 || service.Snapshot(false).StageEnabled {
 		t.Fatal("rejected request changed stage output")
+	}
+}
+
+func TestRemoteStageResponseRedactsNativeErrors(t *testing.T) {
+	command, authentication, service, backend := commandStageSetup(t)
+	session, _ := authentication.PairCommand(authentication.CommandToken(), "remote")
+	const privateError = "Could not stop /private/operator/show/secret.wav"
+	backend.mu.Lock()
+	backend.stopError = errors.New(privateError)
+	backend.mu.Unlock()
+	response := request(command, "POST", "/api/stage-output", `{"enabled":false}`, session, "http://127.0.0.1:8787")
+	if response.Code != 202 || strings.Contains(response.Body.String(), privateError) || strings.Contains(response.Body.String(), "secret.wav") {
+		t.Fatalf("remote stage response leaked a native error: %d %s", response.Code, response.Body.String())
+	}
+	if service.Snapshot(true).LastError != privateError {
+		t.Fatal("Admin lost the diagnostic error")
 	}
 }

@@ -78,7 +78,34 @@ func canonical(path string) (string, error) {
 
 func within(root, path string) bool {
 	rel, err := filepath.Rel(root, path)
-	return err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel)
+	if err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) && !filepath.IsAbs(rel) {
+		return true
+	}
+	// Finder can deliver decomposed Unicode (or differently cased) paths while
+	// the configured root uses another spelling of the very same directory.
+	// Compare filesystem identities instead of guessing normalization rules.
+	// Resolve has already removed candidate symlinks; also ensure the stored
+	// canonical root has not since been redirected through a new symlink.
+	currentRoot, err := canonical(root)
+	if err != nil || currentRoot != root {
+		return false
+	}
+	rootInfo, err := os.Stat(root)
+	if err != nil || !rootInfo.IsDir() {
+		return false
+	}
+	for ancestor := path; ; ancestor = filepath.Dir(ancestor) {
+		info, err := os.Stat(ancestor)
+		if err != nil {
+			return false
+		}
+		if info.IsDir() && os.SameFile(rootInfo, info) {
+			return true
+		}
+		if filepath.Dir(ancestor) == ancestor {
+			return false
+		}
+	}
 }
 func (b *Browser) allowed(path string) bool {
 	if len(b.roots) == 0 {

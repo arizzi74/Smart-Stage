@@ -462,7 +462,7 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			respondError(w, err)
 			return
 		}
-		writeJSON(w, 202, a.app.Snapshot(true))
+		writeJSON(w, 202, a.app.Snapshot(admin))
 	case "POST /api/validate":
 		var body struct{}
 		if !decode(w, r, &body) {
