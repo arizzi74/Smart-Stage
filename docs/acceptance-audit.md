@@ -77,8 +77,10 @@ completed all four two-hour loops/restart checks at `20bcf35`. Its
 [resource traces](soak-results.md) show continuing Mac RSS growth and higher
 Windows handle counts. Completed published-preview diagnostics show native
 Mac allocations increasing with a reported live Go heap of about 1 MiB.
-The Mac cleanup candidate did not reduce retained allocations; native heap
-attribution is running. Windows per-type diagnostics show substantial cleanup
+The Mac pool-boundary candidate did not reduce retained allocations. Heap
+attribution found caption timers/timebases; releasing the video layer with its
+cue removed those classes from stopped snapshots on both Macs. Longer resource
+validation is still needed. Windows per-type diagnostics show substantial cleanup
 after STOP and unchanged file counts, with a small remaining increase over the
 initial handle counts.
 Stability is not established. Each run remains evidence for its own source

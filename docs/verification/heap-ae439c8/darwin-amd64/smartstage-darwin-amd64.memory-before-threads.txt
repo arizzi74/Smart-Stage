@@ -1,0 +1,21 @@
+Exit code: 0
+USER     PID   TT   %CPU STAT PRI     STIME     UTIME COMMAND
+runner 39527   ??    0.0 S    20T   0:00.29   0:00.64 /Users/runner/work/Smart-Stage/Smart-Stage/dist/smartstage-darwin-amd64 --port 49185 --bind 127.0.0.1 --config-dir /var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/smartstage-native-http-lnu41xtl --media-root /Users/runner/work/Smart-Stage/Smart-Stage/testdata/media
+       39527         1.2 S    20T   0:00.19   0:00.03 
+       39527         0.0 S    20T   0:00.00   0:00.00 
+       39527         0.0 S    20T   0:00.04   0:00.02 
+       39527         0.0 S    20T   0:00.04   0:00.01 
+       39527         0.0 S    20T   0:00.00   0:00.00 
+       39527         0.0 S    20T   0:00.08   0:00.04 
+       39527         0.0 S    19T   0:00.00   0:00.00 
+       39527         0.0 S    20R   0:00.00   0:00.00 
+       39527         0.0 S    20T   0:00.00   0:00.00 
+       39527         0.0 S    20T   0:00.47   0:00.34 
+       39527         1.2 S    20T   0:00.10   0:00.04 
+       39527         0.0 S    20T   0:00.00   0:00.00 
+       39527         0.6 S    20T   0:00.09   0:00.04 
+       39527         0.1 S    20T   0:00.04   0:00.05 
+       39527         0.0 S    20T   0:00.00   0:00.00 
+       39527         0.0 S    20T   0:00.03   0:00.04 
+       39527         0.0 S    20T   0:00.00   0:00.00 
+       39527         0.0 S    20T   0:00.00   0:00.00 

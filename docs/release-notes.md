@@ -4,14 +4,18 @@ Native AVFoundation/Media Foundation host playback, embedded Admin and Command
 interfaces, paired LAN access, manual cue playlists, output selection, persistent
 blackout, atomic local persistence and one-command installers are implemented.
 
-This preview includes IPv4 link-local LAN discovery, a total HTTP connection
-cap, and a save-time size check that prevents writing a show too large to reopen.
-Windows STOP now silences its own audio stream without muting the shared audio
-session used by following cues. Physical Windows audio testing is still pending.
-Earlier Windows previews used session-wide mute; if Smart Stage's entry remains
-muted in the Windows volume mixer, unmute that application entry before rehearsal.
-Outstanding native inspection drains before framework shutdown. Native checks
-also cover unavailable output IDs and shutdown during media validation.
+This preview releases the macOS video rendering layer with each stopped or
+replaced cue. The stage window and opaque black overlay remain present across
+STOP. This change targets the caption-timer/timebase accumulation found in
+preview 3's two-hour native tests. Detailed before/after heap measurements and
+long-run status are recorded in
+[native resource verification](https://github.com/arizzi74/Smart-Stage/blob/main/docs/soak-results.md).
+
+Windows retains preview 3's per-stream STOP muting. Physical Windows audio
+testing is still pending. If an older preview left Smart Stage's entry muted in
+the Windows volume mixer, unmute that application entry before rehearsal.
+Native checks cover unavailable output IDs, natural completion, saved-show
+restart, shutdown during validation and repeated PLAY/replacement/STOP.
 
 The attached executables embed the web interfaces and native bridges. They
 require only supported OS libraries at runtime. Each has an individual SHA-256
@@ -20,7 +24,9 @@ checksum and an import audit. Native and application smoke records are attached.
 This is a **preview, not an accepted production release**. CI exercises real
 native APIs and HTTP controls, but does not prove physical speaker/projector
 routing, clean-machine installation, phone/LAN behavior, hotplug safety, visible
-blackout, the two-hour soak or latency targets. macOS builds are ad-hoc signed,
+blackout, physical A/V drift or latency targets. Automated memory/handle evidence
+is separate from physical acceptance; consult the linked results for the tested
+source and duration. macOS builds are ad-hoc signed,
 not Developer ID signed or notarized. Windows executables are not Authenticode
 signed. See `docs/release-verification.md` for the exact evidence and limitations.
 

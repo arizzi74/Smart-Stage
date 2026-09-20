@@ -195,4 +195,23 @@ observers are removed before the renderer is released.
 
 [Heap comparison 35477893688](https://github.com/arizzi74/Smart-Stage/actions/runs/35477893688)
 and [native regression run 35477893782](https://github.com/arizzi74/Smart-Stage/actions/runs/35477893782)
-are running. No memory-fix claim or updated release has been made yet.
+completed successfully. Both Mac heap snapshots, taken while stopped, have no
+allocated `FigTimebase`, `FigCaptionRendererSession`,
+`FigCaptionRendererTrigger` or `FigCaptionRendererTimer` entries before or after
+the five-minute repeat. The earlier code retained hundreds of those objects.
+Mac AMD64 completed 485 cycles; ARM64 completed 624. All four target native
+regressions passed, including natural completion, persistent stage-enabled
+state, repeated PLAY/replacement/STOP and saved-show restart.
+
+Native allocated memory still rose from approximately 3,562 to 4,056 KiB on
+AMD64 and 3,286 to 3,792 KiB on ARM64 during this short instrumented run.
+The remaining increases include Core Audio listener/queue objects and dispatch
+allocations. Their lifetime needs a longer observation and stopped idle period;
+the disappearance of caption objects is not proof of overall resource stability.
+
+Raw snapshots and parsed class deltas are in
+[`verification/heap-ae439c8/`](verification/heap-ae439c8/). The next profile uses
+a stripped release-style build without allocation-stack logging, with a
+20-minute workload and two minutes stopped idle. A new two-hour native run
+will retain independent resource/restart evidence for this candidate source.
+Published preview 3 remains unchanged while this validation continues.

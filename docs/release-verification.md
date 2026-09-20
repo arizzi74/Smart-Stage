@@ -163,8 +163,11 @@ These are **unverified**, not assumed passed:
   increased Windows handle counts; stability remains under investigation.
   Preview 3 also shows continued Mac growth. A completed published-binary
   profile points to native allocations while live Go heap remains around 1 MiB;
-  a Mac pool-boundary candidate did not reduce that retention. Native heap
-  attribution is being collected. Windows per-type diagnostics show substantial
+  a Mac pool-boundary candidate did not reduce that retention. Heap attribution
+  identified accumulating caption timers/timebases. Releasing the video layer
+  with its cue removed those classes from stopped snapshots on both Macs;
+  a longer profile and fresh two-hour soak are still needed for resource trends.
+  Windows per-type diagnostics show substantial
   cleanup after STOP, unchanged file counts and a small remaining increase over
   initial handle counts.
   Even a passing CI result cannot establish physical A/V drift or routed sound.

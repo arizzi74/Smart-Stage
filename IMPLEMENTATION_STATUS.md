@@ -84,8 +84,12 @@ higher Windows handle counts. The preview 3 results also show continuing Mac
 growth. Completed 20-minute profiles show native malloc allocations increasing
 while the reported live Go heap remains around 1 MiB. A Mac autorelease-pool
 change at `67a10d2` passed all four native build/smoke checks but did not reduce
-retained allocations in a comparable 20-minute profile. Native heap attribution
-is running. Windows per-type diagnostics showed substantial event/thread/I/O
+retained allocations in a comparable 20-minute profile. Heap attribution found
+accumulating native caption timers/timebases. Releasing the video layer with
+its cue at `ae439c8` removed those classes from stopped snapshots on both Macs
+and passed all four native regressions. A longer profile and fresh two-hour
+soak still need to establish the remaining resource behavior.
+Windows per-type diagnostics showed substantial event/thread/I/O
 handle cleanup during two stopped idle minutes, with file counts unchanged;
 no Windows change was justified by these observations. Mac stability remains
 under investigation. None verifies physical A/V
