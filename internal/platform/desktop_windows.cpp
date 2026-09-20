@@ -86,6 +86,7 @@ std::once_flag startOnce;
 std::mutex initMutex, tasksMutex, filesMutex;
 std::condition_variable initCV;
 bool initialized = false, uiQuit = false, creating = false, trayAdded = false, mouseTracking = false;
+bool chooserActive = false, chooserShowing = false;
 std::deque<std::function<void()>> tasks;
 struct FileRequest { uint64_t id; std::vector<std::string> paths; };
 std::deque<FileRequest> files;
@@ -105,6 +106,8 @@ HANDLE loaderFile = INVALID_HANDLE_VALUE;
 HANDLE browserProcess = nullptr;
 NOTIFYICONDATAW tray{};
 UINT taskbarCreated = 0;
+unsigned trayAttempts = 0;
+DWORD trayAddError = 0;
 
 void showError(const std::string& message) {
     errorText = wide(message.c_str());
@@ -165,6 +168,7 @@ void openExternal(const wchar_t* url, BOOL user) {
 }
 void showWindow();
 void createWebView();
+void shutdownUI();
 void resize() {
     RECT bounds{}; GetClientRect(window, &bounds);
     if (controller) controller->put_Bounds(bounds);
@@ -214,15 +218,27 @@ Ptr<IDropTarget> dropTarget;
 
 void chooseMedia() {
     chooserScheduled.store(false);
-    if (!ready.load() || stopping.load() || chooser) return;
+    if (!ready.load() || stopping.load() || chooserActive) return;
     showWindow();
+    chooserActive=true;
+    struct FinishChooser {
+        ~FinishChooser() {
+            chooserShowing=false;chooserActive=false;chooser.reset();
+            // Also runs after COM exceptions before or after Show. A pending
+            // shutdown must never wait forever on a stale chooser pointer.
+            if(stopping.load())shutdownUI();
+        }
+    } finish;
     check(CoCreateInstance(CLSID_FileOpenDialog,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(chooser.out())),"Open the Windows media chooser");
     FILEOPENDIALOGOPTIONS flags{}; check(chooser->GetOptions(&flags),"Read chooser options");
     check(chooser->SetOptions(flags|FOS_ALLOWMULTISELECT|FOS_FORCEFILESYSTEM|FOS_FILEMUSTEXIST|FOS_PATHMUSTEXIST|FOS_NOCHANGEDIR),"Configure the media chooser");
     COMDLG_FILTERSPEC filters[]={{L"Audio, video and images",L"*.mp3;*.wav;*.m4a;*.aac;*.flac;*.aiff;*.wma;*.mp4;*.m4v;*.mov;*.wmv;*.avi;*.mkv;*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tif;*.tiff;*.webp"},{L"All files",L"*.*"}};
     chooser->SetFileTypes(2,filters); chooser->SetTitle(L"Choose media for Smart Stage — files stay in their original folders"); chooser->SetOkButtonLabel(L"Add to Show");
+    if(stopping.load())return;
     fprintf(stderr,"Opened native media chooser\n");
+    chooserShowing=true;
     HRESULT result=chooser->Show(window);
+    chooserShowing=false;
     if (SUCCEEDED(result) && !stopping.load()) {
         Ptr<IShellItemArray> items; check(chooser->GetResults(items.out()),"Read selected files"); DWORD count=0; items->GetCount(&count);
         std::vector<std::string> paths;
@@ -230,7 +246,6 @@ void chooseMedia() {
         else for(DWORD i=0;i<count;++i) { Ptr<IShellItem> item; LPWSTR path=nullptr; if(SUCCEEDED(items->GetItemAt(i,item.out())) && SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH,&path))) { paths.push_back(utf8(path)); CoTaskMemFree(path); } }
         queueFiles(std::move(paths));
     } else if (result==HRESULT_FROM_WIN32(ERROR_CANCELLED)) fprintf(stderr,"Cancelled native media chooser\n");
-    chooser.reset();
 }
 std::wstring randomDirectory() {
     PWSTR local=nullptr; check(SHGetKnownFolderPath(FOLDERID_LocalAppData,KF_FLAG_CREATE,nullptr,&local),"Find local application data");
@@ -378,14 +393,22 @@ void createWebView() {
     } catch (...) { creating=false; throw; }
 }
 void addTray() {
-    if(trayAdded)return;
+    if(trayAdded || stopping.load())return;
     tray={}; tray.cbSize=sizeof(tray); tray.hWnd=control.load(); tray.uID=1;
     tray.uFlags=NIF_MESSAGE|NIF_ICON|NIF_TIP; tray.uCallbackMessage=trayMessage;
     tray.hIcon=LoadIconW(GetModuleHandleW(nullptr),MAKEINTRESOURCEW(1));
     if(!tray.hIcon)tray.hIcon=LoadIconW(nullptr,IDI_APPLICATION);
     wcscpy_s(tray.szTip,L"Smart Stage — Open Admin / Quit");
+    SetLastError(ERROR_SUCCESS);++trayAttempts;
     trayAdded=Shell_NotifyIconW(NIM_ADD,&tray)!=FALSE;
-    if(trayAdded) { tray.uVersion=NOTIFYICON_VERSION_4; Shell_NotifyIconW(NIM_SETVERSION,&tray); }
+    trayAddError=trayAdded?ERROR_SUCCESS:GetLastError();
+    if(trayAdded) { tray.uVersion=NOTIFYICON_VERSION_4; Shell_NotifyIconW(NIM_SETVERSION,&tray); KillTimer(control.load(),0x535); }
+    else {
+        HWND shell=FindWindowW(L"Shell_TrayWnd",nullptr);
+        if(trayAttempts==1 || trayAttempts==10)fprintf(stderr,"Native Admin notification icon registration failed: attempt=%u shell=%p visible=%d error=%lu\n",trayAttempts,(void*)shell,shell?int(IsWindowVisible(shell)):0,(unsigned long)trayAddError);
+        if(trayAttempts<10)SetTimer(control.load(),0x535,500,nullptr);
+        else KillTimer(control.load(),0x535);
+    }
 }
 HMENU appMenu() {
     HMENU menu=CreatePopupMenu(); AppendMenuW(menu,MF_STRING,openID,L"Open Admin"); AppendMenuW(menu,MF_STRING,chooseID,L"Choose Media…\tCtrl+O");
@@ -438,8 +461,10 @@ void shutdownUI();
 LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
     try {
         if(message==shutdownMessage) {shutdownUI();return 0;}
+        if(message==WM_TIMER && wp==0x535) {addTray();return 0;}
+        if(message==WM_TIMER && wp==0x534 && stopping.load()) {if(chooserShowing && chooser)chooser->Close(HRESULT_FROM_WIN32(ERROR_CANCELLED));return 0;}
         if(message==wakeMessage) {drainTasks();return 0;}
-        if(taskbarCreated && message==taskbarCreated) {trayAdded=false;addTray();return 0;}
+        if(taskbarCreated && message==taskbarCreated && hwnd==control.load()) {trayAdded=false;trayAttempts=0;addTray();return 0;}
         if(message==trayMessage) {
             UINT event=LOWORD(lp);
             if(event==NIN_SELECT || event==NIN_KEYSELECT || event==WM_LBUTTONDBLCLK)showWindow();
@@ -470,7 +495,13 @@ LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
 }
 void shutdownUI() {
     stopping.store(true);ready.store(false);
-    if(chooser)chooser->Close(HRESULT_FROM_WIN32(ERROR_CANCELLED));
+    if(chooserActive) {
+        SetTimer(control.load(),0x534,50,nullptr);
+        if(chooserShowing && chooser)chooser->Close(HRESULT_FROM_WIN32(ERROR_CANCELLED));
+        return;
+    }
+    KillTimer(control.load(),0x534);
+    KillTimer(control.load(),0x535);
     if(trayAdded) {Shell_NotifyIconW(NIM_DELETE,&tray);trayAdded=false;}
     if(window)RevokeDragDrop(window);
     UINT32 browserID=0;

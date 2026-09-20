@@ -8,7 +8,7 @@
 namespace probe {
 std::map<std::string,std::string> report;
 void require(bool condition,const char* message) {if(!condition)throw std::string(message);}
-void passed(const char* name) {report[name]="true";}
+void passed(const char* name) {report[name]="true";std::cerr<<"Native Admin probe passed: "<<name<<"\n";}
 template<class F> auto ui(F fn) -> decltype(fn()) {
     using T=decltype(fn()); auto promise=std::make_shared<std::promise<T>>();auto result=promise->get_future();
     require(desktop::post([fn,promise]{try {if constexpr(std::is_void_v<T>) {fn();promise->set_value();} else promise->set_value(fn());}catch(...) {promise->set_exception(std::current_exception());}}),"Could not queue native observation");
@@ -24,6 +24,14 @@ std::string js(const wchar_t* script) {
     require(result.wait_for(std::chrono::seconds(10))==std::future_status::ready,"WebView script did not finish");return result.get();
 }
 template<class F> void wait(F fn,const char* message) {auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(35);while(std::chrono::steady_clock::now()<deadline) {if(fn())return;std::this_thread::sleep_for(std::chrono::milliseconds(100));}throw std::string(message);}
+bool chooserVisible() {
+    return ui([]{
+        if(!desktop::chooser)return false;
+        desktop::Ptr<IOleWindow> native;
+        if(FAILED(desktop::chooser->QueryInterface(IID_PPV_ARGS(native.out()))))return false;
+        HWND dialog=nullptr;return SUCCEEDED(native->GetWindow(&dialog)) && dialog && IsWindowVisible(dialog);
+    });
+}
 class Files final: public IDataObject {
     ULONG refs=1;std::vector<std::wstring> paths;bool text;
 public:
@@ -69,7 +77,11 @@ int main() {
         require(js(L"navigator.userAgent.includes('SmartStageDesktop') && navigator.userAgent.includes('SmartStageWindowsDesktop') && document.getElementById('playlist').children.length>0 && !document.getElementById('choose-files').hidden && document.getElementById('media-path-settings').hidden")=="true","Desktop UI identity or chooser capability missing");
         passed("nativeUserAgentAndPlaylistRendered");
         HWND original=ui([]{return desktop::window;});auto* web=ui([]{return desktop::webview.p;});
-        require(ui([]{return IsWindowVisible(desktop::window)!=FALSE && desktop::composition.p && desktop::controller.p && desktop::trayAdded;}),"Composition Admin window and tray not visible");passed("compositionWindowAndTrayVisible");
+        require(ui([]{return IsWindowVisible(desktop::window)!=FALSE && desktop::composition.p && desktop::controller.p;}),"Composition Admin window is not visible");passed("compositionWindowVisible");
+        bool notificationArea=FindWindowW(L"Shell_TrayWnd",nullptr)!=nullptr;
+        report["explorerNotificationAreaAvailable"]=notificationArea?"true":"false";
+        wait([]{return ui([]{return desktop::trayAdded;});},"Smart Stage notification icon was not registered; see native shell diagnostics");
+        report["trayIconRegistered"]=ui([]{return desktop::trayAdded;})?"true":"false";
         js(L"window.__probeEpoch=state.stopEpoch;window.__probeDraft='preserved';document.getElementById('remote-connection-settings').open=true;document.getElementById('gateway-url').value='https://unsaved.example/smartstage';document.getElementById('gateway-url').dispatchEvent(new Event('input',{bubbles:true}));true");
         auto stopPosition=js(L"(()=>{const r=document.getElementById('stop').getBoundingClientRect();return [Math.round((r.left+r.width/2)*devicePixelRatio),Math.round((r.top+r.height/2)*devicePixelRatio)]})()");
         long stopX=0,stopY=0;require(sscanf(stopPosition.c_str(),"[%ld,%ld]",&stopX,&stopY)==2,"Could not locate rendered STOP button");
@@ -91,7 +103,7 @@ int main() {
         passed("publicHitTestTargetsNativeAdminDropWindow");passed("nativeCFHDROPDeliveredToProductionDropTarget");report["dropRequest"]=popRequest(2);
         ui([]{auto* text=new Files({},true);DWORD effect=DROPEFFECT_COPY;desktop::dropTarget->DragEnter(text,0,{0,0},&effect);require(effect==DROPEFFECT_NONE,"Text was accepted as original file paths");desktop::dropTarget->Drop(text,0,{0,0},&effect);text->Release();});require(!ss_desktop_poll_files(),"Text drop queued a file");passed("textCannotSupplyNativeOriginalPaths");
         require(ss_desktop_choose_files(),"Native media chooser was rejected");
-        wait([]{return ui([]{return bool(desktop::chooser);});},"Native Windows file dialog did not open");
+        wait(chooserVisible,"Native Windows file dialog did not become visible");
         ui([&]{desktop::check(desktop::chooser->SetFileName(secondPath.c_str()),"Select original file in native chooser");desktop::Ptr<IOleWindow> native;desktop::check(desktop::chooser->QueryInterface(IID_PPV_ARGS(native.out())),"Observe native file dialog");HWND dialog=nullptr;desktop::check(native->GetWindow(&dialog),"Find native chooser HWND");require(dialog&&IsWindowVisible(dialog),"Native file dialog is not visible");PostMessageW(dialog,WM_COMMAND,IDOK,0);});
         wait([]{return ss_desktop_files_pending()!=0;},"Selecting the original in the real native chooser did not queue it");report["chooserRequest"]=popRequest(1);passed("nativeFileDialogOriginalSelectionAccepted");
         auto blocked=desktop::wide(address.c_str());blocked.resize(blocked.size()-6);blocked+=L"/command";
@@ -104,7 +116,10 @@ int main() {
         // Go's back. Then verify authenticated UI Quit against the real host.
         ui([]{desktop::command(desktop::quitID);});require(ss_desktop_poll_quit_request()==1 && ss_desktop_poll_quit_request()==0,"Native Quit request was not polled exactly once");passed("nativeQuitRequestPolled");
         js(L"document.getElementById('quit-app').click();true");wait([]{return js(L"document.getElementById('app-closed').hidden===false")=="true";},"Real Admin Quit was not acknowledged");passed("realAdminQuitAcknowledged");
+        require(ss_desktop_choose_files(),"Could not open native chooser for shutdown verification");
+        wait(chooserVisible,"Native shutdown-test chooser did not become visible");
         ss_windows_desktop_shutdown();require(!IsWindow(original),"Native shutdown left Admin open");passed("nativeQuitClosedAdminWindow");
+        require(!ss_desktop_files_pending(),"Cancelling the chooser during shutdown queued unexpected files");passed("shutdownWithOpenNativeChooserCompleted");
         require(!std::filesystem::exists(desktop::directory),"Normal WebView shutdown left its private browser profile behind");passed("privateWebViewProfileRemovedAfterShutdown");report["status"]="\"passed\"";
         std::cout<<"{";bool firstField=true;for(auto& item:report) {if(!firstField)std::cout<<",";firstField=false;std::cout<<desktop::quote(item.first)<<":"<<item.second;}std::cout<<"}\n";return 0;
     } catch(const std::string& error) {std::cerr<<error<<"\n";} catch(const std::exception& error) {std::cerr<<error.what()<<"\n";}
