@@ -22,6 +22,11 @@ import urllib.request
 import zipfile
 
 
+def gateway_default(version):
+    legacy = re.fullmatch(r"v0[.]1[.]0-preview[.](\d+)", version)
+    return not legacy or int(legacy[1]) >= 15
+
+
 def fetch(url, destination):
     request = urllib.request.Request(url, headers={"User-Agent": "Smart-Stage-release-verification"})
     with urllib.request.urlopen(request, timeout=120) as response:
@@ -120,10 +125,16 @@ def smoke(binary, target_os, target_arch, version, report):
                 report["adminURL"] = f"http://127.0.0.1:{admin_port}/admin"
                 # The OS accepted the URL hand-off. Browser UI/control behavior
                 # is independently exercised by the native browser workflow.
-                status, _ = get(remote_port, "/admin")
-                if status not in (403, 404):
-                    raise AssertionError(f"Remote listener served Admin: HTTP {status}")
-                report["remoteListenerRejectsAdmin"] = True
+                if gateway_default(version):
+                    with socket.socket() as remote_probe:
+                        remote_probe.settimeout(2)
+                        assert remote_probe.connect_ex(("127.0.0.1", remote_port)) != 0, \
+                            "A fresh installation must not listen for incoming LAN connections"
+                    report.update(gatewayModeDefault=True, lanListenerClosedByDefault=True)
+                else:
+                    status, _ = get(remote_port, "/admin")
+                    assert status in (403, 404), f"Legacy remote listener served Admin: HTTP {status}"
+                    report.update(legacyLANRelease=True, remoteListenerRejectsAdmin=True)
             finally:
                 if process.poll() is None:
                     process.terminate() if os.name == "nt" else process.send_signal(signal.SIGINT)
@@ -143,7 +154,7 @@ def main():
     }.get(platform.machine().lower()))
     parser.add_argument("--destination", required=True, type=Path)
     parser.add_argument("--archive", type=Path, help="Verify a locally built ZIP instead of downloading")
-    parser.add_argument("--smoke", action="store_true", help="Check native version, automatic browser dispatch and separate Admin/remote listeners")
+    parser.add_argument("--smoke", action="store_true", help="Check native version, automatic browser dispatch, loopback Admin and closed default LAN listener")
     args = parser.parse_args()
     if args.os not in ("darwin", "windows") or not args.arch:
         parser.error("Select a supported target with --os and --arch")

@@ -158,7 +158,7 @@ func RunHelper(planPath string) error {
 		return launchErr
 	}
 	logger.Printf("Replaced installation; previous version retained at %s", p.Backup)
-	warning := refreshFirewall(p.Target, logger)
+	warning := refreshFirewall(p.Target, p.ConfigDir, logger)
 	requestPath := filepath.Join(p.Work, "startup.json")
 	if err := writeJSON(requestPath, startupRequest{Version: p.Version, Nonce: p.Nonce, Target: p.Target}); err != nil {
 		return rollback(p, nil, requestPath, err, logger)
@@ -275,7 +275,7 @@ func rollback(p applyPlan, child *launchedApp, request string, cause error, logg
 		_ = retryRename(failed, p.Target.Path)
 		return finishOutcome(p, "error", fmt.Sprintf("Cannot restore the previous version: %v. Backup: %s", err, p.Backup), logger)
 	}
-	warning := refreshFirewall(p.Target, logger)
+	warning := refreshFirewall(p.Target, p.ConfigDir, logger)
 	message := joinMessage("The update did not start successfully; the previous version was restored. "+cause.Error(), warning)
 	if err := finishOutcome(p, "rolled_back", message, logger); err != nil {
 		return err

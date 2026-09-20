@@ -17,15 +17,24 @@ const assert = require('node:assert/strict');
   let updateGets = 0, updateGetDelay = 0, failUpdateCheck = false, restarting = false;
   let hiddenListingDelay = 0;
   let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: false };
+  let gateway = { mode: 'lan', url: '', hasToken: false, status: 'disabled', message: '', remoteURL: '' };
+  const gatewayRemoteToken = 'a1'.repeat(32), gatewayRegistrationToken = 'b2'.repeat(32);
+  const publicPrefix = '/smartstage/e/' + '0123456789abcdef'.repeat(2), publicRequests = [];
+  let gatewayDelay = 0, gatewayFailSave = false;
   let update = { currentVersion: 'v0.1.0-preview.8', latestVersion: 'v0.1.0-preview.9', phase: 'available', available: true, canInstall: true, message: 'A new version is available.', releaseURL: 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', checkedAt: new Date().toISOString() };
   const labels = ['Opening music', 'Welcome video with a deliberately long label that must wrap clearly', "Café's interlude", '<img src=x onerror="window.__xss=true">'];
   const stageDefaults = { backgroundCueId: '', backgroundAudio: false, fadeEnabled: false, fadeSeconds: 1, toggleAudio: false };
   const state = { stage: { ...stageDefaults }, backgroundCueId: '', imageCueId: '', instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
   const config = { stage: { ...stageDefaults }, schema: 1, playlistRevision: 1, outputs: state.outputs, cues: state.cues.map(c => ({ id: c.id, label: c.label, path: `/Host/Show/${c.id}.mp4`, cache: { status: 'ready', media: { kind: c.kind, duration: 3 } } })) };
   const broadcast = () => { for (const c of clients) c.write(`event: state\ndata: ${JSON.stringify(state)}\n\n`); };
-  const createServer = listenerRole => http.createServer(async (req, res) => {
+  const createServer = (listenerRole, prefix = '') => http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     const reply = (value, status = 200) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(value)); };
+    if (prefix) {
+      publicRequests.push(req.url);
+      if (!url.pathname.startsWith(prefix + '/')) { reply({ error: { message: 'Outside public endpoint' } }, 404); return; }
+      url.pathname = url.pathname.slice(prefix.length);
+    }
     if (!url.pathname.startsWith('/api/')) {
       if (listenerRole === 'admin' && url.pathname === '/admin') adminDocumentLoads++;
       const name = url.pathname.startsWith('/assets/') ? path.basename(url.pathname) : 'index.html';
@@ -34,23 +43,23 @@ const assert = require('node:assert/strict');
     }
     let raw = ''; for await (const chunk of req) raw += chunk;
     const body = raw ? JSON.parse(raw) : {};
-    requests.push({ listenerRole, path: url.pathname, query: url.search, body, origin: req.headers.origin, csrf: req.headers['x-csrf-token'] });
+    requests.push({ listenerRole, path: url.pathname, requestPath: req.url, query: url.search, body, origin: req.headers.origin, csrf: req.headers['x-csrf-token'] });
     if (restarting) { reply({ error: { message: 'Host restarting' } }, 503); return; }
     const cookieName = `smartstage_${listenerRole}_session`;
     const sessionID = (req.headers.cookie || '').split(';').map(part => part.trim()).find(part => part.startsWith(cookieName + '='))?.slice(cookieName.length + 1);
     const role = sessions.get(sessionID);
     const pair = () => {
       const id = `fixture-${++sessionCounter}`; sessions.set(id, listenerRole);
-      res.setHeader('Set-Cookie', `${cookieName}=${id}; Path=/; HttpOnly; SameSite=Strict`);
+      res.setHeader('Set-Cookie', `${cookieName}=${id}; Path=${prefix || '/'}; HttpOnly; SameSite=Strict`);
       reply({ role: listenerRole, csrfToken: 'test-csrf', ...(listenerRole === 'admin' ? { capabilities: adminCapabilities } : {}) });
     };
     if (url.pathname === '/api/local-session' && listenerRole === 'admin') { pair(); return; }
     if (url.pathname === '/api/pair' && listenerRole === 'command') {
-      if (body.key !== token) { reply({ error: { message: 'Invalid connection code' } }, 401); return; }
+      if (body.key !== (prefix ? gatewayRemoteToken : token)) { reply({ error: { message: 'Invalid connection code' } }, 401); return; }
       pair(); return;
     }
     if (role !== listenerRole) { reply({ error: { message: 'Connect this browser first' } }, 401); return; }
-    if (url.pathname === '/api/logout') { sessions.delete(sessionID); res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Max-Age=0`); reply({}); return; }
+    if (url.pathname === '/api/logout') { sessions.delete(sessionID); res.setHeader('Set-Cookie', `${cookieName}=; Path=${prefix || '/'}; Max-Age=0`); reply({}); return; }
     if (url.pathname === '/api/state') { stateGets++; reply({ role, csrfToken: 'test-csrf', state, ...(role === 'admin' ? { capabilities: adminCapabilities } : {}) }); return; }
     if (['/api/admin-presence', '/api/quit', '/api/choose-files'].includes(url.pathname)) {
       if (role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
@@ -85,8 +94,25 @@ const assert = require('node:assert/strict');
         reply(update, 202); return;
       }
     }
-    if (['/api/remote-control', '/api/remote-control/qr', '/api/playlist', '/api/stage-settings', '/api/devices', '/api/files'].includes(url.pathname) && role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
-    if (url.pathname === '/api/remote-control') { remoteGets++; reply({ links, token }); return; }
+    if (['/api/remote-control', '/api/remote-control/qr', '/api/playlist', '/api/stage-settings', '/api/devices', '/api/files', '/api/gateway', '/api/gateway/reconnect'].includes(url.pathname) && role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
+    if (url.pathname === '/api/gateway') {
+      if (req.method === 'GET') { const snapshot = { ...gateway }; if (gatewayDelay) await new Promise(resolve => setTimeout(resolve, gatewayDelay)); reply(snapshot); return; }
+      assert.equal(req.method, 'PUT'); assert.equal(req.headers['x-csrf-token'], 'test-csrf');
+      assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
+      if (gatewayFailSave) { reply({ error: { message: 'Gateway settings could not be saved.' } }, 500); return; }
+      assert(['lan', 'gateway'].includes(body.mode));
+      if (body.mode === 'gateway' && (!gateway.hasToken || body.url !== gateway.url)) assert.equal(body.token, gatewayRegistrationToken);
+      gateway = { mode: body.mode, url: body.url, hasToken: Boolean(body.token || gateway.hasToken), status: body.mode === 'gateway' ? 'connecting' : 'disabled', message: '', remoteURL: '', restart: body.mode === 'lan' && gateway.mode !== 'lan' };
+      reply(gateway); return;
+    }
+    if (url.pathname === '/api/gateway/reconnect') {
+      assert.equal(req.method, 'POST'); assert.equal(req.headers['x-csrf-token'], 'test-csrf'); assert.deepEqual(body, {});
+      gateway = { ...gateway, status: 'connecting', remoteURL: '' }; reply(gateway); return;
+    }
+    if (url.pathname === '/api/remote-control') {
+      remoteGets++;
+      reply(gateway.mode === 'gateway' ? { mode: 'gateway', token: gateway.status === 'connected' ? gatewayRemoteToken : '', links: gateway.status === 'connected' ? [{ label: 'Public gateway', url: gateway.remoteURL, qrURL: '/api/remote-control/qr?index=0' }] : [] } : { mode: 'lan', links, token }); return;
+    }
     if (url.pathname === '/api/remote-control/qr') { res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' }); res.end(imageFixture); return; }
     if (url.pathname === '/api/playlist') {
       if (req.method === 'PUT') {
@@ -136,9 +162,10 @@ const assert = require('node:assert/strict');
     if (url.pathname === '/api/stop') { state.revision++; state.stopEpoch++; state.activeCueId = ''; state.state = 'stopped'; broadcast(); }
     reply({ accepted: true }, 202);
   });
-  const adminServer = createServer('admin'), commandServer = createServer('command');
-  await Promise.all([adminServer, commandServer].map(server => new Promise(resolve => server.listen(0, '127.0.0.1', resolve))));
+  const adminServer = createServer('admin'), commandServer = createServer('command'), publicServer = createServer('command', publicPrefix);
+  await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.listen(0, '127.0.0.1', resolve))));
   const adminBase = `http://127.0.0.1:${adminServer.address().port}`, commandBase = `http://127.0.0.1:${commandServer.address().port}`;
+  const publicBase = `http://127.0.0.1:${publicServer.address().port}`;
   const fixtureLink = (label, base, index) => ({ label, url: `${base}/command#token=${token}`, qrURL: `/api/remote-control/qr?index=${index}` });
   links = [fixtureLink('Wi-Fi', commandBase, 0), fixtureLink('Ethernet <img src=x onerror="window.__xss=true">', 'http://192.0.2.15:8788', 1)];
   const browser = await chromium.launch({ headless: true });
@@ -229,6 +256,20 @@ const assert = require('node:assert/strict');
     await page.locator('#connection.live').waitFor();
     assert.equal(await page.locator('#pair-key').inputValue(), '', 'manual code is cleared after submission');
 
+    gateway = { mode: 'gateway', url: '', hasToken: false, status: 'unconfigured', message: '', remoteURL: '' };
+    const freshAdmin = await browser.newPage(); freshAdmin.on('pageerror', e => errors.push(e.message));
+    await freshAdmin.goto(adminBase + '/admin');
+    await freshAdmin.waitForFunction(() => document.getElementById('gateway-status').textContent.includes('Configure your gateway URL'));
+    assert.equal(await freshAdmin.locator('#gateway-mode').inputValue(), 'gateway', 'new installations start with public gateway mode');
+    assert.equal(await freshAdmin.locator('#remote-ready').isVisible(), false, 'unconfigured gateway mode does not advertise a LAN fallback');
+    assert.equal(await freshAdmin.locator('#gateway-fields').isVisible(), true);
+    assert.equal(requests.some(r => r.path === '/api/gateway' && r.body.mode), false, 'loading Admin never opts into LAN automatically');
+    await freshAdmin.locator('#gateway-mode').selectOption('lan');
+    await freshAdmin.locator('#save-gateway').click();
+    await freshAdmin.waitForFunction(() => document.getElementById('gateway-message').textContent.includes('restarting to enable local network'));
+    assert.deepEqual(requests.filter(r => r.path === '/api/gateway' && r.body.mode).at(-1).body, { mode: 'lan', url: '' });
+    await freshAdmin.close(); gateway.restart = false;
+
     const admin = await browser.newPage({ viewport: { width: 1280, height: 900 }, hasTouch: false }); admin.on('pageerror', e => errors.push(e.message));
     await admin.setViewportSize({ width: 1280, height: 900 }); await admin.goto(adminBase + '/admin');
     await admin.locator('.playlist-row').first().waitFor(); await admin.locator('#remote-ready').waitFor();
@@ -238,6 +279,65 @@ const assert = require('node:assert/strict');
     assert.equal(await admin.locator('.playlist-row').count(), 4);
     assert.equal(await admin.locator('#playlist img').count(), 0);
     assert.equal(await admin.locator('#audio-output option').count(), 2);
+    await admin.waitForFunction(() => document.getElementById('gateway-status').textContent.includes('Local network'));
+    assert.equal(await admin.locator('#gateway-mode').inputValue(), 'lan');
+    assert.equal(await admin.locator('#gateway-fields').isVisible(), false);
+    await admin.locator('#gateway-mode').selectOption('gateway');
+    await admin.locator('#gateway-url').fill('https://stage.example.com/smartstage');
+    await admin.locator('#gateway-token').fill(gatewayRegistrationToken);
+    await admin.evaluate(() => loadGateway());
+    assert.equal(await admin.locator('#gateway-mode').inputValue(), 'gateway', 'status polling preserves the unsaved connection mode');
+    assert.equal(await admin.locator('#gateway-url').inputValue(), 'https://stage.example.com/smartstage');
+    assert.equal(await admin.locator('#gateway-token').inputValue(), gatewayRegistrationToken, 'polling cannot overwrite a newly entered secret');
+    gatewayFailSave = true;
+    await admin.locator('#save-gateway').click();
+    await admin.waitForFunction(() => document.getElementById('gateway-message').textContent.includes('Could not save'));
+    assert.equal(await admin.locator('#gateway-token').inputValue(), '', 'a failed save clears the submitted gateway secret');
+    assert.equal(await admin.evaluate(() => localStorage.length + sessionStorage.length), 0);
+    gatewayFailSave = false;
+    await admin.locator('#gateway-token').fill(gatewayRegistrationToken);
+    gatewayDelay = 600;
+    const staleGateway = admin.evaluate(() => loadGateway());
+    await admin.waitForTimeout(50);
+    await admin.locator('#save-gateway').click();
+    await admin.waitForFunction(() => document.getElementById('gateway-message').textContent.startsWith('Saved.'));
+    await staleGateway; gatewayDelay = 0;
+    assert.equal(await admin.locator('#gateway-mode').inputValue(), 'gateway', 'an older LAN status response cannot revert a just-saved gateway');
+    assert.equal(await admin.locator('#gateway-token').inputValue(), '');
+    assert.match(await admin.locator('#gateway-token-hint').textContent(), /token is stored/);
+    assert.equal(await admin.locator('#remote-ready').isVisible(), false, 'connecting does not retain a stale LAN link or QR code');
+    assert.match(await admin.locator('#remote-unavailable').textContent(), /gateway is not connected/);
+    gateway = { ...gateway, status: 'connected', remoteURL: `https://stage.example.com${publicPrefix}/command#token=${gatewayRemoteToken}` };
+    await admin.waitForFunction(expected => document.getElementById('remote-url').textContent === expected, gateway.remoteURL, { timeout: 7000 });
+    assert.equal(await admin.locator('#remote-code-row').isVisible(), false, 'public links do not present a long key as an eight-digit LAN code');
+    assert.equal(await admin.locator('#remote-qr').getAttribute('src'), '/api/remote-control/qr?index=0', 'QR generation remains local to Admin');
+    assert.match(await admin.locator('#gateway-status').textContent(), /Local network remote access is disabled/);
+    assert.match(await admin.locator('#network-note-text').textContent(), /Keep awake/);
+    assert.equal(await admin.locator('#gateway-token').inputValue(), '', 'status API never repopulates the registration secret');
+    await admin.locator('#save-gateway').click();
+    await admin.waitForFunction(() => !document.getElementById('save-gateway').disabled);
+    assert.equal(requests.filter(r => r.path === '/api/gateway' && r.body.mode).at(-1).body.token, undefined, 'blank token keeps the stored token without echoing it');
+    gateway = { ...gateway, status: 'error', message: 'Connection interrupted.', remoteURL: '' };
+    await admin.evaluate(() => loadGateway());
+    assert.equal(await admin.locator('#remote-ready').isVisible(), false);
+    assert.equal(await admin.locator('#remote-url').getAttribute('href'), null, 'a disconnected gateway removes its obsolete public link');
+    assert.equal(await admin.locator('#remote-qr').getAttribute('src'), null);
+    await admin.locator('#reconnect-gateway').click();
+    await admin.waitForFunction(() => document.getElementById('gateway-message').textContent.startsWith('Reconnecting.'));
+    assert.equal(requests.filter(r => r.path === '/api/gateway/reconnect').length, 1);
+    gateway = { ...gateway, status: 'connected', remoteURL: `https://stage.example.com/smartstage/e/${'23'.repeat(16)}/command#token=${gatewayRemoteToken}`, message: '' };
+    await admin.evaluate(() => loadGateway());
+    assert.equal(await admin.locator('#remote-url').textContent(), gateway.remoteURL, 'reconnection replaces the endpoint URL');
+    await admin.locator('#remote-section').scrollIntoViewIfNeeded();
+    await admin.screenshot({ path: path.join(output, 'admin-public-gateway.png') });
+    await admin.locator('#gateway-url').fill('https://another.example.com/smartstage');
+    assert.equal(await admin.locator('#gateway-token').getAttribute('required'), '', 'a different gateway requires a new token');
+    await admin.locator('#gateway-url').fill(gateway.url);
+    await admin.locator('#gateway-mode').selectOption('lan');
+    await admin.locator('#save-gateway').click();
+    await admin.waitForFunction(() => document.getElementById('gateway-status').textContent.includes('Local network remote control is enabled'));
+    await admin.locator('#remote-ready').waitFor();
+    assert.equal(await admin.locator('#remote-url').textContent(), links[0].url);
     await untilPresence();
     async function untilPresence() { await admin.waitForFunction(() => !document.getElementById('quit-app').disabled); assert(requests.some(r => r.path === '/api/admin-presence' && r.listenerRole === 'admin'), 'Admin establishes authenticated presence'); }
     assert.equal(await admin.locator('#choose-files').isVisible(), false, 'the native picker stays hidden until the desktop host is ready');
@@ -597,6 +697,52 @@ const assert = require('node:assert/strict');
     await invalid.goto(commandBase + '/command'); await invalid.locator('#pairing').waitFor();
     assert.match(await invalid.locator('#pair-form').textContent(), /Scan the QR code/);
     assert.equal(requests.some(r => r.listenerRole === 'command' && ['/api/admin-presence', '/api/quit', '/api/choose-files'].includes(r.path)), false, 'remote pages never call local lifecycle endpoints');
+    const publicContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+    const publicPage = await publicContext.newPage(); publicPage.on('pageerror', e => errors.push(e.message));
+    await publicPage.addInitScript(() => {
+      const nativeFetch = window.fetch;
+      window.fetch = (...args) => { if (String(args[0]).endsWith('/api/pair')) window.__pairingHash = location.hash; return nativeFetch(...args); };
+    });
+    await publicPage.goto(`${publicBase}${publicPrefix}/command#token=${gatewayRemoteToken}`);
+    await publicPage.locator('#connection.live').waitFor();
+    assert.equal(await publicPage.evaluate(() => location.hash), '');
+    assert.equal(await publicPage.evaluate(() => window.__pairingHash), '', 'public fragment is consumed before sending its key');
+    assert.equal(await publicPage.evaluate(() => localStorage.length + sessionStorage.length), 0);
+    assert.equal(await publicPage.locator('#admin-view').isVisible(), false);
+    assert.equal(await publicPage.locator('#pair-key').getAttribute('maxlength'), '64');
+    assert(publicRequests.includes(publicPrefix + '/assets/app.js'));
+    assert(publicRequests.includes(publicPrefix + '/assets/wake-lock.js'));
+    assert(publicRequests.includes(publicPrefix + '/assets/style.css'));
+    assert(publicRequests.includes(publicPrefix + '/api/events'), 'public EventSource stays inside its endpoint prefix');
+    assert.equal(await publicPage.locator('.cue').count(), state.cues.filter(c => !c.hidden).length);
+    const publicCommandsBefore = requests.length;
+    await publicPage.locator('.cue').first().tap();
+    await publicPage.locator('#remote-stage').tap();
+    await publicPage.locator('#stop').tap();
+    await publicPage.keyboard.press('Escape');
+    await publicPage.waitForTimeout(250);
+    for (const command of ['/api/play', '/api/stage-output', '/api/stop', '/api/emergency-stop']) {
+      const request = requests.slice(publicCommandsBefore).find(r => r.requestPath === publicPrefix + command);
+      assert(request, `public ${command} stays inside the endpoint`);
+      assert.equal(request.origin, publicBase);
+      assert.equal(request.csrf, 'test-csrf');
+    }
+    const publicPairs = requests.filter(r => r.requestPath === publicPrefix + '/api/pair').length;
+    await publicPage.reload(); await publicPage.locator('#connection.live').waitFor();
+    assert.equal(requests.filter(r => r.requestPath === publicPrefix + '/api/pair').length, publicPairs, 'scoped public cookie resumes on reload');
+    const publicCookie = (await publicContext.cookies()).find(cookie => cookie.name === 'smartstage_command_session');
+    assert.equal(publicCookie.path, publicPrefix); assert.equal(publicCookie.httpOnly, true);
+    await publicPage.locator('#logout').click(); await publicPage.locator('#pairing').waitFor();
+    assert.match(await publicPage.locator('#pair-guidance').textContent(), /current QR code/);
+    assert.match(await publicPage.locator('#pair-network-hint').textContent(), /public gateway/);
+    assert(requests.some(r => r.requestPath === publicPrefix + '/api/logout'));
+    await publicPage.locator('#pair-key').fill(gatewayRemoteToken); await publicPage.getByRole('button', { name: 'Connect', exact: true }).click();
+    await publicPage.locator('#connection.live').waitFor();
+    assert.equal(await publicPage.locator('#pair-key').inputValue(), '');
+    await publicPage.screenshot({ path: path.join(output, 'command-public-gateway.png'), fullPage: true });
+    assert(publicRequests.every(url => url.startsWith(publicPrefix + '/')), 'no public asset, API, or event request escapes its endpoint');
+    assert.equal(publicRequests.some(url => /local-session|admin-presence|gateway|playlist|files|quit/.test(url)), false, 'public remote does not request any local Admin API');
+    await publicContext.close();
     const beforeQuitDocuments = adminDocumentLoads;
     await admin.locator('#quit-app').click();
     await admin.locator('#app-closed').waitFor();
@@ -618,8 +764,8 @@ const assert = require('node:assert/strict');
     assert.equal(adminDocumentLoads, beforeQuitDocuments + 1, 'relaunch refreshes the existing Admin tab once rather than opening a new page');
     assert.equal(requests.filter(r => r.path === '/api/quit').length, 1, 'reconnection never repeats Quit');
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesHiddenByDefault: true, hiddenFileToggleAndNavigation: true, hiddenFileResponseRace: true, compactDesktopFileRows: true, hostFileDragUsesOriginalPaths: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesHiddenByDefault: true, hiddenFileToggleAndNavigation: true, hiddenFileResponseRace: true, compactDesktopFileRows: true, hostFileDragUsesOriginalPaths: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, native file-picker capability/request, host-file selection/dragging, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
-  } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer].map(server => new Promise(resolve => server.close(resolve)))); }
+  } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }
 })().catch(e => { console.error(e); process.exit(1); });

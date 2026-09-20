@@ -20,6 +20,44 @@ jobs:
       - run: go test -race ./...
       - run: go vet ./...
       - run: node --test scripts/wake-lock.test.cjs
+  gateway:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.26.5'
+          cache: false
+      - name: Install proxy configuration validators
+        run: sudo apt-get update && sudo apt-get install -y nginx caddy
+      - name: Test gateway and installer with real proxy configuration validation
+        run: go test -race -v ./internal/gateway ./internal/gatewayinstall ./internal/remote ./internal/httpapi ./cmd/smartstage-gateway
+      - name: Install browser verification tools
+        run: |
+          npm ci --prefix scripts/browser --ignore-scripts --no-audit --no-fund
+          node scripts/browser/node_modules/playwright/cli.js install --with-deps chromium
+      - name: Exercise real HTTPS remote, QR and browser commands
+        env:
+          SMARTSTAGE_TEST_GATEWAY_BROWSER: '1'
+          NODE_PATH: ${{ github.workspace }}/scripts/browser/node_modules
+        run: go test ./internal/httpapi -run TestGatewayBrowser -count=1 -v
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: gateway-browser-checks
+          path: dist/gateway-browser-checks/
+          if-no-files-found: warn
+      - name: Build and inspect static Linux binaries
+        env:
+          VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'dev' }}
+        run: |
+          sh scripts/build-gateway.sh
+          dist/gateway/smartstage-gateway-linux-amd64 --version
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: gateway-linux
+          path: dist/gateway/
+          if-no-files-found: error
   native:
     strategy:
       fail-fast: false
@@ -70,6 +108,7 @@ jobs:
         shell: bash
         env:
           CGO_ENABLED: '0'
+          SMARTSTAGE_TEST_FIREWALL: ${{ matrix.os == 'windows' && '1' || '0' }}
         run: go test ./...
       - name: Native executable startup
         shell: bash
@@ -80,6 +119,7 @@ jobs:
           "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix" --list > "dist/native-enumeration-${{ matrix.os }}-${{ matrix.arch }}.json"
           python3 scripts/native-smoke.py "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix"
           python3 scripts/application-smoke.py "./dist/smartstage-${{ matrix.os }}-${{ matrix.arch }}$suffix" 10
+          python3 scripts/verify-network-mode.py "./dist/smartstage-${{ matrix.os }}-${{ matrix.arch }}$suffix"
       - name: Verify the ZIP, automatic system browser launch and local Admin
         shell: bash
         env:
@@ -129,7 +169,7 @@ jobs:
           if-no-files-found: error
   publish:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [shared, native]
+    needs: [shared, native, gateway]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -140,14 +180,18 @@ jobs:
           pattern: native-*
           merge-multiple: true
           path: dist
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: gateway-linux
+          path: dist/gateway
       - name: Publish verified builds as a preview
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
           gh release create "$RELEASE_TAG" dist/smartstage-*.zip dist/smartstage-*.zip.sha256 \
-            dist/smartstage-*.imports.txt dist/smartstage-*.icon.json dist/smartstage-*.http-smoke.json \
-            dist/toolchain-* dist/native-enumeration-* dist/native-harness-*.smoke.json \
+            dist/smartstage-*.imports.txt dist/smartstage-*.icon.json dist/smartstage-*.http-smoke.json dist/smartstage-*.network-mode.json \
+            dist/toolchain-* dist/native-enumeration-* dist/native-harness-*.smoke.json dist/gateway/* \
             --verify-tag --prerelease --title "Smart Stage $RELEASE_TAG" --notes-file docs/release-notes.md
       - name: Mark the failed preview 9 updater as superseded
         if: github.ref_name == 'v0.1.0-preview.10'

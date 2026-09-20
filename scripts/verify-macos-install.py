@@ -39,6 +39,11 @@ FIREWALL_TOOL = "/usr/libexec/ApplicationFirewall/socketfilterfw"
 FIREWALL_AUTH = "do shell script command with administrator privileges"
 
 
+def gateway_default(version):
+    legacy = re.fullmatch(r"v0[.]1[.]0-preview[.](\d+)", version)
+    return not legacy or int(legacy[1]) >= 15
+
+
 def run(command, **kwargs):
     return subprocess.run(command, check=True, text=True, capture_output=True,
                           timeout=180, **kwargs)
@@ -84,10 +89,14 @@ def install(script, directory, version, launch=False, expect_failure=False, conf
         environment.pop("SMARTSTAGE_NO_LAUNCH", None)
     else:
         environment["SMARTSTAGE_NO_LAUNCH"] = "1"
+    environment.pop("SMARTSTAGE_SKIP_FIREWALL", None)
     if configure_firewall:
-        environment.pop("SMARTSTAGE_SKIP_FIREWALL", None)
+        environment["SMARTSTAGE_CONFIGURE_LAN_FIREWALL"] = "1"
     else:
-        environment["SMARTSTAGE_SKIP_FIREWALL"] = "1"
+        environment.pop("SMARTSTAGE_CONFIGURE_LAN_FIREWALL", None)
+        selected_version = version or re.search(r'version=\$\{SMARTSTAGE_VERSION:-(v[0-9A-Za-z._-]+)\}', script)[1]
+        if not gateway_default(selected_version):
+            environment["SMARTSTAGE_SKIP_FIREWALL"] = "1"
     # stdin deliberately reproduces the documented curl | sh entry point.
     result = subprocess.run(["/bin/sh"], input=script, env=environment,
                             text=True, capture_output=True, timeout=240)
@@ -346,7 +355,15 @@ def default_launch(script, directory, version, report):
                          "-iTCP:8787", "-sTCP:LISTEN", "-Fn"]).stdout.splitlines()
         addresses = [line[1:] for line in listeners if line.startswith("n")]
         assert addresses == ["127.0.0.1:8787"], addresses
-        assert get(8788, "/admin")[0] in (403, 404)
+        if gateway_default(version):
+            with socket.socket() as remote_probe:
+                remote_probe.settimeout(2)
+                assert remote_probe.connect_ex(("127.0.0.1", 8788)) != 0, \
+                    "Fresh installation must not open the LAN listener"
+            report.update(gatewayModeDefault=True, lanListenerClosedByDefault=True)
+        else:
+            assert get(8788, "/admin")[0] in (403, 404)
+            report.update(legacyLANRelease=True, remoteListenerRejectsAdmin=True)
         original = (bundle / "Contents/MacOS/smartstage").read_bytes()
         refusal = install(script, directory, version, expect_failure=True)
         assert "running" in (refusal.stdout + refusal.stderr).lower(), "Refusal must explain the running app"
@@ -359,7 +376,7 @@ def default_launch(script, directory, version, report):
             pid = None
         report.update(installerLaunchedBundleAndCore=True, kernelExecutablePathMatched=True,
                       adminServedOnLoopback=True, adminListenerOnly127001=True,
-                      remoteListenerRejectsAdmin=True, runningAppReplacementRefused=True,
+                      runningAppReplacementRefused=True,
                       runningAppLeftServing=True)
     finally:
         stop_core(pid or find_core_pid(bundle))
@@ -496,14 +513,24 @@ def main():
                 f.write(b"operator configuration must survive\n")
             xattr_write(config_marker, CUSTOM_ATTRIBUTE, CUSTOM_VALUE)
             expected = official_bundle(scratch, args.version, architecture, report)
+            default_firewall_globals = firewall_globals()
+            default_firewall_apps = firewall_apps()
             first_install = install(script, destination, None if args.version == default_version else args.version)
-            assert "Firewall setup skipped (SMARTSTAGE_SKIP_FIREWALL=1)" in first_install.stdout
+            if gateway_default(args.version):
+                assert "Public gateway mode needs no incoming-connection firewall rule" in first_install.stdout
+                report["defaultGatewayInstallNeedsNoFirewallAuthorization"] = True
+            else:
+                assert "Firewall setup skipped (SMARTSTAGE_SKIP_FIREWALL=1)" in first_install.stdout
+                report.update(legacyLANRelease=True, firewallSkipOptionRespected=True)
+            assert firewall_globals() == default_firewall_globals, "Default install changed global firewall settings"
+            assert firewall_apps() == default_firewall_apps, "Default install changed application firewall rules"
+            report["defaultInstallFirewallRulesUnchanged"] = gateway_default(args.version)
+            report["installationCheckFirewallRulesUnchanged"] = True
             assert bundle.is_dir() and not bundle.is_symlink()
             assert_no_quarantine(bundle)
             verify_bundle(bundle, expected, architecture, args.version, scratch, report)
             require_free_default_ports()
             report.update(noLaunchOptionRespected=True,
-                          firewallSkipOptionRespected=True,
                           defaultReleaseSelectionTested=args.version == default_version)
 
             install(quarantined_installer(script), destination, args.version)

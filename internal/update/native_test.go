@@ -17,6 +17,9 @@ import (
 // helper, and the candidate. Production helper code performs the handoff; only
 // the tiny candidate startup/receipt behavior is supplied by this test binary.
 func TestMain(m *testing.M) {
+	if restartTestProcess() {
+		return
+	}
 	if len(os.Args) > 2 && os.Args[1] == "--smartstage-apply-update" {
 		if err := RunHelper(os.Args[2]); err != nil {
 			fmt.Fprintln(os.Stderr, err)

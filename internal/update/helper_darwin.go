@@ -126,7 +126,7 @@ func firewallState(path string) string {
 	}
 	return "unknown"
 }
-func refreshFirewall(target Target, logger *log.Logger) string {
+func configureLANFirewall(target Target, logger *log.Logger) string {
 	if os.Getenv("SMARTSTAGE_SKIP_FIREWALL") == "1" {
 		logger.Printf("Firewall setup skipped (SMARTSTAGE_SKIP_FIREWALL=1)")
 		return "Firewall setup was explicitly skipped (SMARTSTAGE_SKIP_FIREWALL=1); no incoming-connection allowance was verified."
@@ -158,10 +158,10 @@ end run
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Printf("Firewall approval failed: %v: %s", err, strings.TrimSpace(string(output)))
-		return "The update was installed, but macOS firewall approval was cancelled or denied. Allow incoming connections for Smart Stage in System Settings > Network > Firewall > Options; a managed Mac may require your administrator."
+		return "macOS firewall approval was cancelled or denied. Allow incoming connections for Smart Stage in System Settings > Network > Firewall > Options; a managed Mac may require your administrator."
 	}
 	if firewallState(core) != "allowed" || (target.Kind == "bundle" && firewallState(bundle) == "blocked") {
-		return "The update was installed, but its incoming-connection firewall rule could not be verified. Check Smart Stage in System Settings > Network > Firewall > Options."
+		return "The incoming-connection firewall rule could not be verified. Check Smart Stage in System Settings > Network > Firewall > Options."
 	}
 	logger.Printf("Verified scoped macOS firewall allowance")
 	return ""

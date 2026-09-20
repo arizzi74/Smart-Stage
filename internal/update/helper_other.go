@@ -71,4 +71,4 @@ func restartCommand(target Target, args []string) *exec.Cmd {
 func verifyNativeSignature(context.Context, Target, string) error {
 	return errors.New("unsupported update platform")
 }
-func refreshFirewall(Target, *log.Logger) string { return "" }
+func configureLANFirewall(Target, *log.Logger) string { return "" }

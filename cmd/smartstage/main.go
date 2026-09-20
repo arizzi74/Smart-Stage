@@ -14,6 +14,7 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -26,6 +27,7 @@ import (
 	"smartstage/internal/lan"
 	"smartstage/internal/platform"
 	"smartstage/internal/playback"
+	"smartstage/internal/remote"
 	"smartstage/internal/store"
 	"smartstage/internal/update"
 	"smartstage/internal/web"
@@ -40,6 +42,17 @@ func (r *rootsFlag) String() string     { return strings.Join(*r, ", ") }
 func (r *rootsFlag) Set(v string) error { *r = append(*r, v); return nil }
 
 func main() {
+	if len(os.Args) >= 5 && os.Args[1] == "--smartstage-restart" && os.Args[4] == "--" {
+		pid, err := strconv.Atoi(os.Args[2])
+		if err == nil {
+			err = update.RunRestartHelper(pid, os.Args[3], os.Args[5:])
+		}
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Smart Stage restart:", err)
+			os.Exit(1)
+		}
+		return
+	}
 	// Helper mode performs replacement only after the original process exits.
 	if len(os.Args) == 3 && os.Args[1] == "--smartstage-apply-update" {
 		if err := update.RunHelper(os.Args[2]); err != nil {
@@ -157,20 +170,25 @@ func main() {
 			return fmt.Errorf("cannot start localhost Admin on port %d (check another Smart Stage instance): %w", *adminPort, err)
 		}
 		defer adminListener.Close()
-		listener, err := net.Listen("tcp", net.JoinHostPort(*bind, fmt.Sprint(*port)))
+		settings, err := remote.Load(*configDir)
 		if err != nil {
-			return fmt.Errorf("cannot listen on %s:%d (check port conflicts): %w", *bind, *port, err)
+			return err
 		}
-		defer listener.Close()
 		*adminPort = adminListener.Addr().(*net.TCPAddr).Port
-		*port = listener.Addr().(*net.TCPAddr).Port
 		service := app.New(backend, fileBrowser, storage, config)
 		defer service.Close()
 		authentication := auth.New()
 		adminAPI := httpapi.NewAdmin(service, authentication, web.Handler(), []string{"127.0.0.1", "localhost"}, *adminPort)
-		commandAPI := httpapi.NewCommand(service, authentication, web.Handler(), lan.Hosts(addresses, *bind), *port)
-		adminAPI.SetRemoteLinks(remoteLinks(addresses, *bind, *advertise, *port, authentication.CommandToken()))
-		adminServer, commandServer := newServer(adminAPI), newServer(commandAPI)
+		adminServer := newServer(adminAPI)
+		serveError := make(chan error, 2)
+		local := &lanControl{bind: *bind, advertise: *advertise, port: *port, addresses: addresses, auth: authentication, app: service, admin: adminAPI, errors: serveError}
+		if settings.Mode == "lan" {
+			if err := local.enable(); err != nil {
+				return err
+			}
+			*port = local.port
+		}
+		defer local.disable()
 		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer cancel()
 		adminAPI.SetQuit(cancel)
@@ -193,6 +211,33 @@ func main() {
 		for _, root := range roots {
 			restartArgs = append(restartArgs, "--media-root", root)
 		}
+		restartReady := make(chan *update.Restart, 1)
+		remoteManager, err := remote.New(ctx, settings, remote.Options{ConfigDir: *configDir,
+			DisableLAN: local.disable, Changed: local.changed,
+			Handler: func(publicURL, prefix string, authentication *auth.Manager) http.Handler {
+				handler, err := httpapi.NewGatewayCommand(service, authentication, web.Handler(), publicURL, prefix)
+				if err != nil {
+					return nil
+				}
+				return handler
+			},
+			ReserveRestart: func() (func(), func(), error) {
+				release, err := service.ReserveUpdate()
+				if err != nil {
+					return nil, nil, err
+				}
+				prepared, err := update.PrepareRestart(restartArgs, *configDir)
+				if err != nil {
+					release()
+					return nil, nil, err
+				}
+				return func() { restartReady <- prepared }, release, nil
+			}})
+		if err != nil {
+			return err
+		}
+		defer remoteManager.Close()
+		adminAPI.SetGateway(remoteManager)
 		updater := update.New(update.Options{CurrentVersion: version, Executable: executable,
 			Args: restartArgs, ConfigDir: *configDir, AutoInstall: !*noAutoUpdate && *updateReceipt == "", Reserve: service.ReserveUpdate,
 			Ready: func(prepared *update.Prepared) { updateReady <- prepared }})
@@ -209,11 +254,8 @@ func main() {
 		adminAPI.SetUpdater(updater)
 		_ = service.Validate()
 		updater.Start(ctx)
-		serveError := make(chan error, 2)
 		go func() { serveError <- adminServer.Serve(httpapi.BoundConnections(adminListener)) }()
-		go func() { serveError <- commandServer.Serve(httpapi.BoundConnections(listener)) }()
 		defer adminServer.Close()
-		defer commandServer.Close()
 		fmt.Printf("Smart Stage %s\n", version)
 		adminURL := lan.URL("127.0.0.1", *adminPort, "/admin")
 		platform.DesktopAdmin(adminURL)
@@ -222,12 +264,15 @@ func main() {
 				return err
 			}
 		}
-		fmt.Printf("Admin: %s\nRemote listener: %s\n", adminURL, lan.URL(*bind, *port, "/command"))
+		fmt.Printf("Admin: %s\nRemote mode: %s\n", adminURL, settings.Mode)
+		if settings.Mode == "lan" {
+			fmt.Printf("Remote listener: %s\n", lan.URL(*bind, *port, "/command"))
+		}
 		exitHint := "Ctrl+C exits"
 		if runtime.GOOS == "darwin" && os.Getenv("SMARTSTAGE_APP_LAUNCH") == "1" {
 			exitHint = "Right-click the Smart Stage Dock icon and choose Quit"
 		}
-		fmt.Printf("Open Admin to scan or copy the remote-control link. %s; STOP retains an enabled black stage.\n", exitHint)
+		fmt.Printf("Open Admin to scan or copy the remote-control link. %s; STOP returns to the stage background.\n", exitHint)
 		browserCtx, cancelBrowser := context.WithCancel(ctx)
 		defer cancelBrowser()
 		adminBrowser := newAdminBrowser(browserCtx, adminAPI.HasAdminPresence,
@@ -272,6 +317,16 @@ func main() {
 					slog.Warn("Could not add files from the desktop", "error", err)
 				}
 				platform.DesktopFileResult(request.ID, message)
+			case restart := <-restartReady:
+				pendingUpdate = restart
+				cancelBrowser()
+				remoteManager.Close()
+				_ = local.disable()
+				service.Close()
+				shutdownCtx, done := context.WithTimeout(context.Background(), 3*time.Second)
+				_ = adminServer.Shutdown(shutdownCtx)
+				done()
+				return nil
 			case prepared := <-updateReady:
 				if ctx.Err() != nil {
 					_ = prepared.Abort()
@@ -284,7 +339,8 @@ func main() {
 				service.Close()
 				shutdownCtx, done := context.WithTimeout(context.Background(), 3*time.Second)
 				_ = adminServer.Shutdown(shutdownCtx)
-				_ = commandServer.Shutdown(shutdownCtx)
+				remoteManager.Close()
+				_ = local.disable()
 				done()
 				return nil
 			case <-ctx.Done():
@@ -292,7 +348,8 @@ func main() {
 				shutdownCtx, done := context.WithTimeout(context.Background(), 3*time.Second)
 				defer done()
 				_ = adminServer.Shutdown(shutdownCtx)
-				_ = commandServer.Shutdown(shutdownCtx)
+				remoteManager.Close()
+				_ = local.disable()
 				return nil
 			case err := <-serveError:
 				if errors.Is(err, http.ErrServerClosed) {
@@ -307,8 +364,7 @@ func main() {
 				}
 				if !reflect.DeepEqual(addresses, next) {
 					addresses = next
-					commandAPI.SetHosts(lan.Hosts(addresses, *bind))
-					adminAPI.SetRemoteLinks(remoteLinks(addresses, *bind, *advertise, *port, authentication.CommandToken()))
+					local.addressesChanged(addresses)
 					fmt.Println("LAN addresses changed; remote-control links refreshed in Admin.")
 				}
 			}

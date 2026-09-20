@@ -82,3 +82,12 @@
 #fade-seconds{max-width:100px;margin:0}
 #current-background{padding:10px 12px;border-left:2px solid var(--accent);background:#adecd109}
 #stage-settings-message:empty{display:none}
+.gateway-form{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:20px}
+.gateway-form>label{max-width:480px;margin-top:0}
+.gateway-fields{display:grid;grid-template-columns:1fr 1fr;gap:0 20px}
+.gateway-fields label{min-width:0;margin-top:8px}
+.gateway-fields>.hint{grid-column:1/-1;margin:4px 0 12px}
+.gateway-actions{flex-wrap:wrap;margin-top:16px}
+#gateway-message:empty{display:none}
+#gateway-status{margin-bottom:0}
+@media(max-width:650px){.gateway-fields{grid-template-columns:1fr}}

@@ -19,6 +19,13 @@ func TestEmbeddedLicenseIncludesCompleteUpstreamNotice(t *testing.T) {
 	if !strings.Contains(Licenses(), string(upstream)) {
 		t.Fatal("the one-executable distribution omits part of its QR dependency's license")
 	}
+	transport, err := os.ReadFile(filepath.Join("..", "..", "vendor", "github.com", "coder", "websocket", "LICENSE.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(Licenses(), string(transport)) {
+		t.Fatal("the desktop distribution omits its gateway transport license")
+	}
 }
 
 func TestPairingQRRoundTrip(t *testing.T) {

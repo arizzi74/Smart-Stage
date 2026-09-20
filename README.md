@@ -23,14 +23,14 @@ Open Terminal, paste this command, and press Return:
 curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
 ```
 
-The installer detects Apple Silicon or Intel, downloads the matching preview 14
+The installer detects Apple Silicon or Intel, downloads the matching preview 15
 app ZIP, verifies its SHA-256 checksum, and installs **Smart Stage.app** with its
 icon into `~/Applications`. It removes `com.apple.quarantine` only from that app
 and its contents, then launches it. Copying the app needs no administrator
-password, and no extra runtime is required. To allow phone/tablet connections, the installer
-also configures Smart Stage's incoming-connection rule in the macOS firewall.
-macOS may request administrator authorization for that rule. The firewall stays
-enabled and other applications' rules are preserved. Saved shows are retained.
+password, and no extra runtime is required. Public gateway mode is now the default:
+installation and subsequent updates need no incoming firewall rule. Explicitly
+selecting **Local LAN** in Admin restarts Smart Stage and requests authorization
+to configure only this app's incoming rule. Saved shows are retained.
 
 Admin opens automatically in Smart Stage's own window. You can close Terminal after
 installation: the app runs independently, without a Terminal window. Its icon
@@ -66,12 +66,12 @@ never restart a running show. Admin's **Updates** section shows progress and
 also offers **Update and restart** while stopped with stage output disabled.
 After any restart, reconnect phones/tablets using the new QR code.
 
-Mac updates retain the app icon, Dock controls and Terminal-free launch. macOS
-may request administrator approval to refresh this app's firewall allowance.
-Current Mac releases use ad-hoc signing, so the updater refreshes the allowance
-after each replacement; you should not need to re-enable the app in Firewall
-Settings manually. Reusing a stable Developer ID signature and verifying the
-existing allowance would be needed to avoid that repeated authorization.
+Mac updates retain the app icon, Dock controls and Terminal-free launch. In
+public gateway mode they leave the firewall unchanged. Local LAN mode refreshes
+the app's scoped incoming rule and can request administrator approval. An upgrade
+from preview 14 or earlier still runs that older version's updater, so that one
+upgrade can request its previous firewall approval; later gateway-mode updates
+skip it.
 Windows updates replace the executable in its current folder. The installation
 folder must be writable by your user. No additional runtime or permanent updater
 service is installed. If a replacement cannot start, the updater attempts to
@@ -82,6 +82,35 @@ Preview versions receive newer previews and stable releases; stable versions
 receive stable releases. To keep checks but disable automatic installation for
 a particular launch, use `--no-auto-update`.
 
+## Public gateway
+
+On your Linux server (AMD64 or ARM64, systemd), run:
+
+```sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/install-gateway.sh | sh
+```
+
+The installer lists suitable **existing nginx HTTPS virtual hosts**. Choose one
+and it adds `/smartstage`, preserving its other routes. If nginx is absent, it
+offers Caddy installation and asks for a domain pointing at the server. It
+installs a static Go binary, an unprivileged systemd service, and generates a
+private registration token. See [gateway installation](docs/gateway-install.md)
+for proxy prerequisites, manual setup, logs and removal.
+
+In Smart Stage Admin → **Remote control**, keep **Public gateway** selected,
+enter the HTTPS URL and registration token printed by the installer, then Save.
+When connected, scan the public URL's QR code on a phone/tablet. The phone can use
+Wi-Fi or cellular data. Its link has a separate random control secret; it never
+contains the server's registration token. Only remote controls pass through the
+gateway; Admin, host file browsing and media remain on the event computer.
+
+Smart Stage makes an outbound encrypted connection. **The LAN listener stays
+closed**, including during outages or before gateway configuration. Reconnection
+is automatic and rotates the public link/QR code. Gateway mode requires an
+internet connection. To use a local network without a gateway, select **Local
+LAN**, stop playback and switch the stage off, then Save. Smart Stage restarts,
+configures its incoming firewall allowance, and displays local addresses.
+
 ## Download ZIPs
 
 Download the ZIP for your computer, extract it, and open the executable inside.
@@ -90,15 +119,15 @@ executable, including both browser interfaces and native playback.
 
 | Computer | Download |
 | --- | --- |
-| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.14/smartstage-darwin-arm64.zip) |
-| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.14/smartstage-darwin-amd64.zip) |
-| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.14/smartstage-windows-arm64.zip) |
-| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.14/smartstage-windows-amd64.zip) |
+| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-darwin-arm64.zip) |
+| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-darwin-amd64.zip) |
+| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-windows-arm64.zip) |
+| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-windows-amd64.zip) |
 
-[Release notes and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.14).
+[Release notes and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.15).
 Windows executables include the Smart Stage icon. Mac app bundles with the icon
-are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.14/smartstage-darwin-arm64.app.zip)
-and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.14/smartstage-darwin-amd64.app.zip).
+are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-darwin-arm64.app.zip)
+and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.15/smartstage-darwin-amd64.app.zip).
 Each app bundle includes the same core executable plus its Finder launcher and
 icon. Opening `Smart Stage.app` runs it without Terminal and opens a dedicated
 Admin window with native Finder drag-and-drop. It uses the WebKit framework
@@ -138,10 +167,10 @@ acceptance testing.
 3. Select audio and stage outputs, then Save outputs. Explicitly acknowledge
    primary/only-display coverage. Audio works without a stage display. Use an
    extended desktop for independent projection; mirrored displays are identified.
-4. In Admin, find **Remote control**. Scan its QR code with a phone/tablet camera
-   on the same network, or copy its URL. That URL includes a random numeric token
-   and opens the remote controls without typing a separate pairing key. Use the
-   address for the network your phone can reach.
+4. In Admin, find **Remote control**. Configure your public gateway URL/token,
+   then scan its QR code or copy its URL. Alternatively, explicitly select
+   **Local LAN** and save to restart with a local listener and firewall setup.
+   The link pairs the browser without a separate key entry.
 5. In **Stage and sound**, choose an optional saved image or looping video
    background. Enable its soundtrack if wanted. Set optional audio fades and
    crossfades (one second by default, adjustable from 0.1 to 30 seconds).
@@ -176,20 +205,20 @@ When upgrading from preview 11 or earlier, refresh already open Admin and remote
 pages once to load the new interface and Admin reconnect behavior.
 
 The remote's optional **Keep awake** control uses the browser Screen Wake Lock
-API. It requires HTTPS and a supported browser; the default HTTP LAN address
-shows **Needs HTTPS** and cannot prevent screen sleep. For that address, adjust
-Auto-Lock or Screen timeout on the phone/tablet. When supported, the control
-reports whether a wake lock is actually held, reacquires it on returning to the
-visible page, and releases it on Disconnect. Switching apps, power saving and
-manual locking can still release it. Smart Stage does not configure HTTPS or
-change device lock settings. See [browser requirements](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API).
+API. The public gateway's HTTPS address enables it in supported browsers. The
+control reports whether a lock is actually held, reacquires it on returning to
+the visible page, and releases it on Disconnect. Switching apps, power saving
+and manual locking can still release it. Local LAN HTTP addresses show **Needs
+HTTPS**. See [browser requirements](https://developer.mozilla.org/en-US/docs/Web/API/Screen_Wake_Lock_API).
 
-Admin listens only on `127.0.0.1`. Remote controls use port `8788` by default;
-Admin pages and administration APIs are unavailable on that listener. The remote
-URL and token change on each application launch; scan the new QR code after a
-restart. Anyone with the remote URL can control playback, so keep it within your
-show team. HTTP is **not encrypted**: use a trusted LAN without internet port
-forwarding. The token does not protect against a network eavesdropper.
+Admin listens only on `127.0.0.1`. Gateway mode closes the inbound remote port.
+Explicit Local LAN mode uses `8788` by default, with no Admin API access and a
+separate eight-digit pairing code. Remote URLs and tokens change at restart or
+gateway reconnection; scan the current QR code. Anyone with a remote URL can
+control playback, so keep it within your show team. Local HTTP is **not
+encrypted**: use a trusted LAN without internet port forwarding.
+
+The following network diagnostics apply to **Local LAN mode** only.
 
 Multiple interfaces are listed with their names, including IPv4 link-local
 addresses on networks without DHCP; select the reachable network. IPv6 URLs
@@ -277,10 +306,11 @@ Admin port if changed). They are also retained with the vendored source.
 The Mac installer uses built-in macOS tools. Advanced overrides are
 `SMARTSTAGE_VERSION` (release tag), `SMARTSTAGE_INSTALL_DIR` (parent folder for
 `Smart Stage.app`), `SMARTSTAGE_NO_LAUNCH=1` (install without opening it), and
-`SMARTSTAGE_SKIP_FIREWALL=1` (leave firewall configuration to you or your IT team).
+`SMARTSTAGE_SKIP_FIREWALL=1` (leave LAN firewall configuration to you or your IT team),
+and `SMARTSTAGE_CONFIGURE_LAN_FIREWALL=1` (explicit installer firewall opt-in).
 If firewall authorization is cancelled, the installed app remains available;
 allow its incoming connections in **System Settings → Network → Firewall →
-Options** before using phone/tablet controls. Managed network filters can require
+Options** before using local LAN phone/tablet controls. Managed network filters can require
 an additional policy exception from your IT team.
 Its native CI check exercises real ZIP downloads, targeted quarantine removal,
 replacement/refusal behavior and Finder-to-Admin startup on both Macs.
@@ -295,7 +325,7 @@ bash scripts/build.sh windows arm64
 ```
 
 Build on matching OS runners normally. `DEBUG=1` retains symbols;
-`VERSION=v0.1.0-preview.14` sets metadata. Output:
+`VERSION=v0.1.0-preview.15` sets metadata. Output:
 `dist/smartstage-<os>-<arch>.zip`, the raw build executable and engineering
 harness `dist/native-harness-<os>-<arch>[.exe]`, with adjacent checksums, import
 audits and toolchain records. Published application downloads are ZIPs. Apple system frameworks remain dynamic; Windows compiler

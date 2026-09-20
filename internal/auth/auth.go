@@ -3,6 +3,7 @@ package auth
 import (
 	"crypto/rand"
 	"crypto/subtle"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
@@ -47,6 +48,18 @@ func New() *Manager {
 		panic("secure random source unavailable: " + err.Error())
 	}
 	return &Manager{adminKey: identity.New(), commandKey: identity.New(), commandToken: fmt.Sprintf("%08d", n.Int64()), sessions: map[string]Session{}, attempts: map[string]attempt{}, now: time.Now}
+}
+
+// NewPublicCommand creates a separate, high-entropy pairing secret for one
+// public gateway connection. Reconnecting discards its browser sessions.
+func NewPublicCommand() *Manager {
+	m := New()
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		panic("secure random source unavailable: " + err.Error())
+	}
+	m.commandToken = hex.EncodeToString(b)
+	return m
 }
 
 // CommandToken is generated once per process and only disclosed by local Admin.

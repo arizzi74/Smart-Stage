@@ -9,6 +9,17 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.14
 
 ## Implemented
 
+- Static Linux AMD64/ARM64 public gateway, authenticated outbound WSS relay,
+  strict remote-only routes, isolated pairing sessions, bounded HTTP/SSE relay
+  and automatic desktop reconnection. Public HTTPS mode is the default and
+  closes direct LAN access. Admin URL/token setup and public link/QR are local.
+- Interactive one-command Linux installer enumerates suitable nginx HTTPS
+  virtual hosts, adds `/smartstage`, or offers Caddy; validates and backs up
+  proxy configuration and installs an unprivileged systemd service.
+- Explicit Local LAN selection reserves stopped playback, persists the choice,
+  restarts the native app and configures its scoped firewall rule. Gateway-mode
+  installation/updates leave incoming rules unchanged.
+
 - Compiled-in AVFoundation/AppKit/Core Audio backend on macOS and Media
   Foundation/EVR/Win32 backend on Windows; real native harness and media fixtures.
 - Routed foreground audio/video playback with independent stage visibility and
@@ -65,7 +76,7 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.14
   window hides it without interrupting playback; Dock/Open Admin restores it.
   External-browser Finder drops still offer chooser or Dock guidance.
 - Optional Screen Wake Lock with truthful status, opt-in and release/reacquire
-  handling. The default HTTP LAN remote cannot use this HTTPS-only browser API;
+  handling. The public HTTPS gateway enables this browser API; Local LAN HTTP cannot use it;
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested

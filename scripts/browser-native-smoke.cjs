@@ -32,6 +32,8 @@ async function until(check, message, timeout = 30000) {
   assert(fs.statSync(exe).isFile(), 'Pass a real supported-OS Smart Stage executable');
   const root = path.resolve(__dirname, '..');
   const config = fs.mkdtempSync(path.join(os.tmpdir(), 'smartstage-browser-'));
+  // Native LAN coverage explicitly opts in; new installations default to gateway.
+  fs.writeFileSync(path.join(config, 'gateway.json'), JSON.stringify({ mode: 'lan' }), { mode: 0o600 });
   const mediaRoot = path.join(config, 'media');
   fs.cpSync(path.join(root, 'testdata', 'media'), mediaRoot, { recursive: true });
   fs.copyFileSync(path.join(mediaRoot, "Opening – café's tone.wav"), path.join(mediaRoot, '.hidden.wav'));

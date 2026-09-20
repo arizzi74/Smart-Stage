@@ -3,8 +3,8 @@
 
 The fixture is the release's exact source, built as v0.0.0-preview.1. It uses
 the real public GitHub API, downloads and updater. There is no alternate feed,
-transport, helper or startup acknowledgement. Firewall approval is explicitly
-skipped; its real rules and authorization are checked by installer verification.
+transport, helper or startup acknowledgement. Gateway mode is the default;
+updates must leave incoming LAN access closed without firewall authorization.
 """
 import argparse
 import ctypes
@@ -30,6 +30,11 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_VERSION = "v0.0.0-preview.1"
+
+
+def gateway_default(version):
+    legacy = re.fullmatch(r"v0[.]1[.]0-preview[.](\d+)", version)
+    return not legacy or int(legacy[1]) >= 15
 
 
 def digest(path):
@@ -306,7 +311,10 @@ def verify(args, output, report):
         arguments = ["--admin-port", str(admin_port), "--port", str(command_port), "--bind", "127.0.0.1",
                      "--no-browser", "--config-dir", str(config), "--media-root", str(media)]
         environment = os.environ.copy()
-        environment["SMARTSTAGE_SKIP_FIREWALL"] = "1"
+        environment.pop("SMARTSTAGE_SKIP_FIREWALL", None)
+        environment.pop("SMARTSTAGE_CONFIGURE_LAN_FIREWALL", None)
+        if not gateway_default(args.version):
+            environment["SMARTSTAGE_SKIP_FIREWALL"] = "1"
         old_pid = new_pid = None
         process = None
         snapshot = None
@@ -381,16 +389,24 @@ def verify(args, output, report):
                     {k: c[k] for k in ("id", "label", "path")} for c in expected_show["cues"]], "Saved cue identity, order, label or source changed"
                 assert digest(config / "operator-note.txt") == note_hash, "Other saved-show files changed"
                 assert digest(Path(expected_show["cues"][0]["path"])) == audio_hash, "Host media changed"
-                remote = http.client.HTTPConnection("127.0.0.1", command_port, timeout=3)
-                try:
-                    remote.request("GET", "/command")
-                    response = remote.getresponse()
-                    assert response.status == 200 and b"Smart Stage" in response.read()
-                finally:
-                    remote.close()
+                if gateway_default(args.version):
+                    with socket.socket() as remote_probe:
+                        remote_probe.settimeout(2)
+                        assert remote_probe.connect_ex(("127.0.0.1", command_port)) != 0, \
+                            "Default gateway mode opened an incoming LAN listener after updating"
+                    report.update(gatewayModeDefault=True, lanListenerClosedAfterUpdate=True)
+                else:
+                    remote = http.client.HTTPConnection("127.0.0.1", command_port, timeout=3)
+                    try:
+                        remote.request("GET", "/command")
+                        response = remote.getresponse()
+                        assert response.status == 200 and b"Smart Stage" in response.read()
+                    finally:
+                        remote.close()
+                    report.update(legacyLANRelease=True, adminAndCommandPortsPreserved=True)
                 report.update(newPID=new_pid, newInstanceID=new_state["instanceId"], installedVersionOutput=version,
                               installedExecutableSHA256=digest(core), oldProcessExitedCleanly=True,
-                              actualPublishedBytesInstalled=True, adminAndCommandPortsPreserved=True,
+                              actualPublishedBytesInstalled=True, adminPortPreserved=True,
                               savedShowPreserved=True, hostMediaPreserved=True, restartedWithoutAutoplay=True,
                               updateHTTPInstallRequestsSent=0, productionReleaseDiscovery=True,
                               productionArchiveValidation=True, productionHelperHandoff=True,
@@ -399,7 +415,10 @@ def verify(args, output, report):
                 if args.os == "darwin":
                     from macos_app_checks import dedicated_admin_checks, dock_app_checks, terminal_pids
                     assert not (terminal_pids() - snapshot["terminalPIDs"]), "Automatic update opened Terminal"
-                    assert "skipped" in outcome.get("message", "").lower(), "CI must explicitly skip the real administrator firewall prompt"
+                    if gateway_default(args.version):
+                        assert not outcome.get("message", ""), "Gateway-mode update must not require a firewall approval or skip override"
+                    else:
+                        assert "skipped" in outcome.get("message", "").lower(), "Legacy LAN update test must explicitly skip firewall approval"
                     run(["/usr/bin/codesign", "--verify", "--deep", "--strict", str(target)])
                     report.update(dock_app_checks(target, new_pid))
                     info = plistlib.loads((target / "Contents/Info.plist").read_bytes())

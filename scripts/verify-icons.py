@@ -139,8 +139,13 @@ def finder_launch(bundle, background):
                 except (OSError, AssertionError):
                     pass
                 else:
+                    with socket.socket() as remote_probe:
+                        remote_probe.settimeout(2)
+                        assert remote_probe.connect_ex(("127.0.0.1", 8788)) != 0, \
+                            "Fresh Finder launch must keep the LAN listener closed"
                     result = {"finderLaunchedBundledCore": True, "servedAdminPage": True,
-                              "kernelExecutablePathMatched": True}
+                              "kernelExecutablePathMatched": True, "gatewayModeDefault": True,
+                              "lanListenerClosedByDefault": True}
                     if background:
                         result.update(background_launch_checks(bundle, pid, snapshot, find_core_pid))
                         result.update(quit_background_app(pid))

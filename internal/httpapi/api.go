@@ -39,7 +39,12 @@ type API struct {
 	ordinary       chan struct{}
 	role           string
 	cookieName     string
+	cookiePath     string
+	requireTLS     bool
 	remoteLinks    []RemoteLink
+	remoteToken    string
+	remoteMode     string
+	gateway        GatewayController
 	updater        UpdateController
 	quit           func()
 	quitOnce       sync.Once
@@ -64,7 +69,7 @@ func NewCommand(service *app.Service, authentication *auth.Manager, assets http.
 }
 
 func newAPI(service *app.Service, authentication *auth.Manager, assets http.Handler, hosts []string, port int, role, cookie string) *API {
-	a := &API{app: service, auth: authentication, assets: assets, port: strconv.Itoa(port), ordinary: make(chan struct{}, 16), role: role, cookieName: cookie}
+	a := &API{app: service, auth: authentication, assets: assets, port: strconv.Itoa(port), ordinary: make(chan struct{}, 16), role: role, cookieName: cookie, cookiePath: "/", remoteToken: authentication.CommandToken(), remoteMode: "lan"}
 	a.SetHosts(hosts)
 	return a
 }
@@ -83,6 +88,10 @@ func (a *API) SetHosts(hosts []string) {
 // SetRemoteLinks copies host-discovered links; they are never included in
 // Command state or events. Limit the local discovery list and QR payload size.
 func (a *API) SetRemoteLinks(links []RemoteLink) {
+	a.SetRemoteControl(links, a.auth.CommandToken(), "lan")
+}
+
+func (a *API) SetRemoteControl(links []RemoteLink, token, mode string) {
 	if a.role != "admin" {
 		return
 	}
@@ -96,10 +105,14 @@ func (a *API) SetRemoteLinks(links []RemoteLink) {
 	}
 	a.mu.Lock()
 	a.remoteLinks = next
+	a.remoteToken, a.remoteMode = token, mode
 	a.mu.Unlock()
 }
 
 func (a *API) trusted(r *http.Request) bool {
+	if a.requireTLS && r.TLS == nil {
+		return false
+	}
 	if a.role == "admin" {
 		peer, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil || !net.ParseIP(peer).IsLoopback() {
@@ -328,6 +341,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	key := r.Method + " " + path
 	switch key {
+	case "GET /api/gateway", "PUT /api/gateway", "POST /api/gateway/reconnect":
+		a.gatewayRequest(w, r)
 	case "POST /api/quit", "POST /api/admin-presence", "POST /api/choose-files":
 		a.lifecycleRequest(w, r)
 	case "GET /api/update", "POST /api/update/check", "POST /api/update/install":
@@ -335,8 +350,9 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "GET /api/remote-control":
 		a.mu.RLock()
 		links := append([]RemoteLink{}, a.remoteLinks...)
+		token, mode := a.remoteToken, a.remoteMode
 		a.mu.RUnlock()
-		writeJSON(w, 200, map[string]any{"token": a.auth.CommandToken(), "links": links})
+		writeJSON(w, 200, map[string]any{"token": token, "links": links, "mode": mode})
 	case "GET /api/remote-control/qr":
 		query, err := url.ParseQuery(r.URL.RawQuery)
 		if err != nil || len(query) != 1 || len(query["index"]) != 1 {
@@ -369,7 +385,7 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a.events(w, r, session)
 	case "POST /api/logout":
 		a.auth.Logout(session.ID)
-		http.SetCookie(w, &http.Cookie{Name: a.cookieName, Value: "", Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: -1})
+		http.SetCookie(w, &http.Cookie{Name: a.cookieName, Value: "", Path: a.cookiePath, HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: -1})
 		writeJSON(w, 200, map[string]bool{"loggedOut": true})
 	case "POST /api/play":
 		var body app.PlayRequest
@@ -510,7 +526,7 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func (a *API) setSession(w http.ResponseWriter, r *http.Request, s auth.Session) {
-	http.SetCookie(w, &http.Cookie{Name: a.cookieName, Value: s.ID, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: int(auth.Lifetime.Seconds())})
+	http.SetCookie(w, &http.Cookie{Name: a.cookieName, Value: s.ID, Path: a.cookiePath, HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: int(auth.Lifetime.Seconds())})
 	reply := map[string]any{"role": s.Role, "csrfToken": s.CSRF, "expires": s.Expires}
 	a.addCapabilities(reply)
 	writeJSON(w, 200, reply)

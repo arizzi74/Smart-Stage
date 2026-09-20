@@ -1,5 +1,5 @@
 #!/bin/sh
-# Install the verified Finder bundle; request admin access only for its firewall rule.
+# Install the verified Finder bundle. Gateway mode needs no firewall changes.
 # Keep execution inside main so a truncated curl download cannot start an install.
 set -eu
 
@@ -24,8 +24,12 @@ check_destination() {
         fi
     fi
     if [ "$no_launch" = 0 ]; then
-        listeners=$(/usr/sbin/lsof -nP -iTCP:8787 -iTCP:8788 -sTCP:LISTEN -t 2>/dev/null || :)
-        [ -z "$listeners" ] || fail 'Ports 8787 or 8788 are already in use. Close the existing Smart Stage session, or free these ports, then run the installer again.'
+        if [ "$lan_firewall" = 1 ]; then
+            listeners=$(/usr/sbin/lsof -nP -iTCP:8787 -iTCP:8788 -sTCP:LISTEN -t 2>/dev/null || :)
+        else
+            listeners=$(/usr/sbin/lsof -nP -iTCP:8787 -sTCP:LISTEN -t 2>/dev/null || :)
+        fi
+        [ -z "$listeners" ] || fail 'A Smart Stage port is already in use. Close the existing Smart Stage session, or free its ports, then run the installer again.'
     fi
 }
 
@@ -53,6 +57,10 @@ firewall_app_state() {
 configure_firewall() {
     if [ "$skip_firewall" = 1 ]; then
         printf 'Firewall setup skipped (SMARTSTAGE_SKIP_FIREWALL=1).\n'
+        return 0
+    fi
+    if [ "$lan_firewall" != 1 ]; then
+        printf 'Public gateway mode needs no incoming-connection firewall rule. Choose Local network in Admin to enable LAN remote control.\n'
         return 0
     fi
     firewall_core="$destination/Contents/MacOS/smartstage"
@@ -157,6 +165,19 @@ main() {
     case "$no_launch" in 0|1) ;; *) fail 'SMARTSTAGE_NO_LAUNCH must be 0 or 1.' ;; esac
     skip_firewall=${SMARTSTAGE_SKIP_FIREWALL:-0}
     case "$skip_firewall" in 0|1) ;; *) fail 'SMARTSTAGE_SKIP_FIREWALL must be 0 or 1.' ;; esac
+    lan_firewall=${SMARTSTAGE_CONFIGURE_LAN_FIREWALL:-0}
+    case "$lan_firewall" in 0|1) ;; *) fail 'SMARTSTAGE_CONFIGURE_LAN_FIREWALL must be 0 or 1.' ;; esac
+    # Releases before the gateway shipped always run a LAN listener. Retain
+    # their original firewall behavior during the release transition and when
+    # an operator deliberately installs an older version. SKIP still wins.
+    case "$version" in
+        v0.1.0-preview.[0-9]|v0.1.0-preview.1[0-4]) lan_firewall=1 ;;
+    esac
+    gateway_settings="$HOME/Library/Application Support/SmartStage/gateway.json"
+    if [ -f "$gateway_settings" ] && [ ! -L "$gateway_settings" ]; then
+        saved_mode=$(/usr/bin/plutil -extract mode raw -o - "$gateway_settings" 2>/dev/null || :)
+        if [ "$saved_mode" = lan ]; then lan_firewall=1; fi
+    fi
     case "$(/usr/bin/uname -m)" in
         arm64) arch=arm64 ;;
         x86_64)

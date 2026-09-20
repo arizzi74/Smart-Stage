@@ -7,7 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 	"unsafe"
@@ -97,4 +100,41 @@ func restartCommand(target Target, args []string) *exec.Cmd {
 // Release executables currently have no Authenticode signature. The manager
 // verifies the published SHA-256, and Stage validates PE/Go identity and version.
 func verifyNativeSignature(context.Context, Target, string) error { return nil }
-func refreshFirewall(Target, *log.Logger) string                  { return "" }
+
+func windowsPowerShellPath() (string, error) {
+	buffer := make([]uint16, 32768)
+	getSystemDirectory := syscall.NewLazyDLL("kernel32.dll").NewProc("GetSystemDirectoryW")
+	n, _, err := getSystemDirectory.Call(uintptr(unsafe.Pointer(&buffer[0])), uintptr(len(buffer)))
+	if n == 0 || n >= uintptr(len(buffer)) {
+		return "", fmt.Errorf("locate Windows system directory: %v", err)
+	}
+	return filepath.Join(syscall.UTF16ToString(buffer[:n]), "WindowsPowerShell", "v1.0", "powershell.exe"), nil
+}
+
+func configureLANFirewall(target Target, logger *log.Logger) string {
+	if os.Getenv("SMARTSTAGE_SKIP_FIREWALL") == "1" {
+		logger.Printf("Firewall setup skipped (SMARTSTAGE_SKIP_FIREWALL=1)")
+		return "Firewall setup was explicitly skipped; no incoming-connection allowance was verified."
+	}
+	program := corePath(target)
+	if !filepath.IsAbs(program) {
+		return "Smart Stage could not configure the firewall because its executable path is not absolute."
+	}
+	logger.Printf("Requesting Windows administrator approval for this Smart Stage executable on private local networks: %s", program)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	defer cancel()
+	powershell, err := windowsPowerShellPath()
+	if err != nil {
+		logger.Printf("Windows firewall setup unavailable: %v", err)
+		return "Smart Stage could not locate Windows PowerShell to configure its incoming-connection rule."
+	}
+	cmd := exec.CommandContext(ctx, powershell, "-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-EncodedCommand", encodePowerShell(windowsFirewallElevation(windowsFirewallScript(program))))
+	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Printf("Windows firewall approval failed: %v: %s", err, strings.TrimSpace(string(output)))
+		return "Windows firewall approval was cancelled, denied, or could not be verified. Allow Smart Stage on your trusted private network in Windows Security > Firewall & network protection."
+	}
+	logger.Printf("Verified scoped Windows firewall allowance for private local networks")
+	return ""
+}

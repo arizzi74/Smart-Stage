@@ -91,12 +91,18 @@ def wait_for(predicate, seconds=45):
     raise AssertionError('Timed out waiting for native application state')
 
 with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
+    # This suite deliberately exercises LAN pairing; gateway is the product default.
+    gateway_config = Path(config) / 'gateway.json'
+    gateway_config.write_text(json.dumps({'mode': 'lan'}))
+    gateway_config.chmod(0o600)
+    launch_environment = os.environ.copy()
+    launch_environment['SMARTSTAGE_SKIP_FIREWALL'] = '1'
     process = None
     stderr_thread = None
     try:
         for restart in range(2):
             process = subprocess.Popen([exe,'--port','0','--admin-port','0','--bind','127.0.0.1','--no-browser','--config-dir',config,'--media-root',str(root/'testdata'/'media')],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8',
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding='utf-8', env=launch_environment,
                 creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name=='nt' else 0)
             lines = queue.Queue()
             def read_stdout(stream=process.stdout):
