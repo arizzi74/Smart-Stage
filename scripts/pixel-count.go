@@ -23,13 +23,18 @@ func main() {
 	}
 	bounds := im.Bounds()
 	var count, black, opaque, red, green, blue int
+	minX, minY, maxX, maxY := bounds.Max.X, bounds.Max.Y, -1, -1
 	hash := sha256.New()
-	for y := bounds.Min.Y + 4; y < bounds.Max.Y; y += 8 {
-		for x := bounds.Min.X + 4; x < bounds.Max.X; x += 8 {
+	row := make([]byte, 0, bounds.Dx()*4)
+	for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+		row = row[:0]
+		for x := bounds.Min.X; x < bounds.Max.X; x++ {
 			r, g, b, a := im.At(x, y).RGBA()
 			count++
 			if r <= 2048 && g <= 2048 && b <= 2048 {
 				black++
+			} else {
+				minX, minY, maxX, maxY = min(minX, x), min(minY, y), max(maxX, x), max(maxY, y)
 			}
 			if a == 65535 {
 				opaque++
@@ -43,15 +48,17 @@ func main() {
 			if b > 30000 && b > 2*r && b > 2*g {
 				blue++
 			}
-			hash.Write([]byte{byte(r >> 8), byte(g >> 8), byte(b >> 8), byte(a >> 8)})
+			row = append(row, byte(r>>8), byte(g>>8), byte(b>>8), byte(a>>8))
 		}
+		hash.Write(row)
 	}
 	if count == 0 {
 		panic("empty captured display")
 	}
 	fraction := func(n int) float64 { return float64(n) / float64(count) }
 	if err := json.NewEncoder(os.Stdout).Encode(map[string]any{
-		"width": bounds.Dx(), "height": bounds.Dy(), "sampledPixels": count,
+		"width": bounds.Dx(), "height": bounds.Dy(), "sampledPixels": count, "samplingStride": 1,
+		"nonBlackPixels": count - black, "nonBlackBounds": []int{minX, minY, maxX, maxY},
 		"blackFraction": fraction(black), "opaqueFraction": fraction(opaque),
 		"redFraction": fraction(red), "greenFraction": fraction(green), "blueFraction": fraction(blue),
 		"sampledPixelSHA256": hex.EncodeToString(hash.Sum(nil)),
