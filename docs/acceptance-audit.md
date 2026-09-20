@@ -77,6 +77,13 @@ These are the specification's eleven steps, not a substitute scenario.
 | 10. Natural end without advance, silent/black | Native completion/stage-enabled events pass. Physical sound/pixels pending. |
 | 11. Restart restores configuration while silent/stage-disabled | Actual application checks pass on all four runners; physical observation pending. |
 
+The exact Windows installation command additionally passed under built-in
+PowerShell 5.1 on both architectures in
+[run 35484067090](https://github.com/arizzi74/Smart-Stage/actions/runs/35484067090),
+using its default destination and version. Correct native startup, HTTP serving,
+atomic reinstallation, checksums and PATH idempotence were checked. The runner
+images contain development tools, so required scenario step 1 remains pending.
+
 ## Outstanding measurements and long-running evidence
 
 The exact-source [preview 4 soak 35478342253](https://github.com/arizzi74/Smart-Stage/actions/runs/35478342253)

@@ -35,6 +35,11 @@ version and source-commit checks. After switching the default to preview 4,
 [installer run 35480086360](https://github.com/arizzi74/Smart-Stage/actions/runs/35480086360)
 and [browser run 35480086365](https://github.com/arizzi74/Smart-Stage/actions/runs/35480086365)
 also passed on all four targets without a version override.
+The later [installer run 35484067090](https://github.com/arizzi74/Smart-Stage/actions/runs/35484067090)
+also verified the built-in Windows PowerShell 5.1 on AMD64 and ARM64: default
+per-user installation, correct native binary/version, Command-page startup,
+reinstallation with the same checksum and a single user PATH entry all passed.
+This does not replace clean-machine testing.
 
 Preview 4 releases the Mac video layer with each cue while retaining the black
 stage window. [Memory evidence](docs/soak-results.md) supports the fix for

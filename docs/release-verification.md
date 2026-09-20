@@ -30,6 +30,19 @@ and [browser run 35480086365](https://github.com/arizzi74/Smart-Stage/actions/ru
 passed on all four targets at installer/test commit `a95a902`, without setting a
 version override. Public raw installer URLs were also checked to serve preview 4.
 
+[Installer run 35484067090](https://github.com/arizzi74/Smart-Stage/actions/runs/35484067090)
+at test commit `214e15e` additionally passed the exact `irm | iex` command under
+built-in **Windows PowerShell 5.1** on AMD64 and ARM64. Both reported Desktop
+edition version `5.1.26100.9457`. No version or install-directory override was
+set: the executable was installed at `%LOCALAPPDATA%\SmartStage\bin\smartstage.exe`,
+reported preview 4/source `505a1e495075` in the correct native architecture and
+served the Command page. A second installation exercised atomic replacement,
+retained the expected published checksum, left exactly one user PATH entry and
+removed temporary installer directories. PowerShell 7 and both Mac curl checks
+also passed in that run. These hosted machines still contain development tools;
+the result is installer compatibility evidence, not clean-machine acceptance.
+Raw reports: [`verification/install-powershell51-214e15e/`](verification/install-powershell51-214e15e/).
+
 [Windows audio run 35482038438](https://github.com/arizzi74/Smart-Stage/actions/runs/35482038438)
 adds actual native audio-renderer event checks on both Windows architectures:
 all four cues and 120 seconds of transitions passed against published preview 4,
