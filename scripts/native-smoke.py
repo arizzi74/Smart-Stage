@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import tempfile
+import time
 
 exe = str(Path(sys.argv[1]).resolve())
 root = Path(__file__).resolve().parent.parent
@@ -16,6 +18,41 @@ def run(*args, success=True):
     if (result.returncode == 0) != success:
         raise AssertionError(f'{args}: unexpected exit {result.returncode}: {result.stderr}')
     return [json.loads(line) for line in result.stdout.splitlines() if line.startswith('{')]
+
+def run_until_ended(*args):
+    """Wait for native completion; startup time must not shorten the media run."""
+    started = time.monotonic()
+    timings = {}
+    with tempfile.TemporaryDirectory(prefix='smartstage-native-smoke-') as directory:
+        output, errors = Path(directory)/'stdout', Path(directory)/'stderr'
+        with output.open('w',encoding='utf-8') as stdout, errors.open('w',encoding='utf-8') as stderr:
+            process = subprocess.Popen([exe,*map(str,args)],stdin=subprocess.PIPE,
+                                       stdout=stdout,stderr=stderr,text=True,encoding='utf-8')
+            try:
+                while process.poll() is None and time.monotonic()-started < 30:
+                    events = []
+                    for line in output.read_text(encoding='utf-8').splitlines():
+                        try: events.append(json.loads(line))
+                        except json.JSONDecodeError: pass # An in-flight write is read on the next poll.
+                    for event in events:
+                        timings.setdefault(event['kind'],round(time.monotonic()-started,3))
+                    if any(event['kind'] in ('ended','error','device-lost') for event in events):
+                        process.stdin.write('quit\n'); process.stdin.flush()
+                        break
+                    time.sleep(.05)
+                else:
+                    if process.poll() is None:
+                        raise AssertionError('No native end/error event within 30 seconds')
+                process.wait(timeout=15)
+            finally:
+                if process.poll() is None:
+                    process.kill(); process.wait(timeout=5)
+                records.append({'args':list(map(str,args)),'returncode':process.returncode,
+                    'stdout':output.read_text(encoding='utf-8'),'stderr':errors.read_text(encoding='utf-8'),
+                    'observedEventSeconds':timings,'elapsedSeconds':round(time.monotonic()-started,3)})
+                process.stdin.close()
+    assert process.returncode == 0, records[-1]
+    return [json.loads(line) for line in records[-1]['stdout'].splitlines() if line.startswith('{')]
 
 try:
     devices = run('--list')[0]
@@ -40,7 +77,7 @@ try:
         assert not any(e['kind']=='playing' for e in events[stopped+1:]), events
     if devices['displays']:
         screen = devices['displays'][0]
-        events = run('--file',media/'silent-1080p.mp4','--display',screen['id'],'--exit-after','6s')
+        events = run_until_ended('--file',media/'silent-1080p.mp4','--display',screen['id'],'--exit-after','40s')
         assert any(e['kind']=='playing' for e in events), events
         assert any(e['kind']=='ended' and e['stageEnabled'] for e in events), events
     print('Native smoke checks passed. This checks native events, not physical routing or visible blackout.')

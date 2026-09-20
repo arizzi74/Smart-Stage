@@ -4,9 +4,80 @@ No application hooks, synthetic frames, driver installation or desktop changes.
 """
 import ctypes
 from ctypes import wintypes
+import os
 from pathlib import Path
 import struct
 import zlib
+
+def desktop_context(harness_pid):
+    """Read desktop/session/window identity without switching or dismissing UI."""
+    user = ctypes.WinDLL('user32',use_last_error=True)
+    kernel = ctypes.WinDLL('kernel32',use_last_error=True)
+    dwm = ctypes.WinDLL('dwmapi',use_last_error=True)
+    def signature(library,name,arguments,result):
+        function=getattr(library,name)
+        function.argtypes, function.restype=arguments,result
+        return function
+    signature(kernel,'GetCurrentThreadId',[],wintypes.DWORD)
+    signature(kernel,'WTSGetActiveConsoleSessionId',[],wintypes.DWORD)
+    signature(kernel,'ProcessIdToSessionId',[wintypes.DWORD,ctypes.POINTER(wintypes.DWORD)],wintypes.BOOL)
+    signature(user,'GetThreadDesktop',[wintypes.DWORD],wintypes.HANDLE)
+    signature(user,'GetProcessWindowStation',[],wintypes.HANDLE)
+    signature(user,'GetUserObjectInformationW',[wintypes.HANDLE,ctypes.c_int,ctypes.c_void_p,
+        wintypes.DWORD,ctypes.POINTER(wintypes.DWORD)],wintypes.BOOL)
+    signature(user,'OpenInputDesktop',[wintypes.DWORD,wintypes.BOOL,wintypes.DWORD],wintypes.HANDLE)
+    signature(user,'CloseDesktop',[wintypes.HANDLE],wintypes.BOOL)
+    signature(user,'GetWindowThreadProcessId',[wintypes.HWND,ctypes.POINTER(wintypes.DWORD)],wintypes.DWORD)
+    signature(user,'IsWindowVisible',[wintypes.HWND],wintypes.BOOL)
+    signature(user,'GetForegroundWindow',[],wintypes.HWND)
+    signature(user,'GetWindowRect',[wintypes.HWND,ctypes.POINTER(wintypes.RECT)],wintypes.BOOL)
+    signature(user,'GetWindowTextW',[wintypes.HWND,wintypes.LPWSTR,ctypes.c_int],ctypes.c_int)
+    signature(user,'GetClassNameW',[wintypes.HWND,wintypes.LPWSTR,ctypes.c_int],ctypes.c_int)
+    signature(dwm,'DwmGetWindowAttribute',[wintypes.HWND,wintypes.DWORD,ctypes.c_void_p,wintypes.DWORD],ctypes.c_long)
+    def session(pid):
+        value=wintypes.DWORD()
+        return value.value if kernel.ProcessIdToSessionId(pid,ctypes.byref(value)) else {'error':ctypes.get_last_error()}
+    def identity(handle):
+        if not handle: return {'error':ctypes.get_last_error()}
+        name=ctypes.create_unicode_buffer(1024)
+        needed=wintypes.DWORD()
+        if not user.GetUserObjectInformationW(handle,2,name,ctypes.sizeof(name),ctypes.byref(needed)):
+            return {'error':ctypes.get_last_error()}
+        receiving=wintypes.BOOL()
+        valid=user.GetUserObjectInformationW(handle,6,ctypes.byref(receiving),ctypes.sizeof(receiving),ctypes.byref(needed))
+        return {'name':name.value,'receivingInput':bool(receiving.value) if valid else None}
+    result={'observerPid':os.getpid(),'observerSession':session(os.getpid()),
+        'harnessPid':harness_pid,'harnessSession':session(harness_pid),
+        'activeConsoleSession':kernel.WTSGetActiveConsoleSessionId(),
+        'windowStation':identity(user.GetProcessWindowStation()),
+        'observerDesktop':identity(user.GetThreadDesktop(kernel.GetCurrentThreadId())),'windows':[]}
+    # DESKTOP_READOBJECTS only; never request switching/writing permissions.
+    desktop=user.OpenInputDesktop(0,False,0x0001)
+    try: result['inputDesktop']=identity(desktop)
+    finally:
+        if desktop: user.CloseDesktop(desktop)
+    foreground=user.GetForegroundWindow()
+    callback_type=ctypes.WINFUNCTYPE(wintypes.BOOL,wintypes.HWND,wintypes.LPARAM)
+    @callback_type
+    def visit(window,unused):
+        pid=wintypes.DWORD()
+        thread=user.GetWindowThreadProcessId(window,ctypes.byref(pid))
+        visible=bool(user.IsWindowVisible(window))
+        if not visible and pid.value!=harness_pid: return True
+        title,class_name=ctypes.create_unicode_buffer(256),ctypes.create_unicode_buffer(256)
+        user.GetWindowTextW(window,title,len(title)); user.GetClassNameW(window,class_name,len(class_name))
+        rectangle=wintypes.RECT(); user.GetWindowRect(window,ctypes.byref(rectangle))
+        cloaked=wintypes.DWORD()
+        hr=dwm.DwmGetWindowAttribute(window,14,ctypes.byref(cloaked),ctypes.sizeof(cloaked))
+        result['windows'].append({'pid':pid.value,'thread':thread,'visible':visible,
+            'foreground':window==foreground,'title':title.value,'class':class_name.value,
+            'bounds':[rectangle.left,rectangle.top,rectangle.right,rectangle.bottom],
+            'cloaked':cloaked.value if hr==0 else None,
+            'desktop':identity(user.GetThreadDesktop(thread))})
+        return len(result['windows'])<256
+    signature(user,'EnumWindows',[callback_type,wintypes.LPARAM],wintypes.BOOL)
+    user.EnumWindows(visit,0)
+    return result
 
 def capture_display(path, display):
     user = ctypes.WinDLL('user32',use_last_error=True)

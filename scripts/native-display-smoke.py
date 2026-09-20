@@ -125,6 +125,11 @@ try:
 except Exception as error:
     report.update(status='failed',reason=str(error))
     if os.name == 'nt':
+        try:
+            from windows_display_capture import desktop_context
+            (destination/'native-desktop-context.json').write_text(json.dumps(desktop_context(process.pid),indent=2)+'\n')
+        except Exception as unavailable:
+            (destination/'native-desktop-context.json').write_text(json.dumps({'unavailable':str(unavailable)}))
         context_path=destination/'desktop-context.json'
         try:
             context=subprocess.run(['pwsh','-NoLogo','-NoProfile','-NonInteractive','-File',
