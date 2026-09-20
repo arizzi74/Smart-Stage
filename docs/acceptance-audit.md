@@ -31,18 +31,19 @@ connection but reset it before an HTTP response; the browser failed on both the
 Mac and phone. Swapping HTTP Host headers confirmed the failure follows the
 LAN destination; the same Host is accepted through loopback. The Mac has its
 firewall and third-party network filters enabled. The user then confirmed that
-Smart Stage was blocked in macOS Firewall. A successful LAN retest after allowing
-the app has not yet been recorded; this is not a passed physical network test.
-Physical output observations remain pending. The user also
-requested that the Mac app run without a Terminal window.
+Smart Stage was blocked in macOS Firewall. After the preview 7 update the user
+reported that it now works, but that the app has no visible icon and is difficult
+to quit. This is a positive operational report, not a completed physical test
+matrix. Physical output observations remain pending. The requested correction
+adds a regular Dock icon and standard Quit while preserving Terminal-free launch.
 
 Current release: preview 7, commit `7ca8c06`. It adds no-Terminal Mac app launch
 and a scoped, administrator-authorized firewall allowance. Both Mac Finder
 checks and all four native release builds passed in
 [run 35503933513](https://github.com/arizzi74/Smart-Stage/actions/runs/35503933513).
 The installer's real blocked-to-permitted rule changes and preservation checks
-passed on both Mac runners. Interactive password entry and the user's physical
-LAN retest remain unverified.
+passed on both Mac runners. The user's later operational report is recorded
+above; controlled physical output and network test results remain incomplete.
 
 Previous release: preview 6, commit `4aa3529`.
 [Native/browser run 35500115900](https://github.com/arizzi74/Smart-Stage/actions/runs/35500115900)

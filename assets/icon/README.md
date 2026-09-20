@@ -24,7 +24,9 @@ Mac builds also create `smartstage-darwin-<arch>.app.zip`. The optional
 `Smart Stage.app` includes the same standalone executable, a native launcher,
 the ICNS icon and bundle metadata. Opening it in Finder starts Smart Stage
 without Terminal; the core opens local Admin in the system browser automatically.
-A menu bar control provides Admin, logs and Quit. Output is saved to
+A regular Dock entry shows the bundled artwork while the app runs. Right-click
+the Dock icon and choose Quit; the application menu also provides Quit. An
+additional menu bar control provides Admin, logs and Quit. Output is saved to
 `~/Library/Logs/Smart Stage/smartstage.log`. The custom icon belongs to the Finder
 app. The primary Mac ZIP contains only the standalone executable.
 

@@ -167,6 +167,8 @@ def mac_icon(executable, source, test_finder):
         assert digest(contents / "MacOS/smartstage") == digest(executable), "Bundle must contain the standalone release bytes"
         assert info["CFBundleExecutable"] == "SmartStageLauncher" and info["CFBundlePackageType"] == "APPL"
         assert info["SmartStageBackgroundLaunch"] is True, "The new Finder app must declare background launch"
+        assert info["SmartStageDockIcon"] is True, "The new Finder app must declare its visible Dock icon"
+        assert info.get("LSUIElement", False) is False, "The Finder app must be visible in the Dock"
         subprocess.run(["codesign", "--verify", "--deep", "--strict", str(bundle)], check=True)
         decoded = parent / "decoded.iconset"
         subprocess.run(["iconutil", "--convert", "iconset", "--output", str(decoded), str(icon)], check=True)

@@ -31,7 +31,7 @@ static AudioObjectPropertyListenerBlock audioListener;
 static void stopCurrent(void);
 static void checkDevices(void);
 
-// Only the Finder launcher opts into the menu bar lifecycle. CLI invocations
+// Only the Finder launcher opts into the Dock and menu bar lifecycle. CLI invocations
 // keep their ordinary stdout/stderr and Ctrl+C behavior.
 static BOOL desktopLaunch(void) {
     const char *value = getenv("SMARTSTAGE_APP_LAUNCH");
@@ -40,8 +40,8 @@ static BOOL desktopLaunch(void) {
 
 @interface SSApplicationDelegate : NSObject <NSApplicationDelegate>
 @property(nonatomic, strong) NSStatusItem *status;
-@property(nonatomic, strong) NSMenuItem *openItem;
-@property(nonatomic, strong) NSMenuItem *quitItem;
+@property(nonatomic, strong) NSMutableArray<NSMenuItem *> *openItems;
+@property(nonatomic, strong) NSMutableArray<NSMenuItem *> *quitItems;
 @property(nonatomic, strong) NSURL *adminURL;
 @property(nonatomic) BOOL reopenPending;
 @property(nonatomic) BOOL quitPending;
@@ -74,7 +74,7 @@ static SSApplicationDelegate *applicationDelegate;
     if (!self.adminURL) { self.quitPending = YES; return; }
     if (self.quitStarted) return;
     self.quitStarted = YES;
-    self.quitItem.enabled = NO;
+    for (NSMenuItem *item in self.quitItems) item.enabled = NO;
     fputs("Quitting Smart Stage from the app menu\n", stderr);
     kill(getpid(), SIGTERM);
 }
@@ -90,29 +90,54 @@ static SSApplicationDelegate *applicationDelegate;
 }
 @end
 
-static void setupDesktop(void) {
-    if (!desktopLaunch()) return;
-    applicationDelegate = [[SSApplicationDelegate alloc] init];
-    NSApp.delegate = applicationDelegate;
-    NSStatusItem *status = [NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
-    applicationDelegate.status = status;
-    status.button.title = @"Smart Stage";
-    status.button.toolTip = @"Smart Stage — Open Admin, view logs, or quit";
+static NSMenu *desktopMenu(BOOL applicationMenu) {
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Smart Stage"];
     menu.autoenablesItems = NO;
     NSMenuItem *open = [[NSMenuItem alloc] initWithTitle:@"Open Admin" action:@selector(openAdmin:) keyEquivalent:@""];
     open.target = applicationDelegate; open.enabled = NO;
-    applicationDelegate.openItem = open;
+    [applicationDelegate.openItems addObject:open];
     [menu addItem:open];
     NSMenuItem *log = [[NSMenuItem alloc] initWithTitle:@"View Log" action:@selector(viewLog:) keyEquivalent:@""];
     log.target = applicationDelegate;
     [menu addItem:log];
     [menu addItem:NSMenuItem.separatorItem];
-    NSMenuItem *quit = [[NSMenuItem alloc] initWithTitle:@"Quit Smart Stage" action:@selector(quit:) keyEquivalent:@"q"];
-    quit.target = applicationDelegate; quit.enabled = NO;
-    applicationDelegate.quitItem = quit;
+    NSMenuItem *quit = [[NSMenuItem alloc] initWithTitle:@"Quit Smart Stage"
+        action:applicationMenu ? @selector(terminate:) : @selector(quit:)
+        keyEquivalent:applicationMenu ? @"q" : @""];
+    quit.target = applicationMenu ? (id)NSApp : (id)applicationDelegate;
+    quit.enabled = NO;
+    [applicationDelegate.quitItems addObject:quit];
     [menu addItem:quit];
-    status.menu = menu;
+    return menu;
+}
+
+static void setupDesktop(void) {
+    if (!desktopLaunch()) return;
+    applicationDelegate = [[SSApplicationDelegate alloc] init];
+    applicationDelegate.openItems = [NSMutableArray array];
+    applicationDelegate.quitItems = [NSMutableArray array];
+    NSApp.delegate = applicationDelegate;
+
+    // The launcher execs the core in the same process. Set the icon explicitly
+    // so the core executable's filename cannot replace the bundle artwork.
+    const char *iconPath = getenv("SMARTSTAGE_APP_ICON");
+    NSImage *icon = iconPath ? [[NSImage alloc] initWithContentsOfFile:[NSString stringWithUTF8String:iconPath]] : nil;
+    if (icon.isValid) NSApp.applicationIconImage = icon;
+    else fputs("Smart Stage: could not load the application's Dock icon\n", stderr);
+
+    NSMenu *mainMenu = [[NSMenu alloc] initWithTitle:@""];
+    NSMenuItem *applicationItem = [[NSMenuItem alloc] initWithTitle:@"Smart Stage" action:NULL keyEquivalent:@""];
+    applicationItem.submenu = desktopMenu(YES);
+    [mainMenu addItem:applicationItem];
+    NSApp.mainMenu = mainMenu;
+
+    NSStatusItem *status = [NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
+    applicationDelegate.status = status;
+    status.button.title = @"Smart Stage";
+    status.button.toolTip = @"Smart Stage — Open Admin, view logs, or quit";
+    status.menu = desktopMenu(NO);
+    if (NSApp.activationPolicy == NSApplicationActivationPolicyRegular && icon.isValid)
+        fputs("Smart Stage Dock icon and application menu ready\n", stderr);
 }
 
 // Go calls and AVFoundation callbacks do not necessarily arrive as AppKit
@@ -454,7 +479,7 @@ char *ss_init(void) {
     @autoreleasepool {
         if (!NSThread.isMainThread) return copyString(@"AppKit initialization must run on the process main thread");
         [NSApplication sharedApplication];
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+        [NSApp setActivationPolicy:desktopLaunch() ? NSApplicationActivationPolicyRegular : NSApplicationActivationPolicyAccessory];
         setupDesktop();
         [NSApp finishLaunching];
         events = [NSMutableArray array];
@@ -513,8 +538,8 @@ void ss_desktop_admin(const char *url) {
         NSString *value = [NSString stringWithUTF8String:url];
         onMain(^{
             applicationDelegate.adminURL = [NSURL URLWithString:value];
-            applicationDelegate.openItem.enabled = YES;
-            applicationDelegate.quitItem.enabled = YES;
+            for (NSMenuItem *item in applicationDelegate.openItems) item.enabled = YES;
+            for (NSMenuItem *item in applicationDelegate.quitItems) item.enabled = YES;
             fputs("Smart Stage menu bar ready\n", stderr);
             if (applicationDelegate.quitPending) [applicationDelegate quit:nil];
             else if (applicationDelegate.reopenPending) {
@@ -528,7 +553,7 @@ void ss_desktop_error(const char *message) {
     if (!desktopLaunch()) return;
     @autoreleasepool {
         [NSApplication sharedApplication];
-        [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+        [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
         NSAlert *alert = [[NSAlert alloc] init];
         alert.messageText = @"Smart Stage could not start";
         alert.informativeText = [NSString stringWithFormat:@"%s\n\nDetails are saved in ~/Library/Logs/Smart Stage/smartstage.log.", message];

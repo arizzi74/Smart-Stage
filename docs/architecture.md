@@ -11,8 +11,11 @@ builds without cgo fail initialization; there is no production fake backend.
 The optional Mac app launcher redirects output to
 `~/Library/Logs/Smart Stage/smartstage.log` and replaces itself with the bundled
 core executable. It does not start Terminal or leave a separate background
-helper. The native AppKit menu bar control reopens local Admin, reveals the log,
-and requests normal shutdown. Closing the browser leaves the host running.
+helper. Finder launches use regular AppKit activation with the bundled icon in
+the Dock and a standard application menu. Dock Quit and the application menu's
+Quit command request graceful shutdown. The additional menu bar control reopens
+local Admin, reveals the log, and requests normal shutdown. Closing the browser
+leaves the host running.
 
 ## Threads and ownership
 

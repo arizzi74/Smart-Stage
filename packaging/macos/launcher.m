@@ -9,7 +9,7 @@
 static int fail(NSString *message) {
     fprintf(stderr, "Smart Stage: %s\n", message.UTF8String);
     [NSApplication sharedApplication];
-    [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
+    [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
     NSAlert *alert = [[NSAlert alloc] init];
     alert.messageText = @"Smart Stage could not start";
     alert.informativeText = message;
@@ -20,6 +20,8 @@ static int fail(NSString *message) {
 int main(int argc, char *argv[]) {
     @autoreleasepool {
         NSString *core = [[[NSBundle mainBundle] executablePath].stringByDeletingLastPathComponent stringByAppendingPathComponent:@"smartstage"];
+        NSString *icon = [NSBundle.mainBundle pathForResource:@"smartstage" ofType:@"icns"];
+        if (!icon) return fail(@"The application's icon is missing. Reinstall Smart Stage and try again.");
         NSString *directory = [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Logs/Smart Stage"];
         NSError *error = nil;
         if (![NSFileManager.defaultManager createDirectoryAtPath:directory withIntermediateDirectories:YES
@@ -41,6 +43,7 @@ int main(int argc, char *argv[]) {
         if (input > STDERR_FILENO) close(input);
         if (output > STDERR_FILENO) close(output);
         if (setenv("SMARTSTAGE_APP_LAUNCH", "1", 1) != 0 ||
+            setenv("SMARTSTAGE_APP_ICON", icon.fileSystemRepresentation, 1) != 0 ||
             setenv("SMARTSTAGE_LOG_PATH", log.fileSystemRepresentation, 1) != 0)
             return fail(@"Cannot configure the application environment.");
         if (chdir(NSHomeDirectory().fileSystemRepresentation) != 0)

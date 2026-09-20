@@ -59,6 +59,10 @@ the same executable; it is one Finder application, not one physical file.
 The later request to run without Terminal changes the Mac app launcher to
 redirect logs and execute the core directly. A native menu bar control provides
 Open Admin, log access and Quit; quitting uses the existing graceful shutdown.
+The user subsequently reported that the menu-bar-only app left no visible icon
+and made Quit difficult to find. Finder launches therefore use regular AppKit
+activation, an explicit application icon, and standard application/Dock Quit.
+Terminal launches retain their existing native activation policy.
 After the user's Mac firewall blocked remote access, the user explicitly
 requested an installer step to allow Smart Stage's incoming connections. This
 uses per-application firewall rules with macOS administrator authorization; it

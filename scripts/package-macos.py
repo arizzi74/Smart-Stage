@@ -41,8 +41,9 @@ with (contents / "Info.plist").open("wb") as f:
         "CFBundleVersion": bundle_version,
         "SmartStageVersion": version,
         "SmartStageBackgroundLaunch": True,
+        "SmartStageDockIcon": True,
         "LSMinimumSystemVersion": "12.0",
-        "LSUIElement": True,
+        "LSUIElement": False,
         "NSHighResolutionCapable": True,
     }, f)
 subprocess.run([

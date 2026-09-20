@@ -23,7 +23,7 @@ Open Terminal, paste this command, and press Return:
 curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
 ```
 
-The installer detects Apple Silicon or Intel, downloads the matching preview 7
+The installer detects Apple Silicon or Intel, downloads the matching preview 8
 app ZIP, verifies its SHA-256 checksum, and installs **Smart Stage.app** with its
 icon into `~/Applications`. It removes `com.apple.quarantine` only from that app
 and its contents, then launches it. Copying the app needs no administrator
@@ -33,8 +33,10 @@ macOS may request administrator authorization for that rule. The firewall stays
 enabled and other applications' rules are preserved. Saved shows are retained.
 
 Admin opens automatically in your system browser. You can close Terminal after
-installation: the app runs independently, without a Terminal window. Use its
-menu bar control to reopen Admin, view logs, or quit Smart Stage. Later, open
+installation: the app runs independently, without a Terminal window. Its icon
+appears in the Dock. Right-click the Dock icon and choose **Quit**, or use
+**Smart Stage → Quit Smart Stage** when the app is active. Clicking the Dock icon
+reopens Admin. Its additional menu bar control provides Admin, logs and Quit. Later, open
 **Smart Stage.app** from the Applications folder inside your home folder. Quit
 the app before running the installer again to update it.
 
@@ -50,15 +52,15 @@ executable, including both browser interfaces and native playback.
 
 | Computer | Download |
 | --- | --- |
-| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.7/smartstage-darwin-arm64.zip) |
-| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.7/smartstage-darwin-amd64.zip) |
-| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.7/smartstage-windows-arm64.zip) |
-| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.7/smartstage-windows-amd64.zip) |
+| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.8/smartstage-darwin-arm64.zip) |
+| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.8/smartstage-darwin-amd64.zip) |
+| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.8/smartstage-windows-arm64.zip) |
+| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.8/smartstage-windows-amd64.zip) |
 
-[Release notes and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.7).
+[Release notes and checksums](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.8).
 Windows executables include the Smart Stage icon. Mac app bundles with the icon
-are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.7/smartstage-darwin-arm64.app.zip)
-and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.7/smartstage-darwin-amd64.app.zip).
+are also available directly: [Apple Silicon app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.8/smartstage-darwin-arm64.app.zip)
+and [Intel app ZIP](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.8/smartstage-darwin-amd64.app.zip).
 Each app bundle includes the same core executable plus its Finder launcher and
 icon. Opening `Smart Stage.app` runs it without Terminal and opens Admin. The
 standalone ZIPs above contain only `smartstage` (Mac) or `smartstage.exe` (Windows).
@@ -204,7 +206,7 @@ bash scripts/build.sh windows arm64
 ```
 
 Build on matching OS runners normally. `DEBUG=1` retains symbols;
-`VERSION=v0.1.0-preview.7` sets metadata. Output:
+`VERSION=v0.1.0-preview.8` sets metadata. Output:
 `dist/smartstage-<os>-<arch>.zip`, the raw build executable and engineering
 harness `dist/native-harness-<os>-<arch>[.exe]`, with adjacent checksums, import
 audits and toolchain records. Published application downloads are ZIPs. Apple system frameworks remain dynamic; Windows compiler
@@ -213,7 +215,8 @@ support is linked in. `CGO_ENABLED=0` cannot make a playback release.
 Windows builds embed the Smart Stage icon in the executable. Mac builds also
 produce `dist/smartstage-darwin-<arch>.app.zip`, an optional Finder app with the
 same icon. Extract it and open `Smart Stage.app` to start the bundled executable
-without Terminal. Its menu bar control provides Admin, logs and Quit. Both
+without Terminal, with the Smart Stage icon in the Dock and a standard Quit
+command. Its menu bar control also provides Admin, logs and Quit. Both
 launch paths open the local Admin page automatically. See the
 [icon source and regeneration instructions](assets/icon/README.md).
 

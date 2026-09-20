@@ -252,6 +252,12 @@ def verify_bundle(bundle, expected, architecture, version, scratch, report):
     assert info["CFBundleExecutable"] == "SmartStageLauncher"
     assert info["CFBundleIconFile"] == "smartstage.icns"
     assert info["SmartStageVersion"] == version
+    # Preview 7 remains a valid selectable installer target. Only newer app
+    # metadata promises the visible Dock behavior checked after real launch.
+    if info.get("SmartStageDockIcon"):
+        assert info.get("LSUIElement", False) is False
+        assert info.get("LSBackgroundOnly", False) is False
+        report["installedBundleDeclaresVisibleDockApp"] = True
     core = contents / "MacOS/smartstage"
     launcher = contents / "MacOS/SmartStageLauncher"
     icon = contents / "Resources/smartstage.icns"

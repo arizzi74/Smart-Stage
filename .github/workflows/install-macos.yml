@@ -2,7 +2,7 @@ name: Verify Mac app installation and quarantine removal
 on:
   push:
     branches: [main]
-    paths: ['install.sh', 'scripts/verify-macos-install.py', 'scripts/macos_app_checks.py', '.github/workflows/install-macos.yml']
+    paths: ['install.sh', 'scripts/verify-macos-install.py', 'scripts/macos_app_checks.py', 'scripts/inspect-macos-app.m', '.github/workflows/install-macos.yml']
   workflow_dispatch:
     inputs:
       version:

@@ -1,9 +1,14 @@
 """Native checks shared by Finder-bundle and published-installer verification."""
+import base64
+import hashlib
+import json
 import os
 from pathlib import Path
+import plistlib
 import signal
 import socket
 import subprocess
+import tempfile
 import time
 
 
@@ -32,8 +37,57 @@ def appended_log(snapshot):
         return stream.read().decode("utf-8", errors="replace")
 
 
+def dock_app_checks(bundle, pid):
+    """Observe Dock eligibility and icon art on the actual running process."""
+    contents = bundle / "Contents"
+    info = plistlib.loads((contents / "Info.plist").read_bytes())
+    assert info.get("LSUIElement", False) is False, "Finder app must not hide itself as a UI agent"
+    assert info.get("LSBackgroundOnly", False) is False, "Finder app must not hide itself as a background app"
+    source = Path(__file__).with_name("inspect-macos-app.m")
+    with tempfile.TemporaryDirectory(prefix="smartstage-running-app-") as temporary:
+        helper = Path(temporary) / "inspect-macos-app"
+        subprocess.run(["/usr/bin/clang", "-fobjc-arc", "-Wall", "-Wextra", "-Werror",
+                        "-mmacosx-version-min=12.0", "-framework", "AppKit", str(source),
+                        "-o", str(helper)], check=True, capture_output=True, text=True, timeout=90)
+        deadline = time.monotonic() + 15
+        observation = None
+        while time.monotonic() < deadline:
+            result = subprocess.run([str(helper), str(pid), str(contents / "Resources/smartstage.icns")],
+                                    capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                observation = json.loads(result.stdout)
+                if observation["finishedLaunching"] and observation["activationPolicy"] == 0:
+                    break
+            time.sleep(0.25)
+        else:
+            diagnostic = {key: value for key, value in (observation or {}).items()
+                          if not key.endswith("RGBA")}
+            raise AssertionError(f"Running app did not become a regular Dock application: {diagnostic}; {result.stderr}")
+
+    assert observation["processIdentifier"] == pid, observation
+    assert observation["bundleIdentifier"] == BUNDLE_ID, "Running app lost its bundle identity"
+    assert Path(observation["bundlePath"]).resolve() == bundle.resolve(), "Running app points to another bundle"
+    actual = base64.b64decode(observation.pop("runtimeIconRGBA"), validate=True)
+    expected = base64.b64decode(observation.pop("sourceIconRGBA"), validate=True)
+    assert len(actual) == len(expected) == 128 * 128 * 4, "Runtime icon must render as 128-pixel RGBA"
+    assert sum(alpha > 127 for alpha in expected[3::4]) > 128 * 128 // 4, "Source icon is unexpectedly empty"
+    difference = sum(abs(a - b) for a, b in zip(actual, expected)) / len(actual)
+    # Both images go through the same AppKit renderer. Permit small color-space
+    # or cached representation differences, while rejecting a blank/generic icon.
+    assert difference <= 5.0, f"Runtime Dock icon does not match Smart Stage artwork (mean channel difference {difference:.3f}/255)"
+    return {"runtimeAppObservedByNSRunningApplication": True,
+            "runtimeActivationPolicyRegular": True, "runtimeAppEligibleForDock": True,
+            "runtimeBundleIdentityMatched": True, "runtimeIconMatchesBundledArtwork": True,
+            "runtimeIconMeanAbsoluteChannelDifference": round(difference, 6),
+            "runtimeIconRenderedRGBA128SHA256": hashlib.sha256(actual).hexdigest(),
+            "sourceIconRenderedRGBA128SHA256": hashlib.sha256(expected).hexdigest(),
+            "runningApplication": observation}
+
+
 def background_launch_checks(bundle, pid, snapshot, find_core_pid):
     """Inspect the actual running core, then exercise LaunchServices reopen."""
+    info = plistlib.loads((bundle / "Contents/Info.plist").read_bytes())
+    dock = bool(info.get("SmartStageDockIcon"))
     assert not (terminal_pids() - snapshot["terminalPIDs"]), "Finder launch started Terminal"
     tty = subprocess.check_output(["/bin/ps", "-p", str(pid), "-o", "tty="],
                                   text=True, timeout=10).strip()
@@ -53,7 +107,8 @@ def background_launch_checks(bundle, pid, snapshot, find_core_pid):
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline:
         log = appended_log(snapshot)
-        if "Admin: http://127.0.0.1:8787/admin" in log and "Smart Stage menu bar ready" in log:
+        readiness = "Smart Stage Dock icon and application menu ready" if dock else "Smart Stage menu bar ready"
+        if "Admin: http://127.0.0.1:8787/admin" in log and readiness in log:
             break
         time.sleep(0.25)
     else:
@@ -70,10 +125,13 @@ def background_launch_checks(bundle, pid, snapshot, find_core_pid):
     else:
         raise AssertionError("Reopening the app did not dispatch Admin to the system browser")
     assert not (terminal_pids() - snapshot["terminalPIDs"]), "Reopening the app started Terminal"
-    return {"finderDidNotStartTerminal": True, "coreHasNoControllingTerminal": True,
-            "standardInputIsDevNull": True, "stdoutAndStderrUseAppLog": True,
-            "startupURLWrittenToAppLog": True, "appLogPath": str(LOG_PATH),
-            "reopenKeptSameCorePID": True, "reopenDispatchedAdminBrowser": True}
+    result = {"finderDidNotStartTerminal": True, "coreHasNoControllingTerminal": True,
+              "standardInputIsDevNull": True, "stdoutAndStderrUseAppLog": True,
+              "startupURLWrittenToAppLog": True, "appLogPath": str(LOG_PATH),
+              "reopenKeptSameCorePID": True, "reopenDispatchedAdminBrowser": True}
+    if dock:
+        result.update(dock_app_checks(bundle, pid))
+    return result
 
 
 def quit_background_app(pid):
