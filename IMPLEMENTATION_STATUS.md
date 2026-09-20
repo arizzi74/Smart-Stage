@@ -61,8 +61,11 @@ and compiled, but Windows audio playback remains unverified on real hardware.
   [Capability checks](https://github.com/arizzi74/Smart-Stage/actions/runs/35473613211)
   confirmed running Windows audio services but no installed sound devices on
   either runner. They tested the published preview without changing OS settings.
-- Native natural completion and stage-enabled persistence are checked through
-  native events. No CI assertion proves physical black pixels or actual sound.
+- [Captured native pixels](docs/native-display-results.md) at source `505a1e4`
+  show moving/restarted video and STOP/end blackout on both Macs and Windows
+  AMD64. Mac captures retain a small OS indicator. Windows ARM64 captures show
+  first-run Windows setup, so its visual test failed. No physical projector,
+  sound or latency claim follows from these virtual-desktop checks.
 - Unavailable audio/display IDs cause native errors without a playing event on
   all four targets. Detailed harness records are attached to preview 3.
 - Linux ARM64: `go test -race ./...`, `go vet ./...`, Chromium browser checks.
@@ -87,8 +90,10 @@ change at `67a10d2` passed all four native build/smoke checks but did not reduce
 retained allocations in a comparable 20-minute profile. Heap attribution found
 accumulating native caption timers/timebases. Releasing the video layer with
 its cue at `ae439c8` removed those classes from stopped snapshots on both Macs
-and passed all four native regressions. A longer profile and fresh two-hour
-soak still need to establish the remaining resource behavior.
+and passed all four native regressions. A 20-minute release-style profile at
+`505a1e4` returned native allocation counts slightly below their starting levels
+after two stopped idle minutes on both Macs. The exact-source two-hour soak
+remains in progress; it must finish before long-run conclusions are drawn.
 Windows per-type diagnostics showed substantial event/thread/I/O
 handle cleanup during two stopped idle minutes, with file counts unchanged;
 no Windows change was justified by these observations. Mac stability remains

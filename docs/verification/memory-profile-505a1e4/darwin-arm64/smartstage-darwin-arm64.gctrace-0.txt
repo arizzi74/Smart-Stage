@@ -1,0 +1,102 @@
+gc 1 @21.203s 0%: 0.15+1.6+0.004 ms clock, 0.45+0.043/0.63/3.0+0.012 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 7664 KiB now, 39% util
+gc 2 @44.170s 0%: 0.29+1.9+0.038 ms clock, 0.88+0.13/0.41/1.0+0.11 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6720 KiB now, 33% util
+gc 3 @67.075s 0%: 0.52+0.93+0.005 ms clock, 1.5+0.10/0.77/0.22+0.015 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6536 KiB now, 30% util
+gc 4 @90.124s 0%: 0.37+0.79+0.003 ms clock, 1.1+0.38/0.48/0.75+0.009 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 496 KiB work (bg), 0 KiB work (eager), 6512 KiB now, 31% util
+gc 5 @112.252s 0%: 1.4+3.6+0.43 ms clock, 4.4+0.084/0.70/0+1.2 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 640 KiB work (bg), 0 KiB work (eager), 6720 KiB now, 36% util
+gc 6 @134.191s 0%: 0.30+0.41+0.003 ms clock, 0.92+0.040/0.46/0.089+0.009 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 128 KiB work (bg), 0 KiB work (eager), 6824 KiB now, 36% util
+gc 7 @157.379s 0%: 1.2+1.2+0.002 ms clock, 3.7+0.072/1.8/0.85+0.008 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6824 KiB now, 35% util
+gc 8 @185.961s 0%: 0.51+0.59+0.005 ms clock, 1.5+0.11/0.56/0+0.016 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6640 KiB now, 39% util
+gc 9 @213.107s 0%: 0.31+0.47+0.002 ms clock, 0.93+0.037/0.47/0.004+0.007 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6544 KiB now, 36% util
+gc 10 @241.191s 0%: 0.17+0.47+0.030 ms clock, 0.51+0.038/0.48/0.10+0.090 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 384 KiB work (bg), 0 KiB work (eager), 6768 KiB now, 38% util
+gc 11 @269.391s 0%: 0.34+0.51+0.002 ms clock, 1.0+0.047/0.56/0.26+0.007 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6544 KiB now, 36% util
+gc 12 @298.496s 0%: 0.30+1.0+0.002 ms clock, 0.92+0.042/0.43/1.1+0.007 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 320 KiB work (bg), 0 KiB work (eager), 6752 KiB now, 42% util
+gc 13 @326.514s 0%: 0.30+1.2+0.016 ms clock, 0.91+0.13/1.1/0.14+0.050 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6672 KiB now, 40% util
+gc 14 @353.678s 0%: 0.24+1.0+0.025 ms clock, 0.72+0.030/0.80/0.15+0.075 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 128 KiB work (bg), 0 KiB work (eager), 6768 KiB now, 41% util
+gc 15 @382.166s 0%: 0.30+0.46+0.002 ms clock, 0.90+0.045/0.41/0.29+0.006 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6752 KiB now, 40% util
+gc 16 @411.171s 0%: 0.31+0.74+0.011 ms clock, 0.95+0.050/0.55/0.085+0.035 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6704 KiB now, 41% util
+gc 17 @435.604s 0%: 0.17+0.21+0.002 ms clock, 0.52+0.015/0.23/0.10+0.007 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6544 KiB now, 41% util
+gc 18 @460.529s 0%: 0.18+0.42+0.003 ms clock, 0.56+0.11/0.41/0.10+0.009 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 256 KiB work (bg), 0 KiB work (eager), 6800 KiB now, 45% util
+gc 19 @485.799s 0%: 0.092+0.23+0.003 ms clock, 0.27+0.029/0.23/0.13+0.009 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6800 KiB now, 44% util
+gc 20 @512.601s 0%: 0.34+0.43+0.002 ms clock, 1.0+0.039/0.61/0.13+0.007 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6800 KiB now, 43% util
+gc 21 @539.042s 0%: 0.14+0.80+0.016 ms clock, 0.43+0.029/0.52/0.43+0.050 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6800 KiB now, 47% util
+gc 22 @565.859s 0%: 0.11+0.20+0.002 ms clock, 0.35+0.024/0.29/0.045+0.007 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6544 KiB now, 40% util
+gc 23 @591.550s 0%: 0.25+0.46+0.002 ms clock, 0.76+0/0.58/0.11+0.006 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 256 KiB work (bg), 0 KiB work (eager), 6760 KiB now, 43% util
+gc 24 @617.300s 0%: 0.082+0.54+0.029 ms clock, 0.24+0.019/0.24/0.11+0.088 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6544 KiB now, 45% util
+gc 25 @643.171s 0%: 0.29+0.62+0.002 ms clock, 0.89+0.060/0.50/0.28+0.007 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 256 KiB work (bg), 0 KiB work (eager), 6800 KiB now, 45% util
+gc 26 @669.892s 0%: 0.17+0.39+0.002 ms clock, 0.52+0.023/0.27/0.16+0.008 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6544 KiB now, 44% util
+gc 27 @695.731s 0%: 0.29+0.29+0.002 ms clock, 0.87+0.034/0.56/0.075+0.007 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 192 KiB work (bg), 0 KiB work (eager), 6736 KiB now, 43% util
+gc 28 @720.915s 0%: 0.50+0.60+0.018 ms clock, 1.5+0.31/0.56/0.36+0.056 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6544 KiB now, 42% util
+gc 29 @744.451s 0%: 0.32+0.54+0.002 ms clock, 0.97+0.035/0.60/0+0.007 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 256 KiB work (bg), 0 KiB work (eager), 6744 KiB now, 44% util
+gc 30 @769.833s 0%: 1.8+3.9+0.032 ms clock, 5.5+0.27/4.6/2.0+0.098 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6032 KiB now, 41% util
+gc 31 @793.711s 0%: 0.066+0.37+0.002 ms clock, 0.19+0.046/0.18/0.15+0.006 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 768 KiB work (bg), 0 KiB work (eager), 6768 KiB now, 44% util
+gc 32 @818.667s 0%: 0.37+1.0+0.030 ms clock, 1.1+0.040/0.64/0.60+0.092 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6496 KiB now, 43% util
+gc 33 @843.985s 0%: 0.31+0.66+0.004 ms clock, 0.95+0.039/0.55/0.33+0.013 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 320 KiB work (bg), 0 KiB work (eager), 6816 KiB now, 45% util
+gc 34 @867.549s 0%: 0.73+2.8+0.012 ms clock, 2.1+0.12/1.1/5.3+0.037 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6440 KiB now, 43% util
+gc 35 @884.960s 0%: 0.15+1.0+0.004 ms clock, 0.47+0.083/0.56/1.2+0.014 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 432 KiB work (bg), 0 KiB work (eager), 6664 KiB now, 52% util
+gc 36 @904.936s 0%: 0.066+0.64+0.005 ms clock, 0.19+0.017/0.42/0.23+0.015 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6664 KiB now, 54% util
+gc 37 @926.027s 0%: 0.092+0.68+0.005 ms clock, 0.27+0.033/0.14/0.67+0.016 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6656 KiB now, 54% util
+gc 38 @947.423s 0%: 0.23+0.90+0.004 ms clock, 0.71+0.058/0.57/1.0+0.014 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6440 KiB now, 50% util
+gc 39 @967.831s 0%: 0.31+0.95+0.004 ms clock, 0.94+0.47/0.62/0.73+0.014 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 384 KiB work (bg), 0 KiB work (eager), 6752 KiB now, 55% util
+gc 40 @987.081s 0%: 0.13+0.78+0.005 ms clock, 0.39+0.085/0.43/0.53+0.017 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6408 KiB now, 50% util
+gc 41 @1006.135s 0%: 0.26+1.1+0.005 ms clock, 0.78+0.046/0.60/0.75+0.015 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 384 KiB work (bg), 0 KiB work (eager), 6792 KiB now, 54% util
+gc 42 @1028.119s 0%: 0.23+1.3+0.009 ms clock, 0.71+0.36/0.26/1.3+0.029 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6664 KiB now, 52% util
+gc 43 @1049.898s 0%: 0.096+0.68+0.024 ms clock, 0.28+0.038/0.42/0.15+0.074 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6648 KiB now, 53% util
+gc 44 @1069.881s 0%: 0.10+0.21+0.001 ms clock, 0.32+0.016/0.25/0.088+0.005 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6648 KiB now, 51% util
+gc 45 @1089.906s 0%: 0.39+1.5+0.012 ms clock, 1.1+0.094/0.39/1.8+0.038 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 128 KiB work (bg), 0 KiB work (eager), 6776 KiB now, 53% util
+gc 46 @1110.442s 0%: 0.25+1.1+0.041 ms clock, 0.76+0.062/0.74/0.47+0.12 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6672 KiB now, 53% util
+gc 47 @1131.185s 0%: 0.17+0.95+0.009 ms clock, 0.52+0.067/0.65/0.68+0.028 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 128 KiB work (bg), 0 KiB work (eager), 6800 KiB now, 56% util
+gc 48 @1152.078s 0%: 0.18+0.74+0.006 ms clock, 0.55+0.29/0.49/0.29+0.018 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6744 KiB now, 55% util
+gc 49 @1171.898s 0%: 0.14+0.63+0.041 ms clock, 0.42+0.025/0.29/0.24+0.12 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6536 KiB now, 52% util
+gc 50 @1192.784s 0%: 0.13+0.35+0.002 ms clock, 0.39+0.021/0.24/0.24+0.008 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 256 KiB work (bg), 0 KiB work (eager), 6776 KiB now, 53% util
+gc 51 @1312.792s 0%: 0.61+1.6+0.012 ms clock, 1.8+0/2.0/0.80+0.036 ms cpu, 3->3->1 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 3 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6648 KiB now, 49% util

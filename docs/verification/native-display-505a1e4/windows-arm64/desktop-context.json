@@ -1,0 +1,188 @@
+{
+  "visibleElementCount": 13,
+  "truncated": false,
+  "elements": [
+    {
+      "name": "",
+      "automationId": "",
+      "controlType": "ControlType.Pane",
+      "processId": 11164,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        0.0,
+        0.0,
+        1024.0,
+        768.0
+      ]
+    },
+    {
+      "name": "",
+      "automationId": "",
+      "controlType": "ControlType.Pane",
+      "processId": 11164,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        0.0,
+        0.0,
+        1024.0,
+        768.0
+      ]
+    },
+    {
+      "name": "",
+      "automationId": "",
+      "controlType": "ControlType.Pane",
+      "processId": 5856,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        0.0,
+        720.0,
+        1024.0,
+        48.0
+      ]
+    },
+    {
+      "name": "C:\\ProgramData\\GitHub\\HostedComputeAgent\\hosted-compute-agent",
+      "automationId": "Console Window",
+      "controlType": "ControlType.Window",
+      "processId": 5484,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        31.0,
+        156.0,
+        993.0,
+        519.0
+      ]
+    },
+    {
+      "name": "Text Area",
+      "automationId": "Text Area",
+      "controlType": "ControlType.Document",
+      "processId": 5484,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        31.0,
+        156.0,
+        993.0,
+        519.0
+      ]
+    },
+    {
+      "name": "Microsoft account",
+      "automationId": "",
+      "controlType": "ControlType.Window",
+      "processId": 5856,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        0.0,
+        0.0,
+        1024.0,
+        768.0
+      ]
+    },
+    {
+      "name": "System Properties",
+      "automationId": "",
+      "controlType": "ControlType.Window",
+      "processId": 5424,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        311.0,
+        319.0,
+        420.0,
+        192.0
+      ]
+    },
+    {
+      "name": "OK",
+      "automationId": "2",
+      "controlType": "ControlType.Pane",
+      "processId": 5424,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        633.0,
+        470.0,
+        75.0,
+        23.0
+      ]
+    },
+    {
+      "name": "",
+      "automationId": "20",
+      "controlType": "ControlType.Pane",
+      "processId": 5424,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        340.0,
+        373.0,
+        32.0,
+        32.0
+      ]
+    },
+    {
+      "name": "Windows created a temporary paging file on your computer because of a problem that occurred with your paging file configuration when you started your computer.  The total paging file size for all disk drives may be somewhat larger than the size you specified.",
+      "automationId": "65535",
+      "controlType": "ControlType.Pane",
+      "processId": 5424,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        381.0,
+        373.0,
+        312.0,
+        67.0
+      ]
+    },
+    {
+      "name": "Program Manager",
+      "automationId": "",
+      "controlType": "ControlType.Pane",
+      "processId": 5856,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        0.0,
+        0.0,
+        1024.0,
+        768.0
+      ]
+    },
+    {
+      "name": "",
+      "automationId": "",
+      "controlType": "ControlType.Pane",
+      "processId": 5856,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        0.0,
+        0.0,
+        1024.0,
+        768.0
+      ]
+    },
+    {
+      "name": "FolderView",
+      "automationId": "1",
+      "controlType": "ControlType.Pane",
+      "processId": 5856,
+      "toggle": null,
+      "canInvoke": false,
+      "bounds": [
+        0.0,
+        0.0,
+        1024.0,
+        768.0
+      ]
+    }
+  ]
+}

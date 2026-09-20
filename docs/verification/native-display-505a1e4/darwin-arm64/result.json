@@ -1,0 +1,199 @@
+{
+  "status": "passed",
+  "physicalOutputsVerified": false,
+  "latencyMeasured": false,
+  "captures": [
+    {
+      "image": "desktop-before.png",
+      "blackFraction": 0.9028396606445312,
+      "blueFraction": 0.0005404154459635416,
+      "greenFraction": 0.0022252400716145835,
+      "height": 768,
+      "nonBlackBounds": [
+        0,
+        0,
+        1023,
+        762
+      ],
+      "nonBlackPixels": 76410,
+      "opaqueFraction": 1,
+      "redFraction": 0.002574920654296875,
+      "sampledPixelSHA256": "0c16cef36c926f3ce4218d7b91472c9c6d6dc8511cb4bb0bd9605d9cabef5043",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "initial-play-frame-0.png",
+      "blackFraction": 0.2499237060546875,
+      "blueFraction": 0.12208811442057292,
+      "greenFraction": 0.12438583374023438,
+      "height": 768,
+      "nonBlackBounds": [
+        0,
+        4,
+        1023,
+        671
+      ],
+      "nonBlackPixels": 589884,
+      "opaqueFraction": 1,
+      "redFraction": 0.12300618489583333,
+      "sampledPixelSHA256": "35c6ccf2bd6e22eb47ff478be381604e9107aaee7b10c6c7cf2de9090b8126ea",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "initial-play-later-frame.png",
+      "blackFraction": 0.2499237060546875,
+      "blueFraction": 0.12196858723958333,
+      "greenFraction": 0.12279637654622395,
+      "height": 768,
+      "nonBlackBounds": [
+        0,
+        4,
+        1023,
+        671
+      ],
+      "nonBlackPixels": 589884,
+      "opaqueFraction": 1,
+      "redFraction": 0.12264760335286458,
+      "sampledPixelSHA256": "86fbb681cbf6ec38576491a649ebe4494c4446771a294008a72a959c788f4c53",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "stop-black.png",
+      "blackFraction": 0.9999237060546875,
+      "blueFraction": 6.612141927083333e-05,
+      "greenFraction": 0,
+      "height": 768,
+      "nonBlackBounds": [
+        1012,
+        4,
+        1019,
+        11
+      ],
+      "nonBlackPixels": 60,
+      "opaqueFraction": 1,
+      "redFraction": 0,
+      "sampledPixelSHA256": "7a25b21f500e2c15da1fcb0d562fce941697ee0a3b42bd9d8a7a42cc1c7462e0",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "stop-black-persistent.png",
+      "blackFraction": 0.9999237060546875,
+      "blueFraction": 6.612141927083333e-05,
+      "greenFraction": 0,
+      "height": 768,
+      "nonBlackBounds": [
+        1012,
+        4,
+        1019,
+        11
+      ],
+      "nonBlackPixels": 60,
+      "opaqueFraction": 1,
+      "redFraction": 0,
+      "sampledPixelSHA256": "7a25b21f500e2c15da1fcb0d562fce941697ee0a3b42bd9d8a7a42cc1c7462e0",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "restarted-play-frame-0.png",
+      "blackFraction": 0.2499237060546875,
+      "blueFraction": 0.12208811442057292,
+      "greenFraction": 0.12438583374023438,
+      "height": 768,
+      "nonBlackBounds": [
+        0,
+        4,
+        1023,
+        671
+      ],
+      "nonBlackPixels": 589884,
+      "opaqueFraction": 1,
+      "redFraction": 0.12300618489583333,
+      "sampledPixelSHA256": "35c6ccf2bd6e22eb47ff478be381604e9107aaee7b10c6c7cf2de9090b8126ea",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "restarted-play-later-frame.png",
+      "blackFraction": 0.2499237060546875,
+      "blueFraction": 0.12196858723958333,
+      "greenFraction": 0.12279637654622395,
+      "height": 768,
+      "nonBlackBounds": [
+        0,
+        4,
+        1023,
+        671
+      ],
+      "nonBlackPixels": 589884,
+      "opaqueFraction": 1,
+      "redFraction": 0.12264760335286458,
+      "sampledPixelSHA256": "86fbb681cbf6ec38576491a649ebe4494c4446771a294008a72a959c788f4c53",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "natural-end-black.png",
+      "blackFraction": 0.9999338785807291,
+      "blueFraction": 4.0690104166666664e-05,
+      "greenFraction": 0,
+      "height": 768,
+      "nonBlackBounds": [
+        1012,
+        4,
+        1019,
+        11
+      ],
+      "nonBlackPixels": 52,
+      "opaqueFraction": 1,
+      "redFraction": 0,
+      "sampledPixelSHA256": "f533569393484ec87f984c8c42ffb94f962ac87240df1ba74a110b464405bfa2",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "natural-end-black-persistent.png",
+      "blackFraction": 0.9999338785807291,
+      "blueFraction": 4.0690104166666664e-05,
+      "greenFraction": 0,
+      "height": 768,
+      "nonBlackBounds": [
+        1012,
+        4,
+        1019,
+        11
+      ],
+      "nonBlackPixels": 52,
+      "opaqueFraction": 1,
+      "redFraction": 0,
+      "sampledPixelSHA256": "f533569393484ec87f984c8c42ffb94f962ac87240df1ba74a110b464405bfa2",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    }
+  ],
+  "harnessVersion": "Smart Stage native harness dev (505a1e495075), go1.26.5 darwin/arm64",
+  "displayCount": 1,
+  "display": {
+    "id": "D0F26C02-CFC3-40C3-BEFE-CB3F2E0E89E6",
+    "name": "Apple Virtual",
+    "x": 0,
+    "y": 0,
+    "width": 1024,
+    "height": 768,
+    "primary": true,
+    "mirrored": false
+  }
+}

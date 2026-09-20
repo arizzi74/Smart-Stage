@@ -1,0 +1,132 @@
+{
+  "runId": "35478340863",
+  "applicationCommit": "505a1e495075dcc01abe6d7367d3b57d3f8e60a9",
+  "workflowCommit": "505a1e495075dcc01abe6d7367d3b57d3f8e60a9",
+  "method": "GC heap values and vmmap sizes are rounded by their tools. Before/after snapshots and continuous resource samples are separate observations. Counts/trends describe this workload; they do not establish resource stability or physical A/V behavior.",
+  "targets": [
+    {
+      "target": "darwin-amd64",
+      "cycles": 2153,
+      "elapsedSeconds": 1200.3871081380003,
+      "completed": true,
+      "firstSample": {
+        "seconds": 0.25,
+        "cycles": 1,
+        "residentBytes": 33832960
+      },
+      "lastSample": {
+        "seconds": 1200.37,
+        "cycles": 2153,
+        "residentBytes": 42209280
+      },
+      "goGCCollections": 49,
+      "goLiveHeapMiBRounded": {
+        "first": 0,
+        "final": 1,
+        "max": 1
+      },
+      "before": {
+        "mallocAllocationCount": 22355,
+        "mallocAllocatedBytesRounded": 3746816.0,
+        "physicalFootprintBytesRounded": 16986931.2
+      },
+      "after": {
+        "mallocAllocationCount": 27893,
+        "mallocAllocatedBytesRounded": 4344832.0,
+        "physicalFootprintBytesRounded": 23173529.6
+      },
+      "idle": {
+        "mallocAllocationCount": 22060,
+        "mallocAllocatedBytesRounded": 3725312.0,
+        "physicalFootprintBytesRounded": 22020096.0
+      },
+      "stoppedIdle": {
+        "requestedSeconds": 120,
+        "elapsedSeconds": 120.12172268699987,
+        "completed": true,
+        "samples": [
+          {
+            "seconds": 0.0,
+            "residentBytes": 42176512
+          },
+          {
+            "seconds": 60.13,
+            "residentBytes": 41369600
+          },
+          {
+            "seconds": 120.12,
+            "residentBytes": 41377792
+          }
+        ]
+      },
+      "mallocChange": {
+        "allocationCount": 5538,
+        "bytesRounded": 598016.0,
+        "allocationsPerCycle": 2.572224802601022,
+        "bytesPerCycleRounded": 277.7594054807246
+      }
+    },
+    {
+      "target": "darwin-arm64",
+      "cycles": 2347,
+      "elapsedSeconds": 1200.476354041,
+      "completed": true,
+      "firstSample": {
+        "seconds": 0.18,
+        "cycles": 1,
+        "residentBytes": 51560448
+      },
+      "lastSample": {
+        "seconds": 1200.46,
+        "cycles": 2347,
+        "residentBytes": 60522496
+      },
+      "goGCCollections": 51,
+      "goLiveHeapMiBRounded": {
+        "first": 0,
+        "final": 1,
+        "max": 1
+      },
+      "before": {
+        "mallocAllocationCount": 22721,
+        "mallocAllocatedBytesRounded": 3476480.0,
+        "physicalFootprintBytesRounded": 19084083.2
+      },
+      "after": {
+        "mallocAllocationCount": 29112,
+        "mallocAllocatedBytesRounded": 4207616.0,
+        "physicalFootprintBytesRounded": 31037849.6
+      },
+      "idle": {
+        "mallocAllocationCount": 22410,
+        "mallocAllocatedBytesRounded": 3530752.0,
+        "physicalFootprintBytesRounded": 22963814.4
+      },
+      "stoppedIdle": {
+        "requestedSeconds": 120,
+        "elapsedSeconds": 120.02932783300002,
+        "completed": true,
+        "samples": [
+          {
+            "seconds": 0.0,
+            "residentBytes": 60375040
+          },
+          {
+            "seconds": 60.05,
+            "residentBytes": 59392000
+          },
+          {
+            "seconds": 120.03,
+            "residentBytes": 59392000
+          }
+        ]
+      },
+      "mallocChange": {
+        "allocationCount": 6391,
+        "bytesRounded": 731136.0,
+        "allocationsPerCycle": 2.7230507030251383,
+        "bytesPerCycleRounded": 311.51938645078826
+      }
+    }
+  ]
+}

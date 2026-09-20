@@ -1,0 +1,199 @@
+{
+  "status": "passed",
+  "physicalOutputsVerified": false,
+  "latencyMeasured": false,
+  "captures": [
+    {
+      "image": "desktop-before.png",
+      "blackFraction": 0,
+      "blueFraction": 0.036327362060546875,
+      "greenFraction": 0.000484466552734375,
+      "height": 768,
+      "nonBlackBounds": [
+        0,
+        0,
+        1023,
+        767
+      ],
+      "nonBlackPixels": 786432,
+      "opaqueFraction": 1,
+      "redFraction": 0.00116729736328125,
+      "sampledPixelSHA256": "0ea0bc4165cf6e64ee2d61803af509c73f2c7ed75e70923e5142c23c94656826",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "initial-play-frame-0.png",
+      "blackFraction": 0.25,
+      "blueFraction": 0.12248611450195312,
+      "greenFraction": 0.12398910522460938,
+      "height": 768,
+      "nonBlackBounds": [
+        0,
+        96,
+        1023,
+        671
+      ],
+      "nonBlackPixels": 589824,
+      "opaqueFraction": 1,
+      "redFraction": 0.1238873799641927,
+      "sampledPixelSHA256": "4578e0e1ce8865d3fe92200f735e37d5068c66572e91029d9827fc7ed08788ae",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "initial-play-later-frame.png",
+      "blackFraction": 0.25,
+      "blueFraction": 0.12257639567057292,
+      "greenFraction": 0.1231549580891927,
+      "height": 768,
+      "nonBlackBounds": [
+        0,
+        96,
+        1023,
+        671
+      ],
+      "nonBlackPixels": 589824,
+      "opaqueFraction": 1,
+      "redFraction": 0.1231549580891927,
+      "sampledPixelSHA256": "e9c25bc808f9f31ff97e25deb9f68202ea0fd1665ba63552952dfed872f4ef50",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "stop-black.png",
+      "blackFraction": 1,
+      "blueFraction": 0,
+      "greenFraction": 0,
+      "height": 768,
+      "nonBlackBounds": [
+        1024,
+        768,
+        -1,
+        -1
+      ],
+      "nonBlackPixels": 0,
+      "opaqueFraction": 1,
+      "redFraction": 0,
+      "sampledPixelSHA256": "d2cdb07798b599560e35abad5e4f87f4205ee60e72e14d850b9590f801080978",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "stop-black-persistent.png",
+      "blackFraction": 1,
+      "blueFraction": 0,
+      "greenFraction": 0,
+      "height": 768,
+      "nonBlackBounds": [
+        1024,
+        768,
+        -1,
+        -1
+      ],
+      "nonBlackPixels": 0,
+      "opaqueFraction": 1,
+      "redFraction": 0,
+      "sampledPixelSHA256": "d2cdb07798b599560e35abad5e4f87f4205ee60e72e14d850b9590f801080978",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "restarted-play-frame-0.png",
+      "blackFraction": 0.25,
+      "blueFraction": 0.12249120076497395,
+      "greenFraction": 0.1244366963704427,
+      "height": 768,
+      "nonBlackBounds": [
+        0,
+        96,
+        1023,
+        671
+      ],
+      "nonBlackPixels": 589824,
+      "opaqueFraction": 1,
+      "redFraction": 0.12386830647786458,
+      "sampledPixelSHA256": "dd2d470126ef5b3022359c41d2d1e2481b25158b33e70b3ad20927bbd7fd2cd7",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "restarted-play-later-frame.png",
+      "blackFraction": 0.25,
+      "blueFraction": 0.12255223592122395,
+      "greenFraction": 0.12318166097005208,
+      "height": 768,
+      "nonBlackBounds": [
+        0,
+        96,
+        1023,
+        671
+      ],
+      "nonBlackPixels": 589824,
+      "opaqueFraction": 1,
+      "redFraction": 0.12343851725260417,
+      "sampledPixelSHA256": "62eddbb3dd27182e032646d87268c837fde5b03fd8631ed37f1b4479b36cfbf3",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "natural-end-black.png",
+      "blackFraction": 1,
+      "blueFraction": 0,
+      "greenFraction": 0,
+      "height": 768,
+      "nonBlackBounds": [
+        1024,
+        768,
+        -1,
+        -1
+      ],
+      "nonBlackPixels": 0,
+      "opaqueFraction": 1,
+      "redFraction": 0,
+      "sampledPixelSHA256": "d2cdb07798b599560e35abad5e4f87f4205ee60e72e14d850b9590f801080978",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    },
+    {
+      "image": "natural-end-black-persistent.png",
+      "blackFraction": 1,
+      "blueFraction": 0,
+      "greenFraction": 0,
+      "height": 768,
+      "nonBlackBounds": [
+        1024,
+        768,
+        -1,
+        -1
+      ],
+      "nonBlackPixels": 0,
+      "opaqueFraction": 1,
+      "redFraction": 0,
+      "sampledPixelSHA256": "d2cdb07798b599560e35abad5e4f87f4205ee60e72e14d850b9590f801080978",
+      "sampledPixels": 786432,
+      "samplingStride": 1,
+      "width": 1024
+    }
+  ],
+  "harnessVersion": "Smart Stage native harness dev (505a1e495075), go1.26.5 windows/amd64",
+  "displayCount": 1,
+  "display": {
+    "id": "\\\\?\\DISPLAY#MSH062E#5&1a097cd8&0&UID5527112#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}",
+    "name": "HyperVMonitor",
+    "x": 0,
+    "y": 0,
+    "width": 1024,
+    "height": 768,
+    "primary": true,
+    "mirrored": false
+  }
+}

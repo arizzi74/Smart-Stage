@@ -105,6 +105,12 @@ now checkpoints incomplete reports and prints resource samples every minute;
 it retains evidence if a future repeat loop fails or is interrupted. Neither
 already-running two-hour job uses this later reporting change.
 
+Native [captured-pixel observations](native-display-results.md) at renderer-fix
+source `505a1e4` passed video/restart/STOP/end checks on both Mac virtual
+desktops and Windows AMD64. A small Mac OS indicator remains visible. Windows
+ARM64 captured Windows first-run setup and failed the visual assertions. These
+results add virtual-pixel evidence without establishing physical outputs or latency.
+
 ## Reproduce
 
 ```sh
@@ -166,7 +172,9 @@ These are **unverified**, not assumed passed:
   a Mac pool-boundary candidate did not reduce that retention. Heap attribution
   identified accumulating caption timers/timebases. Releasing the video layer
   with its cue removed those classes from stopped snapshots on both Macs;
-  a longer profile and fresh two-hour soak are still needed for resource trends.
+  a 20-minute release-style profile returned allocation counts slightly below
+  their initial snapshots after two idle minutes on both Macs. The exact-source
+  two-hour run at `505a1e4` is still in progress.
   Windows per-type diagnostics show substantial
   cleanup after STOP, unchanged file counts and a small remaining increase over
   initial handle counts.

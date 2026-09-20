@@ -1,6 +1,6 @@
 # Acceptance audit
 
-Audit date: 19 September 2026. **Full acceptance is not achieved.** This maps
+Audit date: 20 September 2026. **Full acceptance is not achieved.** This maps
 the specification to current implementation and evidence. An automated result
 is credited only for what it observes; native events do not prove physical
 sound, black pixels, routing or timing.
@@ -22,6 +22,12 @@ confirmed both Windows audio services running but no installed sound devices or
 native audio endpoints on either runner architecture. The published preview's
 silent-video/restart checks passed in those same environments; Windows audio
 playback still needs machines with real render endpoints.
+
+[Captured-pixel checks](native-display-results.md) at source `505a1e4` observe
+video/restart and STOP/end black stage on both Macs and Windows AMD64, with a
+small OS indicator in the Mac captures. Windows ARM64 captures are obstructed
+by first-run setup, so its visual test failed. These observations do not complete
+the physical scenario or measure physical latency.
 
 ## Product and implementation requirements
 
@@ -79,8 +85,10 @@ Windows handle counts. Completed published-preview diagnostics show native
 Mac allocations increasing with a reported live Go heap of about 1 MiB.
 The Mac pool-boundary candidate did not reduce retained allocations. Heap
 attribution found caption timers/timebases; releasing the video layer with its
-cue removed those classes from stopped snapshots on both Macs. Longer resource
-validation is still needed. Windows per-type diagnostics show substantial cleanup
+cue removed those classes from stopped snapshots on both Macs. A 20-minute
+release-style profile at `505a1e4` returned allocation counts slightly below
+initial snapshots after two stopped idle minutes. Its two-hour run remains in
+progress; long-run resource validation is still needed. Windows per-type diagnostics show substantial cleanup
 after STOP and unchanged file counts, with a small remaining increase over the
 initial handle counts.
 Stability is not established. Each run remains evidence for its own source

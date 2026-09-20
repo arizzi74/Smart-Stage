@@ -212,19 +212,38 @@ the disappearance of caption objects is not proof of overall resource stability.
 Raw snapshots and parsed class deltas are in
 [`verification/heap-ae439c8/`](verification/heap-ae439c8/).
 [Profile 35478340863](https://github.com/arizzi74/Smart-Stage/actions/runs/35478340863)
-is using a stripped release-style build without allocation-stack logging, with
-a 20-minute workload and two minutes stopped idle.
+completed a 20-minute workload followed by two minutes stopped idle on both
+Mac architectures, using a stripped release-style build without allocation-stack
+logging. Both loops and saved-show restart checks passed.
+
+| Target | Cycles | Native malloc count before → after workload → after idle | Allocated KiB before → after workload → after idle |
+| --- | ---: | --- | --- |
+| Mac AMD64 | 2,153 | 22,355 → 27,893 → 22,060 | 3,659 → 4,243 → 3,638 |
+| Mac ARM64 | 2,347 | 22,721 → 29,112 → 22,410 | 3,395 → 4,109 → 3,448 |
+
+Compared with preview 3's similar 20-minute workload, the native allocation
+increase fell from about 15 allocations per cycle to 2.57/2.72. After idle,
+both counts were slightly below their starting snapshots; allocated bytes were
+21 KiB lower on AMD64 and 53 KiB higher on ARM64. Live Go heap ended at a
+reported 1 MiB on both. Resident memory did not fully return to its starting
+value: it ended at 39.46/56.64 MiB after idle versus 32.27/49.17 MiB at the first
+workload sample. This supports the renderer-lifetime fix and delayed native
+cleanup, but does not prove stability for every workload or a two-hour run.
+Raw reports, GC traces and before/after/idle OS snapshots are retained in
+[`verification/memory-profile-505a1e4/`](verification/memory-profile-505a1e4/).
+
 [Two-hour run 35478342253](https://github.com/arizzi74/Smart-Stage/actions/runs/35478342253)
 is collecting independent resource/restart evidence on all four targets.
 Both build exact candidate commit `505a1e495075dcc01abe6d7367d3b57d3f8e60a9`;
 the application code is unchanged from `ae439c8`. Its
 [regular native regression 35478340978](https://github.com/arizzi74/Smart-Stage/actions/runs/35478340978)
-passed all four targets and shared race/vet checks. Published preview 3 remains
-unchanged while this validation continues.
+passed all four targets and shared race/vet checks. Preview 4 is tagged at this
+same source; its release workflow is
+[35479742963](https://github.com/arizzi74/Smart-Stage/actions/runs/35479742963).
 
-[Native display observation 35478649277](https://github.com/arizzi74/Smart-Stage/actions/runs/35478649277)
-uses the exact `505a1e4` native harness artifacts to test moving video pixels,
-STOP/natural-end blackout and video restart on Mac virtual desktops. This is
-separate from the resource runs. Screen-capture permissions are not changed;
-unavailable capture is reported explicitly, not counted as passed pixel checks.
-Results are pending and cannot establish physical projector or latency acceptance.
+[Native display observations](native-display-results.md) use the exact `505a1e4`
+harness artifacts. Moving video, STOP/natural-end black stage and video restart
+were observed on both Mac virtual desktops and Windows AMD64. Mac screenshots
+also contain a small OS indicator; the Windows ARM64 observation failed because
+its captured desktop showed Windows first-run setup. These are separate from
+resource testing and do not establish physical projector or latency acceptance.

@@ -1,0 +1,325 @@
+{
+  "observerPid": 8752,
+  "observerSession": 2,
+  "harnessPid": 6940,
+  "harnessSession": 2,
+  "activeConsoleSession": 2,
+  "windowStation": {
+    "name": "WinSta0",
+    "receivingInput": null
+  },
+  "observerDesktop": {
+    "name": "Default",
+    "receivingInput": true
+  },
+  "windows": [
+    {
+      "pid": 6940,
+      "thread": 1452,
+      "visible": true,
+      "foreground": false,
+      "title": "",
+      "class": "SmartStageNative",
+      "bounds": [
+        0,
+        0,
+        1024,
+        768
+      ],
+      "cloaked": 0,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6936,
+      "thread": 6692,
+      "visible": true,
+      "foreground": false,
+      "title": "",
+      "class": "Shell_TrayWnd",
+      "bounds": [
+        0,
+        720,
+        1024,
+        768
+      ],
+      "cloaked": 0,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6940,
+      "thread": 7480,
+      "visible": false,
+      "foreground": false,
+      "title": "EVR Fullscreen Window",
+      "class": "EVRFullscreenVideo",
+      "bounds": [
+        10,
+        10,
+        410,
+        310
+      ],
+      "cloaked": 0,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6940,
+      "thread": 1452,
+      "visible": false,
+      "foreground": false,
+      "title": "Smart Stage",
+      "class": "SmartStageNative",
+      "bounds": [
+        0,
+        0,
+        136,
+        39
+      ],
+      "cloaked": 0,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 5108,
+      "thread": 10696,
+      "visible": true,
+      "foreground": false,
+      "title": "C:\\Windows\\system32\\wsl.exe",
+      "class": "ConsoleWindowClass",
+      "bounds": [
+        26,
+        26,
+        1019,
+        545
+      ],
+      "cloaked": 0,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 10600,
+      "thread": 10624,
+      "visible": true,
+      "foreground": false,
+      "title": "C:\\ProgramData\\GitHub\\HostedComputeAgent\\hosted-compute-agent",
+      "class": "ConsoleWindowClass",
+      "bounds": [
+        31,
+        156,
+        1024,
+        675
+      ],
+      "cloaked": 0,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6936,
+      "thread": 6876,
+      "visible": true,
+      "foreground": false,
+      "title": "Microsoft account",
+      "class": "Shell_OOBEProxy",
+      "bounds": [
+        0,
+        0,
+        1024,
+        768
+      ],
+      "cloaked": 0,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 2576,
+      "thread": 2588,
+      "visible": true,
+      "foreground": false,
+      "title": "System Properties",
+      "class": "#32770",
+      "bounds": [
+        311,
+        319,
+        731,
+        511
+      ],
+      "cloaked": 0,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6936,
+      "thread": 8368,
+      "visible": true,
+      "foreground": false,
+      "title": "",
+      "class": "DummyDWMListenerWindow",
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "cloaked": 1,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6936,
+      "thread": 8368,
+      "visible": true,
+      "foreground": false,
+      "title": "",
+      "class": "DummyDWMListenerWindow",
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "cloaked": 1,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6936,
+      "thread": 8368,
+      "visible": true,
+      "foreground": false,
+      "title": "",
+      "class": "DummyDWMListenerWindow",
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "cloaked": 1,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6936,
+      "thread": 8368,
+      "visible": true,
+      "foreground": false,
+      "title": "",
+      "class": "DummyDWMListenerWindow",
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "cloaked": 1,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6936,
+      "thread": 8368,
+      "visible": true,
+      "foreground": false,
+      "title": "",
+      "class": "DummyDWMListenerWindow",
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "cloaked": 1,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6936,
+      "thread": 6904,
+      "visible": true,
+      "foreground": false,
+      "title": "Program Manager",
+      "class": "Progman",
+      "bounds": [
+        0,
+        0,
+        1024,
+        768
+      ],
+      "cloaked": 0,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6940,
+      "thread": 7480,
+      "visible": false,
+      "foreground": false,
+      "title": "Default IME",
+      "class": "IME",
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "cloaked": 0,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    },
+    {
+      "pid": 6940,
+      "thread": 1452,
+      "visible": false,
+      "foreground": false,
+      "title": "Default IME",
+      "class": "IME",
+      "bounds": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "cloaked": 0,
+      "desktop": {
+        "name": "Default",
+        "receivingInput": true
+      }
+    }
+  ],
+  "inputDesktop": {
+    "name": "Default",
+    "receivingInput": true
+  }
+}
