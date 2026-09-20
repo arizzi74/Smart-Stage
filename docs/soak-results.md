@@ -210,8 +210,21 @@ allocations. Their lifetime needs a longer observation and stopped idle period;
 the disappearance of caption objects is not proof of overall resource stability.
 
 Raw snapshots and parsed class deltas are in
-[`verification/heap-ae439c8/`](verification/heap-ae439c8/). The next profile uses
-a stripped release-style build without allocation-stack logging, with a
-20-minute workload and two minutes stopped idle. A new two-hour native run
-will retain independent resource/restart evidence for this candidate source.
-Published preview 3 remains unchanged while this validation continues.
+[`verification/heap-ae439c8/`](verification/heap-ae439c8/).
+[Profile 35478340863](https://github.com/arizzi74/Smart-Stage/actions/runs/35478340863)
+is using a stripped release-style build without allocation-stack logging, with
+a 20-minute workload and two minutes stopped idle.
+[Two-hour run 35478342253](https://github.com/arizzi74/Smart-Stage/actions/runs/35478342253)
+is collecting independent resource/restart evidence on all four targets.
+Both build exact candidate commit `505a1e495075dcc01abe6d7367d3b57d3f8e60a9`;
+the application code is unchanged from `ae439c8`. Its
+[regular native regression 35478340978](https://github.com/arizzi74/Smart-Stage/actions/runs/35478340978)
+passed all four targets and shared race/vet checks. Published preview 3 remains
+unchanged while this validation continues.
+
+[Native display observation 35478649277](https://github.com/arizzi74/Smart-Stage/actions/runs/35478649277)
+uses the exact `505a1e4` native harness artifacts to test moving video pixels,
+STOP/natural-end blackout and video restart on Mac virtual desktops. This is
+separate from the resource runs. Screen-capture permissions are not changed;
+unavailable capture is reported explicitly, not counted as passed pixel checks.
+Results are pending and cannot establish physical projector or latency acceptance.
