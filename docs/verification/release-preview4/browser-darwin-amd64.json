@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "application": "Smart Stage v0.1.0-preview.4 (505a1e495075), go1.26.5, darwin/amd64",
+  "platform": "darwin",
+  "architecture": "amd64",
+  "node": "v22.23.2",
+  "nodeArchitecture": "x64",
+  "physicalRoutingVerified": false,
+  "checks": [
+    "Admin browser selected four real host files, saved four labels and reordered stable cue IDs",
+    "Command paired separately on plain HTTP, rendered the saved order, and sent one PLAY per tap",
+    "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser"
+  ],
+  "browser": "153.0.8010.12",
+  "origin": "HTTP on an actual non-loopback host IPv4 address",
+  "cuesNativelyPlayedAndStopped": 4,
+  "audioEndpoints": 1,
+  "displays": 1,
+  "audioSkipped": false
+}

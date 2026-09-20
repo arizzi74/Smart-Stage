@@ -13,6 +13,8 @@ HTTP/native application checks and release publication, followed by curl/irm
 installation and real browser checks on all four targets. The browser tests
 use the same workflow and coverage described below, against the published
 preview 4 executables. Runtime output reports `v0.1.0-preview.4 (505a1e495075)`.
+Browser result JSONs are retained alongside the download verification below;
+their full screenshots remain in this run's `browser-native-*` Actions artifacts.
 
 Downloaded files in `dist/releases/v0.1.0-preview.4/` passed checksum, architecture,
 Go/module-version and clean-source-commit checks. The exact sizes, hashes and
@@ -156,6 +158,18 @@ and resource samples; current scripts mark the repeat loop `completed` only
 after its full duration. Check the process/workflow result and subsequent
 restart result too. A partial report or ten-second CI run cannot establish the
 two-hour requirement.
+
+The harness natural-end check now waits for the native `ended` event with a
+30-second bound and records observed event times. In earlier
+[run 35479026373](https://github.com/arizzi74/Smart-Stage/actions/runs/35479026373),
+the Windows AMD64 harness exited at its fixed six-second process deadline while
+the last playback position was only 2.60/3.00 seconds; that run failed its end
+assertion. [Run 35479868178](https://github.com/arizzi74/Smart-Stage/actions/runs/35479868178)
+at test source `4305547` passed the revised check on all four targets, with
+observed end events 3.42–4.25 seconds after process start. It retains the required
+end/stage-enabled assertions and does not change application code. Raw records
+are in [`verification/native-smoke-4305547/`](verification/native-smoke-4305547/).
+These process/event observations are not physical cue-start or STOP latency.
 
 Use matching OS runners normally. Windows Linux cross-builds are additional
 compile/import checks. Go/native SDKs/Python/Playwright are development-only.
