@@ -75,14 +75,21 @@ def windows_icon(executable, source):
     user.DestroyIcon.argtypes = [wintypes.HICON]
     large, small = wintypes.HICON(), wintypes.HICON()
     try:
-        result = shell.ExtractIconExW(str(executable), 0, ctypes.byref(large), ctypes.byref(small), 1)
-        assert result == 1 and large.value and small.value, "Windows Shell could not extract both icon sizes"
+        # Request each size separately: requesting both can return two icons,
+        # although nIcons is one (one large/small pair).
+        large_count = shell.ExtractIconExW(str(executable), 0, ctypes.byref(large), None, 1)
+        small_count = shell.ExtractIconExW(str(executable), 0, None, ctypes.byref(small), 1)
+        assert large_count == small_count == 1 and large.value and small.value, (
+            f"Windows Shell icon extraction failed: large={large_count}/{large.value}, "
+            f"small={small_count}/{small.value}, error={ctypes.get_last_error()}"
+        )
     finally:
         if large.value:
             user.DestroyIcon(large)
         if small.value:
             user.DestroyIcon(small)
-    return {"embeddedSizes": sizes, "sourcePixelsMatch": True, "shellExtractedLargeAndSmall": True}
+    return {"embeddedSizes": sizes, "sourcePixelsMatch": True, "shellExtractedLargeAndSmall": True,
+            "shellLargeExtractCount": large_count, "shellSmallExtractCount": small_count}
 
 
 def finder_launch(bundle):
