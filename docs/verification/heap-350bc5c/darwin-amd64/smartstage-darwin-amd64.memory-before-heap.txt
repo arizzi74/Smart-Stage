@@ -1,0 +1,1126 @@
+Exit code: 0
+Process:         smartstage-darwin-amd64 [8731]
+Path:            /Users/USER/*/smartstage-darwin-amd64
+Load Address:    0x103d99000
+Identifier:      smartstage-darwin-amd64
+Version:         0
+Code Type:       X86-64
+Platform:        macOS
+Parent Process:  Python [8730]
+Target Type:     live task
+
+Date/Time:       2026-09-19 23:58:26.141 +0000
+Launch Time:     2026-09-19 23:58:18.925 +0000
+OS Version:      macOS 15.7.9 (24G830)
+Report Version:  7
+Analysis Tool:   /Applications/Xcode_16.4.app/Contents/Developer/usr/bin/heap
+Analysis Tool Version:  Xcode 16.4 (16F6)
+
+Physical footprint:         28.8M
+Physical footprint (peak):  30.2M
+Idle exit:                  untracked
+----
+
+Process 8731: 6 zones
+
+All zones: 22613 nodes malloced - Sizes: 752KB[1] 80KB[1] 44KB[1] 20KB[1] 19.5KB[1] 18.5KB[1] 18KB[1] 13.5KB[2] 13KB[1] 12KB[1] 11.5KB[1] 10KB[8] 9KB[2] 8.5KB[9] 8KB[12] 7.5KB[2] 6KB[3] 5.5KB[2] 5KB[11] 4.5KB[3] 4KB[22] 3.5KB[7] 3KB[19] 2.5KB[70] 2KB[49] 1.5KB[69] 1KB[35] 1008[1] 992[1] 928[2] 880[3] 864[4] 832[4] 800[11] 784[1] 768[1] 752[6] 736[1] 720[1] 704[1] 688[3] 672[10] 656[54] 624[4] 608[3] 592[8] 576[23] 560[9] 544[17] 528[4] 512[75] 480[9] 464[3] 448[14] 432[1] 416[4] 400[6] 384[18] 368[107] 352[16] 336[42] 320[14] 304[41] 288[34] 272[35] 256[184] 240[278] 224[142] 208[298] 192[108] 176[27] 160[63] 144[243] 128[868] 112[573] 96[541] 80[1109] 64[4843] 48[5331] 32[5488] 16[1591] 
+
+Found:  747 ObjC classes  121 Swift classes  155 C++ classes  327 CFTypes
+Derived 458 type names for non-objects from allocation backtraces
+
+-----------------------------------------------------------------------
+All zones: 22613 nodes (3658416 bytes)
+
+   COUNT      BYTES       AVG   CLASS_NAME                                        TYPE    BINARY
+   =====      =====       ===   ==========                                        ====    ======
+       1     770048  770048.0   malloc in (anonymous namespace)::LogRingBuffer::LogRingBuffer()  C++     SkyLight
+     836     204976     245.2   NSMutableDictionary (Storage)                     C       CoreFoundation
+     494     181184     366.8   Class.methodCache._buckets (bucket_t)             C       libobjc.A.dylib
+    3393     178256      52.5   CFString                                          ObjC    CoreFoundation
+      64     163840    2560.0   calloc in weak_resize(weak_table_t*, unsigned long)  C       libobjc.A.dylib
+    1686     107904      64.0   calloc in _dispatch_async_f_slow                  C       libdispatch.dylib
+     164      89952     548.5   CFDictionary (Value Storage)                      C       CoreFoundation
+      10      81920    8192.0   malloc in CA::Transaction::create()               C++     QuartzCore
+       1      81920   81920.0   AppleParavirtDevice                               ObjC    AppleParavirtGPUMetal
+     123      70672     574.6   NSDictionary                                      ObjC    CoreFoundation
+     254      60960     240.0   APComponent_FromBundle_Loadable                   C++     AudioToolboxCore
+    1696      54272      32.0   Class.data (class_rw_t)                           C       libobjc.A.dylib
+     109      48544     445.4   CFDictionary (Key Storage)                        C       CoreFoundation
+     825      45440      55.1   calloc in parseFrameArgumentInfo                  C       CoreFoundation
+       1      45056   45056.0   malloc in CADeprecated::CABufferList::AllocateBuffers(unsigned int)  C++     libAudioToolboxUtility.dylib
+     455      44096      96.9   CFData                                            ObjC    CoreFoundation
+      28      43008    1536.0   calloc in __CFTSDGetTable                         C       CoreFoundation
+      55      41408     752.9   CFDictionary (Weak Key Storage)                   C       CoreFoundation
+       2      39424   19712.0   malloc in std::vector<float>::__vallocate[abi:ne190102](unsigned long)  C++     libAudioToolboxUtility.dylib
+      12      35312    2942.7   calloc in lockedClassInfoForClass                 C       AppKit
+       5      34032    6806.4   calloc in _RegisterFilePropertyProvider           C       CoreServicesInternal
+     552      33664      61.0   NSMutableArray (Storage)                          C       CoreFoundation
+     881      28192      32.0   NSMutableDictionary                               ObjC    CoreFoundation
+     437      28000      64.1   non-object from AE                                C       AE
+     583      27984      48.0   NSMutableArray                                    ObjC    CoreFoundation
+     281      27504      97.9   calloc in _dispatch_calloc_typed                  C       libdispatch.dylib
+       7      24528    3504.0   malloc in _CFXNotificationRegistrarAddObserver    C       CoreFoundation
+     338      23152      68.5   malloc in __sel_registerName(char const*, bool, bool)  C       libobjc.A.dylib
+     208      21056     101.2   NSURL                                             ObjC    CoreFoundation
+     164      20992     128.0   dispatch_queue_t (serial)                         ObjC    libdispatch.dylib
+       1      18432   18432.0   calloc in tzsetwall_basic                         C       libsystem_c.dylib
+      36      17712     492.0   non-object from libicucore.A.dylib                C       libicucore.A.dylib
+       4      16384    4096.0   @autoreleasepool content                          C       libobjc.A.dylib
+     125      16000     128.0   dispatch_source_t                                 ObjC    libdispatch.dylib
+     142      15680     110.4   CFArray                                           ObjC    CoreFoundation
+       8      15360    1920.0   malloc in HALC_ProxyIOContext::HALC_ProxyIOContext(unsigned int, unsigned int)  C++     CoreAudio
+      51      15024     294.6   calloc in __CFBasicHashRehash                     C       CoreFoundation
+      39      14352     368.0   HALObject                                         C++     CoreAudio
+     281      13936      49.6   __NSMallocBlock__                                 ObjC    libsystem_blocks.dylib
+      60      13856     230.9   non-object with no stack backtrace                C       <unknown>
+     131      13664     104.3   NSArray                                           ObjC    CoreFoundation
+     197      12608      64.0   CFDictionary                                      ObjC    CoreFoundation
+       1      12288   12288.0   malloc in HALObjectMap::Initialize()              C++     CoreAudio
+     131      11984      91.5   non-object from libsystem_notify.dylib            C       libsystem_notify.dylib
+      82      11808     144.0   CAListenerProxy::HALListener                      C++     AudioToolbox
+     184      11776      64.0   calloc in dispatch_group_async_f                  C       libdispatch.dylib
+       5      11760    2352.0   _realloc in _CFXNotificationRegistrarAddName      C       CoreFoundation
+     181      11584      64.0   OS_os_log                                         ObjC    libsystem_trace.dylib
+     181      11584      64.0   calloc in _dispatch_source_set_handler            C       libdispatch.dylib
+      80      11584     144.8   calloc in cache_t::allocateBuckets(unsigned int)  C++     libobjc.A.dylib
+      37      11504     310.9   malloc in classDescription_locked(objc_class*)    C       QuartzCore
+       1      10240   10240.0   calloc in initAtoms                               C       QuartzCore
+       1       9216    9216.0   _realloc in _CFXNotificationRegistrarAddObject    C       CoreFoundation
+     143       9152      64.0   calloc in dispatch_async                          C       libdispatch.dylib
+      12       8992     749.3   calloc in ColorSyncTransformIteratorCreate        C       ColorSync
+       1       8704    8704.0   FileIDMap                                         CFType  CarbonCore
+     104       8320      80.0   malloc in FigSimpleMutexCreateWithAttr            C       CoreMedia
+      22       8320     378.2   calloc in _value_entry_table_resize               C       libcache.dylib
+      37       8288     224.0   CFBundle                                          CFType  CoreFoundation
+      32       8192     256.0   ColorSyncProfile                                  CFType  ColorSync
+     254       8128      32.0   std::__shared_ptr_pointer<APComponent_FromBundle_Loadable*, std::shared_ptr<APComponent_FromBundle_Loadable>::__shared_ptr_default_delete<APComponent_FromBundle_Loadable, APComponent_FromBundle_Loadable>>  C++     AudioToolboxCore
+       1       7680    7680.0   malloc in TLockedLRUCache<TFontCacheNode, 48ul>::CreateCache()  C++     libFontParser.dylib
+      22       7424     337.5   calloc in _entry_table_resize                     C       libcache.dylib
+      99       7184      72.6   malloc in _CFArrayReplaceValues                   C       CoreFoundation
+      27       7056     261.3   xpc_connection_t                                  ObjC    libxpc.dylib
+      20       6912     345.6   calloc in BOM_malloczero                          C       CoreUI
+      68       6768      99.5   Class.data.methods.lists (method_list_t)          C       libobjc.A.dylib
+      20       6752     337.6   malloc in objc::UnattachedCategories::addForClass(locstamped_category_t, objc_class*)  C++     libobjc.A.dylib
+      30       6720     224.0   CFAllocator                                       CFType  CoreFoundation
+     134       6432      48.0   Class.data.extended (class_rw_ext_t)              C       libobjc.A.dylib
+      49       6272     128.0   calloc in FigBaseClassRegisterClass               C       CoreMedia
+       4       6144    1536.0   HALC_ProxyIOContext                               C++     CoreAudio
+      24       6080     253.3   malloc in CreatePass_ColorSpaceTransformWithCGColorConversionInfo  C       vImage
+      65       5936      91.3   non-object from CoreAudio                         C       CoreAudio
+      28       5824     208.0   dispatch_workloop_t                               ObjC    libdispatch.dylib
+      72       5760      80.0   Class.data.readonly (class_ro_t)                  C       libobjc.A.dylib
+     179       5728      32.0   NSNumber                                          ObjC    CoreFoundation
+     140       5728      40.9   malloc in os_log_create                           C       libsystem_trace.dylib
+       1       5632    5632.0   _MTLDeviceFeatureQueries                          ObjC    Metal
+       7       5600     800.0   malloc in TPerThreadLRUCache<TRequestCacheNode, (ThreadSpecificKey)3, 16ul>::TPerThreadLRUCache()  C++     CoreText
+      19       5472     288.0   CGDataProvider                                    CFType  CoreGraphics
+      63       5232      83.0   CFSet (Value Storage)                             C       CoreFoundation
+      38       5168     136.0   calloc in color_space_state_create_icc            C       CoreGraphics
+      17       5168     304.0   malloc in -[CALayer init]                         C       QuartzCore
+       1       5120    5120.0   malloc in invocation function for block in once_createPropertyTable()  C       LaunchServices
+      18       4896     272.0   NSCache._cache (struct cache_s)                   C       CoreFoundation
+      37       4736     128.0   CFPrefsPlistSource                                ObjC    CoreFoundation
+       2       4624    2312.0   malloc in caulk::concurrent::guarded_lookup_hash_table<unsigned int, BaseOpaqueObject*, (caulk::concurrent::guarded_lookup_hash_table_options)0, std::function<unsigned int (unsigned int)>>::rehash(unsigned int)  C++     libAudioToolboxUtility.dylib
+       1       4608    4608.0   Swift._DictionaryStorage<Swift.String, Swift.String>  Swift   libswiftCore.dylib
+       1       4608    4608.0   calloc in __si_module_cache_byname_block_invoke   C       libsystem_info.dylib
+     285       4560      16.0   malloc in caulk::concurrent::guarded_lookup_hash_table<unsigned int, BaseOpaqueObject*, (caulk::concurrent::guarded_lookup_hash_table_options)0, std::function<unsigned int (unsigned int)>>::_addOrReplace(unsigned int, BaseOpaqueObject*, bool)  C++     libAudioToolboxUtility.dylib
+      12       4416     368.0   HALProcess                                        C++     CoreAudio
+       3       4368    1456.0   malloc in CGSEventQueueEnqueueEvent               C       SkyLight
+     135       4320      32.0   malloc in CA::AttrList::set(unsigned int, _CAValueType, void const*)  C++     QuartzCore
+       7       4144     592.0   TBaseFont                                         C++     CoreText
+       1       4096    4096.0   calloc in FIDCopyFileIDMapForVolume               C       CarbonCore
+       1       4096    4096.0   malloc in AudioComponentVector::insertSorted(std::__wrap_iter<std::shared_ptr<APComponent>*>, std::shared_ptr<APComponent> const&)  C++     AudioToolboxCore
+       1       4096    4096.0   valloc in AllocateHandleBlock                     C       CarbonCore
+      51       4080      80.0   FigRegistryItem                                   CFType  CoreMedia
+      27       4048     149.9   Class.data.methods (method_array_t)               C       libobjc.A.dylib
+      28       4032     144.0   dispatch_mach_t                                   ObjC    libdispatch.dylib
+      19       3952     208.0   CFRunLoopMode                                     CFType  CoreFoundation
+      61       3904      64.0   calloc in dispatch_mach_send_barrier              C       libdispatch.dylib
+      78       3744      48.0   CFSet                                             ObjC    CoreFoundation
+      33       3696     112.0   NSKeyValueSlowMutableCollectionGetter             ObjC    Foundation
+      70       3360      48.0   malloc in -[NSXPCInterface _locked_methodInfoForSelector:createIfNecessary:]  C       Foundation
+      15       3360     224.0   calloc in ConversionManager::AddMatrixConv(CMMXYZTag* (&) [3], CMMRGBCurves&, bool, CMMConversionType, ColorSyncLuminanceInfo*, __CFDictionary const*)  C++     ColorSync
+       4       3328     832.0   calloc in CGCMSConverterCreateCachedCGvImageConverter  C       CoreGraphics
+      25       3200     128.0   NSMapTable                                        ObjC    Foundation
+     128       3168      24.8   malloc in std::vector<CAPropertyAddressList>::__push_back_slow_path<CAPropertyAddressList const&>(CAPropertyAddressList const&)  C++     CoreAudio
+       9       3168     352.0   std::__shared_ptr_emplace<AMCP::Utility::Dispatch_Queue>  C++     CoreAudio
+      98       3136      32.0   calloc in perform_fignote_variable_registration   C       CoreMedia
+      20       3104     155.2   malloc in std::pair<HALPropertyListener, CAPropertyAddressList>* std::vector<std::pair<HALPropertyListener, CAPropertyAddressList>>::__push_back_slow_path<std::pair<HALPropertyListener, CAPropertyAddressList> const&>(std::pair<HALPropertyListener, CAPropertyAddressList> const&)  C++     CoreAudio
+      82       3072      37.5   malloc in std::vector<AudioObjectPropertyAddress>::__init_with_size[abi:ne190102]<AudioObjectPropertyAddress const*, AudioObjectPropertyAddress const*>(AudioObjectPropertyAddress const*, AudioObjectPropertyAddress const*, unsigned long)  C++     AudioToolbox
+      12       3072     256.0   APComponent_NSExtension                           C++     AudioToolboxCore
+       6       3072     512.0   NSOperationQueue                                  ObjC    Foundation
+       4       3008     752.0   vImageConverterRef                                CFType  libCGInterfaces.dylib
+      61       2928      48.0   HALC_ProxyObject                                  C++     CoreAudio
+      39       2800      71.8   NSSet                                             ObjC    CoreFoundation
+      85       2720      32.0   malloc in hash_table_modify(x_hash_table_struct*, void*, void*, int)  C       QuartzCore
+      21       2688     128.0   CFPrefsManagedSource                              ObjC    CoreFoundation
+      12       2688     224.0   calloc in ConversionManager::AddInvMatrixConv(CMMXYZTag* (&) [3], CMMRGBCurves&, bool, CMMConversionType, ColorSyncLuminanceInfo*, __CFDictionary const*)  C++     ColorSync
+       4       2624     656.0   malloc in CGvImage_converter_data_key_retain      C       CoreGraphics
+       2       2624    1312.0   malloc in get_current_display_system_state()      C       SkyLight
+      44       2608      59.3   malloc in _dispatch_lane_create_with_target       C       libdispatch.dylib
+      40       2592      64.8   Class (objc_class)                                C       libobjc.A.dylib
+       3       2592     864.0   FigGeometryMapping                                CFType  CoreMedia
+      20       2560     128.0   CFPrefsSuiteSearchListSource                      ObjC    CoreFoundation
+       8       2560     320.0   OS_dispatch_queue_pthread_root                    ObjC    libdispatch.dylib
+       1       2560    2560.0   MTLCompilerConnectionManagerPrivate               C++     Metal
+       1       2560    2560.0   malloc in allocBuckets(unsigned int)              C       libobjc.A.dylib
+       1       2560    2560.0   malloc in std::vector<std::shared_ptr<APComponent>>::__assign_with_size[abi:ne190102]<std::shared_ptr<APComponent>*, std::shared_ptr<APComponent>*>(std::shared_ptr<APComponent>*, std::shared_ptr<APComponent>*, long)  C++     AudioToolboxCore
+      19       2432     128.0   OS_dispatch_queue_runloop                         ObjC    libdispatch.dylib
+       8       2432     304.0   calloc in __GetColorspaceTransformsWithTransformWithCGColorConversionInfo_block_invoke_2  C       libCGInterfaces.dylib
+       7       2416     345.1   NSData                                            ObjC    Foundation
+       3       2400     800.0   TTenuousComponentFont                             C++     CoreText
+      15       2368     157.9   calloc in grow_refs_and_insert(weak_entry_t*, objc_object**)  C       libobjc.A.dylib
+       6       2368     394.7   _realloc in CSMemSetHandleSize                    C       CarbonCore
+      12       2304     192.0   CFRunLoopSource                                   CFType  CoreFoundation
+       6       2304     384.0   HALStream                                         C++     CoreAudio
+      59       2288      38.8   malloc in CGSConnectionNotifierAddCallback        C       SkyLight
+      28       2240      80.0   malloc in _CFBundleIngestResultForBundleCache     C       CoreFoundation
+      69       2208      32.0   NSMethodSignature                                 ObjC    CoreFoundation
+      69       2208      32.0   NSMethodSignature._frameDescriptor (struct NSMethodFrameDescriptor)  C       CoreFoundation
+       4       2208     552.0   SecStaticCode                                     CFType  Security
+       4       2176     544.0   CUICommonAssetStorage                             ObjC    CoreUI
+     135       2160      16.0   NSArray                                           ObjC    CoreFoundation
+      15       2160     144.0   HALC_ShellObject                                  C++     CoreAudio
+       6       2128     354.7   malloc in std::vector<AMCP::Utility::Dispatch_Queue::Event_Source>::__push_back_slow_path<AMCP::Utility::Dispatch_Queue::Event_Source>(AMCP::Utility::Dispatch_Queue::Event_Source&&)  C++     CoreAudio
+      33       2112      64.0   calloc in _dispatch_mach_push_send_barrier_drain  C       libdispatch.dylib
+      22       2112      96.0   CGColorSpace                                      CFType  CoreGraphics
+       3       2064     688.0   CFRunLoop                                         CFType  CoreFoundation
+       1       2048    2048.0   _LSDatabase                                       ObjC    LaunchServices
+       1       2048    2048.0   _realloc in cache_t::collect_free(bucket_t*, unsigned int)  C++     libobjc.A.dylib
+       1       2048    2048.0   calloc in FigManagedFilePoolCreate                C       CoreMedia
+       1       2048    2048.0   malloc in CASmartPreferences::_RegisterFirstHandler(__CFString const*, __CFString const*, std::function<bool (void const*)>)  C++     libAudioToolboxUtility.dylib
+       1       2048    2048.0   malloc in HALC_ProxyNotifications::AddListener(unsigned int, unsigned int, AudioObjectPropertyAddress const&)  C++     CoreAudio
+       1       2048    2048.0   malloc in HALC_ProxyObjectMap::CopyObjectByObjectID(unsigned int)  C++     CoreAudio
+       1       2048    2048.0   malloc in std::vector<AudioUnitParameterEvent>::reserve(unsigned long)  C++     AudioToolbox
+      49       1984      40.5   malloc in CGSInternalRegisterNotifyProc           C       SkyLight
+      30       1920      64.0   memalign in id2data(objc_object*, SyncKind, usage)  C       libobjc.A.dylib
+      24       1920      80.0   NSHashTable                                       ObjC    Foundation
+      20       1920      96.0   malloc in _CFRuntimeCreateInstance                C       CoreFoundation
+      35       1840      52.6   malloc in __Balloc_D2A                            C       libsystem_c.dylib
+      28       1792      64.0   calloc in _dispatch_apply_with_attr_f             C       libdispatch.dylib
+      19       1792      94.3   CFString (Storage)                                C       CoreFoundation
+      14       1792     128.0   calloc in _CFRuntimeCreateInstance                C       CoreFoundation
+       7       1792     256.0   CFData (Bytes Storage)                            C       CoreFoundation
+       4       1792     448.0   CUICommonAssetStorage._header (struct _carheader)  C       CoreUI
+       4       1792     448.0   HALC_ShellDevice                                  C++     CoreAudio
+       4       1792     448.0   HALDevice                                         C++     CoreAudio
+      12       1728     144.0   HALC_ShellProcess                                 C++     CoreAudio
+      23       1696      73.7   NSHashTable (Weak Object Storage)                 C       Foundation
+       6       1696     282.7   malloc in objc_setAssociatedObject                C       libobjc.A.dylib
+      21       1680      80.0   NSKeyValueSlowSetter                              ObjC    Foundation
+      21       1680      80.0   dispatch_semaphore_t                              ObjC    libdispatch.dylib
+      22       1648      74.9   malloc in std::vector<CGSDisplayMode>::__init_with_size[abi:nn190102]<CGSDisplayMode*, CGSDisplayMode*>(CGSDisplayMode*, CGSDisplayMode*, unsigned long)  C++     SkyLight
+      17       1632      96.0   malloc in RegisterEventClass                      C       HIToolbox
+      14       1568     112.0   malloc in CA::Layer::class_state(objc_class*)     C++     QuartzCore
+      14       1568     112.0   malloc in _swift_getGenericMetadata(swift::MetadataRequest, void const* const*, swift::TargetTypeContextDescriptor<swift::InProcess> const*)  C++     libswiftCore.dylib
+       1       1536    1536.0   FigCaptionRendererSession                         CFType  MediaToolbox
+       1       1536    1536.0   malloc in MESchedulingVectors::MESchedulingVectors()  C++     AudioToolbox
+       1       1536    1536.0   malloc in caulk::details::semaphore_pool::acquire()  C++     caulk
+       1       1536    1536.0   malloc in std::vector<HALC_ShellObjectMap::ObjectInfo>::__push_back_slow_path<HALC_ShellObjectMap::ObjectInfo>(HALC_ShellObjectMap::ObjectInfo&&)  C++     CoreAudio
+       1       1536    1536.0   malloc in swift::ConcurrentReadableArray<(anonymous namespace)::ProtocolSection>::push_back((anonymous namespace)::ProtocolSection const&)  C++     libswiftCore.dylib
+       1       1536    1536.0   std::__shared_ptr_emplace<AQMEIO_HAL>             C++     AudioToolbox
+      19       1520      80.0   NSKeyValueMethodGetter                            ObjC    Foundation
+       4       1472     368.0   CUICommonAssetStorage._bitmapKeydb (malloc)       C       CoreUI
+       4       1472     368.0   CUICommonAssetStorage._colordb (malloc)           C       CoreUI
+       4       1472     368.0   CUICommonAssetStorage._facetKeysdb (malloc)       C       CoreUI
+       4       1472     368.0   CUICommonAssetStorage._imagedb (malloc)           C       CoreUI
+      15       1392      92.8   CGColor                                           CFType  CoreGraphics
+      35       1360      38.9   __NSExactBlockVariable__                          ObjC    libsystem_blocks.dylib
+      14       1344      96.0   NSKeyValueMethodSetter                            ObjC    Foundation
+       6       1344     224.0   TTrueTypeDataForkFont                             C++     libFontParser.dylib
+       4       1344     336.0   FigTimebase                                       CFType  CoreMedia
+       2       1312     656.0   icu::GregorianCalendar                            C++     libicucore.A.dylib
+      16       1280      80.0   dispatch_group_t                                  ObjC    libdispatch.dylib
+      10       1280     128.0   CFPrefsSearchListSource                           ObjC    CoreFoundation
+       5       1280     256.0   malloc in dyld4::APIs::setErrorString(char const*, ...)  C++     dyld
+       7       1264     180.6   malloc in APComponent::newInstance(unsigned int, bool, void (OpaqueAudioComponentInstance*, int) block_pointer)  C++     AudioToolboxCore
+      12       1248     104.0   NSMapTable (Value Storage)                        C       Foundation
+       2       1248     624.0   TSplicedFont                                      C++     CoreText
+       7       1232     176.0   CFXNotificationRegistrar                          CFType  CoreFoundation
+       3       1232     410.7   malloc in PowerUsageWatchdog::PowerUsageWatchdog(unsigned int, unsigned int, std::unique_ptr<PowerUsageWatchdog::ClientLogger>)  C++     AudioToolbox
+      15       1200      80.0   NSPointerArray                                    ObjC    Foundation
+      73       1168      16.0   NSSet                                             ObjC    CoreFoundation
+      18       1152      64.0   NSMapTable (Key Storage)                          C       Foundation
+       9       1152     128.0   AudioQueueOwner                                   C++     AudioToolbox
+      14       1120      80.0   malloc in _fetchInitializingClassList(bool)       C       libobjc.A.dylib
+       7       1120     160.0   NSXPCConnection                                   ObjC    Foundation
+      17       1088      64.0   CFBag                                             CFType  CoreFoundation
+       4       1088     272.0   calloc in cache_create                            C       libcache.dylib
+       2       1088     544.0   calloc in _dirhelper_init                         C       libsystem_coreservices.dylib
+      11       1056      96.0   malloc in FigSemaphoreCreateWithFlags             C       CoreMedia
+       8       1024     128.0   calloc in x_hash_table_new_                       C       QuartzCore
+       4       1024     256.0   calloc in BOM_calloc                              C       CoreUI
+       2       1024     512.0   malloc in AudioFileFormatRegistry::AddAudioFileType(AudioFileFormatBase*)  C++     AudioToolboxCore
+       1       1024    1024.0   calloc in _os_set_32_ptr_rehash                   C       libsystem_collections.dylib
+       1       1024    1024.0   calloc in sqlite3_os_init                         C       libsqlite3.dylib
+       1       1024    1024.0   malloc in CAListenerProxy::remove(CAListenerProxy::Listener&)  C++     AudioToolbox
+       1       1024    1024.0   malloc in basename                                C       libsystem_c.dylib
+       7       1008     144.0   malloc in GetTable()                              C       CoreText
+       1       1008    1008.0   NSWindowAuxiliary                                 ObjC    AppKit
+       1        992     992.0   malloc in _swift_allocObject_                     C       libswiftCore.dylib
+      20        976      48.8   malloc in objc_initializeClassPair_internal(objc_class*, char const*, objc_class*, objc_class*)  C       libobjc.A.dylib
+      15        960      64.0   calloc in _dispatch_barrier_async_detached_f      C       libdispatch.dylib
+      15        960      64.0   calloc in dispatch_mach_reconnect                 C       libdispatch.dylib
+      12        960      80.0   malloc in PushEventHandler(EventTargetRec*, int (*)(OpaqueEventHandlerCallRef*, OpaqueEventRef*, void*), unsigned char, unsigned long, EventTypeSpec const*, void*, OpaqueEventHandlerRef**)  C       HIToolbox
+      10        960      96.0   ColorSyncTRC                                      CFType  ColorSync
+      10        960      96.0   malloc in __CGTypeRegisterInternal                C       CoreGraphics
+       7        960     137.1   NSPathStore2                                      ObjC    Foundation
+       6        960     160.0   ColorSyncTransformIterator                        CFType  ColorSync
+       6        960     160.0   calloc in addEntryForDisplay                      C       SkyLight
+       4        960     240.0   CGCMSConverter                                    CFType  CoreGraphics
+       1        928     928.0   std::__shared_ptr_emplace<AQ::API::BufferAllocator>  C++     AudioToolbox
+       3        912     304.0   FigGeometryCoordinateSpace                        CFType  CoreMedia
+      19        896      47.2   malloc in color_space_state_create_icc            C       CoreGraphics
+      14        896      64.0   malloc in UDataMemory_createNewInstance           C       libicucore.A.dylib
+      12        896      74.7   malloc in TEventTypeIndex::AddTypes(unsigned long, EventTypeSpec const*)  C++     HIToolbox
+       7        896     128.0   NSMapTable (Weak Key Storage)                     C       Foundation
+       4        896     224.0   calloc in CMMConvMatrix::CollapseToRGB(CMMConvInvMatrix*, CMMMemMgr&)  C++     ColorSync
+      22        880      40.0   malloc in (anonymous namespace)::EventLog::getLogString() const  C++     SkyLight
+      11        880      80.0   malloc in BOM_malloc                              C       CoreUI
+      11        880      80.0   std::__function::__func<void CASmartPreferences::AddHandler<bool>(__CFString const*, __CFString const*, bool (*)(void const*, bool&), std::function<void (bool)>)::'lambda'(void const*), bool (void const*)>  C++     AudioToolbox
+      19        864      45.5   malloc in _addToStatCache                         C       Foundation
+      18        864      48.0   NSKeyValueUnnestedProperty                        ObjC    Foundation
+       6        864     144.0   ColorSyncTransform                                CFType  ColorSync
+       1        864     864.0   malloc in AUMultiChannelMixerFactory              C       CoreAudio
+      14        832      59.4   NSMutableSet (Storage)                            C       CoreFoundation
+      13        832      64.0   calloc in _dispatch_root_queue_push_override      C       libdispatch.dylib
+      13        832      64.0   calloc in dispatch_mach_receive_barrier_f         C       libdispatch.dylib
+       4        832     208.0   NSRecursiveLock                                   ObjC    Foundation
+      25        800      32.0   NSDictionary                                      ObjC    CoreFoundation
+      13        800      61.5   NSMapTable (Weak Value Storage)                   C       Foundation
+       8        800     100.0   Swift.StringStorage                               Swift   libswiftCore.dylib
+       1        800     800.0   malloc in TBObjectAllocate                        C       HIToolbox
+       1        784     784.0   malloc in __CGColorSpaceCreateWithName_block_invoke  C       CoreGraphics
+      16        768      48.0   FigCFWeakReferenceTable                           CFType  CoreMedia
+      12        768      64.0   NSXPCInterface                                    ObjC    Foundation
+       8        768      96.0   malloc in x_hash_table_new_                       C       QuartzCore
+       6        768     128.0   malloc in mach_msg_overwrite                      C       libsystem_kernel.dylib
+       4        768     192.0   APComponent                                       C++     AudioToolboxCore
+       1        768     768.0   MEOutputStreamClient                              C++     AudioToolbox
+       1        752     752.0   std::__shared_ptr_emplace<as::client::KVOManager>  C++     AudioSession
+      23        720      31.3   malloc in NXMapKeyCopyingInsert                   C       libobjc.A.dylib
+       5        720     144.0   LSNotificationReceiverRef                         CFType  LaunchServices
+      11        704      64.0   calloc in dispatch_group_notify_f                 C       libdispatch.dylib
+      28        672      24.0   calloc in _fetchInitializingClassList(bool)       C       libobjc.A.dylib
+      21        672      32.0   __NSObserver                                      ObjC    Foundation
+       7        672      96.0   NSLock                                            ObjC    Foundation
+       6        672     112.0   _CFPasteboardEntry                                ObjC    CoreFoundation
+       3        672     224.0   icu::OlsonTimeZone                                C++     libicucore.A.dylib
+      25        656      26.2   malloc in std::vector<bool>::vector(unsigned long)  C++     csparser
+       8        656      82.0   malloc in cache_set_name                          C       libcache.dylib
+       1        656     656.0   Swift._DictionaryStorage<Swift.ObjectIdentifier, Swift.Bool>  Swift   libswiftCore.dylib
+      10        640      64.0   pthread_mutex_t                                   C       libpthread.dylib
+       8        640      80.0   _NSBPlistMappedData                               ObjC    Foundation
+       5        640     128.0   NSMachPort                                        ObjC    CoreFoundation
+       5        640     128.0   dispatch_queue_t (concurrent)                     ObjC    libdispatch.dylib
+       4        640     160.0   FigXPCClientConnectionInfo                        CFType  CoreMedia
+       2        624     312.0   malloc in newAudioConverter(AudioStreamBasicDescription const*, AudioStreamBasicDescription const*, unsigned int, AudioClassDescription const*, unsigned int)  C       AudioToolboxCore
+       5        608     121.6   malloc in HALObject::AddOwnedObject(HALObject*)   C++     CoreAudio
+       2        608     304.0   APComponentInstance                               C++     AudioToolboxCore
+       2        608     304.0   CAContext._impl (malloc)                          C       QuartzCore
+       2        608     304.0   _NSViewLayoutAux                                  ObjC    AppKit
+       2        608     304.0   malloc in invocation function for block in LaunchServices::PrefsCapabilityInfo::Enumerate(void (LaunchServices::PrefsCapabilityInfo const&, bool*) block_pointer)  C++     LaunchServices
+       1        608     608.0   NSCTFont                                          ObjC    UIFoundation
+       1        608     608.0   NSNextStepFrame                                   ObjC    AppKit
+      12        592      49.3   _NSKVODeallocSentinel                             ObjC    Foundation
+       4        592     148.0   malloc in HALC_ShellDevice::RebuildControlList(bool)  C++     CoreAudio
+       1        592     592.0   HALC_ShellPlugIn                                  C++     CoreAudio
+      18        576      32.0   FigCFWeakReferenceHolder                          CFType  CoreMedia
+      18        576      32.0   NSCache                                           ObjC    CoreFoundation
+       6        576      96.0   ColorSyncMatrix                                   CFType  ColorSync
+       4        576     144.0   calloc in CGDisplayColorCurveCreate               C       CoreGraphics
+       3        576     192.0   CFPasteboard                                      CFType  CoreFoundation
+       2        576     288.0   LSSharedMemoryRef                                 CFType  LaunchServices
+       2        576     288.0   SCClientSession                                   C++     CarbonCore
+      13        560      43.1   malloc in _dispatch_mach_create                   C       libdispatch.dylib
+      11        560      50.9   NSMethodSignature._typeString (char[])            C       CoreFoundation
+      11        560      50.9   malloc in typeStringRetain                        C       CoreFoundation
+       7        560      80.0   NSKeyValueUndefinedSetter                         ObjC    Foundation
+       7        560      80.0   _NSXPCConnectionExportedObjectTable               ObjC    Foundation
+       1        560     560.0   SSStageView                                       ObjC    smartstage-darwin-amd64
+      17        544      32.0   Closure context                                   Swift   <unknown>
+      17        544      32.0   NSMutableSet                                      ObjC    CoreFoundation
+      10        544      54.4   malloc in __CFBasicHashRehash                     C       Foundation
+       2        544     272.0   calloc in conversion_cache_get_retained_conversion_params  C       CoreGraphics
+       1        544     544.0   Foundation.LockedState<Foundation._LocaleICU.State>.(_Buffer in $7ff815aeb468)<>  Swift   Foundation
+      11        528      48.0   NSKeyValueContainerClass                          ObjC    Foundation
+      11        528      48.0   NSKeyValueObservance                              ObjC    Foundation
+       1        528     528.0   malloc in GetGlobalRegistry() (.cold.1)           C       HIToolbox
+       1        528     528.0   malloc in Security::ModuleNexus<Security::CodeSigning::CFObjects>::make()  C++     Security
+       2        512     256.0   calloc in os_set_32_ptr_init                      C       libsystem_collections.dylib
+       2        512     256.0   calloc in os_set_64_ptr_init                      C       libsystem_collections.dylib
+       2        512     256.0   malloc in CFBasicHashGetPtrIndex                  C       CoreFoundation
+       1        512     512.0   AVAudioSession._impl (malloc)                     C       AudioSession
+       1        512     512.0   CABackingStore                                    CFType  QuartzCore
+       1        512     512.0   FigCaptionRendererAVFLayoutRegion                 CFType  MediaToolbox
+       1        512     512.0   FigSampleGenerator                                CFType  MediaToolbox
+       1        512     512.0   calloc in _os_set_str_ptr_rehash                  C       libsystem_collections.dylib
+       1        512     512.0   calloc in os_map_64_init                          C       libsystem_collections.dylib
+       1        512     512.0   malloc in CGSBoundingShapeCreate                  C       CoreGraphics
+       1        512     512.0   malloc in addClassTableEntry(objc_class*, bool)   C       libobjc.A.dylib
+       1        512     512.0   malloc in shape_reverse_y                         C       CoreGraphics
+      29        496      17.1   malloc in _CFXNotificationRegistrarAddObject      C       CoreFoundation
+      15        480      32.0   calloc in registryCacheProcessBundle              C       CoreMedia
+      12        480      40.0   non-object from MediaToolbox                      C       MediaToolbox
+      10        480      48.0   malloc in FigReadWriteLockCreateWithFlags         C       CoreMedia
+       6        480      80.0   calloc in CMMMemMgr::CMMMemMgr()                  C++     ColorSync
+       6        480      80.0   malloc in HALC_ProxyIOContext::RebuildCache()     C++     CoreAudio
+       5        480      96.0   NSClassicMapTable                                 ObjC    Foundation
+       3        480     160.0   CFRunLoopObserver                                 CFType  CoreFoundation
+       2        480     240.0   std::__shared_ptr_emplace<AQMEIO_HAL::IOStream>   C++     AudioToolbox
+       1        464     464.0   SSStageWindow                                     ObjC    smartstage-darwin-amd64
+       1        464     464.0   TFPFont                                           C++     libFontParser.dylib
+      28        448      16.0   malloc in std::vector<unsigned int>::vector[abi:ne190102](unsigned long, unsigned int const&)  C++     CoreAudio
+      14        448      32.0   _NSXPCConnectionClassCache                        ObjC    Foundation
+       4        448     112.0   calloc in __GetColorspaceTransformsWithTransformWithCGColorConversionInfo_block_invoke_3  C       libCGInterfaces.dylib
+       2        448     224.0   calloc in CMMConvScaleFloatXYZ::Collapse(CMMMemMgr&, CMMConvNode*&)  C++     ColorSync
+       1        448     448.0   calloc in __si_module_static_search_block_invoke  C       libsystem_info.dylib
+       1        448     448.0   malloc in __ColorSyncProfileCreateWithName_block_invoke  C       ColorSync
+      10        432      43.2   malloc in _Block_object_assign                    C       libsystem_blocks.dylib
+       9        432      48.0   NSConcreteValue                                   ObjC    Foundation
+       1        432     432.0   HALPlugIn                                         C++     CoreAudio
+      13        416      32.0   malloc in LSNotificationReceiver::modify(unsigned long, LSNotificationCode const*, unsigned long, LSNotificationCode const*, void const*, void const*)  C++     LaunchServices
+       7        416      59.4   malloc in caulk::concurrent::details::service_thread::service_thread(caulk::thread::attributes const&)  C++     caulk
+       2        416     208.0   APComponent_Carbon                                C++     AudioToolboxCore
+       2        416     208.0   caulk::concurrent::details::service_thread        C++     caulk
+       1        416     416.0   std::__shared_ptr_emplace<caulk::alloc::multi_free_list<caulk::alloc::cascading_allocator<caulk::alloc::chunk_allocator<caulk::alloc::global_page_cache, caulk::alloc::serial_allocator, caulk::alloc::embed_block_memory, 16384ul>>, caulk::concurrent::details::node_allocator<void*, caulk::alloc::detail::tracked_block, 10ul, (caulk::concurrent::skiplist_options)0>::size_generator, 8ul, 1ul, -1l>>  C++     caulk
+       1        416     416.0   std::__shared_ptr_emplace<caulk::alloc::multi_free_list<caulk::alloc::cascading_allocator<caulk::alloc::chunk_allocator<caulk::alloc::global_page_cache, caulk::alloc::serial_allocator, caulk::alloc::embed_block_memory, 16384ul>>, caulk::concurrent::details::node_allocator<void*, caulk::alloc::detail::tracked_block, 10ul, (caulk::concurrent::skiplist_options)0>::size_generator, 8ul, 1ul, -1l>>  C++     AudioToolbox
+      14        400      28.6   malloc in cache_create                            C       libcache.dylib
+       7        400      57.1   malloc in HALSystem::InitializeShell()            C++     CoreAudio
+       5        400      80.0   NSBundle                                          ObjC    Foundation
+       5        400      80.0   std::__function::__func<void CASmartPreferences::AddHandler<long long>(__CFString const*, __CFString const*, long long (*)(void const*, bool&), std::function<void (long long)>)::'lambda'(void const*), bool (void const*)>  C++     AudioToolbox
+       3        400     133.3   Swift._ContiguousArrayStorage<Swift.String>       Swift   libswiftCore.dylib
+       1        400     400.0   malloc in -[_LSDatabase _init]                    C       LaunchServices
+      24        384      16.0   calloc in classDescription_locked(objc_class*)    C       QuartzCore
+      12        384      32.0   CFUUID                                            CFType  CoreFoundation
+      12        384      32.0   std::__shared_ptr_pointer<APComponent_NSExtension*, std::shared_ptr<APComponent_NSExtension>::__shared_ptr_default_delete<APComponent_NSExtension, APComponent_NSExtension>>  C++     AudioToolboxCore
+       8        384      48.0   CALayerArray                                      ObjC    QuartzCore
+       6        384      64.0   calloc in dispatch_after                          C       libdispatch.dylib
+       4        384      96.0   CUIStructuredThemeStore                           ObjC    CoreUI
+       4        384      96.0   FigXPCConnection                                  CFType  CoreMedia
+       4        384      96.0   calloc in invocation function for block in CMMInitializeOnePointEightGammaTable()  C       ColorSync
+       4        384      96.0   calloc in invocation function for block in CMMInitializeSRGBGammaTable()  C       ColorSync
+       4        384      96.0   malloc in CreatePass_ChunkyToPlanarWithCGColorConversionInfo  C       vImage
+       4        384      96.0   malloc in CreatePass_PlanarToChunky               C       vImage
+       1        384     384.0   HALSystem                                         C++     CoreAudio
+       1        384     384.0   NSCGSWindow                                       ObjC    AppKit
+       1        384     384.0   NSWorkspaceNotificationCenter                     ObjC    AppKit
+       1        384     384.0   malloc in HALObject::AddProperty(HALProperty*)    C++     CoreAudio
+       1        368     368.0   AVPlayerLayerInternal                             ObjC    AVFCore
+       1        368     368.0   FigCaptionRendererNode (FigAssetAlternativeConfigurationKey_ServiceInformation)  CFType  MediaToolbox
+       1        368     368.0   HALUserInfo                                       C++     CoreAudio
+       1        368     368.0   malloc in ConformanceState::cacheResult(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, swift::TargetWitnessTable<swift::InProcess> const*, unsigned long)  C++     libswiftCore.dylib
+      11        352      32.0   calloc in FigCFWeakReferenceTableAddValueAssociatedWithKey  C       CoreMedia
+      10        352      35.2   NSPointerArray (Object Storage)                   C       Foundation
+       1        352     352.0   FigCaptionRendererMACache                         CFType  MediaToolbox
+       1        352     352.0   NSDocumentControllerMoreIVars                     ObjC    AppKit
+       1        352     352.0   NSDocumentRevisionsController                     ObjC    AppKit
+       1        352     352.0   _CSStore                                          ObjC    CoreServicesStore
+       9        336      37.3   CAAudioChannelLayout::RefCountedLayout            C++     libAudioToolboxUtility.dylib
+       7        336      48.0   _NSXPCConnectionImportInfo                        ObjC    Foundation
+       7        336      48.0   _NSXPCConnectionRequestedReplies                  ObjC    Foundation
+       7        336      48.0   malloc in _dispatch_pthread_root_queue_create     C       libdispatch.dylib
+       6        336      56.0   malloc in _dispatch_workloop_create               C       libdispatch.dylib
+       3        336     112.0   calloc in CSMemNewPtrClear                        C       CarbonCore
+       1        336     336.0   NSKVONotifying_NSApplication                      ObjC    AppKit
+       8        320      40.0   malloc in update_cache                            C       CoreGraphics
+       5        320      64.0   CFBasicHash                                       CFType  Foundation
+       4        320      80.0   NSAutoresizingMaskLayoutConstraint                ObjC    CoreAutoLayout
+       4        320      80.0   acv2::CodecDecoderFactory                         C++     AudioToolboxCore
+       2        320     160.0   CFMessagePort                                     CFType  CoreFoundation
+       2        320     160.0   _NSThreadData                                     ObjC    Foundation
+       2        320     160.0   malloc in AQMEIOManager_FindIOUnit(AQMEIO_Binding const&)  C       AudioToolbox
+       1        320     320.0   FigSubtitleCALayer.layerInternal (struct OpaqueFigSubtitleCALayerInternal)  C       MediaToolbox
+       1        320     320.0   _FileCache                                        CFType  CoreServicesInternal
+       1        320     320.0   malloc in HALC_ProxyGate::Initialize(void*)       C++     CoreAudio
+      18        288      16.0   NSMutableDictionary.cow (struct __cow_state_t)    C       CoreFoundation
+      11        288      26.2   malloc in _CFXNotificationRegistrarAddName        C       CoreFoundation
+       9        288      32.0   LSASN                                             CFType  LaunchServices
+       7        288      41.1   malloc in _LSSchemaCacheWrite                     C       LaunchServices
+       3        288      96.0   calloc in HLTBCreateRefTable                      C       HIToolbox
+       3        288      96.0   malloc in __SLTypeRegister                        C       SkyLight
+       2        288     144.0   NSCompositeAppearance                             ObjC    AppKit
+       2        288     144.0   NSVibrantLightAppearance                          ObjC    AppKit
+       1        288     288.0   AQMixEngine_Single                                C++     AudioToolbox
+       1        288     288.0   NSKVONotifying__WMWindow                          ObjC    WindowManagement
+       1        288     288.0   __NSAppKitThreadSpecificData                      ObjC    AppKit
+       1        288     288.0   acv2::Reinterleaver                               C++     AudioToolboxCore
+       1        288     288.0   malloc in (anonymous namespace)::shared_logger()  C++     SkyLight
+       1        288     288.0   malloc in CGSWindowConstructInternal              C       SkyLight
+      11        272      24.7   malloc in CA::AttrList::Node::alloc_memory(_CAValueType)  C++     QuartzCore
+       5        272      54.4   NSArray (Storage)                                 C       CoreFoundation
+       3        272      90.7   xpc_pipe_t                                        ObjC    libxpc.dylib
+       1        272     272.0   malloc in CGSBacktraceCreate                      C       SkyLight
+      16        256      16.0   malloc in _newBOMTree                             C       CoreUI
+       8        256      32.0   NSKeyValueObservationInfo                         ObjC    Foundation
+       4        256      64.0   CUICoreThemeRenderer                              C++     CoreUI
+       4        256      64.0   NSKeyValueDependencyInfo                          ObjC    AppKit
+       4        256      64.0   _realloc in objc::UnattachedCategories::addForClass(locstamped_category_t, objc_class*)  C++     libobjc.A.dylib
+       4        256      64.0   malloc in HALDeviceList::AddDevice(HALDevice*)    C++     CoreAudio
+       4        256      64.0   malloc in std::vector<char>::__assign_with_size[abi:ne190102]<char*, char*>(char*, char*, long)  C++     AudioToolbox
+       2        256     128.0   CGColorTransformCache                             CFType  CoreGraphics
+       2        256     128.0   MTLIOAccelResourcePool._resourceArgs (struct IOAccelNewResourceArgs)  C       Metal
+       2        256     128.0   malloc in CreateEventTarget                       C       HIToolbox
+       1        256     256.0   CGSWindow                                         CFType  SkyLight
+       1        256     256.0   FigXPCConnectionInfo                              CFType  CoreMedia
+       1        256     256.0   calloc in os_set_str_ptr_init                     C       libsystem_collections.dylib
+       1        256     256.0   calloc in swift::ConcurrentReadableHashMap<MallocTypeCacheEntry, swift::LazyMutex>::resize(swift::ConcurrentReadableHashMap<MallocTypeCacheEntry, swift::LazyMutex>::IndexStorage, unsigned char, MallocTypeCacheEntry*)  C++     libswiftCore.dylib
+       1        256     256.0   malloc in CAListenerProxy::add(CAListenerProxy::Listener&)  C++     AudioToolbox
+       1        256     256.0   malloc in IOAccelDeviceCreateWithAPIProperty      C       IOAccelerator
+       1        256     256.0   malloc in RegisterTBObjectClass                   C       HIToolbox
+       1        256     256.0   malloc in StaticContainer<HALC_ProxyObjectMap_Statics>::init_statics(std::function<void ()>)  C++     CoreAudio
+       1        256     256.0   malloc in __CFBasicHashGetPtrIndex_block_invoke   C       CoreFoundation
+       1        256     256.0   malloc in std::vector<SincKernel*>::reserve(unsigned long)  C++     AudioToolboxCore
+       1        256     256.0   std::__shared_ptr_emplace<caulk::alloc::multi_free_list<caulk::alloc::cascading_allocator<caulk::alloc::chunk_allocator<caulk::alloc::global_page_cache, caulk::alloc::serial_allocator, caulk::alloc::embed_block_memory, 16384ul>>, caulk::concurrent::details::node_allocator<unsigned long, caulk::alloc::chunk_allocator<caulk::alloc::global_page_cache, caulk::alloc::bitmap_allocator, caulk::alloc::embed_block_memory, 16384ul, 16ul, 6ul>::node_impl<caulk::alloc::tree_allocator<caulk::alloc::chunk_allocator<caulk::alloc::global_page_cache, caulk::alloc::bitmap_allocator, caulk::alloc::embed_block_memory, 16384ul, 16ul, 6ul>>::node_header, caulk::alloc::embed_block_memory>*, 5ul, (caulk::concurrent::skiplist_options)1>::size_generator, 8ul, 1ul, -1l>>  C++     caulk
+       1        256     256.0   std::__shared_ptr_emplace<caulk::alloc::multi_free_list<caulk::alloc::cascading_allocator<caulk::alloc::chunk_allocator<caulk::alloc::global_page_cache, caulk::alloc::serial_allocator, caulk::alloc::embed_block_memory, 16384ul>>, caulk::concurrent::details::node_allocator<unsigned long, caulk::alloc::chunk_allocator<caulk::alloc::global_page_cache, caulk::alloc::bitmap_allocator, caulk::alloc::embed_block_memory, 16384ul, 256ul, 6ul>::node_impl<caulk::alloc::tree_allocator<caulk::alloc::chunk_allocator<caulk::alloc::global_page_cache, caulk::alloc::bitmap_allocator, caulk::alloc::embed_block_memory, 16384ul, 256ul, 6ul>>::node_header, caulk::alloc::embed_block_memory>*, 5ul, (caulk::concurrent::skiplist_options)1>::size_generator, 8ul, 1ul, -1l>>  C++     caulk
+       1        256     256.0   std::__shared_ptr_emplace<caulk::alloc::multi_free_list<caulk::alloc::cascading_allocator<caulk::alloc::chunk_allocator<caulk::alloc::global_page_cache, caulk::alloc::serial_allocator, caulk::alloc::embed_block_memory, 16384ul>>, caulk::concurrent::details::node_allocator<unsigned long, caulk::alloc::chunk_allocator<caulk::alloc::page_allocator, caulk::alloc::bitmap_allocator, caulk::alloc::embed_block_memory, 16384ul, 16ul, 6ul>::node_impl<caulk::alloc::tree_allocator<caulk::alloc::chunk_allocator<caulk::alloc::page_allocator, caulk::alloc::bitmap_allocator, caulk::alloc::embed_block_memory, 16384ul, 16ul, 6ul>>::node_header, caulk::alloc::embed_block_memory>*, 5ul, (caulk::concurrent::skiplist_options)1>::size_generator, 8ul, 1ul, -1l>>  C++     caulk
+       5        240      48.0   NSArray                                           ObjC    CoreFoundation
+       5        240      48.0   malloc in invocation function for block in LSNotificationReceiver::CreateNotification(__CFAllocator const*, LSSessionID, dispatch_queue_s*, void (LSNotificationCode, double, void const*, __LSASN const*, LSSessionID, void const*) block_pointer)  C++     LaunchServices
+       3        240      80.0   CA::Render::Filter                                C++     QuartzCore
+       3        240      80.0   FigCaptionRendererTimer                           CFType  MediaToolbox
+       3        240      80.0   NSKeyValueSlowGetter                              ObjC    Foundation
+       7        224      32.0   CFNotificationCenter                              CFType  CoreFoundation
+       7        224      32.0   _NSXPCConnectionExpectedReplies                   ObjC    Foundation
+       4        224      56.0   malloc in CADeprecated::CABufferList::New(char const*, CAStreamBasicDescription const&)  C++     AudioToolbox
+       4        224      56.0   malloc in CGColorTransformConvertColorComponents  C       CoreGraphics
+       2        224     112.0   CADeprecated::CAMutex                             C++     libAudioToolboxUtility.dylib
+       2        224     112.0   CGColorTransform                                  CFType  CoreGraphics
+       2        224     112.0   FigCaptionRendererTrigger                         CFType  MediaToolbox
+       1        224     224.0   WMWindowPropertySnapshot                          ObjC    WindowManagement
+       1        224     224.0   calloc in ConversionManager::AddGrayConv(CMMProfile*, bool, __CFDictionary const*)  C++     ColorSync
+       1        224     224.0   icu::Locale                                       C++     libicucore.A.dylib
+       1        224     224.0   malloc in (anonymous namespace)::IndirectAddressManager::sharedManager()  C++     SkyLight
+       1        224     224.0   malloc in caulk::alloc::page_cache_monitor::enable_preallocation(unsigned long)  C++     caulk
+       1        224     224.0   std::__shared_ptr_emplace<caulk::concurrent::details::service_thread>  C++     caulk
+       4        208      52.0   Swift._ContiguousArrayStorage<Swift.UInt8>        Swift   libswiftCore.dylib
+       4        208      52.0   malloc in HALC_ShellObjectMap::MapObject(unsigned int, HALC_ShellObject*)  C++     CoreAudio
+       3        208      69.3   CGRegion                                          CFType  CoreGraphics
+       1        208     208.0   FigClock                                          CFType  CoreMedia
+       1        208     208.0   HIApplication                                     C++     HIToolbox
+       1        208     208.0   NSCGSWindow._deviceID (malloc)                    C       AppKit
+       1        208     208.0   TLocalFontRegistryImp                             C++     libFontRegistry.dylib
+       1        208     208.0   _LocaleICU                                        Swift   Foundation
+       1        208     208.0   malloc in GlobalComponentPluginMgr()              C       AudioToolboxCore
+       1        208     208.0   malloc in StoreEventParam                         C       HIToolbox
+       1        208     208.0   malloc in as::client::XPCConnection::Create()     C++     AudioSession
+       1        208     208.0   malloc in caulk::alloc::exported_resource<caulk::alloc::darwin_resource<caulk::alloc::audio_allocator, caulk::alloc::memory_resource>, caulk::alloc::memory_resource, caulk::memory_resource>::exported_resource<char const*>(char const*)  C++     caulk
+       1        208     208.0   malloc in caulk::alloc::global_page_cache::instance()  C++     caulk
+       1        208     208.0   malloc in caulk::alloc::init_realtime_safe_resource()  C++     caulk
+       8        192      24.0   malloc in swift::_getWitnessTable(swift::TargetProtocolConformanceDescriptor<swift::InProcess> const*, swift::TargetMetadata<swift::InProcess> const*, void const* const*)  C++     libswiftCore.dylib
+       6        192      32.0   malloc in HALC_ShellDevice::RebuildStreamLists(bool)  C++     CoreAudio
+       6        192      32.0   malloc in colorsync_transform_data_key_retain     C       CoreGraphics
+       5        192      38.4   NSPointerArray (Weak Object Storage)              C       Foundation
+       4        192      48.0   FigXPCRemoteClient                                CFType  CoreMedia
+       4        192      48.0   NSColorSpace                                      ObjC    AppKit
+       4        192      48.0   _NSStateMarker                                    ObjC    AppKit
+       4        192      48.0   calloc in FigBaseProtocolRegisterProtocol         C       CoreMedia
+       4        192      48.0   calloc in swift::ConcurrentReadableHashMap<swift::HashMapElementWrapper<(anonymous namespace)::GenericCacheEntry>, swift::Mutex>::resize(swift::ConcurrentReadableHashMap<swift::HashMapElementWrapper<(anonymous namespace)::GenericCacheEntry>, swift::Mutex>::IndexStorage, unsigned char, swift::HashMapElementWrapper<(anonymous namespace)::GenericCacheEntry>*)  C++     libswiftCore.dylib
+       3        192      64.0   CALayerArray._ivars (struct)                      C       QuartzCore
+       3        192      64.0   CUICommonAssetStorage._keyfmt (struct _renditionkeyfmt)  C       CoreUI
+       3        192      64.0   _CFPasteboardCache                                ObjC    CoreFoundation
+       3        192      64.0   _NSAxisAlignedVolumeColorGamut                    ObjC    AppKit
+       3        192      64.0   calloc in dispatch_group_async                    C       libdispatch.dylib
+       3        192      64.0   malloc in realtime_data_for_display(int, bool)    C       SkyLight
+       2        192      96.0   MTLIOAccelResourcePool                            ObjC    Metal
+       2        192      96.0   NSKeyValueShareableObservationInfoKey             ObjC    Foundation
+       2        192      96.0   calloc in color_transform_create                  C       CoreGraphics
+       2        192      96.0   calloc in invocation function for block in CMMInitializeLinearGammaTable()  C       ColorSync
+       1        192     192.0   FigXPCPerProcessInfo                              CFType  CoreMedia
+       1        192     192.0   NSDragDestination                                 ObjC    AppKit
+       1        192     192.0   NSEvent                                           ObjC    AppKit
+       1        192     192.0   NSEvent._eventRef (malloc)                        C       AppKit
+       1        192     192.0   NSTimer                                           ObjC    CoreFoundation
+       1        192     192.0   _realloc in objc::SafeRanges::add(unsigned long, unsigned long)  C++     libobjc.A.dylib
+       1        192     192.0   _realloc in register_for_new_connection_notification(void (*)(unsigned int, void*), void*, CGSConnectionNoticeType)  C       SkyLight
+       1        192     192.0   malloc in AllocateAndInitializeEvent              C       HIToolbox
+      11        176      16.0   malloc in CGPropertiesCreate                      C       CoreGraphics
+       2        176      88.0   malloc in SLSNewConnection                        C       SkyLight
+       1        176     176.0   AVNetworkPlaybackPerfHUDLayer                     ObjC    AVFCore
+       1        176     176.0   EnhanceDialogueProcessor                          C++     AudioToolbox
+       1        176     176.0   FigXPCEnqueuedNotifications                       CFType  CoreMedia
+       1        176     176.0   Swift._DictionaryStorage<Swift.String, Any>       Swift   libswiftCore.dylib
+       1        176     176.0   _NSAutomaticFocusRingState                        ObjC    AppKit
+       1        176     176.0   calloc in TSplicedFont::EvalComponents(__CFArray const*)  C++     CoreText
+       1        176     176.0   calloc in __loginframework_vtable_block_invoke    C       SkyLight
+       1        176     176.0   malloc in swift_getObjCClassMetadata              C       libswiftCore.dylib
+       1        176     176.0   std::__function::__func<OpaqueObjectMgr::OpaqueObjectMgr()::$_0, unsigned int (unsigned int)>  C++     libAudioToolboxUtility.dylib
+       1        176     176.0   std::__shared_ptr_emplace<HALB_Guard>             C++     CoreAudio
+       1        176     176.0   std::__shared_ptr_emplace<System_Input_Processing_Notification_Handler>  C++     CoreAudio
+      10        160      16.0   calloc in CA::Layer::setter(unsigned int, _CAValueType, void const*)  C++     QuartzCore
+       5        160      32.0   AVRetainReleaseWeakReference                      ObjC    AVFCore
+       5        160      32.0   NSDisplayCyclePhase                               ObjC    AppKit
+       5        160      32.0   malloc in _InstallEventLoopObserver               C       HIToolbox
+       5        160      32.0   malloc in std::vector<char>::vector[abi:ne190102](unsigned long, char const&)  C++     AudioToolbox
+       4        160      40.0   malloc in HALC_ShellSimpleProxyList::Reconcile(bool, bool)  C++     CoreAudio
+       3        160      53.3   CA::Render::String                                C++     QuartzCore
+       2        160      80.0   malloc in _AECreateAEReceivePortInRunLoopWithSource  C       AE
+       1        160     160.0   MTLCompilerFSCache                                C++     Metal
+       1        160     160.0   NSCGSDisplay                                      ObjC    AppKit
+       1        160     160.0   NSImage                                           ObjC    AppKit
+       1        160     160.0   PLClientLogger                                    ObjC    PowerLog
+       1        160     160.0   RBSConnection                                     ObjC    RunningBoardServices
+       1        160     160.0   _NSTrackingAreaAKManager                          ObjC    AppKit
+       1        160     160.0   calloc in CreateMainThread                        C       CarbonCore
+       1        160     160.0   malloc in LI_ils_create                           C       libsystem_info.dylib
+       1        160     160.0   malloc in std::basic_string<char>::__assign_no_alias<true>(char const*, unsigned long)  C++     libc++.1.dylib
+       5        144      28.8   malloc in std::vector<unsigned int>::__assign_with_size[abi:ne190102]<unsigned int*, unsigned int*>(unsigned int*, unsigned int*, long)  C++     CoreAudio
+       3        144      48.0   CAFilter                                          ObjC    QuartzCore
+       3        144      48.0   MTLResourceListPool                               ObjC    Metal
+       3        144      48.0   NSAutoreleasePool                                 ObjC    Foundation
+       3        144      48.0   NSCursor                                          ObjC    AppKit
+       3        144      48.0   NSDictionary (Storage)                            C       CoreFoundation
+       3        144      48.0   calloc in IONotificationPortCreate                C       IOKit
+       3        144      48.0   malloc in CA::Render::add_observer(CA::Render::NotificationName, CA::Render::Object*, void (*)(CA::Render::Object*, void*, void*), void*, bool)  C++     QuartzCore
+       3        144      48.0   malloc in CAPropertyAddressList::AppendItem(AudioObjectPropertyAddress const&)  C++     CoreAudio
+       3        144      48.0   malloc in HALSystem::InitializeDevices()          C++     CoreAudio
+       3        144      48.0   malloc in caulk::deferred_logger::create_v(void*)  C++     caulk
+       3        144      48.0   malloc in invocation function for block in LSNotificationReceiver::modify(unsigned long, LSNotificationCode const*, unsigned long, LSNotificationCode const*, void const*, void const*)  C++     LaunchServices
+       2        144      72.0   malloc in cacheCanonicalSpecializedMetadata(swift::TargetTypeContextDescriptor<swift::InProcess> const*, long*)::$_0::__invoke(void*)  C++     libswiftCore.dylib
+       1        144     144.0   CADeprecated::CAGuard                             C++     CoreAudio
+       1        144     144.0   CGSEventAppendix                                  CFType  CoreGraphics
+       1        144     144.0   Class.data.properties (property_array_t)          C       libobjc.A.dylib
+       1        144     144.0   NSAquaAppearance                                  ObjC    AppKit
+       1        144     144.0   NSSystemAppearance                                ObjC    AppKit
+       1        144     144.0   NSViewHierarchyLock                               ObjC    AppKit
+       1        144     144.0   Swift._DictionaryStorage<Swift.Int64, AudioAnalytics.ReporterState>  Swift   libswiftCore.dylib
+       1        144     144.0   Swift._DictionaryStorage<Swift.String, Foundation._TimeZoneProtocol & Swift.AnyObject>  Swift   libswiftCore.dylib
+       1        144     144.0   _realloc in fetch_cache(bool)                     C       libobjc.A.dylib
+       1        144     144.0   calloc in FigXPCServerStartWithListenerCreatingBlock  C       CoreMedia
+       1        144     144.0   calloc in __CGDisplayColorCurveCreateIdentity_block_invoke  C       CoreGraphics
+       1        144     144.0   malloc in StaticContainer<HALC_ProxyNotifications_Statics>::init_statics(std::function<void ()>)  C++     CoreAudio
+       1        144     144.0   std::__shared_ptr_emplace<caulk::concurrent::details::dispatch_receiver>  C++     caulk
+       8        128      16.0   malloc in swift_getSingletonMetadata              C       libswiftCore.dylib
+       4        128      32.0   CUICFType                                         CFType  CoreUI
+       4        128      32.0   NSArray                                           ObjC    CoreFoundation
+       4        128      32.0   NSDisplayCycleObserver                            ObjC    AppKit
+       4        128      32.0   NSKeyValueDependency                              ObjC    AppKit
+       4        128      32.0   Swift weak reference storage                      C       libswiftCore.dylib
+       4        128      32.0   calloc in map_images_nolock                       C       libobjc.A.dylib
+       4        128      32.0   malloc in _NodeIDFFromFileID(_FileIDMap*, unsigned long long)  C       CarbonCore
+       4        128      32.0   malloc in ___UTTypeConformsTo_block_invoke.28     C       LaunchServices
+       4        128      32.0   malloc in invocation function for block in lsCASLog(int)  C       LaunchServices
+       4        128      32.0   std::__shared_ptr_pointer<APComponent*, std::shared_ptr<APComponent>::__shared_ptr_default_delete<APComponent, APComponent>>  C++     AudioToolboxCore
+       3        128      42.7   malloc in addOrRemoveShaderFunctionCache(id<MTLDeviceSPI>, MTLUINT256_t, bool)  C       Metal
+       2        128      64.0   CFPrefsSource                                     ObjC    CoreFoundation
+       2        128      64.0   FigNotificationListenerWeakListenerLink           CFType  CoreMedia
+       2        128      64.0   MTLIOAccelDeviceShmemPool                         ObjC    Metal
+       2        128      64.0   NSLayoutDimension                                 ObjC    CoreAutoLayout
+       2        128      64.0   _CFPFactory                                       CFType  CoreFoundation
+       2        128      64.0   malloc in -[NSViewHierarchyLock lockForReading]   C       AppKit
+       2        128      64.0   malloc in conversion_params_data_key_retain       C       CoreGraphics
+       2        128      64.0   malloc in invocation function for block in MTLCompilerConnectionManagerPrivate::registerCompilerPlugin(char const*, NSObject<OS_dispatch_data>*)  C++     Metal
+       2        128      64.0   malloc in objc_object::sidetable_retain(bool)     C++     libobjc.A.dylib
+       2        128      64.0   malloc in objc_object::sidetable_setWeaklyReferenced_nolock()  C++     libobjc.A.dylib
+       2        128      64.0   std::__shared_ptr_emplace<caulk::lifetime_observed<std::unique_ptr<caulk::concurrent::details::service_thread>, caulk::shared_instance_manager<caulk::concurrent::details::service_thread>::observer>>  C++     caulk
+       1        128     128.0   CADeprecated::CAPThread                           C++     CoreAudio
+       1        128     128.0   CGFont                                            CFType  CoreGraphics
+       1        128     128.0   CGSConnection                                     CFType  SkyLight
+       1        128     128.0   FigCaptionRendererOutputNode (FigItemIntegratedTimelineSetTimeOption_UpdateCurrentTimeImmediately)  CFType  MediaToolbox
+       1        128     128.0   FigRoutingContext (routingContextRemoteXPC)       CFType  MediaExperience
+       1        128     128.0   Foundation.LockedState<Foundation.TimeZoneCache.State>.(_Buffer in $7ff815aeb468)<>  Swift   Foundation
+       1        128     128.0   NSCGSCAWindowBackingStore                         ObjC    AppKit
+       1        128     128.0   NSMenuBarPresentationInstance                     ObjC    AppKit
+       1        128     128.0   SLSTransaction                                    CFType  SkyLight
+       1        128     128.0   TFileDataReference                                C++     libFontParser.dylib
+       1        128     128.0   calloc in color_space_state_create_device_cmyk    C       CoreGraphics
+       1        128     128.0   calloc in color_space_state_create_device_gray    C       CoreGraphics
+       1        128     128.0   calloc in color_space_state_create_device_rgb     C       CoreGraphics
+       1        128     128.0   malloc in (anonymous namespace)::get_registry()   C++     SkyLight
+       1        128     128.0   malloc in CAExternalLock::ScheduleDeletion()      C++     AudioToolbox
+       1        128     128.0   malloc in CGSConnectionGetEventQueue              C       SkyLight
+       1        128     128.0   malloc in StaticContainer<HALC_ShellObjectMap_Statics>::init_statics(std::function<void ()>)  C++     CoreAudio
+       1        128     128.0   malloc in StaticContainer<HALObjectMap_Statics>::init_statics(std::function<void ()>)  C++     CoreAudio
+       1        128     128.0   malloc in _vasprintf                              C       libsystem_c.dylib
+       7        112      16.0   calloc in dyld::ThreadLocalVariables::instantiateVariable(dyld::ThreadLocalVariables::Thunk const&)  C++     libdyld.dylib
+       3        112      37.3   malloc in _LSGetSession(LSSessionKey)             C       LaunchServices
+       1        112     112.0   FigCaptionRendererFreeLayoutRegion (FigImageQueueGaugeNotification_WasInvalidated)  CFType  MediaToolbox
+       1        112     112.0   FigMemoryPoolBlockState                           CFType  CoreMedia
+       1        112     112.0   NSApplicationFunctionRowController                ObjC    AppKit
+       1        112     112.0   NSCursorArea                                      ObjC    AppKit
+       1        112     112.0   RBSProcessHandle                                  ObjC    RunningBoardServices
+       1        112     112.0   SLSSkyLightEventAuthenticationMessage             ObjC    SkyLight
+       1        112     112.0   ServerClient                                      Swift   AudioAnalytics
+       1        112     112.0   malloc in (anonymous namespace)::get_process_notifier()  C++     SkyLight
+       1        112     112.0   malloc in (anonymous namespace)::get_registry() (.20287)  C++     SkyLight
+       1        112     112.0   malloc in CGSConnectionGetNotifier                C       SkyLight
+       1        112     112.0   malloc in acv2::AudioConverterChain::PostBuild()  C++     AudioToolboxCore
+       1        112     112.0   malloc in invocation function for block in LSNotificationReceiver::Class()  C++     LaunchServices
+       1        112     112.0   malloc in invocation function for block in LSSharedMemoryPage::Class()  C++     LaunchServices
+       1        112     112.0   std::__shared_ptr_emplace<as::client::api_utils::ServerAccessor const>  C++     AudioSession
+       6         96      16.0   NSCGSDockMessageHandlers                          ObjC    AppKit
+       6         96      16.0   NSMutableArray.cow (struct __cow_state_t)         C       CoreFoundation
+       6         96      16.0   malloc in HALC_ProxyObject::HALC_ProxyObject(unsigned int, unsigned int, unsigned int, unsigned int)  C++     CoreAudio
+       6         96      16.0   malloc in HALDevice::ObjectPublished(HALObject*, CAPropertyAddressList&)  C++     CoreAudio
+       6         96      16.0   malloc in look_up_class                           C       libobjc.A.dylib
+       3         96      32.0   CA::Render::KeyValue                              C++     QuartzCore
+       3         96      32.0   CA::Render::Vector                                C++     QuartzCore
+       3         96      32.0   CALayer                                           ObjC    QuartzCore
+       3         96      32.0   CGDisplayMode                                     CFType  SkyLight
+       3         96      32.0   NSDictionary                                      ObjC    CoreFoundation
+       3         96      32.0   NSTaggedPointerStringCStringContainer             ObjC    CoreFoundation
+       3         96      32.0   std::__shared_ptr_pointer<caulk::deferred_logger*, std::shared_ptr<caulk::deferred_logger>::__shared_ptr_default_delete<caulk::deferred_logger, caulk::deferred_logger>>  C++     caulk
+       2         96      48.0   AVPlayerLayerIntermediateLayer                    ObjC    AVFCore
+       2         96      48.0   CGColorTransformBase                              CFType  CoreGraphics
+       2         96      48.0   NSViewBackingLayer                                ObjC    AppKit
+       2         96      48.0   _NSCGSWindowOrderingProperties                    ObjC    AppKit
+       2         96      48.0   _NSTrackingAreaAKViewHelper                       ObjC    AppKit
+       2         96      48.0   _WMWindowShadowProperties                         ObjC    WindowManagement
+       2         96      48.0   calloc in initDisplayMappings()                   C       SkyLight
+       2         96      48.0   malloc in CA::Context::commit_transaction(CA::Transaction*, double, double*)  C++     QuartzCore
+       2         96      48.0   malloc in FigDerivedFormatDescriptionRegister     C       CoreMedia
+       2         96      48.0   malloc in MSHCreateMIGServerSource                C       HIServices
+       2         96      48.0   malloc in SLSGetHotKeyHandleForID                 C       SkyLight
+       2         96      48.0   malloc in __70+[NSServiceViewController(CompatibilityDylibs) addCompatibilityDylib:]_block_invoke  C       ViewBridge
+       2         96      48.0   std::__shared_ptr_emplace<std::map<CACFString, HALDevice*>>  C++     CoreAudio
+       2         96      48.0   std::__shared_ptr_pointer<AQMixEngine_Single*, void (*)(AQIONode*)>  C++     AudioToolbox
+       1         96      96.0   CADeprecated::CAMutex                             C++     CoreAudio
+       1         96      96.0   FigCaptionRendererInput (FigVirtualDisplaySinkType_Conduit)  CFType  MediaToolbox
+       1         96      96.0   FigFCRCALayer.layerInternal (struct OpaqueFigCaptionRendererCALayerInternal)  C       MediaToolbox
+       1         96      96.0   FigRoutingContext (RoutingContextResilientRemote)  CFType  MediaExperience
+       1         96      96.0   HALB_Mutex                                        C++     CoreAudio
+       1         96      96.0   HIEventDispatcher                                 C++     HIToolbox
+       1         96      96.0   NSDisplayCyclePhaseCollection                     ObjC    AppKit
+       1         96      96.0   NSMutableParagraphStyle                           ObjC    UIFoundation
+       1         96      96.0   NSParagraphStyle                                  ObjC    UIFoundation
+       1         96      96.0   NSPasteboard                                      ObjC    AppKit
+       1         96      96.0   NSScreen                                          ObjC    AppKit
+       1         96      96.0   NSWindowLayout                                    ObjC    AppKit
+       1         96      96.0   _CFXPreferences                                   ObjC    CoreFoundation
+       1         96      96.0   _LSDefaults                                       ObjC    LaunchServices
+       1         96      96.0   calloc in -[NSObject(NSKeyValueObserverRegistration) removeObserver:forKeyPath:context:]  C       Foundation
+       1         96      96.0   calloc in NSKVOPendingPerThreadNotificationStack  C       Foundation
+       1         96      96.0   malloc in QTAudioFileComponentFactory             C       CoreAudio
+       1         96      96.0   malloc in swift_getExistentialTypeMetadata        C       libswiftCore.dylib
+       1         96      96.0   std::__shared_ptr_emplace<std::recursive_mutex>   C++     AudioSession
+       5         80      16.0   NSArray.cow (struct __cow_state_t)                C       CoreFoundation
+       5         80      16.0   malloc in NSCreateMapTableWithZone                C       Foundation
+       5         80      16.0   malloc in swift::runtime::SwiftTLSContext::get()  C++     libswiftCore.dylib
+       2         80      40.0   CA::Render::Array                                 C++     QuartzCore
+       2         80      40.0   NSColorSpaceColor                                 ObjC    AppKit
+       2         80      40.0   calloc in si_module_config_modules_for_category   C       libsystem_info.dylib
+       2         80      40.0   malloc in AMCP::Log::Scope_Registry::fetch(char const*, char const*)  C++     CoreAudio
+       2         80      40.0   malloc in std::basic_string<char>::basic_string[abi:ne190102]<0>(char const*)  C++     CoreAudio
+       2         80      40.0   malloc in withCompatibilityDylibs(signed char (std::set<mach_header const*>*) block_pointer)  C++     ViewBridge
+       1         80      80.0   ..__NSXPCInterfaceProxy_AudioAnalytics.ServerProtocol  ObjC    Foundation
+       1         80      80.0   AVPlayerLayerInternal.isReadyForDisplayMutex (struct OpaqueFigSimpleMutex)  C       AVFCore
+       1         80      80.0   AVWeaklyObservedObjectClientBlockKVONotifier      ObjC    AVFCore
+       1         80      80.0   AppleParavirtObjectRefAllocator                   ObjC    AppleParavirtGPUMetal
+       1         80      80.0   AudioFileFormatRegistry                           C++     AudioToolboxCore
+       1         80      80.0   CAReporter                                        ObjC    libAudioStatistics.dylib
+       1         80      80.0   ColorSyncCMM                                      CFType  ColorSync
+       1         80      80.0   FigCaptionRendererAVFLayoutRegion (FigVideoPerformanceKey_NumberOfDroppableFramesDroppedByMentorForThrottling)  CFType  MediaToolbox
+       1         80      80.0   FigMemoryOrigin                                   CFType  CoreMedia
+       1         80      80.0   FigVideoContainerLayer                            ObjC    MediaToolbox
+       1         80      80.0   FigXPCServedObject                                CFType  CoreMedia
+       1         80      80.0   Foundation.LockedState<Foundation._NSSwiftProcessInfo.State>.(_Buffer in $7ff815aeb468)<>  Swift   Foundation
+       1         80      80.0   MTLCompiler                                       ObjC    Metal
+       1         80      80.0   NSKeyValueUndefinedGetter                         ObjC    Foundation
+       1         80      80.0   NSWindowTitleController                           ObjC    AppKit
+       1         80      80.0   SecCode                                           CFType  Security
+       1         80      80.0   Security::LoadableBundle                          C++     Security
+       1         80      80.0   TGlobalFontRegistryImp                            C++     libFontRegistry.dylib
+       1         80      80.0   _NSScreenMenuBarHeights                           ObjC    AppKit
+       1         80      80.0   _realloc in _setThisThreadIsInitializingClass(objc_class*)  C       libobjc.A.dylib
+       1         80      80.0   acv2::ConverterRegistry                           C++     AudioToolboxCore
+       1         80      80.0   calloc in __get_cache_block_invoke                C       CoreGraphics
+       1         80      80.0   calloc in __get_cache_block_invoke.13557          C       CoreGraphics
+       1         80      80.0   calloc in __get_cache_block_invoke.17640          C       CoreGraphics
+       1         80      80.0   calloc in __get_cache_block_invoke.24389          C       CoreGraphics
+       1         80      80.0   calloc in __si_module_static_file_block_invoke    C       libsystem_info.dylib
+       1         80      80.0   calloc in fetch_cache(bool)                       C       libobjc.A.dylib
+       1         80      80.0   malloc in AT::MixServer::macOSImpl::macOSImpl(AT::MixServer::Base::Dependencies const&)  C++     AudioToolbox
+       1         80      80.0   malloc in CADeprecated::TSingleton<avfaudio::SessionMap>::instance()  C++     AudioSession
+       1         80      80.0   malloc in GetKaiser(unsigned int, double)         C       libAudioToolboxUtility.dylib
+       1         80      80.0   malloc in HIObjectClass::Register(__CFString const*, __CFString const*, unsigned int, int (*)(OpaqueEventHandlerCallRef*, OpaqueEventRef*, void*), unsigned long, EventTypeSpec const*, void*, HIObjectClass**)  C++     HIToolbox
+       1         80      80.0   malloc in RBSAssertionHandler::GetInstance()      C++     CoreAudio
+       1         80      80.0   malloc in ScreenSharingStateSynchronizer::instance()  C++     AudioToolbox
+       1         80      80.0   malloc in Security::ModuleNexus<Security::CodeSigning::PluginHost>::make()  C++     Security
+       1         80      80.0   malloc in std::basic_string<char>::basic_string[abi:ne190102]<0>(char const*)  C++     Security
+       1         80      80.0   std::__function::__func<void CASmartPreferences::AddHandler<int>(__CFString const*, __CFString const*, int (*)(void const*, bool&), std::function<void (int)>)::'lambda'(void const*), bool (void const*)>  C++     libAudioToolboxUtility.dylib
+       1         80      80.0   std::__function::__func<void CASmartPreferences::AddHandler<long long>(__CFString const*, __CFString const*, long long (*)(void const*, bool&), std::function<void (long long)>)::'lambda'(void const*), bool (void const*)>  C++     AudioToolboxCore
+       1         80      80.0   std::__shared_ptr_emplace<AT::IOBinding::Impl>    C++     AudioToolbox
+       1         80      80.0   std::__shared_ptr_emplace<caulk::synchronized<AQ::Server::CentralState, caulk::mach::unfair_recursive_lock, caulk::empty_atomic_interface<AQ::Server::CentralState>>>  C++     AudioToolbox
+       1         80      80.0   xpc_session_t                                     ObjC    libxpc.dylib
+       4         64      16.0   NSArray._list (id[])                              C       CoreFoundation
+       4         64      16.0   NSNotificationCenter                              ObjC    Foundation
+       4         64      16.0   WAVEAudioFormat                                   C++     AudioToolboxCore
+       2         64      32.0   AVCallbackContextRegistry                         ObjC    AVFCore
+       2         64      32.0   FSNode                                            ObjC    LaunchServices
+       2         64      32.0   FigProcessInfo                                    CFType  CoreMedia
+       2         64      32.0   NSConcreteValue.typeInfo (malloc)                 C       Foundation
+       2         64      32.0   NSHIObject                                        ObjC    HIToolbox
+       2         64      32.0   TFontPathIndex                                    C++     libFontRegistry.dylib
+       2         64      32.0   _NSLocalEventObserver                             ObjC    AppKit
+       2         64      32.0   calloc in FigCFWeakReferenceTableAddValueAndGetKey  C       CoreMedia
+       2         64      32.0   calloc in registryCacheAddPath                    C       CoreMedia
+       2         64      32.0   malloc in MSHCreateMachServerSource               C       HIServices
+       2         64      32.0   malloc in acv2::ConverterRegistry::AddFactory(acv2::ConverterFactory*)  C++     AudioToolboxCore
+       2         64      32.0   malloc in availabilityStateForServiceDomain(_LSDServiceDomain*)  C       LaunchServices
+       2         64      32.0   malloc in std::vector<char>::vector[abi:ne190102](unsigned long, char const&)  C++     AudioToolboxCore
+       2         64      32.0   std::__shared_ptr_emplace<caulk::mach::unfair_lock>  C++     caulk
+       2         64      32.0   std::__shared_ptr_pointer<APComponent_Carbon*, std::shared_ptr<APComponent_Carbon>::__shared_ptr_default_delete<APComponent_Carbon, APComponent_Carbon>>  C++     AudioToolboxCore
+       1         64      64.0   AVKeyPathDependency                               ObjC    AVFCore
+       1         64      64.0   AppleParavirtDevice._libraryBuilder (malloc)      C       AppleParavirtGPUMetal
+       1         64      64.0   BSAuditToken                                      ObjC    BaseBoard
+       1         64      64.0   CAListenerProxy                                   C++     AudioToolbox
+       1         64      64.0   Closure context (unknown layout)                  Swift   <unknown>
+       1         64      64.0   FigCaptionRendererInterval (FigAssertionProperty_HolderName)  CFType  MediaToolbox
+       1         64      64.0   FigCaptionRendererParentInterval (FigAssertionProperty_HolderName)  CFType  MediaToolbox
+       1         64      64.0   FigManagedFilePool                                CFType  CoreMedia
+       1         64      64.0   FigRegistry                                       CFType  CoreMedia
+       1         64      64.0   FigSubtitleCALayer                                ObjC    MediaToolbox
+       1         64      64.0   FigSubtitleCALayer.bdLayerInternal (struct OpaqueFigSubtitleBackdropCALayerInternal)  C       MediaToolbox
+       1         64      64.0   Foundation.LockedState<Foundation.LocaleCache.State>.(_Buffer in $7ff815aeb468)<>  Swift   Foundation
+       1         64      64.0   HALC_ProxySystem                                  C++     CoreAudio
+       1         64      64.0   Helper                                            Swift   Foundation
+       1         64      64.0   IntelligenceCollectionListener                    Swift   UIIntelligenceSupport
+       1         64      64.0   MTLIOAccelService                                 ObjC    Metal
+       1         64      64.0   MTLIOAccelServiceGlobalContext                    ObjC    Metal
+       1         64      64.0   MTLLoader                                         ObjC    Metal
+       1         64      64.0   MTLLoader._global (malloc)                        C       Metal
+       1         64      64.0   NSAffineTransform                                 ObjC    Foundation
+       1         64      64.0   NSCGSDock                                         ObjC    AppKit
+       1         64      64.0   NSDockConnection                                  ObjC    AppKit
+       1         64      64.0   NSDocumentController                              ObjC    AppKit
+       1         64      64.0   NSHashTable.slice.internalProps (struct NSSliceInternalProperties)  C       Foundation
+       1         64      64.0   NSHelpManager                                     ObjC    AppKit
+       1         64      64.0   NSRunLoop                                         ObjC    CoreFoundation
+       1         64      64.0   NSSet (Storage)                                   C       CoreFoundation
+       1         64      64.0   NSThread                                          ObjC    Foundation
+       1         64      64.0   NotifyDStateDumpManager                           C++     AudioToolboxCore
+       1         64      64.0   OS_os_workgroup                                   ObjC    libdispatch.dylib
+       1         64      64.0   PGSerializer                                      ObjC    AppleParavirtGPUMetal
+       1         64      64.0   RBSInheritance                                    ObjC    RunningBoardServices
+       1         64      64.0   RBSOpaqueProcessIdentity                          ObjC    RunningBoardServices
+       1         64      64.0   RBSProcessBundle                                  ObjC    RunningBoardServices
+       1         64      64.0   RemoteCacheable                                   C++     CarbonCore
+       1         64      64.0   SCService                                         C++     CarbonCore
+       1         64      64.0   ServerProxy                                       Swift   AudioAnalytics
+       1         64      64.0   Swift.KeyPath<__C._WMWindow, Swift.Optional<__C._WMWindowTilingState>>  Swift   libswiftCore.dylib
+       1         64      64.0   Swift.ManagedBuffer<UIIntelligenceSupport.IntelligenceSupportAgentXPCConnection.State, __C.os_unfair_lock_s>  Swift   libswiftCore.dylib
+       1         64      64.0   Swift.SharedStringStorage                         Swift   libswiftCore.dylib
+       1         64      64.0   Swift._ContiguousArrayStorage<Swift.Array<Swift.UInt8>>  Swift   libswiftCore.dylib
+       1         64      64.0   WMClientWindowManager                             ObjC    WindowManagement
+       1         64      64.0   _NSAutoresizingMaskXAxisAnchor                    ObjC    CoreAutoLayout
+       1         64      64.0   _NSAutoresizingMaskYAxisAnchor                    ObjC    CoreAutoLayout
+       1         64      64.0   _NSDocumentRecentItemsMenuController              ObjC    AppKit
+       1         64      64.0   _NSMainThread                                     ObjC    Foundation
+       1         64      64.0   _NSScreenSharedInfo                               ObjC    AppKit
+       1         64      64.0   _NSSwiftProcessInfo                               Swift   Foundation
+       1         64      64.0   _NSWMWindowTilingStateController                  Swift   AppKit
+       1         64      64.0   __NSBundleTables                                  ObjC    Foundation
+       1         64      64.0   calloc in FigMemoryRecipientCreateWithXPCMessage1AndUpdateXPCMessage2  C       CoreMedia
+       1         64      64.0   calloc in _dispatch_continuation_redirect_push    C       libdispatch.dylib
+       1         64      64.0   calloc in cg_font_library_link_symbol             C       CoreGraphics
+       1         64      64.0   calloc in dispatch_after_f                        C       libdispatch.dylib
+       1         64      64.0   calloc in dispatch_group_notify                   C       libdispatch.dylib
+       1         64      64.0   calloc in os_state_add_handler                    C       libsystem_trace.dylib
+       1         64      64.0   caulk::mach::os_workgroup_managed                 C++     caulk
+       1         64      64.0   dispatch_data_t                                   ObjC    libdispatch.dylib
+       1         64      64.0   icu::UnifiedCache                                 C++     libicucore.A.dylib
+       1         64      64.0   malloc in CGSSurfaceListCreate                    C       SkyLight
+       1         64      64.0   malloc in caulk::alloc::consolidating_free_map<caulk::alloc::page_allocator, 10485760ul>::add_freemap_node(caulk::alloc::consolidating_free_map<caulk::alloc::page_allocator, 10485760ul>::NodePrefix*)  C++     caulk
+       1         64      64.0   malloc in localtime                               C       libsystem_c.dylib
+       1         64      64.0   malloc in std::map<unsigned int, (anonymous namespace)::Backtrace>::insert[abi:nn190102](std::pair<unsigned int const, (anonymous namespace)::Backtrace>&&)  C++     SkyLight
+       1         64      64.0   malloc in swift::LockingConcurrentMap<(anonymous namespace)::TupleCacheEntry, (anonymous namespace)::TupleCacheStorage>::getOrInsert<(anonymous namespace)::TupleCacheEntry::Key, swift::MetadataRequest&, swift::TargetValueWitnessTable<swift::InProcess> const*&>((anonymous namespace)::TupleCacheEntry::Key, swift::MetadataRequest&, swift::TargetValueWitnessTable<swift::InProcess> const*&)  C++     libswiftCore.dylib
+       1         64      64.0   std::__shared_ptr_emplace<FrameworkConfiguration>  C++     CoreAnalytics
+       1         64      64.0   std::__shared_ptr_emplace<caulk::synchronized<as::client::NotificationStateManager, caulk::mach::unfair_lock, caulk::empty_atomic_interface<as::client::NotificationStateManager>>>  C++     AudioSession
+       3         48      16.0   MPEGAudioFormat                                   C++     AudioToolboxCore
+       3         48      16.0   NSCountedSet                                      ObjC    Foundation
+       3         48      16.0   NSDictionary.cow (struct __cow_state_t)           C       CoreFoundation
+       3         48      16.0   _CFPasteboardWeakRef                              ObjC    CoreFoundation
+       3         48      16.0   _NSXPCAllowListHolder                             ObjC    Foundation
+       3         48      16.0   calloc in _cfmp_record_intent_to_invalidate       C       CoreFoundation
+       3         48      16.0   calloc in fig_log_get_emitter                     C       CoreMedia
+       3         48      16.0   malloc in CAListenerProxy::HALListener::addChangedProperties(unsigned long, AudioObjectPropertyAddress const*)  C++     AudioToolbox
+       3         48      16.0   malloc in std::pair<HALPropertyListener, CAPropertyAddressList>::pair[abi:ne190102](std::pair<HALPropertyListener, CAPropertyAddressList> const&)  C++     CoreAudio
+       3         48      16.0   malloc in x_list_prepend                          C       QuartzCore
+       2         48      24.0   calloc in LI_get_thread_info                      C       libsystem_info.dylib
+       2         48      24.0   malloc in AQIONodeManager::_FindAQIONode(AQMEIO_Binding const&)  C++     AudioToolbox
+       2         48      24.0   malloc in _LSCopyApplicationInformation           C       LaunchServices
+       2         48      24.0   malloc in memoryOriginServer_handleRemoteMessageWithReply  C       CoreMedia
+       2         48      24.0   malloc in scInternString                          C       CarbonCore
+       1         48      48.0   AppleParavirtDevice._commandBufferStoragePool (struct MTLIOAccelCommandBufferStoragePool)  C       AppleParavirtGPUMetal
+       1         48      48.0   AudioFileFormatComponent                          C++     AudioToolboxCore
+       1         48      48.0   CFBasicHash                                       CFType  CoreFoundation
+       1         48      48.0   CUINamedRenditionInfo._bitmap (malloc)            C       CoreUI
+       1         48      48.0   CUINamedRenditionInfo._keyFormat (struct _renditionkeyfmt)  C       CoreUI
+       1         48      48.0   FigBufferedAirPlayClientRoutingRegistry           CFType  CoreMedia
+       1         48      48.0   FigBufferedAirPlayGlobalRoutingRegistry (FigDiskCacheProviderProperty_NoPersistentCache)  CFType  MediaToolbox
+       1         48      48.0   FigByteStreamProvider (BaseByteStreamProvider)    CFType  CoreMedia
+       1         48      48.0   FigCaptionBackdropLayer                           ObjC    MediaToolbox
+       1         48      48.0   FigCaptionRendererCALayerOutputNode (FigSampleBufferConsumerXPCMsgParam_SampleBuffer)  CFType  MediaToolbox
+       1         48      48.0   FigCaptionRendererOutput (FigPWDKeyExchangeSenderProperty_Encryptor)  CFType  MediaToolbox
+       1         48      48.0   FigFCRCALayer                                     ObjC    MediaToolbox
+       1         48      48.0   FigFCRCALayerOutputNodeContentLayer               ObjC    MediaToolbox
+       1         48      48.0   FigFCRCALayerOutputNodeLayer                      ObjC    MediaToolbox
+       1         48      48.0   FigFCRCALayerOutputNodeLayer.layerInternal (struct OpaqueFigCaptionRendererCALayerOutputNodeLayerInternal)  C       MediaToolbox
+       1         48      48.0   FigMemoryRecipient                                CFType  CoreMedia
+       1         48      48.0   FigPixelBufferRecipient                           CFType  CoreMedia
+       1         48      48.0   FigShareAndAirPlayHelper (FigVideoReceiverProperty_LoggingIdentifier)  CFType  MediaToolbox
+       1         48      48.0   Foundation.LockedState<Foundation._NSSwiftTimeZone.State>.(_Buffer in $7ff815aeb468)<>  Swift   Foundation
+       1         48      48.0   Foundation.LockedState<Foundation._ProcessInfo.State>.(_Buffer in $7ff815aeb468)<>  Swift   Foundation
+       1         48      48.0   Foundation.LockedState<Swift.Optional<Foundation._LocaleProtocol & Swift.AnyObject>>.(_Buffer in $7ff815aeb468)<>  Swift   Foundation
+       1         48      48.0   Foundation.LockedState<Swift.Optional<Swift.String>>.(_Buffer in $7ff815aeb468)<>  Swift   Foundation
+       1         48      48.0   IntelligenceSupportAgentXPCConnection             Swift   UIIntelligenceSupport
+       1         48      48.0   MTLIOAccelService._notifyPort (struct IONotificationPort)  C       Metal
+       1         48      48.0   MTLIOAccelServiceGlobalContext._deviceNotifyPort (struct IONotificationPort)  C       Metal
+       1         48      48.0   NSCGSDisplayConfiguration                         ObjC    AppKit
+       1         48      48.0   NSCoreDragManager                                 ObjC    AppKit
+       1         48      48.0   NSDynamicSystemColor                              ObjC    AppKit
+       1         48      48.0   NSHashTable.slice.personalityProps (struct NSSliceExternalPersonalityProperties)  C       Foundation
+       1         48      48.0   NSKVONotifying_AVPlayerLayer                      ObjC    AVFCore
+       1         48      48.0   NSKeyValueShareableObservanceKey                  ObjC    Foundation
+       1         48      48.0   NSUserDefaults                                    ObjC    CoreFoundation
+       1         48      48.0   NSWMStageInfo                                     ObjC    AppKit
+       1         48      48.0   NSWMWindowCoordinator                             ObjC    AppKit
+       1         48      48.0   OSStateDumpManager                                C++     AudioToolboxCore
+       1         48      48.0   RBSAssertionIdentifier                            ObjC    RunningBoardServices
+       1         48      48.0   ReporterData                                      Swift   AudioAnalytics
+       1         48      48.0   Swift.ManagedBuffer<AppKit.NSWMDeferredTransactionQueue.(State in $7ff818949d24), __C.os_unfair_lock_s>  Swift   libswiftCore.dylib
+       1         48      48.0   Swift.ManagedBuffer<UIIntelligenceSupport.IntelligenceCollectionCoordinator.(State in $7ffd16fab7c4), __C.os_unfair_lock_s>  Swift   libswiftCore.dylib
+       1         48      48.0   Swift._ContiguousArrayStorage<Swift.AnyObject>    Swift   libswiftCore.dylib
+       1         48      48.0   TFileFragmentCache                                C++     libFontParser.dylib
+       1         48      48.0   TokenBucket                                       Swift   AudioAnalytics
+       1         48      48.0   XPCRelaunchNotificationHandler                    Swift   UIIntelligenceSupport
+       1         48      48.0   _NSFocusStackElement                              ObjC    AppKit
+       1         48      48.0   _TimeZoneICU                                      Swift   Foundation
+       1         48      48.0   acv2::AudioConverterV2                            C++     AudioToolboxCore
+       1         48      48.0   malloc in CLVVisitValuesForKey                    C       CarbonCore
+       1         48      48.0   malloc in CachedApplicationInformationMapInitFunc()  C       LaunchServices
+       1         48      48.0   malloc in GetMissedRequests()                     C       CoreText
+       1         48      48.0   malloc in LaunchServices::DatabaseContext::getPerThreadStateReference()  C++     LaunchServices
+       1         48      48.0   malloc in caulk::alloc::details::caching_page_allocator_base::caching_page_allocator_base(unsigned long)  C++     caulk
+       1         48      48.0   malloc in invocation function for block in _LSGetSessions()  C       LaunchServices
+       1         48      48.0   malloc in invocation function for block in availabilityStateForServiceDomain(_LSDServiceDomain*)  C       LaunchServices
+       1         48      48.0   malloc in std::basic_string<char>::append(char const*, unsigned long)  C++     libc++.1.dylib
+       1         48      48.0   malloc in std::basic_string<char>::basic_string[abi:ne190102]<0>(char const*)  C++     AudioToolbox
+       1         48      48.0   malloc in std::basic_string<char>::insert(unsigned long, char const*, unsigned long)  C++     libc++.1.dylib
+       1         48      48.0   malloc in std::operator+<char>(char const*, std::basic_string<char> const&)  C++     libc++.1.dylib
+       1         48      48.0   malloc in std::vector<TFont*>::__init_with_size[abi:fe190102]<TFont**, TFont**>(TFont**, TFont**, unsigned long)  C++     libFontParser.dylib
+       1         48      48.0   std::__shared_ptr_emplace<AMCP::Log::Scope>       C++     CoreAudio
+       1         48      48.0   std::__shared_ptr_emplace<WS::Shmem>              C++     SkyLight
+       1         48      48.0   std::__shared_ptr_emplace<caulk::details::lifetime_guard_base<AQ::Server::RemoteClient>::control_block>  C++     AudioToolbox
+       1         48      48.0   std::__shared_ptr_emplace<caulk::details::lifetime_guard_base<caulk::alloc::page_cache_monitor>::control_block>  C++     caulk
+       1         48      48.0   std::__shared_ptr_emplace<std::vector<HALCFPlugIn*>>  C++     CoreAudio
+       1         48      48.0   std::__shared_ptr_emplace<std::vector<HALC_ProxyNotifications::Listener>>  C++     CoreAudio
+       1         48      48.0   std::__shared_ptr_emplace<std::vector<HALC_ProxyObjectMap::ObjectInfo>>  C++     CoreAudio
+       1         48      48.0   std::__shared_ptr_emplace<std::vector<HALC_ShellObjectMap::ObjectInfo>>  C++     CoreAudio
+       1         48      48.0   std::__shared_ptr_emplace<std::vector<HALObjectMap_Statics::ObjectInfo>>  C++     CoreAudio
+       1         48      48.0   std::__shared_ptr_emplace<std::vector<HALPlugIn*>>  C++     CoreAudio
+       1         48      48.0   std::__shared_ptr_emplace<std::vector<HALPlugInManagement::MatchingInfo*>>  C++     CoreAudio
+       1         48      48.0   std::__shared_ptr_pointer<CGSBacktrace*, void (*)(CGSBacktrace*)>  C++     SkyLight
+       2         32      16.0   CAContext                                         ObjC    QuartzCore
+       2         32      16.0   CAFilter._attr (malloc)                           C       QuartzCore
+       2         32      16.0   EC3AudioFormat                                    C++     AudioToolboxCore
+       2         32      16.0   NSRegion                                          Swift   AppKit
+       2         32      16.0   SLSEventAuthenticationMessageVersionedPID         ObjC    SkyLight
+       2         32      16.0   malloc in AQMEIO_HAL::Scope::UpdateStreams()      C++     AudioToolbox
+       2         32      16.0   malloc in CGColorTransformBaseAcquire             C       CoreGraphics
+       2         32      16.0   malloc in CGSEventScoreboardCreateFromShmemEntries  C       SkyLight
+       2         32      16.0   malloc in CreateEventLoop                         C       HIToolbox
+       2         32      16.0   malloc in HALC_ProxyIOContext::IOWorkLoop()       C++     CoreAudio
+       2         32      16.0   malloc in HALObject::PropertiesChanged(unsigned int, AudioObjectPropertyAddress const*)  C++     CoreAudio
+       2         32      16.0   malloc in LI_get_thread_info                      C       libsystem_info.dylib
+       2         32      16.0   malloc in SLSStructuralRegionIDRangeExtend        C       SkyLight
+       2         32      16.0   malloc in dyld::ThreadLocalVariables::instantiateVariable(dyld::ThreadLocalVariables::Thunk const&)  C++     libdyld.dylib
+       2         32      16.0   malloc in std::vector<int>::insert(std::__wrap_iter<int const*>, unsigned long, int const&)  C++     AudioToolboxCore
+       1         32      32.0   AQMEIO_HAL::IOConverter_Simple                    C++     AudioToolbox
+       1         32      32.0   AVAudioSession                                    ObjC    AudioSession
+       1         32      32.0   AVAudioSessionCallbackDispatcher                  ObjC    AudioSession
+       1         32      32.0   AVCMNotificationDispatcher                        ObjC    AVFCore
+       1         32      32.0   AVKeyPathDependencyManager                        ObjC    AVFCore
+       1         32      32.0   AVTwoPartKeyPath                                  ObjC    AVFCore
+       1         32      32.0   AppleParavirtDevice._supportedGPUFamilies (malloc)  C       AppleParavirtGPUMetal
+       1         32      32.0   CABackdropLayer                                   ObjC    QuartzCore
+       1         32      32.0   CADeprecated::XMachPortServicer::DispatchImpl     C++     libAudioToolboxUtility.dylib
+       1         32      32.0   CAMediaTimingFunctionBuiltin                      ObjC    QuartzCore
+       1         32      32.0   CGEvent                                           CFType  SkyLight
+       1         32      32.0   CUINamedRenditionInfo                             ObjC    CoreUI
+       1         32      32.0   FigCaptionSerializer                              CFType  CoreMedia
+       1         32      32.0   Foundation.LockedState<Foundation._TimeZoneICU.State>.(_Buffer in $7ff815aeb468)<>  Swift   Foundation
+       1         32      32.0   Foundation.LockedState<Swift.Optional<Foundation._NSSwiftLocale>>.(_Buffer in $7ff815aeb468)<>  Swift   Foundation
+       1         32      32.0   HALB_CFBundle                                     C++     CoreAudio
+       1         32      32.0   IntelligenceCollectionCoordinator                 Swift   UIIntelligenceSupport
+       1         32      32.0   NSAccessibilityNotificationTable                  ObjC    AppKit
+       1         32      32.0   NSApplicationIntelligence                         Swift   AppKit
+       1         32      32.0   NSCGSWindowBackingStoreLayer                      ObjC    AppKit
+       1         32      32.0   NSFileManager                                     ObjC    Foundation
+       1         32      32.0   NSFocusStack                                      ObjC    AppKit
+       1         32      32.0   NSHashTable.slice.acquisitionProps (struct NSSliceExternalAcquisitionProperties)  C       Foundation
+       1         32      32.0   NSKVONotifying_NSSystemAppearanceProxy            ObjC    AppKit
+       1         32      32.0   NSLifeguard                                       ObjC    AppKit
+       1         32      32.0   NSMenuBarDisplayManager                           ObjC    AppKit
+       1         32      32.0   NSMenuBarWindowManager                            ObjC    AppKit
+       1         32      32.0   NSMutableOrderedSet                               ObjC    CoreFoundation
+       1         32      32.0   NSScreenLayout                                    ObjC    AppKit
+       1         32      32.0   NSSet                                             ObjC    CoreFoundation
+       1         32      32.0   NSUIActivityManager                               ObjC    AppKit
+       1         32      32.0   NSUUID                                            Swift   Foundation
+       1         32      32.0   RBSProcessIdentifier                              ObjC    RunningBoardServices
+       1         32      32.0   RBSProcessInstance                                ObjC    RunningBoardServices
+       1         32      32.0   RBSWorkloop                                       ObjC    RunningBoardServices
+       1         32      32.0   RateLimiter                                       Swift   AudioAnalytics
+       1         32      32.0   ReporterIDGenerator                               Swift   AudioAnalytics
+       1         32      32.0   SLSEventAuthenticationMessageEventType            ObjC    SkyLight
+       1         32      32.0   ScreenSharingState                                C++     AudioToolbox
+       1         32      32.0   Swift.ManagedBuffer<Swift.Dictionary<Swift.ObjectIdentifier, Swift.Bool>, __C.os_unfair_lock_s>  Swift   libswiftCore.dylib
+       1         32      32.0   TFontFamilyNameIndex                              C++     libFontRegistry.dylib
+       1         32      32.0   TFontFullNameIndex                                C++     libFontRegistry.dylib
+       1         32      32.0   TFontPostScriptNameAliasesIndex                   C++     libFontRegistry.dylib
+       1         32      32.0   TFontPostScriptNameIndex                          C++     libFontRegistry.dylib
+       1         32      32.0   TSMInputSource                                    CFType  HIToolbox
+       1         32      32.0   XPCSession                                        Swift   libswiftXPC.dylib
+       1         32      32.0   XTFontStaticRegistry                              ObjC    libFontRegistry.dylib
+       1         32      32.0   _CFXPreferencesHandle                             ObjC    CoreFoundation
+       1         32      32.0   _CSStore2DataContainer                            ObjC    CoreServicesStore
+       1         32      32.0   _LSDServiceDomain                                 ObjC    LaunchServices
+       1         32      32.0   _NSCGSWindowLocalOrderingState                    ObjC    AppKit
+       1         32      32.0   _NSCGSWindowOrdering                              ObjC    AppKit
+       1         32      32.0   _NSDisplayOperationStack                          ObjC    AppKit
+       1         32      32.0   _NSSwiftLocale                                    Swift   Foundation
+       1         32      32.0   _NSSwiftTimeZone                                  Swift   Foundation
+       1         32      32.0   _ProcessInfo                                      Swift   Foundation
+       1         32      32.0   calloc in ConformanceState::cacheResult(swift::TargetMetadata<swift::InProcess> const*, swift::TargetProtocolDescriptor<swift::InProcess> const*, swift::TargetWitnessTable<swift::InProcess> const*, unsigned long)  C++     libswiftCore.dylib
+       1         32      32.0   calloc in SLDisplayRegisterReconfigurationCallback  C       SkyLight
+       1         32      32.0   calloc in _SLSTransactionPushWriteStream          C       SkyLight
+       1         32      32.0   calloc in create_private_data_with_path_and_name  C       CoreGraphics
+       1         32      32.0   calloc in swift_getObjCClassMetadata              C       libswiftCore.dylib
+       1         32      32.0   icu::SharedCalendar                               C++     libicucore.A.dylib
+       1         32      32.0   icu::SharedObject                                 C++     libicucore.A.dylib
+       1         32      32.0   malloc in (anonymous namespace)::get_application_name()::$_0::operator()() const  C++     SkyLight
+       1         32      32.0   malloc in -[_MTLDevice initGPUFamilySupport]      C       Metal
+       1         32      32.0   malloc in AQ::API::V2Impl::AudioQueueNew(bool, AudioStreamBasicDescription const*, AQ::API::QueueCallback const&, CACallbackTarget const&, unsigned int, unsigned int, OpaqueAudioQueue**)  C++     AudioToolbox
+       1         32      32.0   malloc in CADeprecated::TSingleton<CAListenerProxy::ZombieJanitor>::instance()  C++     AudioToolbox
+       1         32      32.0   malloc in CCFMapCachedData                        C       CarbonCore
+       1         32      32.0   malloc in DFTSetupList<true>::instance()          C++     AudioCodecs
+       1         32      32.0   malloc in FIDCopyFileIDMapForVolume               C       CarbonCore
+       1         32      32.0   malloc in HALC_ShellPlugIn::_ReconcileDeviceList(bool, bool, std::vector<unsigned int>&, std::vector<unsigned int>&)  C++     CoreAudio
+       1         32      32.0   malloc in HAL_HardwarePlugIn_InitializeWithObjectID(AudioHardwarePlugInInterface**, unsigned int)  C       CoreAudio
+       1         32      32.0   malloc in Resampler2::ConstructorBody(double, double, unsigned int, double, double, ResamplerSpecificationMethod, unsigned int, double)  C++     AudioToolboxCore
+       1         32      32.0   malloc in Security::ModuleNexus<MutexAttributes>::make()  C++     Security
+       1         32      32.0   malloc in TFileFragmentCache::AddValue(TFileFragmentReference*, timespec)  C++     libFontParser.dylib
+       1         32      32.0   malloc in TrampolinePointerWrapper::Initialize()  C++     libobjc.A.dylib
+       1         32      32.0   malloc in _AEInstallEventSecurityHandler          C       AE
+       1         32      32.0   malloc in _NSNewValue                             C       Foundation
+       1         32      32.0   malloc in __GetFakelinkDataVolumeMountPoint_block_invoke  C       CarbonCore
+       1         32      32.0   malloc in __si_module_static_darwin_directory_block_invoke  C       libsystem_info.dylib
+       1         32      32.0   malloc in boost::container::vector<boost::container::dtl::pair<unsigned int, AQ::Server::RemoteBufferMap::MappedBlock>, boost::container::new_allocator<boost::container::dtl::pair<unsigned int, AQ::Server::RemoteBufferMap::MappedBlock>>, void>::priv_insert_forward_range_no_capacity<boost::container::dtl::insert_emplace_proxy<boost::container::new_allocator<boost::container::dtl::pair<unsigned int, AQ::Server::RemoteBufferMap::MappedBlock>>, boost::container::dtl::pair<unsigned int, AQ::Server::RemoteBufferMap::MappedBlock>*, boost::container::dtl::pair<unsigned int, AQ::Server::RemoteBufferMap::MappedBlock>>>(boost::container::dtl::pair<unsigned int, AQ::Server::RemoteBufferMap::MappedBlock>*, unsigned long, boost::container::dtl::insert_emplace_proxy<boost::container::new_allocator<boost::container::dtl::pair<unsigned int, AQ::Server::RemoteBufferMap::MappedBlock>>, boost::container::dtl::pair<unsigned int, AQ::Server::RemoteBufferMap::MappedBlock>*, boost::container::dtl::pair<unsigned int, AQ::Server::RemoteBufferMap::MappedBlock>>, boost::move_detail::integral_constant<unsigned int, 1u>)  C++     AudioToolbox
+       1         32      32.0   malloc in boost::container::vector<boost::container::dtl::pair<void*, AQ::API::BufferAllocImpl::SharedSlabInfo>, boost::container::new_allocator<boost::container::dtl::pair<void*, AQ::API::BufferAllocImpl::SharedSlabInfo>>, void>::priv_insert_forward_range_no_capacity<boost::container::dtl::insert_emplace_proxy<boost::container::new_allocator<boost::container::dtl::pair<void*, AQ::API::BufferAllocImpl::SharedSlabInfo>>, boost::container::dtl::pair<void*, AQ::API::BufferAllocImpl::SharedSlabInfo>*, boost::container::dtl::pair<void*, AQ::API::BufferAllocImpl::SharedSlabInfo>>>(boost::container::dtl::pair<void*, AQ::API::BufferAllocImpl::SharedSlabInfo>*, unsigned long, boost::container::dtl::insert_emplace_proxy<boost::container::new_allocator<boost::container::dtl::pair<void*, AQ::API::BufferAllocImpl::SharedSlabInfo>>, boost::container::dtl::pair<void*, AQ::API::BufferAllocImpl::SharedSlabInfo>*, boost::container::dtl::pair<void*, AQ::API::BufferAllocImpl::SharedSlabInfo>>, boost::move_detail::integral_constant<unsigned int, 1u>)  C++     AudioToolbox
+       1         32      32.0   malloc in caulk::concurrent::messenger::messenger(caulk::concurrent::messenger::thread_strategy, caulk::thread::attributes const&)  C++     caulk
+       1         32      32.0   malloc in caulk::shared_instance_manager<DFTSetups>::find_or_create<DFTSetupList<true>::FindOrCreate(unsigned int)::'lambda'(DFTSetups const&), DFTSetupList<true>::FindOrCreate(unsigned int)::'lambda'()>(DFTSetupList<true>::FindOrCreate(unsigned int)::'lambda'(DFTSetups const&), DFTSetupList<true>::FindOrCreate(unsigned int)::'lambda'())  C++     AudioCodecs
+       1         32      32.0   malloc in cf_typified<(anonymous namespace)::event_appendix>::get_type_id()  C++     SkyLight
+       1         32      32.0   malloc in invocation function for block in LSNotificationReceiver::getActiveLSNotificationReceiverRefs()  C++     LaunchServices
+       1         32      32.0   malloc in invocation function for block in NotifyDStateDumpManager::registerSubsystem(CACentralStateDumpSubsystem, __CFString const*, void (__sFILE*) block_pointer)  C++     AudioToolboxCore
+       1         32      32.0   malloc in invocation function for block in OSStateDumpManager::registerSubsystem(CACentralStateDumpSubsystem, __CFString const*, void (__sFILE*) block_pointer)  C++     AudioToolboxCore
+       1         32      32.0   malloc in invocation function for block in getPropertyTable()  C       LaunchServices
+       1         32      32.0   malloc in os_workgroup_create_with_port           C       libdispatch.dylib
+       1         32      32.0   malloc in std::basic_string<char>::__init_copy_ctor_external(char const*, unsigned long)  C++     SkyLight
+       1         32      32.0   malloc in std::vector<as::SessionIOStateManager::IORunnerState>::__push_back_slow_path<as::SessionIOStateManager::IORunnerState const&>(as::SessionIOStateManager::IORunnerState const&)  C++     AudioSession
+       1         32      32.0   malloc in tccListenEventService()                 C       SkyLight
+       1         32      32.0   malloc in uprv_getDefaultLocaleID                 C       libicucore.A.dylib
+       1         32      32.0   std::__shared_ptr_emplace<caulk::mach::unfair_recursive_lock>  C++     AudioToolbox
+       1         32      32.0   std::__shared_ptr_pointer<MTLCompilerCache*, std::shared_ptr<MTLCompilerCache>::__shared_ptr_default_delete<MTLCompilerCache, MTLCompilerCache>>  C++     Metal
+       1         32      32.0   std::__shared_ptr_pointer<PowerUsageWatchdog::Impl*>  C++     AudioToolbox
+       1         32      32.0   std::__shared_ptr_pointer<as::client::XPCConnection*, std::shared_ptr<as::client::XPCConnection>::__shared_ptr_default_delete<as::client::XPCConnection, as::client::XPCConnection>>  C++     AudioSession
+       1         32      32.0   xpc_date_t                                        ObjC    libxpc.dylib
+       1         32      32.0   xpc_endpoint_t                                    ObjC    libxpc.dylib
+       1         16      16.0   AACAudioFormat                                    C++     AudioToolboxCore
+       1         16      16.0   AIFCAudioFormat                                   C++     AudioToolboxCore
+       1         16      16.0   AIFFAudioFormat                                   C++     AudioToolboxCore
+       1         16      16.0   AMRAudioFormat                                    C++     AudioToolboxCore
+       1         16      16.0   AVKVODispatcher                                   ObjC    AVFCore
+       1         16      16.0   AVWeakObservableCallbackCancellationHelper        ObjC    AVFCore
+       1         16      16.0   AppleParavirtDevice._pipelineLibraryBuilder (struct MTLPipelineLibraryBuilder)  C       AppleParavirtGPUMetal
+       1         16      16.0   AudioAnalyticsReporter                            ObjC    AudioAnalytics
+       1         16      16.0   AudioComponentRegistrarClient                     ObjC    AudioToolboxCore
+       1         16      16.0   CAFAudioFormat                                    C++     AudioToolboxCore
+       1         16      16.0   DefaultAllocator                                  C++     csparser
+       1         16      16.0   FLACAudioFormat                                   C++     AudioToolboxCore
+       1         16      16.0   FPSupport_VideoRangeSingleton                     ObjC    MediaToolbox
+       1         16      16.0   FigFCRCALayerOutputNodeContentLayer.layerInternal (struct OpaqueFigCaptionRendererCALayerOutputNodeContentLayerInternal)  C       MediaToolbox
+       1         16      16.0   FigRemoteRoutingContextFactory                    ObjC    MediaExperience
+       1         16      16.0   HALDefaultDeviceProperty                          C++     CoreAudio
+       1         16      16.0   HALDeviceList                                     C++     CoreAudio
+       1         16      16.0   HALRunLoopProperty                                C++     CoreAudio
+       1         16      16.0   Helper.lock (malloc)                                      Foundation
+       1         16      16.0   ID3FileFormat                                     C++     AudioToolboxCore
+       1         16      16.0   LOASAudioFormat                                   C++     AudioToolboxCore
+       1         16      16.0   MP4_3GP2_AudioFormat                              C++     AudioToolboxCore
+       1         16      16.0   MP4_3GP_AudioFormat                               C++     AudioToolboxCore
+       1         16      16.0   MP4_AudioFormat                                   C++     AudioToolboxCore
+       1         16      16.0   MP4_M4A_AudioFormat                               C++     AudioToolboxCore
+       1         16      16.0   MP4_M4B_AudioFormat                               C++     AudioToolboxCore
+       1         16      16.0   NSAppleEventManager                               ObjC    Foundation
+       1         16      16.0   NSHashTable (Object Storage)                      C       Foundation
+       1         16      16.0   NSKVOForwarder                                    ObjC    AppKit
+       1         16      16.0   NSKVONotifying_NSWorkspace                        ObjC    AppKit
+       1         16      16.0   NSSet.cow (struct __cow_state_t)                  C       CoreFoundation
+       1         16      16.0   NSWMDeferredTransactionQueue                      Swift   AppKit
+       1         16      16.0   NextAudioFormat                                   C++     AudioToolboxCore
+       1         16      16.0   OggAudioFormat                                    C++     AudioToolboxCore
+       1         16      16.0   PowerUsageWatchdog::Impl::populateClientLoggers()::CaulkLogClientLogger  C++     AudioToolbox
+       1         16      16.0   PowerUsageWatchdog::Impl::populateClientLoggers()::PowerLogClientLogger  C++     AudioToolbox
+       1         16      16.0   SD2AudioFormat                                    C++     AudioToolboxCore
+       1         16      16.0   Security::CodeSigning::KernelDiskRep              C++     Security
+       1         16      16.0   XTypeXPCClient                                    ObjC    libFontRegistry.dylib
+       1         16      16.0   _MTLDeviceNotifier                                ObjC    Metal
+       1         16      16.0   _NSAppearanceCustomizationProxy                   ObjC    AppKit
+       1         16      16.0   _NSCGSWindowOrderingGroup                         ObjC    AppKit
+       1         16      16.0   _NSFileManagerBridge                              Swift   Foundation
+       1         16      16.0   _NSKeyValueObservation                            Swift   Foundation
+       1         16      16.0   _NSLocalNotificationCenter                        ObjC    Foundation
+       1         16      16.0   _NSWindowSpringLoadingController                  ObjC    AppKit
+       1         16      16.0   calloc in __si_module_static_ds_block_invoke      C       libsystem_info.dylib
+       1         16      16.0   calloc in _xpc_alloc_typed                        C       libxpc.dylib
+       1         16      16.0   calloc in getIsCurrentThreadInLSContextInitReference()  C       LaunchServices
+       1         16      16.0   malloc in (anonymous namespace)::RunElsewhere::instance()  C++     SkyLight
+       1         16      16.0   malloc in -[MTLIOAccelDevice setHwResourcePool:count:]  C       Metal
+       1         16      16.0   malloc in AQ::API::Queue::~Queue()                C++     AudioToolbox
+       1         16      16.0   malloc in AQ::API::V2Impl::AQOfflineMixerNew(AudioStreamBasicDescription const*, AudioChannelLayout const*, unsigned int, OpaqueAQOfflineMixer**)  C++     AudioToolbox
+       1         16      16.0   malloc in AQ::Server::LogScope()                  C++     AudioToolbox
+       1         16      16.0   malloc in AQIONode::AQIONode(AQMEIO_Binding const&)  C++     AudioToolbox
+       1         16      16.0   malloc in AQIONodeTimeLog()                       C       AudioToolbox
+       1         16      16.0   malloc in AQMEDevice::GetOutputStreamClient(MEStreamTypeID)  C++     AudioToolbox
+       1         16      16.0   malloc in AQMEIO_Base::AddNotificationClient(AQMEIO_NotificationClient&)  C++     AudioToolbox
+       1         16      16.0   malloc in AQMixEngine_Single::AQMixEngine_Single(AQMEIO_Binding const&, bool, bool)  C++     AudioToolbox
+       1         16      16.0   malloc in AQOfflineMixerBase::AQOfflineMixerBase(AQIONodeManager&, int, AudioStreamBasicDescription const&, CA::ChannelLayout const&, int&)  C++     AudioToolbox
+       1         16      16.0   malloc in AudioQueueXPC_Server::MixerNew(AudioStreamBasicDescription, CA::ChannelLayout)  C++     AudioToolbox
+       1         16      16.0   malloc in AudioQueueXPC_Server::NewQueue(bool, AudioStreamBasicDescription, unsigned int, unsigned int)  C++     AudioToolbox
+       1         16      16.0   malloc in CA::Context::did_connect()              C++     QuartzCore
+       1         16      16.0   malloc in CARetainColorTransform                  C       QuartzCore
+       1         16      16.0   malloc in CGSColorSpaceRegistryCopyColorSpace     C       SkyLight
+       1         16      16.0   malloc in CacheFMMapData                          C       CarbonCore
+       1         16      16.0   malloc in HALC_ShellObject::HALC_ShellObject(unsigned int, unsigned int, unsigned int, unsigned int)  C++     CoreAudio
+       1         16      16.0   malloc in HALPlugInManagement::CreateHALPlugIn(HALCFPlugIn const*)  C++     CoreAudio
+       1         16      16.0   malloc in MESubmixGraph::allocMixerBus(int&)      C++     AudioToolbox
+       1         16      16.0   malloc in MESubmixGraph::attach1MixerChannel(MEMixerChannel*)  C++     AudioToolbox
+       1         16      16.0   malloc in SCSession::findOrCreateCacheable(SCCacheableName, char const*)  C++     CarbonCore
+       1         16      16.0   malloc in SCSession::findOrCreateService(char const*, unsigned int)  C++     CarbonCore
+       1         16      16.0   malloc in Security::ModuleNexus<Security::CodeSigning::KernelCode::Globals>::make()  C++     Security
+       1         16      16.0   malloc in TCGFontCache::GetCache()                C++     CoreText
+       1         16      16.0   malloc in TDescriptorSource::GetCache()::'lambda'(void*)::__invoke(void*)  C++     CoreText
+       1         16      16.0   malloc in XProcessingChain::addNode(XProcessingBase*)  C++     AudioToolbox
+       1         16      16.0   malloc in __GetFakelinkSystemVolumeMountPoint_block_invoke  C       CarbonCore
+       1         16      16.0   malloc in __si_module_cache_byname_block_invoke   C       libsystem_info.dylib
+       1         16      16.0   malloc in __si_module_static_ds_block_invoke      C       libsystem_info.dylib
+       1         16      16.0   malloc in __si_module_static_file_block_invoke    C       libsystem_info.dylib
+       1         16      16.0   malloc in __si_module_static_mdns_block_invoke    C       libsystem_info.dylib
+       1         16      16.0   malloc in __si_module_static_search_block_invoke  C       libsystem_info.dylib
+       1         16      16.0   malloc in acv2::AudioConverterChain::AddStep(std::unique_ptr<acv2::AudioConverterBase>&&)  C++     AudioToolboxCore
+       1         16      16.0   malloc in acv2::PCMConverterFactory::BuildConverterChain(acv2::StreamDescPair const&, acv2::ChainBuildSettings const&, acv2::AudioConverterChain&, acv2::PCMConverterFactory&)  C++     AudioToolboxCore
+       1         16      16.0   malloc in acv2::Reinterleaver::Reinterleaver(acv2::StreamDescPair const&)  C++     AudioToolboxCore
+       1         16      16.0   malloc in caulk::synchronized<AudioComponentMgr_NSExtension, std::recursive_mutex, caulk::empty_atomic_interface<AudioComponentMgr_NSExtension>>::synchronized<>()  C++     AudioToolboxCore
+       1         16      16.0   malloc in colorspace_from_ICC_data_data_key_retain  C       CoreGraphics
+       1         16      16.0   malloc in dispatch_data_create                    C       libdispatch.dylib
+       1         16      16.0   malloc in invocation function for block in ACLoggingRegisterScopeOnce()  C       AudioCodecs
+       1         16      16.0   malloc in invocation function for block in DRCLoggingRegisterScopeOnce()  C       AudioCodecs
+       1         16      16.0   malloc in invocation function for block in TRequestCache::TRequestCache()  C++     libFontRegistry.dylib
+       1         16      16.0   malloc in invocation function for block in TUniqueingFilter::TUniqueingFilter()  C++     libFontRegistry.dylib
+       1         16      16.0   malloc in nextRoot_init                           C       libsystem_coreservices.dylib
+       1         16      16.0   malloc in register_for_new_connection_notification(void (*)(unsigned int, void*), void*, CGSConnectionNoticeType)  C       SkyLight
+       1         16      16.0   malloc in std::vector<int>::__assign_with_size[abi:ne190102]<int*, int*>(int*, int*, long)  C++     AudioToolboxCore
+       1         16      16.0   malloc in swift::TargetMetadata<swift::InProcess>::allocateBoxForExistentialIn(swift::TargetValueBuffer<swift::InProcess>*) const  C++     libswiftCore.dylib
+       1         16      16.0   malloc in u_setDataDirectory                      C       libicucore.A.dylib
+       1         16      16.0   non-object from AudioDSP                          C       AudioDSP
+

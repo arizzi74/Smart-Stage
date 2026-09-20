@@ -1,0 +1,22 @@
+gc 1 @30.209s 0%: 0.079+0.91+0.003 ms clock, 0.31+0.064/0.70/0.78+0.012 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+scav 0 KiB work (bg), 0 KiB work (eager), 3472 KiB now, 44% util
+gc 2 @59.888s 0%: 0.16+0.38+0.002 ms clock, 0.66+0.052/0.31/0.072+0.011 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+scav 0 KiB work (bg), 0 KiB work (eager), 2904 KiB now, 39% util
+gc 3 @87.817s 0%: 0.17+0.56+0.002 ms clock, 0.71+0.028/0.32/0.37+0.011 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+scav 0 KiB work (bg), 0 KiB work (eager), 2504 KiB now, 37% util
+gc 4 @116.107s 0%: 0.19+0.39+0.003 ms clock, 0.77+0.035/0.27/0.45+0.012 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+scav 0 KiB work (bg), 0 KiB work (eager), 2392 KiB now, 33% util
+gc 5 @143.358s 0%: 0.15+0.42+0.003 ms clock, 0.63+0.022/0.21/0.26+0.012 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+scav 448 KiB work (bg), 0 KiB work (eager), 2640 KiB now, 39% util
+gc 6 @171.177s 0%: 0.19+0.41+0.002 ms clock, 0.77+0.025/0.26/0.22+0.009 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+scav 0 KiB work (bg), 0 KiB work (eager), 2520 KiB now, 36% util
+gc 7 @200.088s 0%: 0.16+0.20+0.002 ms clock, 0.65+0.029/0.16/0.14+0.010 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+scav 0 KiB work (bg), 0 KiB work (eager), 2392 KiB now, 37% util
+gc 8 @228.679s 0%: 0.082+0.32+0.002 ms clock, 0.33+0.022/0.26/0.039+0.010 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+scav 320 KiB work (bg), 0 KiB work (eager), 2608 KiB now, 39% util
+gc 9 @254.848s 0%: 0.20+0.41+0.003 ms clock, 0.80+0.071/0.18/0.18+0.012 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6464 KiB now, 39% util
+gc 10 @283.757s 0%: 0.029+0.68+0.002 ms clock, 0.11+0.033/0.27/0.38+0.011 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+scav 0 KiB work (bg), 0 KiB work (eager), 6464 KiB now, 40% util
+gc 11 @310.199s 0%: 0.12+0.16+0.002 ms clock, 0.50+0.018/0.13/0.25+0.011 ms cpu, 3->3->0 MB, 4 MB goal, 0 MB stacks, 0 MB globals, 4 P
+scav 40 KiB work (bg), 0 KiB work (eager), 6096 KiB now, 36% util

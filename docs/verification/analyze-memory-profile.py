@@ -29,6 +29,17 @@ def vmmap_summary(path):
             'mallocAllocatedBytesRounded':bytes_from_vmmap(columns[5]),
             'physicalFootprintBytesRounded':bytes_from_vmmap(footprint[1])}
 
+def heap_types(path):
+    content = path.read_text()
+    assert content.startswith('Exit code: 0\n'), path
+    types = {}
+    for line in content.splitlines():
+        match = re.match(r'\s*(\d+)\s+(\d+)\s+[\d.]+\s+(.+?)\s{2,}(C\+\+|C|CFType|ObjC|Swift)\s+(.*)$', line)
+        if match:
+            types[match[3]+' ['+match[4]+'; '+match[5]+']'] = {'count':int(match[1]),'bytes':int(match[2])}
+    assert types, path
+    return types
+
 reports = []
 for path in sorted(args.input.rglob('*.http-smoke.json')):
     target = re.search(r'(darwin|windows)-(amd64|arm64)', str(path))
@@ -64,6 +75,17 @@ for path in sorted(args.input.rglob('*.http-smoke.json')):
     idle = next((record['stoppedIdle'] for record in records if 'stoppedIdle' in record), None)
     if idle is not None:
         report['stoppedIdle'] = idle
+    before_heap, after_heap = Path(prefix+'.memory-before-heap.txt'), Path(prefix+'.memory-after-heap.txt')
+    if before_heap.exists() and after_heap.exists():
+        before_types, after_types = heap_types(before_heap), heap_types(after_heap)
+        changes = []
+        for name in sorted(before_types.keys() | after_types.keys()):
+            before = before_types.get(name, {'count':0,'bytes':0})
+            after = after_types.get(name, {'count':0,'bytes':0})
+            changes.append({'type':name,'before':before,'after':after,
+                            'countChange':after['count']-before['count'],
+                            'bytesChange':after['bytes']-before['bytes']})
+        report['heapTypeChanges'] = sorted(changes,key=lambda item:item['bytesChange'],reverse=True)
     if 'darwin' in target[0]:
         before, after = report['before'], report['after']
         count = after['mallocAllocationCount']-before['mallocAllocationCount']

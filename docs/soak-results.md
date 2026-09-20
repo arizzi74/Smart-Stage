@@ -168,5 +168,31 @@ Published preview 3 remains unchanged; no fixed-memory claim is justified.
 [Heap attribution run 35477482621](https://github.com/arizzi74/Smart-Stage/actions/runs/35477482621)
 uses the same application source with debug symbols, `MallocStackLogging=1`,
 and before/after `heap -sortBySize -noContent` summaries over five minutes.
-This diagnostic aims to identify retained object classes/allocation sites.
-Its instrumented memory use must not be treated as a release stability result.
+Both targets completed. The application playback objects did not accumulate
+in the stopped heap snapshots, but Core Media timebases and caption-renderer
+timers/triggers did:
+
+| Target | Cycles | FigTimebase count before → after | FigCaptionRendererTrigger | FigCaptionRendererTimer |
+| --- | ---: | ---: | ---: | ---: |
+| Mac AMD64 | 545 | 4 → 440 | 2 → 220 | 3 → 221 |
+| Mac ARM64 | 596 | 4 → 480 | 2 → 240 | 3 → 241 |
+
+There was one persistent player layer and one caption-renderer session in both
+snapshots on each Mac. Autorelease-pool storage stayed at four pages on both.
+These class counts suggest investigating the video layer's retained rendering
+state; they are not a full reference-ownership graph. Additional retained
+libdispatch/Core Audio objects were also present. This instrumented memory use
+must not be treated as a release stability result. Raw snapshots and all parsed
+class deltas are retained in
+[`verification/heap-350bc5c/`](verification/heap-350bc5c/).
+
+## Candidate renderer lifetime change: `ae439c8`
+
+The candidate releases the video player layer during playback teardown and
+creates a fresh layer below the existing black overlay when needed. The native
+stage window and opaque overlay remain present across STOP. KVO and playback
+observers are removed before the renderer is released.
+
+[Heap comparison 35477893688](https://github.com/arizzi74/Smart-Stage/actions/runs/35477893688)
+and [native regression run 35477893782](https://github.com/arizzi74/Smart-Stage/actions/runs/35477893782)
+are running. No memory-fix claim or updated release has been made yet.
