@@ -116,10 +116,17 @@ retain real WebKit authentication, file-URL drops, chooser lifecycle, close/reop
 and unsaved draft preservation. The real TLS gateway test also decodes the actual
 Admin QR while connection settings remain collapsed.
 
-The default Mac installer changes to preview 16 only after those public checks.
-Gateway-mode installation and actual update tests use no firewall-skip override
-and leave incoming LAN access closed. Physical Finder gestures, speaker/projector
-output and phone power behavior remain outside automated acceptance.
+[Default Mac installer run 35533543251](https://github.com/arizzi74/Smart-Stage/actions/runs/35533543251)
+passed on Apple Silicon and Intel after installer commit
+`df9a4b57fec0ee4ab070039e7db07b88f536951c` selected preview 16, built from
+`918830774f1ddefebed2551a28bcb9e499d939f4`. The default installation used no
+version or firewall-skip override, changed no firewall rules, and matched the
+independently verified public archive and executable hashes. Both native Admin
+windows loaded and retained their window identity on reopen; LAN remained closed.
+Reports and bootstrap provenance are in
+[`verification/release-preview16/default-install`](verification/release-preview16/default-install/).
+Physical Finder gestures, speaker/projector output and phone power behavior
+remain outside automated acceptance.
 Reports are retained in
 [`verification/release-preview16`](verification/release-preview16/).
 

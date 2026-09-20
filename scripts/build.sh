@@ -42,6 +42,7 @@ if [[ -d cmd/smartstage ]]; then commands+=(smartstage); fi
 for command in "${commands[@]}"; do
   artifact="dist/$command-$target_os-$target_arch$suffix"
   flags="-X main.version=$build_version -X main.commit=$build_commit"
+  if [[ "$target_os" == windows && "$command" == smartstage ]]; then flags="-H windowsgui $flags"; fi
   if [[ ${DEBUG:-0} != 1 ]]; then flags="-s -w $flags"; fi
   go build -trimpath -buildvcs=true -ldflags "$flags" -o "$artifact" "./cmd/$command"
   if [[ "$target_os" == darwin ]]; then codesign --force --sign - "$artifact"; fi

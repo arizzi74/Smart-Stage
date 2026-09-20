@@ -46,6 +46,32 @@ const path = require('node:path');
     assert.equal(await admin.locator('#remote-qr').isVisible(), true);
     await admin.screenshot({ path: path.join(config.outputDir, 'gateway-admin.png'), fullPage: false });
 
+    // A user-agent fixture checks Windows presentation against the real local
+    // API; it is not a native WebView2 window and cannot grant file access.
+    const desktopContext = await browser.newContext({ ignoreHTTPSErrors: true, userAgent: 'BrowserFixture SmartStageDesktop SmartStageWindowsDesktop' });
+    const desktop = await desktopContext.newPage();
+    desktop.on('pageerror', error => errors.push(error.message));
+    desktop.on('request', request => adminRequests.push(new URL(request.url()).pathname));
+    await desktop.goto(config.adminURL + '/admin'); await desktop.locator('#connection.live').waitFor();
+    await desktop.locator('#remote-ready').waitFor({ state: 'visible' });
+    assert.equal(await desktop.locator('#playlist-drop-title').textContent(), 'Drop File Explorer files here');
+    assert.equal(await desktop.locator('#media-path-settings').isVisible(), false);
+    assert.equal(await desktop.locator('#choose-files').isVisible(), false, 'the native marker cannot grant a picker the host did not advertise');
+    assert.equal(await desktop.locator('#remote-connection-settings').evaluate(node => node.open), false);
+    assert.equal(await desktop.locator('#remote-qr').isVisible(), true);
+    const playlistBeforeSpoof = await desktop.evaluate(async () => (await api('GET', '/api/playlist')).playlistRevision);
+    await desktop.evaluate(() => {
+      const files = new DataTransfer(); files.items.add(new File(['example'], 'Explorer fixture.wav'));
+      const drop = new DragEvent('drop', { dataTransfer: files, bubbles: true, cancelable: true });
+      document.getElementById('playlist-drop').dispatchEvent(drop); window.__nativeDropPrevented = drop.defaultPrevented;
+    });
+    assert.equal(await desktop.evaluate(() => window.__nativeDropPrevented), true);
+    assert.match(await desktop.locator('#file-drop-message').textContent(), /File Explorer/);
+    assert.equal(await desktop.evaluate(async () => (await api('GET', '/api/playlist')).playlistRevision), playlistBeforeSpoof);
+    await desktop.evaluate(async () => { await loadGateway(); await loadRemoteControl(); });
+    assert.equal(await desktop.locator('#remote-connection-settings').evaluate(node => node.open), false);
+    await desktopContext.close();
+
     // Follow the real target=_blank link, which starts as a cross-site
     // navigation from loopback HTTP Admin to the HTTPS public gateway.
     const popupReady = admin.waitForEvent('popup');
@@ -156,6 +182,8 @@ const path = require('node:path');
       actualAdminOpenRemoteLink: true,
       connectionSettingsCollapsedWithVisibleQR: true, statusPollingPreservesCollapsedSettings: true,
       noHostFilesPanelOrBackgroundBrowsing: true,
+      windowsDesktopPresentationAndCapabilities: true, windowsDesktopDropCannotInventPaths: true,
+      windowsNativeWindowExecutionVerified: false,
       actualPairingAndScopedSecureCookie: true, actualCSRFMutations: true,
       actualSSEPlaybackTransitions: true, endpointRelativeAssetsAndRequests: true,
       publicPairingFragmentRemovedBeforeRequest: true, noPairingSecretInBrowserStorage: true,

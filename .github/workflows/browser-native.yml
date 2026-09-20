@@ -38,6 +38,10 @@ jobs:
       SMARTSTAGE_DOWNLOAD_DIR: ${{ github.workspace }}/dist/browser-downloaded
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Ensure the Windows dedicated-window runtime
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: ./scripts/ensure-webview2.ps1
       - name: Download and extract the checksum-verified release ZIP
         shell: bash
         run: |

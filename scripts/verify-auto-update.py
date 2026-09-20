@@ -296,6 +296,10 @@ def verify(args, output, report):
          "--os", args.os, "--arch", args.arch, "--destination", str(reference)], timeout=240)
     reference_report = json.loads((reference / "download-verification.json").read_text())
     report["publishedDownload"] = reference_report
+    native_windows = False
+    if args.os == "windows":
+        from windows_app_checks import dedicated_windows_release, inspect_gui_executable, wait_for_admin_window
+        native_windows = dedicated_windows_release(args.version)
     with tempfile.TemporaryDirectory(prefix="smartstage update verification ") as temporary:
         work = Path(temporary).resolve()
         installation = work / "Operator's applications – café"
@@ -309,7 +313,9 @@ def verify(args, output, report):
             command_port = unused_port()
         admin = Admin(admin_port)
         arguments = ["--admin-port", str(admin_port), "--port", str(command_port), "--bind", "127.0.0.1",
-                     "--no-browser", "--config-dir", str(config), "--media-root", str(media)]
+                     "--config-dir", str(config), "--media-root", str(media)]
+        if not native_windows:
+            arguments.append("--no-browser")
         environment = os.environ.copy()
         environment.pop("SMARTSTAGE_SKIP_FIREWALL", None)
         environment.pop("SMARTSTAGE_CONFIGURE_LAN_FIREWALL", None)
@@ -429,6 +435,39 @@ def verify(args, output, report):
                     report.update(restartedWithoutTerminal=True, appSignatureVerified=True, firewallAuthorizationExercised=False)
                 else:
                     report["windowsReplacementAfterOldExecutableExit"] = True
+                    if native_windows:
+                        report["windowsExecutable"] = inspect_gui_executable(core)
+                        window = wait_for_admin_window(new_pid, timeout=60)
+                        report["nativeAdminWindow"] = window
+                        wait_for(lambda: "Loaded native Admin page" in (config / "update.log").read_text(
+                            encoding="utf-8", errors="replace"), 60, "the updated native Admin navigation")
+                        assert "Opened Admin in the system browser" not in (config / "update.log").read_text(
+                            encoding="utf-8", errors="replace"), "Windows update launched an external browser"
+                        report.update(nativeAdminPageNavigationCompleted=True,
+                                      nativeAdminWindowVisible=True, nativeAdminWindowIconPresent=True,
+                                      externalBrowserDispatched=False,
+                                      nativePageJavaScriptVerified=False)
+                        # A second launch must activate the retained GUI process,
+                        # not create another server or another Admin window.
+                        run([str(core), *arguments, "--no-auto-update"], cwd=work, env=environment, timeout=30)
+                        reopened = wait_for_admin_window(new_pid, timeout=30)
+                        assert reopened["hwnd"] == window["hwnd"], "Relaunch replaced the native Admin window"
+                        assert listener_pid(admin_port, core) == new_pid, "Relaunch replaced the native host process"
+                        assert admin.get("/api/state")["state"]["instanceId"] == new_state["instanceId"], "Relaunch restarted playback state"
+                        report.update(relaunchPreservedNativeAdminWindow=True,
+                                      relaunchPreservedNativeProcess=True,
+                                      relaunchPreservedInstance=True,
+                                      nativeAdminWindowAfterRelaunch=reopened)
+                        status, quitting = admin.request("POST", "/api/quit", {})
+                        assert status == 202 and quitting.get("quitting") is True, (status, quitting)
+                        wait_for(lambda: not process_alive(new_pid), 30, "the updated app to exit after Admin Quit")
+                        for port in (admin_port, command_port):
+                            with socket.socket() as probe:
+                                probe.settimeout(2)
+                                assert probe.connect_ex(("127.0.0.1", port)) != 0, "Quit left a native listener open"
+                        report.update(authenticatedAdminQuitVerified=True,
+                                      nativeProcessExitedAfterQuit=True,
+                                      noListenersAfterQuit=True)
         finally:
             # Capture diagnostics before cleanup removes the private installation.
             for name in ("update.log", "update.log.1", "update-result.json"):
@@ -470,7 +509,9 @@ def verify(args, output, report):
                     process.kill()
                     process.wait(timeout=5)
             if not cleanup_errors:
-                deadline = time.monotonic() + 8
+                # WebView2 releases its per-user data files asynchronously after
+                # controller shutdown; still require complete private cleanup.
+                deadline = time.monotonic() + (30 if native_windows else 8)
                 while work.exists():
                     try:
                         shutil.rmtree(work)

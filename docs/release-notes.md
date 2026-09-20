@@ -1,25 +1,30 @@
-Smart Stage preview 16 simplifies Admin and makes the remote connection settings
-less intrusive.
+Smart Stage preview 17 brings the dedicated Admin app experience to Windows.
 
-- Removes the **ON THE HOST COMPUTER / Host files** browser and its navigation
-  entry. In the Mac app, add original files with Finder drag-and-drop,
-  **Choose Media…**, or the Dock icon. Files stay in place.
-- Collapses **Remote control → Connection settings** by default. Expand it to
-  change Public gateway / Local network, the URL or registration token. The
-  current remote link, QR code and connection status remain visible.
-- Keeps **Public gateway** as the default. Installing or automatically updating
-  in gateway mode does not ask for administrator authorization to configure the
-  firewall, and does not open the LAN listener.
-- Saving **Local network** explains the incoming-connection requirement and
-  restarts Smart Stage for the existing scoped firewall setup. Admin keeps
-  firewall instructions visible after restart.
-- Browser-only hosts without a native chooser retain a small **Add files by
-  path** form in Playlist. It is hidden in the dedicated Mac app.
+- Adds an icon-bearing Windows Admin window with original-file Explorer
+  drag-and-drop, **Choose Media…**, taskbar/tray controls and **Quit Smart Stage**.
+  Closing the window keeps playback running; relaunching the shortcut restores
+  the same window without opening a duplicate browser page or terminal.
+- Restores a single PowerShell installation command that detects native ARM64
+  or Intel/AMD64, verifies the release ZIP and installs per user with Desktop
+  and Start menu shortcuts. It checks Microsoft WebView2 and installs the
+  Microsoft-signed runtime for the current user if missing.
+- Retains automatic updates on launch, before playback starts, on both Windows
+  architectures. Updates preserve the window, icon, shortcuts, show and media
+  locations. Gateway mode leaves incoming firewall rules unchanged.
+- Keeps **Public gateway** as the default, connection settings collapsed, and
+  the remote link/QR visible. Select **Local LAN** explicitly for a local
+  listener and the app-specific firewall setup.
+
+Install on Windows from a normal PowerShell window:
+
+```powershell
+irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | iex
+```
 
 Install the gateway on a Linux server with systemd:
 
 ```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.16/install-gateway.sh | sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/install-gateway.sh | sh
 ```
 
 [Gateway setup, prerequisites and recovery](https://github.com/arizzi74/Smart-Stage/blob/main/docs/gateway-install.md).
@@ -36,9 +41,12 @@ curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.s
 ```
 
 The Mac installer verifies the matching archive, installs in `~/Applications`,
-and removes quarantine only from Smart Stage. Standalone desktop ZIPs still
+and removes quarantine only from Smart Stage. The Windows installer uses
+`%LOCALAPPDATA%\Programs\SmartStage`; no administrator prompt is needed in
+default gateway mode. Standalone desktop ZIPs still
 contain one executable. Mac app bundles and all four desktop architectures are
-available below, alongside the two Linux gateway binaries and checksums.
+available below. Windows ZIP users need Microsoft Evergreen WebView2 installed;
+the one-command installer checks this automatically. Also available are the two Linux gateway binaries and checksums.
 
 Automatic updates install on launch before playback. An update from preview 14
 or earlier uses that older updater and may still show its firewall approval

@@ -1,0 +1,36 @@
+{
+  "status": "passed",
+  "runID": 35533543251,
+  "runURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35533543251",
+  "installerCommit": "df9a4b57fec0ee4ab070039e7db07b88f536951c",
+  "releaseSource": "918830774f1ddefebed2551a28bcb9e499d939f4",
+  "release": "v0.1.0-preview.16",
+  "bootstrapURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/df9a4b57fec0ee4ab070039e7db07b88f536951c/install.sh",
+  "bootstrapSHA256": "83b45ed1e6a600d3967c4186b390b40b6e4e8d74d0b5c19c73ad53690006dbfe",
+  "publishedBootstrapMatchesInstallerCommit": true,
+  "defaultReleaseUsedWithoutVersionOverride": true,
+  "defaultGatewayInstallWithoutFirewallOverride": true,
+  "defaultFirewallRulesUnchanged": true,
+  "publicArchiveAndExecutableHashesMatchIndependentVerification": true,
+  "checkedAt": "2026-09-20T20:08:00.947788+00:00",
+  "reports": [
+    {
+      "target": "darwin/arm64",
+      "report": "installer-darwin-arm64.json",
+      "archive": "smartstage-darwin-arm64.app.zip",
+      "archiveSHA256": "7be0b524d3bc90f79efadd6ffe1cb113629df3f0055cf583f765e0a97fbea397",
+      "executableSHA256": "4e61abc265c84066cb2c87077b35156c5055a76ef0da091de30e2b50c2b98968",
+      "artifactSHA256": "15129764e4e3b5230e9a4967a5c9a68081a685f5d9993d1c08e76afd6c63f03b"
+    },
+    {
+      "target": "darwin/amd64",
+      "report": "installer-darwin-amd64.json",
+      "archive": "smartstage-darwin-amd64.app.zip",
+      "archiveSHA256": "03b65ba92fb9c39b5c60fba639986b9a471d06b02ab3be9fc4ab0b9ac9cc3b8e",
+      "executableSHA256": "b921828ca7944272702bf4cd8838c557185cda25f94428b0f48a386b9786cc31",
+      "artifactSHA256": "ece1749f21df8e9f363c2cdfb8fa3ea4673c0518498cae9b8d2163d71701a421"
+    }
+  ],
+  "defaultSelectionEvidence": "Both workflow jobs had empty RELEASE_VERSION; verifier first_install removes SMARTSTAGE_VERSION when the selected release equals the bootstrap default. The default gateway case also removes SMARTSTAGE_SKIP_FIREWALL and SMARTSTAGE_CONFIGURE_LAN_FIREWALL.",
+  "scopedFirewallTestNote": "Separate explicit-LAN fixtures exercise existing opt-in firewall behavior; the unchanged-rules assertions describe the default gateway installation."
+}

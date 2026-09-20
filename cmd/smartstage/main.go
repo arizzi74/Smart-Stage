@@ -75,6 +75,7 @@ func main() {
 	flag.Var(&roots, "media-root", "allowed host media directory; repeat for several roots")
 	flag.Parse()
 	if *showVersion {
+		prepareVersionOutput()
 		fmt.Printf("Smart Stage %s (%s), %s, %s/%s\n", version, commit, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 		return
 	}
@@ -91,7 +92,6 @@ func main() {
 	if err := level.UnmarshalText([]byte(*logLevel)); err != nil {
 		exitError(errors.New("invalid --log-level; use debug, info, warn or error"))
 	}
-	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
 	if *port < 0 || *port > 65535 || *adminPort < 0 || *adminPort > 65535 {
 		exitError(errors.New("--port and --admin-port must be between 0 and 65535"))
 	}
@@ -121,6 +121,22 @@ func main() {
 		exitError(err)
 	}
 	*configDir = absoluteConfigDir
+	if canonical, resolveErr := filepath.EvalSymlinks(*configDir); resolveErr == nil {
+		*configDir = canonical
+	}
+	reopenExisting := func() bool {
+		return runtime.GOOS == "windows" && !*noBrowser && *updateReceipt == "" && platform.DesktopReopen(*configDir)
+	}
+	if reopenExisting() {
+		return
+	}
+	closeDesktopLog, err := prepareDesktopLog(*configDir)
+	if err != nil {
+		exitError(err)
+	}
+	defer closeDesktopLog()
+	platform.DesktopConfigure(*configDir)
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
 	for i, root := range roots {
 		absoluteRoot, err := filepath.Abs(root)
 		if err != nil {
@@ -269,7 +285,9 @@ func main() {
 			fmt.Printf("Remote listener: %s\n", lan.URL(*bind, *port, "/command"))
 		}
 		exitHint := "Ctrl+C exits"
-		if runtime.GOOS == "darwin" && os.Getenv("SMARTSTAGE_APP_LAUNCH") == "1" {
+		if runtime.GOOS == "windows" {
+			exitHint = "Use Quit Smart Stage in Admin or the tray menu to exit"
+		} else if runtime.GOOS == "darwin" && os.Getenv("SMARTSTAGE_APP_LAUNCH") == "1" {
 			exitHint = "Right-click the Smart Stage Dock icon and choose Quit"
 		}
 		fmt.Printf("Open Admin to scan or copy the remote-control link. %s; STOP returns to the stage background.\n", exitHint)
@@ -284,11 +302,13 @@ func main() {
 				return
 			}
 			if platform.DesktopHasAdminWindow() {
-				// A bundled Mac app owns its Admin window. It can display startup
-				// update progress immediately and always restores that same window,
+				// Desktop apps own their Admin window. They can display startup
+				// update progress immediately and always restore that same window,
 				// regardless of any separately opened browser's presence.
 				if !platform.DesktopShowAdmin() {
 					slog.Warn("Could not show the Admin window; open the printed Admin URL")
+				} else {
+					slog.Info("Requested the dedicated Admin window")
 				}
 				return
 			}
@@ -301,10 +321,12 @@ func main() {
 		defer ticker.Stop()
 		for {
 			select {
+			case <-platform.DesktopQuitRequests():
+				cancel()
 			case <-platform.DesktopAdminRequests():
 				requestAdmin(true)
 			case request := <-platform.DesktopFiles():
-				// Native Finder/Dock actions carry original host paths. Keep the
+				// Native desktop actions carry original host paths. Keep the
 				// save in this loop so shutdown cannot overtake an accepted append.
 				_, err := service.AppendHostFiles(request.Paths)
 				message := ""
@@ -371,6 +393,11 @@ func main() {
 		}
 	})
 	if err != nil {
+		// A simultaneous second launch may lose the existing configuration
+		// lock after its first reopen check. Restore the established window.
+		if reopenExisting() {
+			return
+		}
 		exitError(err)
 	}
 }

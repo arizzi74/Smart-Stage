@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Download, checksum and extract a release ZIP; optionally verify native startup.
 
-Development/CI helper only. Users download and extract ZIPs in their browser.
-No installation, PATH change, privilege elevation or extra runtime is required.
+Development/CI helper only. Users download and extract ZIPs or use the installer.
+Native Windows Admin verification requires Microsoft Evergreen WebView2.
 """
 import argparse
 import hashlib
@@ -82,6 +82,12 @@ def get(port, path):
 
 
 def smoke(binary, target_os, target_arch, version, report):
+    native_windows = False
+    if target_os == "windows":
+        from windows_app_checks import dedicated_windows_release, inspect_gui_executable, wait_for_admin_window
+        native_windows = dedicated_windows_release(version)
+        if native_windows:
+            report["windowsExecutable"] = inspect_gui_executable(binary)
     actual = subprocess.check_output([str(binary), "--version"], text=True, timeout=30).strip()
     if not actual.endswith(f"{target_os}/{target_arch}") or f" {version} " not in actual:
         raise AssertionError(f"Unexpected downloaded executable version: {actual}")
@@ -97,9 +103,10 @@ def smoke(binary, target_os, target_arch, version, report):
                 "--bind", "127.0.0.1", "--config-dir", config,
             ], stdout=log, stderr=subprocess.STDOUT)
             try:
-                deadline = time.monotonic() + 30
+                deadline = time.monotonic() + 60
                 admin_ready = False
                 browser_dispatched = False
+                native_requested = False
                 while time.monotonic() < deadline:
                     if process.poll() is not None:
                         raise AssertionError(f"Downloaded application exited: {log_path.read_text()}")
@@ -107,10 +114,11 @@ def smoke(binary, target_os, target_arch, version, report):
                     if "Could not open the system browser" in startup:
                         raise AssertionError(f"Automatic system browser dispatch failed: {startup}")
                     browser_dispatched = "Opened Admin in the system browser" in startup
+                    native_requested = "Requested the dedicated Admin window" in startup
                     try:
                         status, page = get(admin_port, "/admin")
                         admin_ready = status == 200 and "Smart Stage" in page
-                        if admin_ready and browser_dispatched:
+                        if admin_ready and (native_requested if native_windows else browser_dispatched):
                             break
                     except OSError:
                         pass
@@ -118,13 +126,19 @@ def smoke(binary, target_os, target_arch, version, report):
                 else:
                     raise AssertionError(
                         f"Downloaded application startup incomplete (Admin={admin_ready}, "
-                        f"system browser dispatch={browser_dispatched}): {log_path.read_text()}"
+                        f"system browser dispatch={browser_dispatched}, native window request={native_requested}): {log_path.read_text()}"
                     )
                 report["adminServedOnLoopback"] = True
-                report["automaticSystemBrowserDispatchAccepted"] = True
                 report["adminURL"] = f"http://127.0.0.1:{admin_port}/admin"
-                # The OS accepted the URL hand-off. Browser UI/control behavior
-                # is independently exercised by the native browser workflow.
+                if native_windows:
+                    assert not browser_dispatched, "Windows app unexpectedly opened an external browser"
+                    report["nativeAdminWindow"] = wait_for_admin_window(process.pid, timeout=60)
+                    report["automaticDedicatedAdminWindowVisible"] = True
+                    report["automaticSystemBrowserDispatchAccepted"] = False
+                else:
+                    # The OS accepted the URL hand-off. Browser UI/control behavior
+                    # is independently exercised by the native browser workflow.
+                    report["automaticSystemBrowserDispatchAccepted"] = True
                 if gateway_default(version):
                     with socket.socket() as remote_probe:
                         remote_probe.settimeout(2)
@@ -154,7 +168,7 @@ def main():
     }.get(platform.machine().lower()))
     parser.add_argument("--destination", required=True, type=Path)
     parser.add_argument("--archive", type=Path, help="Verify a locally built ZIP instead of downloading")
-    parser.add_argument("--smoke", action="store_true", help="Check native version, automatic browser dispatch, loopback Admin and closed default LAN listener")
+    parser.add_argument("--smoke", action="store_true", help="Check native version, automatic Admin presentation, loopback binding and closed default LAN listener")
     args = parser.parse_args()
     if args.os not in ("darwin", "windows") or not args.arch:
         parser.error("Select a supported target with --os and --arch")

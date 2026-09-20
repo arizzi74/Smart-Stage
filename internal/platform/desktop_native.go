@@ -1,4 +1,4 @@
-//go:build darwin && cgo
+//go:build (darwin || windows) && cgo
 
 package platform
 
@@ -32,7 +32,7 @@ func DesktopChooseFiles() bool { return C.ss_desktop_choose_files() != 0 }
 // never opens a URL, starts a browser process, or selects a particular tab.
 func DesktopActivateBrowser() bool { return C.ss_desktop_activate_browser() != 0 }
 
-// DesktopHasAdminWindow is a static capability of the bundled Mac app. It does
+// DesktopHasAdminWindow is a static native desktop capability. It does
 // not depend on the asynchronous registration of the Admin URL.
 func DesktopHasAdminWindow() bool { return C.ss_desktop_has_admin_window() != 0 }
 
@@ -51,6 +51,7 @@ func DesktopFileResult(id uint64, message string) {
 }
 
 func pollDesktop() {
+	pollDesktopQuit()
 	if len(desktopAdminRequests) < cap(desktopAdminRequests) && C.ss_desktop_poll_admin_request() != 0 {
 		desktopAdminRequests <- struct{}{}
 	}
@@ -67,15 +68,15 @@ func pollDesktop() {
 	}
 }
 
-// DesktopAdmin enables the app's menu using the actual bound Admin URL.
-// It is a no-op for an executable launched directly from a terminal.
+// DesktopAdmin enables the native menu using the actual bound Admin URL.
+// On macOS it is enabled only for an app-bundle launch.
 func DesktopAdmin(url string) {
 	p := C.CString(url)
 	defer C.free(unsafe.Pointer(p))
 	C.ss_desktop_admin(p)
 }
 
-// DesktopError must run on the process main thread, after Run has returned.
+// DesktopError must run after Run has returned (on the main thread for Cocoa).
 func DesktopError(message string) {
 	p := C.CString(message)
 	defer C.free(unsafe.Pointer(p))

@@ -190,9 +190,9 @@ async function until(check, message, timeout = 30000) {
         await admin.locator('#media-path-settings > summary').click();
         importMethods.add('Original-path fallback UI');
       } else {
-        // Mac exposes the real native chooser, whose OS dialog cannot be
+        // The desktop app exposes a native chooser, whose OS dialog cannot be
         // selected by Playwright. Seed this playback scenario through the
-        // authenticated API; the separate native Admin probe exercises Finder.
+        // authenticated API; separate native Admin probes exercise OS file drops.
         assert.equal(await admin.locator('#choose-files').isVisible(), true);
         assert.equal(await admin.locator('#choose-files').textContent(), 'Choose Media…');
         await edit(() => admin.evaluate(async paths => {

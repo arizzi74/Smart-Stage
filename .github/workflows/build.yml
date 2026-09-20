@@ -111,6 +111,10 @@ jobs:
           CGO_ENABLED: '0'
           SMARTSTAGE_TEST_FIREWALL: ${{ matrix.os == 'windows' && '1' || '0' }}
         run: go test ./...
+      - name: Ensure the Windows dedicated-window runtime
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: ./scripts/ensure-webview2.ps1
       - name: Native executable startup
         shell: bash
         run: |
@@ -121,7 +125,7 @@ jobs:
           python3 scripts/native-smoke.py "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix"
           python3 scripts/application-smoke.py "./dist/smartstage-${{ matrix.os }}-${{ matrix.arch }}$suffix" 10
           python3 scripts/verify-network-mode.py "./dist/smartstage-${{ matrix.os }}-${{ matrix.arch }}$suffix"
-      - name: Verify the ZIP, automatic system browser launch and local Admin
+      - name: Verify the ZIP, automatic Admin window and local server
         shell: bash
         env:
           VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'dev' }}
@@ -137,6 +141,19 @@ jobs:
           else
             python3 scripts/verify-icons.py './dist/smartstage-windows-${{ matrix.arch }}.exe'
           fi
+      - name: Exercise current-user Windows installation and native app lifecycle
+        if: matrix.os == 'windows'
+        shell: bash
+        env:
+          VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'dev' }}
+        run: |
+          python3 scripts/verify-windows-install.py --version "$VERSION" --arch '${{ matrix.arch }}' \
+            --archive 'dist/smartstage-windows-${{ matrix.arch }}.zip' \
+            --powershell powershell.exe --output 'dist/windows-install-${{ matrix.arch }}.json'
+      - name: Exercise the real Windows Admin WebView, chooser and original-file drops
+        if: matrix.os == 'windows'
+        shell: bash
+        run: python3 scripts/native_admin_windows_checks.py 'dist/smartstage-windows-${{ matrix.arch }}.exe'
       - name: Install pinned development-only browser tools
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         shell: bash
@@ -192,6 +209,7 @@ jobs:
         run: |
           gh release create "$RELEASE_TAG" dist/smartstage-*.zip dist/smartstage-*.zip.sha256 \
             dist/smartstage-*.imports.txt dist/smartstage-*.icon.json dist/smartstage-*.http-smoke.json dist/smartstage-*.network-mode.json \
+            dist/smartstage-windows-*.native-admin.json \
             dist/toolchain-* dist/native-enumeration-* dist/native-harness-*.smoke.json dist/gateway/* \
             --verify-tag --prerelease --title "Smart Stage $RELEASE_TAG" --notes-file docs/release-notes.md
       - name: Mark the failed preview 9 updater as superseded
@@ -236,5 +254,11 @@ jobs:
       contents: read
       actions: read
     uses: ./.github/workflows/update.yml
+    with:
+      version: ${{ github.ref_name }}
+  verify-windows-install:
+    needs: publish
+    if: startsWith(github.ref, 'refs/tags/')
+    uses: ./.github/workflows/install-windows.yml
     with:
       version: ${{ github.ref_name }}

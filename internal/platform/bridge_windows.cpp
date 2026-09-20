@@ -937,6 +937,7 @@ extern "C" void ss_run() {
     }
     { std::lock_guard<std::mutex> lock(commandMutex); latestCommand.reset(); }
     cleanupQuitting.store(true); cleanupCV.notify_all(); if (cleaner.joinable()) cleaner.join();
+    ss_windows_desktop_shutdown();
     DestroyWindow(stageWindow); DestroyWindow(controlWindow);
     if (notificationEnumerator.p) { notificationEnumerator.p->Release(); notificationEnumerator.p = nullptr; }
     MFShutdown(); CoUninitialize();

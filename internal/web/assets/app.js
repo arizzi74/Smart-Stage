@@ -7,8 +7,12 @@ const gatewayRoute = /^\/smartstage\/e\/[A-Za-z0-9_-]{16,128}\/command$/.test(lo
 const endpointPrefix = gatewayRoute ? location.pathname.slice(0, -'/command'.length) : '';
 const endpointPath = path => endpointPrefix + path;
 // The native user-agent token changes guidance only. It grants no API access
-// and never lets JavaScript read or submit a Finder file's original path.
+// and never lets JavaScript read or submit a native file's original path.
 const desktopAdmin = adminPage && /(?:^|\s)SmartStageDesktop(?:\s|$)/.test(navigator.userAgent);
+// Platform detection selects copy only; host capabilities still control every
+// native action, and all requests use the authenticated local Admin session.
+const windowsPlatform = /(?:^|\s)SmartStageWindowsDesktop(?:\s|$)|Windows NT/.test(navigator.userAgent) || /^Win/.test(navigator.platform);
+const fileManagerName = windowsPlatform ? 'File Explorer' : 'Finder';
 let state = null, role = '', csrf = '', online = false, source = null, lastSeen = 0;
 let playlist = null, devices = null;
 let playlistBusy = false, refreshing = false, renderedOrder = '', playlistRefresh = false;
@@ -510,8 +514,8 @@ function renderEditAvailability() {
   $('quit-app').disabled = !online || role !== 'admin' || quitBusy || appClosed || reloadingAdmin;
   $('choose-files').hidden = adminCapabilities.chooseFiles !== true;
   $('choose-files').disabled = !online || role !== 'admin' || chooseFilesBusy || quitBusy || appClosed || updatePending() || playlistBusy;
-  $('playlist-drop-title').textContent = desktopAdmin ? 'Drop Finder files here' : adminCapabilities.chooseFiles === true ? 'Add media from this Mac' : 'Add media from this computer';
-  $('playlist-drop-hint').textContent = desktopAdmin ? 'Use Choose Media, or drag files from Finder into this window. Originals stay in place; nothing is uploaded or copied.' : adminCapabilities.chooseFiles === true ? 'Use Choose Media to select files on this Mac. Browser drops cannot provide their original paths. You can also drop files onto Smart Stage’s Dock icon.' : 'Browsers cannot read original file paths from a drop. Use Add files by path below. On Mac, you can also open Smart Stage and drop files from Finder into its window.';
+  $('playlist-drop-title').textContent = desktopAdmin ? `Drop ${fileManagerName} files here` : adminCapabilities.chooseFiles === true ? windowsPlatform ? 'Add media from this PC' : 'Add media from this Mac' : 'Add media from this computer';
+  $('playlist-drop-hint').textContent = desktopAdmin ? `Use Choose Media, or drag files from ${fileManagerName} into this window. Originals stay in place; nothing is uploaded or copied.` : adminCapabilities.chooseFiles === true ? windowsPlatform ? 'Use Choose Media to select files on this PC. Browser drops cannot provide their original paths. You can also drag File Explorer files into the Smart Stage app window.' : 'Use Choose Media to select files on this Mac. Browser drops cannot provide their original paths. You can also drop files onto Smart Stage’s Dock icon.' : 'Browsers cannot read original file paths from a drop. Use Add files by path below, or open the Smart Stage app on Mac or Windows to choose files or drop them into its window.';
   $('media-path-settings').hidden = desktopAdmin || adminCapabilities.chooseFiles === true;
   for (const id of ['media-paths', 'add-media-paths']) $(id).disabled = !online || role !== 'admin' || !playlist || playlistBusy || quitBusy || appClosed || updatePending();
   const pending = updatePending();
@@ -667,7 +671,7 @@ $('choose-files').addEventListener('click', async () => {
   try {
     const result = await api('POST', '/api/choose-files', {});
     if (result.choosing !== true) throw new Error('The host did not open the file chooser.');
-    fileDropMessage('Choose files in the Mac dialog. Originals stay in place.');
+    fileDropMessage(`Choose files in the ${windowsPlatform ? 'Windows' : 'Mac'} dialog. Originals stay in place.`);
   } catch (error) { fileDropMessage(error.message, true); }
   finally { chooseFilesBusy = false; renderEditAvailability(); }
 });
@@ -698,7 +702,7 @@ if (adminPage) {
   document.addEventListener('drop', event => {
     if (!dragHasType(event, 'Files')) return;
     event.preventDefault();
-    const message = desktopAdmin ? 'Drop files directly from Finder onto this Smart Stage window, or use Choose Media. Originals stay in place.' : adminCapabilities.chooseFiles === true ? 'Your browser cannot read Finder file paths. Use Choose Media, or drop files onto the Smart Stage Dock icon.' : 'Your browser cannot read original file paths from a drop. Use Add files by path in the Playlist, or drop Finder files into the Smart Stage Mac app.';
+    const message = desktopAdmin ? `Drop files directly from ${fileManagerName} onto this Smart Stage window, or use Choose Media. Originals stay in place.` : adminCapabilities.chooseFiles === true ? windowsPlatform ? 'Your browser cannot read File Explorer file paths. Use Choose Media, or drop files into the Smart Stage app window.' : 'Your browser cannot read Finder file paths. Use Choose Media, or drop files onto the Smart Stage Dock icon.' : 'Your browser cannot read original file paths from a drop. Use Add files by path in the Playlist, or drop files into the Smart Stage app on Mac or Windows.';
     fileDropMessage(message); notify(message);
   });
 }

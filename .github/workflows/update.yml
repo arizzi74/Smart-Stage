@@ -2,7 +2,7 @@ name: Verify automatic updates against published native releases
 on:
   push:
     branches: [main]
-    paths: ['scripts/verify-auto-update.py', 'scripts/macos_app_checks.py', '.github/workflows/update.yml']
+    paths: ['scripts/verify-auto-update.py', 'scripts/macos_app_checks.py', 'scripts/windows_app_checks.py', '.github/workflows/update.yml']
   workflow_dispatch:
     inputs:
       version:
@@ -56,6 +56,10 @@ jobs:
           path: dist/update-fixture
           run-id: ${{ inputs.fixture-run || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '35530818664') || github.run_id }}
           github-token: ${{ github.token }}
+      - name: Ensure the Windows dedicated-window runtime
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: ./scripts/ensure-webview2.ps1
       - name: Exercise real automatic discovery, replacement and restart
         shell: bash
         env:

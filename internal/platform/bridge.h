@@ -32,7 +32,7 @@ typedef struct {
  * Foreground events use foreground_id as generation; stopped uses generation.
  * stage/background-error events include sceneRevision. */
 void ss_scene(const ss_scene_request *request);
-#ifdef __APPLE__
+#if defined(__APPLE__) || defined(_WIN32)
 void ss_desktop_admin(const char *url);
 void ss_desktop_error(const char *message);
 char *ss_desktop_poll_files(void);
@@ -44,6 +44,13 @@ int ss_desktop_choose_files(void);
 int ss_desktop_activate_browser(void);
 int ss_desktop_has_admin_window(void);
 int ss_desktop_show_admin(void);
+#endif
+#ifdef _WIN32
+void ss_desktop_identity(const char *key);
+void ss_desktop_log_path(const char *path);
+int ss_desktop_reopen(const char *key);
+int ss_desktop_poll_quit_request(void);
+void ss_windows_desktop_shutdown(void);
 #endif
 #ifdef __cplusplus
 }

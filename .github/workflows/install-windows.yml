@@ -1,0 +1,55 @@
+name: Verify Windows single-command app installation
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release tag; leave empty to verify the installer default'
+        type: string
+        required: false
+  workflow_call:
+    inputs:
+      version:
+        description: 'Published release tag to install and launch'
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  install:
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-2025
+            arch: amd64
+          - runner: windows-11-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Install the published app using built-in Windows PowerShell
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version || '' }}
+        run: |
+          $arguments = @('scripts/verify-windows-install.py', '--arch', '${{ matrix.arch }}', '--powershell', 'powershell.exe', '--bootstrap-url', 'https://raw.githubusercontent.com/arizzi74/Smart-Stage/${{ github.sha }}/install.ps1', '--output', 'dist/windows-install/${{ matrix.arch }}/result.json')
+          if ($env:RELEASE_VERSION) { $arguments += @('--version', $env:RELEASE_VERSION) }
+          python @arguments
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Repeat the public install using PowerShell 7
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ inputs.version || '' }}
+        run: |
+          $arguments = @('scripts/verify-windows-install.py', '--arch', '${{ matrix.arch }}', '--powershell', 'pwsh.exe', '--bootstrap-url', 'https://raw.githubusercontent.com/arizzi74/Smart-Stage/${{ github.sha }}/install.ps1', '--output', 'dist/windows-install/${{ matrix.arch }}/powershell7.json')
+          if ($env:RELEASE_VERSION) { $arguments += @('--version', $env:RELEASE_VERSION) }
+          python @arguments
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Retain installation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-app-install-${{ matrix.arch }}
+          path: dist/windows-install/
+          if-no-files-found: warn

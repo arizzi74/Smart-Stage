@@ -2,8 +2,9 @@
 
 Trigger local music, video and image cues on a Windows PC or Mac from a phone, tablet or
 desktop browser. Native playback stays on the host. One executable includes the
-browser interfaces and native bridge. No Go, Node, Python, database, player or
-extra application runtime is needed on the event computer.
+browser interfaces and native bridge. No Go, Node, Python, database or media
+player installation is needed on the event computer. The Windows Admin
+window uses Microsoft WebView2; the Windows installer supplies it if missing.
 
 **Preview:** built and exercised through real OS APIs on all four target runners.
 Physical routing, visible projector blackout, hotplug, latency, clean-machine
@@ -46,17 +47,39 @@ This deliberately removes this app's quarantine check; it does not provide Apple
 notarization or disable Gatekeeper system-wide. Other macOS permissions, such as
 local-network access, may still need approval.
 
+## Install on Windows
+
+Open a normal PowerShell window, paste this command, and press Enter:
+
+```powershell
+irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | iex
+```
+
+The installer detects native **ARM64 or Intel/AMD64**, including when PowerShell
+runs under emulation. It checks the matching ZIP's SHA-256 checksum and installs
+`smartstage.exe` into `%LOCALAPPDATA%\Programs\SmartStage`, with **Smart Stage**
+shortcuts on the Desktop and Start menu. Microsoft WebView2 is checked and, if
+missing, its Microsoft-signed installer runs for the current user. Use a normal,
+non-administrator PowerShell window. Gateway mode needs no firewall change.
+
+Smart Stage opens its own Admin window with its icon in the taskbar and a tray
+menu. Drop original files from **File Explorer** into the window or use
+**Choose Media…**; files remain in place. Closing the window keeps playback
+running. Open the shortcut or use **Open Admin** in the tray menu to restore the
+same window. **Quit Smart Stage** in Admin or the tray menu stops playback and
+exits. You can close PowerShell after installation; later launches and updates
+run without a terminal. Application logs are in `%APPDATA%\SmartStage\smartstage.log`.
+
 ## Automatic updates
 
 Starting with preview 10, Smart Stage **updates automatically when it starts**.
 It checks GitHub, downloads the correct version for your computer, verifies the
-checksum, installs it and restarts. The Mac app reopens its Admin window.
-Standalone Mac and Windows launches reconnect an open Admin browser tab or open
-one if needed. Saved shows
-and output preferences stay in place; playback never resumes automatically.
+checksum, installs it and restarts. The Mac and Windows apps reopen their Admin
+window. The standalone Mac executable reconnects an open Admin browser tab or
+opens one if needed. Saved shows and output preferences stay in place; playback never resumes automatically.
 
-Install the current release once using the Mac command above or the matching
-Windows ZIP below to enable automatic updates. Previews before 10 need this
+Install the current release once using the Mac or Windows command above, or the
+matching Windows ZIP below to enable automatic updates. Previews before 10 need this
 manual upgrade; preview 10 and later can update on launch.
 
 Playback and editing wait while a startup update is checked or prepared. If the
@@ -72,9 +95,10 @@ the app's scoped incoming rule and can request administrator approval. An upgrad
 from preview 14 or earlier still runs that older version's updater, so that one
 upgrade can request its previous firewall approval; later gateway-mode updates
 skip it.
-Windows updates replace the executable in its current folder. The installation
-folder must be writable by your user. No additional runtime or permanent updater
-service is installed. If a replacement cannot start, the updater attempts to
+Windows updates replace the executable in its current folder, preserving its
+icon, shortcuts and dedicated window. The installation folder must be writable
+by your user; the installer uses a per-user folder. No permanent updater service
+is installed. If a replacement cannot start, the updater attempts to
 restore the previous version and shows the result in Admin. Logs are in
 `update.log` in the application's configuration folder.
 
@@ -136,6 +160,8 @@ icon. Opening `Smart Stage.app` runs it without Terminal and opens a dedicated
 Admin window with native Finder drag-and-drop. It uses the WebKit framework
 already supplied by macOS. The
 standalone ZIPs above contain only `smartstage` (Mac) or `smartstage.exe` (Windows).
+The Windows executable includes its WebView2 loader; Microsoft Evergreen WebView2
+Runtime must be present separately. The Windows installer checks this for you.
 
 Mac files downloaded through your browser are still unnotarized and may require
 **System Settings → Privacy & Security → Open Anyway** after the first launch
@@ -154,15 +180,15 @@ acceptance testing.
 1. On Mac, use the installation command above or open the extracted app. For a
    standalone ZIP, open `smartstage` (`smartstage.exe` on Windows) in the
    signed-in interactive desktop session. Keep the application running. The Mac
-   app automatically opens its dedicated **Admin** window; standalone Mac and
-   Windows executables use the system browser. Admin is served only on the host
+   app and Windows executable automatically open their dedicated **Admin** window;
+   the standalone Mac executable uses the system browser. Admin is served only on the host
    computer at `http://127.0.0.1:8787/admin`.
-2. In the Mac app, drop Finder files directly into the **Admin window**, use
-   **Choose Media…**, or drop files onto the Smart Stage Dock icon. The original
+2. In the app, drop Finder or File Explorer files directly into the **Admin
+   window**, use **Choose Media…**, or on Mac drop files onto the Smart Stage Dock icon. The original
    files stay in place. Set labels, order and button colors in Playlist;
    **Default** resets a cue's color. Wait for native validation;
    missing/unsupported files remain visible. Regular external browsers cannot
-   read full Finder paths; use the native chooser when available. Browser-only
+   read full original file paths; use the native chooser when available. Browser-only
    hosts without a native chooser provide **Add files by path** in Playlist,
    accepting one absolute host path per line. During an update, wait and add
    files again.
@@ -193,10 +219,10 @@ acceptance testing.
    stops all sound and closes the stage. **Disconnect** is in the top bar.
 
 **Quit Smart Stage** in Admin stops playback, closes the stage and exits the app.
-Closing the Mac Admin window only hides it. Click the Dock icon or choose Open
-Admin to bring back that same window with its current interface state.
+Closing the Admin window only hides it. Click the Dock icon, reopen the Windows
+shortcut, or choose Open Admin to bring back that same window with its current interface state.
 
-For standalone Mac or Windows browser interfaces, leave the Admin tab open to
+For the standalone Mac executable or an external browser, leave the Admin tab open to
 reconnect after relaunch. Smart Stage allows up to
 six seconds for an existing Admin page to reconnect before opening another one;
 the reconnected page reloads its interface for the running version. This is best
@@ -317,6 +343,12 @@ an additional policy exception from your IT team.
 Its native CI check exercises real ZIP downloads, targeted quarantine removal,
 replacement/refusal behavior and Finder-to-Admin startup on both Macs.
 
+The Windows installer supports PowerShell 5.1 and newer. Its overrides are
+`SMARTSTAGE_VERSION`, `SMARTSTAGE_INSTALL_DIR` (parent of `SmartStage`), and
+`SMARTSTAGE_NO_LAUNCH=1`. It never requests elevation. The app configures the
+scoped incoming rule only after you explicitly select Local LAN; default gateway
+installation and updates leave firewall rules unchanged.
+
 ```sh
 go test -race ./...
 go vet ./...
@@ -327,13 +359,15 @@ bash scripts/build.sh windows arm64
 ```
 
 Build on matching OS runners normally. `DEBUG=1` retains symbols;
-`VERSION=v0.1.0-preview.16` sets metadata. Output:
+`VERSION=v0.1.0-preview.17` sets metadata. Output:
 `dist/smartstage-<os>-<arch>.zip`, the raw build executable and engineering
 harness `dist/native-harness-<os>-<arch>[.exe]`, with adjacent checksums, import
 audits and toolchain records. Published application downloads are ZIPs. Apple system frameworks remain dynamic; Windows compiler
 support is linked in. `CGO_ENABLED=0` cannot make a playback release.
 
-Windows builds embed the Smart Stage icon in the executable. Mac builds also
+Windows builds embed the Smart Stage icon and pinned Microsoft WebView2 loader
+in the executable. The Admin UI uses the separately serviced Evergreen runtime.
+Run `pwsh -File scripts/ensure-webview2.ps1` before native Windows UI checks. Mac builds also
 produce `dist/smartstage-darwin-<arch>.app.zip`, an optional Finder app with the
 same icon. Extract it and open `Smart Stage.app` to start the bundled executable
 without Terminal, with the Smart Stage icon in the Dock and a standard Quit

@@ -403,6 +403,7 @@ const assert = require('node:assert/strict');
     await admin.locator('#add-media-paths').click();
     await admin.waitForFunction(expected => document.querySelectorAll('.playlist-row').length === expected, beforePathImport + 2);
     assert.deepEqual(config.cues.slice(-2).map(cue => cue.path), ['/Host/Show/path-added.wav', 'C:\\Show\\quoted media.wav'], 'quoted original paths are preserved and duplicate lines add only one cue');
+    await admin.waitForFunction(() => document.getElementById('media-paths').value === '');
     assert.equal(await admin.locator('#media-paths').inputValue(), '');
     assert.match(await admin.locator('#file-drop-message').textContent(), /Added 2 files.*Originals stay in place/);
     adminCapabilities = { chooseFiles: true }; await admin.evaluate(() => refreshState());
@@ -655,41 +656,73 @@ const assert = require('node:assert/strict');
     assert.equal(requests.filter(r => r.path === '/api/update/install').length, 1, 'reconnection does not repeat installation');
     assert.equal(adminDocumentLoads, documentsBeforeUpdateRestart + 1, 'a new host instance reloads Admin assets exactly once');
 
-    // A synthetic user-agent exercises presentation only. Native pasteboard
-    // handling is verified separately on macOS; this marker grants no access.
-    const desktop = await browser.newPage({ viewport: { width: 1280, height: 900 }, userAgent: 'BrowserFixture SmartStageDesktop' });
-    desktop.on('pageerror', e => errors.push(e.message));
-    const sessionsBeforeDesktopRemote = requests.filter(r => r.path === '/api/local-session').length;
-    await desktop.goto(commandBase + '/command'); await desktop.locator('#pairing').waitFor();
-    assert.equal(await desktop.locator('#admin-view').isVisible(), false, 'a desktop user-agent does not expose Admin on the remote page');
-    assert.equal(requests.filter(r => r.path === '/api/local-session').length, sessionsBeforeDesktopRemote, 'the desktop marker never bypasses the normal remote pairing flow');
-    await desktop.goto(adminBase + '/admin'); await desktop.locator('.playlist-row').first().waitFor();
-    assert.equal(await desktop.locator('#playlist-drop-title').textContent(), 'Drop Finder files here');
-    assert.match(await desktop.locator('#playlist-drop-hint').textContent(), /Originals stay in place.*nothing is uploaded or copied/);
-    assert.equal(await desktop.locator('#media-path-settings').isVisible(), false, 'dedicated native Admin keeps Finder and Choose Media as its import flow');
-    assert.match(await admin.locator('#playlist-drop-hint').textContent(), /original paths/, 'external browsers explain why Finder paths cannot be read');
-    assert.equal(await admin.locator('#files-section').count(), 0);
-    const writesBeforeDesktopDrop = requests.filter(r => r.path === '/api/playlist' && r.body.cues).length;
-    await desktop.evaluate(() => {
-      const files = new DataTransfer(); files.items.add(new File(['example'], 'spoofed Finder.wav', { type: 'audio/wav' }));
-      const drop = new DragEvent('drop', { dataTransfer: files, bubbles: true, cancelable: true });
-      document.getElementById('playlist-drop').dispatchEvent(drop); window.__desktopDropPrevented = drop.defaultPrevented;
-      const paths = new DataTransfer(); paths.setData('application/x-smartstage-host-files', '/untrusted/native-spoof.wav');
-      document.getElementById('playlist-drop').dispatchEvent(new DragEvent('drop', { dataTransfer: paths, bubbles: true, cancelable: true }));
-    });
-    assert.equal(await desktop.evaluate(() => window.__desktopDropPrevented), true);
-    assert.equal(requests.filter(r => r.path === '/api/playlist' && r.body.cues).length, writesBeforeDesktopDrop, 'a spoofed desktop marker cannot turn File objects or forged drag paths into privileged imports');
-    assert.equal(requests.some(r => r.path === '/api/playlist/import'), false);
-    const beforeDesktopAddition = config.cues.length;
-    config.cues.push({ id: 'native-added-fixture', label: 'Native added fixture', path: '/Host/Show/native-added.wav', cache: { status: 'ready', media: { kind: 'audio', duration: 3 } } });
-    config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++;
-    state.cues.push({ id: 'native-added-fixture', label: 'Native added fixture', position: beforeDesktopAddition + 1, kind: 'audio', duration: 3, validation: 'ready' });
-    broadcast();
-    await desktop.waitForFunction(expected => document.querySelectorAll('.playlist-row').length === expected, beforeDesktopAddition + 1);
-    assert.equal(await desktop.locator('#file-drop-message').textContent(), 'Added 1 file to the playlist. Originals stay in place.', 'native playlist changes are announced after the authoritative state event');
-    await desktop.locator('#playlist-drop').scrollIntoViewIfNeeded();
-    await desktop.screenshot({ path: path.join(output, 'admin-desktop-drop.png') });
-    await desktop.close();
+    // User-agent fixtures exercise presentation only. Native file pickers and
+    // Finder/Explorer drop handling are verified separately on each OS.
+    for (const platform of [
+      { name: 'mac', marker: 'SmartStageDesktop', manager: 'Finder', picker: 'Mac', original: '/Host/Show/native-added-mac.wav', screenshot: 'admin-desktop-drop.png' },
+      { name: 'windows', marker: 'SmartStageDesktop SmartStageWindowsDesktop', manager: 'File Explorer', picker: 'Windows', original: "C:\\Show\\Café's native-added-windows.wav", screenshot: 'admin-windows-desktop-drop.png' }
+    ]) {
+      const desktop = await browser.newPage({ viewport: { width: 1280, height: 900 }, userAgent: `BrowserFixture ${platform.marker}` });
+      desktop.on('pageerror', e => errors.push(e.message));
+      const sessionsBeforeDesktopRemote = requests.filter(r => r.path === '/api/local-session').length;
+      await desktop.goto(commandBase + '/command'); await desktop.locator('#pairing').waitFor();
+      assert.equal(await desktop.locator('#admin-view').isVisible(), false, 'desktop markers never expose Admin on the remote page');
+      assert.equal(requests.filter(r => r.path === '/api/local-session').length, sessionsBeforeDesktopRemote, 'desktop markers never bypass remote pairing');
+      adminCapabilities = { chooseFiles: false };
+      await desktop.goto(adminBase + '/admin'); await desktop.locator('.playlist-row').first().waitFor();
+      assert.equal(await desktop.locator('#playlist-drop-title').textContent(), `Drop ${platform.manager} files here`);
+      assert.match(await desktop.locator('#playlist-drop-hint').textContent(), /Originals stay in place.*nothing is uploaded or copied/);
+      assert.equal(await desktop.locator('#choose-files').isVisible(), false, 'a native user-agent cannot grant picker capability');
+      assert.equal(await desktop.locator('#media-path-settings').isVisible(), false, 'native windows never show the path-entry fallback while initializing');
+      assert.equal(await desktop.locator('#remote-connection-settings').evaluate(node => node.open), false);
+      assert.equal(await desktop.locator('#remote-qr').isVisible(), true);
+      assert.equal(await desktop.locator('#lan-firewall-guidance').isVisible(), true);
+      await desktop.evaluate(async () => { await loadGateway(); await loadRemoteControl(); });
+      assert.equal(await desktop.locator('#remote-connection-settings').evaluate(node => node.open), false, 'native polling preserves collapsed settings');
+      assert.equal(await desktop.locator('#files-section').count(), 0);
+      const writesBeforeDesktopDrop = requests.filter(r => r.path === '/api/playlist' && r.body.cues).length;
+      await desktop.evaluate(() => {
+        const files = new DataTransfer(); files.items.add(new File(['example'], 'spoofed native file.wav', { type: 'audio/wav' }));
+        const drop = new DragEvent('drop', { dataTransfer: files, bubbles: true, cancelable: true });
+        document.getElementById('playlist-drop').dispatchEvent(drop); window.__desktopDropPrevented = drop.defaultPrevented;
+        const paths = new DataTransfer(); paths.setData('application/x-smartstage-host-files', '/untrusted/native-spoof.wav');
+        document.getElementById('playlist-drop').dispatchEvent(new DragEvent('drop', { dataTransfer: paths, bubbles: true, cancelable: true }));
+      });
+      assert.equal(await desktop.evaluate(() => window.__desktopDropPrevented), true);
+      assert.match(await desktop.locator('#file-drop-message').textContent(), new RegExp(platform.manager));
+      assert.equal(requests.filter(r => r.path === '/api/playlist' && r.body.cues).length, writesBeforeDesktopDrop, 'a spoofed desktop marker cannot turn File objects or forged drag paths into imports');
+      assert.equal(requests.some(r => r.path === '/api/playlist/import'), false);
+      adminCapabilities = { chooseFiles: true };
+      await desktop.evaluate(() => sendAdminPresence(true));
+      await desktop.locator('#choose-files').waitFor({ state: 'visible' });
+      assert.equal(await desktop.locator('#choose-files').textContent(), 'Choose Media…');
+      assert.equal(await desktop.locator('#media-path-settings').isVisible(), false);
+      const beforeDesktopAddition = config.cues.length;
+      const pickerRequestsBefore = requests.filter(r => r.path === '/api/choose-files').length;
+      nativeChooserImports = [{ path: platform.original, kind: 'audio' }];
+      await desktop.locator('#choose-files').click();
+      await desktop.waitForFunction(picker => document.getElementById('file-drop-message').textContent.includes(`${picker} dialog`), platform.picker);
+      assert.equal(requests.filter(r => r.path === '/api/choose-files').length, pickerRequestsBefore + 1);
+      await desktop.waitForFunction(expected => document.querySelectorAll('.playlist-row').length === expected, beforeDesktopAddition + 1);
+      assert.equal(config.cues.at(-1).path, platform.original, 'native import feedback uses the authoritative original host path');
+      assert.equal(await desktop.locator('#file-drop-message').textContent(), 'Added 1 file to the playlist. Originals stay in place.');
+      await desktop.locator('#playlist-drop').scrollIntoViewIfNeeded();
+      await desktop.screenshot({ path: path.join(output, platform.screenshot) });
+      await desktop.close();
+    }
+
+    const windowsBrowser = await browser.newPage({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) BrowserFixture' });
+    windowsBrowser.on('pageerror', e => errors.push(e.message));
+    await windowsBrowser.goto(adminBase + '/admin'); await windowsBrowser.locator('#choose-files').waitFor({ state: 'visible' });
+    assert.equal(await windowsBrowser.locator('#playlist-drop-title').textContent(), 'Add media from this PC');
+    assert.match(await windowsBrowser.locator('#playlist-drop-hint').textContent(), /File Explorer.*Smart Stage app window/);
+    assert.doesNotMatch(await windowsBrowser.locator('#playlist-drop-hint').textContent(), /Finder|Dock|Mac/);
+    assert.equal(await windowsBrowser.locator('#media-path-settings').isVisible(), false);
+    adminCapabilities = { chooseFiles: false }; await windowsBrowser.evaluate(() => refreshState());
+    assert.equal(await windowsBrowser.locator('#choose-files').isVisible(), false);
+    assert.equal(await windowsBrowser.locator('#media-path-settings').isVisible(), true, 'external Windows browsers retain path fallback without native chooser capability');
+    await windowsBrowser.close();
+    adminCapabilities = { chooseFiles: true };
 
     const invalid = await browser.newPage(); invalid.on('pageerror', e => errors.push(e.message));
     await invalid.goto(commandBase + '/command#token=00000000'); await invalid.locator('#pairing').waitFor();
@@ -774,7 +807,7 @@ const assert = require('node:assert/strict');
     assert.equal(await admin.locator('#lan-firewall-guidance').isVisible(), true, 'saved LAN guidance remains visible after restart');
     assert.equal(requests.some(r => ['/api/files', '/api/inspect'].includes(r.path)), false, 'no Admin page or reconnect starts folder browsing');
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }

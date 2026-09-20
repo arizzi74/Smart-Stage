@@ -35,7 +35,11 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-      - name: Verify downloaded ZIP, automatic browser launch and local Admin
+      - name: Ensure the Windows dedicated-window runtime
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: ./scripts/ensure-webview2.ps1
+      - name: Verify downloaded ZIP, automatic Admin window and local server
         shell: bash
         env:
           RELEASE_VERSION: ${{ inputs.version }}

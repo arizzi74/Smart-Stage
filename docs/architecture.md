@@ -7,13 +7,20 @@ Admin in one retained AppKit window containing the system WKWebView. macOS may
 start its own WebKit rendering/network helper processes; no browser engine or
 additional runtime is distributed with Smart Stage.
 
+Windows uses a retained Win32 Admin window with Microsoft Evergreen WebView2.
+The architecture-specific Microsoft loader DLL is embedded in the executable,
+verified after extraction into a private per-launch directory, and loaded by
+absolute path. The installer detects the Evergreen runtime and installs the
+Microsoft-signed bootstrapper for the current user if missing. The pinned SDK
+and redistribution notice are in `internal/platform/webview2`.
+
 After both HTTP listeners are ready, the Mac app shows its Admin window. It can
 show startup-update progress while the service blocks playback and edits. Dock,
 menu and native-import actions restore the same window, independent of external
 browser presence. Closing the window hides Admin and keeps the host running;
 Quit stops playback and exits. Window UI remains on the AppKit main queue.
 
-Standalone Mac executables and Windows use the system browser. They give an
+Standalone Mac executables use the system browser. They give an
 existing authenticated Admin page up to six seconds to reconnect before opening
 another page. Active Admin SSE and authenticated heartbeats establish presence;
 a new host instance reloads the existing page's assets. `--no-browser` suppresses
@@ -27,12 +34,25 @@ core executable. It does not start Terminal or leave an extra launcher process.
 The app has its Dock icon and standard menus, including Quit and text editing.
 The additional menu bar control opens Admin, reveals the log and requests Quit.
 
+The Windows executable uses the GUI subsystem, so Explorer and shortcut launches
+do not create a terminal. Missing stdout/stderr handles are directed to
+`%APPDATA%\SmartStage\smartstage.log`; parent-provided pipes remain intact for
+CLI tools and updater diagnostics. The taskbar and tray use its embedded icon.
+A second launch locates the current user's window for the same configuration
+directory and sends a focus-only request. The retained Admin window preserves
+unsaved UI state when hidden and reopened. Tray and Admin Quit requests enter
+the normal Go shutdown flow before the native UI thread is joined.
+
 The dedicated window loads the actual loopback Admin URL, using the existing
 session, Origin, CSRF and local-listener protections. Native navigation policy
 keeps Admin in that local origin; intended external links use the system browser.
 Finder drops are read from the specific native drag session's file-URL pasteboard
 and queued through the same original-path import and root-validation flow as
 Dock imports. Web-page scripts do not acquire arbitrary filesystem access.
+Windows accepts original paths from native OLE `CF_HDROP` objects and the
+multi-select `IFileOpenDialog`. A DirectComposition WebView lets the containing
+window own file drops. Both platforms queue bounded imports through Go's same
+root validation and playlist persistence; neither copies media into a library.
 
 ## Automatic updates
 
@@ -72,9 +92,10 @@ mutex serializes saved edits. Cues being removed/replaced cannot be newly
 activated while their edit is being written. STOP never acquires that mutex.
 
 The initial OS thread is locked during package initialization and runs AppKit
-or Win32. The Go application/server run in another goroutine. Windows UI,
-loader, inspector and cleanup threads use the same COM MTA; no STA interface
-crosses apartments. Bounded per-role source-loader mailboxes prepare Media Session topologies off
+or Win32. The Go application/server run in another goroutine. Windows playback,
+loader, inspector and cleanup threads use the same COM MTA. Its dedicated Admin
+WebView and native chooser run on a separate STA with their own message loop;
+COM interfaces remain on their owning thread. Bounded per-role source-loader mailboxes prepare Media Session topologies off
 the UI thread. A separate worker shuts down retired sources and sessions. A
 nonblocking native event poll advances playback. Each audio/video source uses
 one session clock; its audio renderer endpoint ID is set before activation.

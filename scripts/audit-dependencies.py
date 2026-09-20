@@ -18,7 +18,8 @@ if path.suffix == '.exe':
                'oleaut32.dll', 'mf.dll', 'mfplat.dll', 'mfreadwrite.dll', 'evr.dll',
                'propsys.dll', 'shcore.dll', 'shell32.dll', 'ntdll.dll', 'bcrypt.dll',
                'ws2_32.dll', 'winmm.dll', 'ucrtbase.dll', 'msvcrt.dll', 'crypt32.dll',
-               'secur32.dll', 'iphlpapi.dll', 'setupapi.dll', 'dwmapi.dll'}
+               'secur32.dll', 'iphlpapi.dll', 'setupapi.dll', 'dwmapi.dll',
+               'dcomp.dll'}  # Windows DirectComposition hosts the native Admin WebView.
     bad = [i for i in imports if i.lower() not in os_dlls and not i.lower().startswith(('api-ms-win-', 'ext-ms-win-'))]
 else:
     output = subprocess.check_output(['otool', '-L', str(path)], text=True)
