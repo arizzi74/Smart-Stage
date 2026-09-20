@@ -111,14 +111,54 @@ func windowsPowerShellPath() (string, error) {
 	return filepath.Join(syscall.UTF16ToString(buffer[:n]), "WindowsPowerShell", "v1.0", "powershell.exe"), nil
 }
 
+func canonicalWindowsFirewallProgram(program string) (string, error) {
+	if !filepath.IsAbs(program) {
+		return "", errors.New("executable path is not absolute")
+	}
+	// Expand filesystem aliases, including Windows 8.3 directory names, before
+	// passing the executable to the firewall's application-path resolver.
+	canonical, err := filepath.EvalSymlinks(program)
+	if err != nil {
+		return "", err
+	}
+	input, err := syscall.UTF16PtrFromString(canonical)
+	if err != nil {
+		return "", err
+	}
+	buffer := make([]uint16, 32768)
+	getLongPathName := syscall.NewLazyDLL("kernel32.dll").NewProc("GetLongPathNameW")
+	n, _, callErr := getLongPathName.Call(uintptr(unsafe.Pointer(input)), uintptr(unsafe.Pointer(&buffer[0])), uintptr(len(buffer)))
+	if n == 0 || n >= uintptr(len(buffer)) {
+		return "", fmt.Errorf("expand executable path: %v", callErr)
+	}
+	canonical = syscall.UTF16ToString(buffer[:n])
+	if strings.HasPrefix(canonical, `\\?\UNC\`) {
+		canonical = `\\` + strings.TrimPrefix(canonical, `\\?\UNC\`)
+	} else if strings.HasPrefix(canonical, `\\?\`) && len(canonical) > 6 && canonical[5] == ':' && canonical[6] == '\\' {
+		canonical = strings.TrimPrefix(canonical, `\\?\`)
+	}
+	if !filepath.IsAbs(canonical) {
+		return "", errors.New("resolved executable path is not absolute")
+	}
+	info, err := os.Stat(canonical)
+	if err != nil {
+		return "", err
+	}
+	if !info.Mode().IsRegular() {
+		return "", errors.New("executable is not a regular file")
+	}
+	return canonical, nil
+}
+
 func configureLANFirewall(target Target, logger *log.Logger) string {
 	if os.Getenv("SMARTSTAGE_SKIP_FIREWALL") == "1" {
 		logger.Printf("Firewall setup skipped (SMARTSTAGE_SKIP_FIREWALL=1)")
 		return "Firewall setup was explicitly skipped; no incoming-connection allowance was verified."
 	}
-	program := corePath(target)
-	if !filepath.IsAbs(program) {
-		return "Smart Stage could not configure the firewall because its executable path is not absolute."
+	program, err := canonicalWindowsFirewallProgram(corePath(target))
+	if err != nil {
+		logger.Printf("Windows firewall executable path could not be resolved: %v", err)
+		return "Smart Stage could not resolve its executable path for the firewall rule. Move the executable to a local folder and try again."
 	}
 	logger.Printf("Requesting Windows administrator approval for this Smart Stage executable on private local networks: %s", program)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)

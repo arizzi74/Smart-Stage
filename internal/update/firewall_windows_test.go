@@ -39,6 +39,13 @@ func TestWindowsLANFirewallRuleScoped(t *testing.T) {
 
 func verifyWindowsFirewallRule(t *testing.T, program string) {
 	t.Helper()
+	original := program
+	var err error
+	program, err = canonicalWindowsFirewallProgram(program)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Firewall application path: original=%q canonical=%q", original, program)
 	digest := sha256.Sum256([]byte(strings.ToLower(program)))
 	name := fmt.Sprintf("SmartStage-LAN-%x", digest[:12])
 	powershell, err := windowsPowerShellPath()
