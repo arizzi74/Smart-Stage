@@ -32,6 +32,67 @@ bool chooserVisible() {
         HWND dialog=nullptr;return SUCCEEDED(native->GetWindow(&dialog)) && dialog && IsWindowVisible(dialog);
     });
 }
+// Failure-only independent Win32 baselines. They never substitute for the
+// production tray assertion, and each temporary icon/window is removed here.
+void trayDiagnostics() {
+    ui([]{
+        HWND shell=FindWindowW(L"Shell_TrayWnd",nullptr);DWORD shellPID=0;
+        if(shell)GetWindowThreadProcessId(shell,&shellPID);
+        auto process=[](DWORD pid,const char* label) {
+            HANDLE handle=OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION,FALSE,pid),token=nullptr;
+            DWORD session=DWORD(-1);ProcessIdToSessionId(pid,&session);
+            std::cerr<<"Tray diagnostic process "<<label<<" pid="<<pid<<" session="<<session;
+            if(handle && OpenProcessToken(handle,TOKEN_QUERY,&token)) {
+                TOKEN_ELEVATION elevation{};DWORD needed=0;
+                if(GetTokenInformation(token,TokenElevation,&elevation,sizeof(elevation),&needed))std::cerr<<" elevated="<<elevation.TokenIsElevated;
+                GetTokenInformation(token,TokenIntegrityLevel,nullptr,0,&needed);std::vector<BYTE> buffer(needed);
+                if(needed && GetTokenInformation(token,TokenIntegrityLevel,buffer.data(),needed,&needed)) {
+                    auto* level=(TOKEN_MANDATORY_LABEL*)buffer.data();auto count=*GetSidSubAuthorityCount(level->Label.Sid);
+                    if(count)std::cerr<<" integrity="<<*GetSidSubAuthority(level->Label.Sid,count-1);
+                }
+                CloseHandle(token);
+            } else std::cerr<<" tokenError="<<GetLastError();
+            if(handle)CloseHandle(handle);std::cerr<<"\n";
+        };
+        process(GetCurrentProcessId(),"probe");if(shellPID)process(shellPID,"explorer");
+        for(auto object:{(HANDLE)GetProcessWindowStation(),(HANDLE)GetThreadDesktop(GetCurrentThreadId())}) {
+            wchar_t name[256]{};DWORD needed=0;
+            BOOL result=GetUserObjectInformationW(object,UOI_NAME,name,sizeof(name),&needed);
+            std::cerr<<"Tray diagnostic desktop object="<<object<<" name="<<(result?desktop::utf8(name):"unknown")<<"\n";
+        }
+        for(HKEY hive:{HKEY_CURRENT_USER,HKEY_LOCAL_MACHINE})for(const auto* setting:{L"NoTrayItemsDisplay",L"NoSetTaskbar"}) {
+            DWORD value=0,size=sizeof(value);LSTATUS result=RegGetValueW(hive,L"Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",setting,RRF_RT_REG_DWORD,nullptr,&value,&size);
+            std::cerr<<"Tray diagnostic policy hive="<<(hive==HKEY_CURRENT_USER?"HKCU":"HKLM")<<" name="<<desktop::utf8(setting)<<" result="<<result<<" value="<<value<<"\n";
+        }
+        NOTIFYICONIDENTIFIER existing{};existing.cbSize=sizeof(existing);existing.hWnd=desktop::tray.hWnd;existing.uID=desktop::tray.uID;RECT rect{};
+        HRESULT rectangle=Shell_NotifyIconGetRect(&existing,&rect);
+        SetLastError(0);BOOL modify=Shell_NotifyIconW(NIM_MODIFY,&desktop::tray);DWORD modifyError=GetLastError();
+        std::cerr<<"Tray diagnostic production readback rectHRESULT="<<(unsigned long)rectangle<<" modify="<<modify<<" modifyError="<<modifyError<<"\n";
+        HWND baseline=CreateWindowExW(0,L"STATIC",L"Smart Stage tray diagnostic",WS_OVERLAPPED,0,0,100,100,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
+        std::cerr<<"Tray diagnostic baseline window="<<baseline<<" valid="<<IsWindow(baseline)<<" sizeW="<<sizeof(NOTIFYICONDATAW)<<" sizeA="<<sizeof(NOTIFYICONDATAA)<<"\n";
+        if(!baseline)return;
+        auto attempt=[&](const char* label,UINT bytes,UINT flags,bool guid) {
+            NOTIFYICONDATAW item{};item.cbSize=bytes;item.hWnd=baseline;item.uID=71;item.uFlags=flags;
+            item.uCallbackMessage=WM_APP+117;item.hIcon=LoadIconW(nullptr,IDI_APPLICATION);wcscpy_s(item.szTip,L"Smart Stage tray diagnostic");
+            if(guid) {CoCreateGuid(&item.guidItem);item.uFlags|=NIF_GUID;}
+            SetLastError(0);BOOL added=Shell_NotifyIconW(NIM_ADD,&item);DWORD error=GetLastError();
+            std::cerr<<"Tray diagnostic baseline "<<label<<" added="<<added<<" error="<<error<<" icon="<<item.hIcon<<" size="<<bytes<<" flags="<<item.uFlags<<"\n";
+            if(added)Shell_NotifyIconW(NIM_DELETE,&item);
+        };
+        attempt("unicode-minimal",sizeof(NOTIFYICONDATAW),NIF_ICON|NIF_TIP,false);
+        attempt("unicode-callback",sizeof(NOTIFYICONDATAW),NIF_MESSAGE|NIF_ICON|NIF_TIP,false);
+        attempt("unicode-guid",sizeof(NOTIFYICONDATAW),NIF_MESSAGE|NIF_ICON|NIF_TIP,true);
+        attempt("unicode-v2",NOTIFYICONDATAW_V2_SIZE,NIF_MESSAGE|NIF_ICON|NIF_TIP,false);
+        ShowWindow(baseline,SW_SHOWNOACTIVATE);
+        attempt("unicode-visible",sizeof(NOTIFYICONDATAW),NIF_MESSAGE|NIF_ICON|NIF_TIP,false);
+        NOTIFYICONDATAA narrow{};narrow.cbSize=sizeof(narrow);narrow.hWnd=baseline;narrow.uID=71;narrow.uFlags=NIF_ICON|NIF_TIP;
+        narrow.hIcon=LoadIconW(nullptr,IDI_APPLICATION);strcpy_s(narrow.szTip,"Smart Stage tray diagnostic");
+        SetLastError(0);BOOL added=Shell_NotifyIconA(NIM_ADD,&narrow);DWORD error=GetLastError();
+        std::cerr<<"Tray diagnostic baseline ansi-minimal added="<<added<<" error="<<error<<"\n";
+        if(added)Shell_NotifyIconA(NIM_DELETE,&narrow);
+        DestroyWindow(baseline);
+    });
+}
 class Files final: public IDataObject {
     ULONG refs=1;std::vector<std::wstring> paths;bool text;
 public:
@@ -80,7 +141,8 @@ int main() {
         require(ui([]{return IsWindowVisible(desktop::window)!=FALSE && desktop::composition.p && desktop::controller.p;}),"Composition Admin window is not visible");passed("compositionWindowVisible");
         bool notificationArea=FindWindowW(L"Shell_TrayWnd",nullptr)!=nullptr;
         report["explorerNotificationAreaAvailable"]=notificationArea?"true":"false";
-        wait([]{return ui([]{return desktop::trayAdded;});},"Smart Stage notification icon was not registered; see native shell diagnostics");
+        try {wait([]{return ui([]{return desktop::trayAdded;});},"Smart Stage notification icon was not registered; see native shell diagnostics");}
+        catch(...) {trayDiagnostics();throw;}
         report["trayIconRegistered"]=ui([]{return desktop::trayAdded;})?"true":"false";
         js(L"window.__probeEpoch=state.stopEpoch;window.__probeDraft='preserved';document.getElementById('remote-connection-settings').open=true;document.getElementById('gateway-url').value='https://unsaved.example/smartstage';document.getElementById('gateway-url').dispatchEvent(new Event('input',{bubbles:true}));true");
         auto stopPosition=js(L"(()=>{const r=document.getElementById('stop').getBoundingClientRect();return [Math.round((r.left+r.width/2)*devicePixelRatio),Math.round((r.top+r.height/2)*devicePixelRatio)]})()");

@@ -51,7 +51,9 @@ def powershell(shell, command, env=None, timeout=360):
 def psjson(shell, command):
     code, out, err = powershell(shell, command + ' | ConvertTo-Json -Compress -Depth 8')
     assert code == 0, (out, err)
-    return json.loads(out)
+    # An empty PowerShell pipeline emits no JSON. This is expected while the
+    # asynchronously created WebView2 child process has not appeared yet.
+    return json.loads(out) if out.strip() else None
 
 
 def native_architecture():
@@ -84,6 +86,18 @@ def wait_process_exit(pid, timeout=30):
         assert kernel.WaitForSingleObject(handle, timeout * 1000) == 0, 'Installed app did not exit after Admin Quit'
     finally:
         kernel.CloseHandle(handle)
+
+
+def remove_fixture_tree(path):
+    """Allow brief Windows file-release delays, but never report stale cleanup."""
+    deadline = time.monotonic() + 10
+    while path.exists():
+        shutil.rmtree(path, ignore_errors=True)
+        if not path.exists():
+            return
+        if time.monotonic() >= deadline:
+            raise AssertionError(f'Installer verification could not remove its fixture directory: {path}')
+        time.sleep(.2)
 
 
 def until(check, description, timeout=60):
@@ -396,11 +410,17 @@ def main():
         finally:
             if pid:
                 subprocess.run(['taskkill', '/PID', str(pid), '/T', '/F'], capture_output=True, timeout=20)
-            args.output.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
-            for link in links:
-                link.unlink(missing_ok=True)
-            shutil.rmtree(directory, ignore_errors=True)
-            shutil.rmtree(config, ignore_errors=True)
+            try:
+                for link in links:
+                    link.unlink(missing_ok=True)
+                remove_fixture_tree(directory)
+                remove_fixture_tree(config)
+                report['testInstallationAndConfigRemoved'] = True
+            except Exception as cleanup_error:
+                report.update(status='failed', cleanupError=str(cleanup_error))
+                raise
+            finally:
+                args.output.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print(json.dumps(report, indent=2))
 
 

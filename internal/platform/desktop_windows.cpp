@@ -240,6 +240,7 @@ void chooseMedia() {
     chooserShowing=true;
     HRESULT result=chooser->Show(window);
     chooserShowing=false;
+    if(stopping.load())fprintf(stderr,"Native media chooser returned during shutdown: 0x%lx\n",(unsigned long)result);
     if (SUCCEEDED(result) && !stopping.load()) {
         Ptr<IShellItemArray> items; check(chooser->GetResults(items.out()),"Read selected files"); DWORD count=0; items->GetCount(&count);
         std::vector<std::string> paths;
@@ -411,7 +412,13 @@ void addTray() {
     if(trayAdded) { tray.uVersion=NOTIFYICON_VERSION_4; Shell_NotifyIconW(NIM_SETVERSION,&tray); KillTimer(control.load(),0x535); }
     else {
         HWND shell=FindWindowW(L"Shell_TrayWnd",nullptr);
-        if(trayAttempts==1 || trayAttempts==10)fprintf(stderr,"Native Admin notification icon registration failed: attempt=%u shell=%p visible=%d error=%lu\n",trayAttempts,(void*)shell,shell?int(IsWindowVisible(shell)):0,(unsigned long)trayAddError);
+        if(trayAttempts==1 || trayAttempts==10) {
+            ICONINFO icon{};BOOL validIcon=tray.hIcon && GetIconInfo(tray.hIcon,&icon);
+            if(icon.hbmColor)DeleteObject(icon.hbmColor);if(icon.hbmMask)DeleteObject(icon.hbmMask);
+            DWORD shellPID=0,selfSession=DWORD(-1),shellSession=DWORD(-1);if(shell)GetWindowThreadProcessId(shell,&shellPID);
+            ProcessIdToSessionId(GetCurrentProcessId(),&selfSession);if(shellPID)ProcessIdToSessionId(shellPID,&shellSession);
+            fprintf(stderr,"Native Admin notification icon registration failed: attempt=%u shell=%p visible=%d error=%lu size=%u hwndOffset=%zu iconOffset=%zu control=%p validControl=%d icon=%p validIcon=%d selfPID=%lu selfSession=%lu shellPID=%lu shellSession=%lu\n",trayAttempts,(void*)shell,shell?int(IsWindowVisible(shell)):0,(unsigned long)trayAddError,(unsigned)tray.cbSize,offsetof(NOTIFYICONDATAW,hWnd),offsetof(NOTIFYICONDATAW,hIcon),(void*)tray.hWnd,int(IsWindow(tray.hWnd)),(void*)tray.hIcon,int(validIcon),(unsigned long)GetCurrentProcessId(),(unsigned long)selfSession,(unsigned long)shellPID,(unsigned long)shellSession);
+        }
         if(trayAttempts<10)SetTimer(control.load(),0x535,500,nullptr);
         else KillTimer(control.load(),0x535);
     }
@@ -470,11 +477,21 @@ void drainTasks() {
     try { fn(); } catch(const std::string& error) {showError(error);} catch(...) {showError("Native Admin operation failed.");}
 }
 void shutdownUI();
+void cancelChooser() {
+    if(!chooserShowing || !chooser)return;
+    Ptr<IOleWindow> native;
+    if(FAILED(chooser->QueryInterface(IID_PPV_ARGS(native.out()))))return;
+    HWND dialog=nullptr;
+    if(SUCCEEDED(native->GetWindow(&dialog)) && dialog && IsWindowVisible(dialog))
+        // Let the dialog finish through its ordinary Cancel message. Calling
+        // Close synchronously from its nested pump can reenter shell teardown.
+        PostMessageW(dialog,WM_COMMAND,IDCANCEL,0);
+}
 LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
     try {
         if(message==shutdownMessage) {shutdownUI();return 0;}
         if(message==WM_TIMER && wp==0x535) {addTray();return 0;}
-        if(message==WM_TIMER && wp==0x534 && stopping.load()) {if(chooserShowing && chooser)chooser->Close(HRESULT_FROM_WIN32(ERROR_CANCELLED));return 0;}
+        if(message==WM_TIMER && wp==0x534 && stopping.load()) {cancelChooser();return 0;}
         if(message==wakeMessage) {drainTasks();return 0;}
         if(taskbarCreated && message==taskbarCreated && hwnd==control.load()) {trayAdded=false;trayAttempts=0;addTray();return 0;}
         if(message==trayMessage) {
@@ -510,10 +527,11 @@ LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
     return DefWindowProcW(hwnd,message,wp,lp);
 }
 void shutdownUI() {
+    if(!stopping.load())fprintf(stderr,"Closing native Admin: chooserActive=%d chooserShowing=%d\n",int(chooserActive),int(chooserShowing));
     stopping.store(true);ready.store(false);
     if(chooserActive) {
         SetTimer(control.load(),0x534,50,nullptr);
-        if(chooserShowing && chooser)chooser->Close(HRESULT_FROM_WIN32(ERROR_CANCELLED));
+        cancelChooser();
         return;
     }
     KillTimer(control.load(),0x534);
@@ -524,6 +542,7 @@ void shutdownUI() {
     if(webview && SUCCEEDED(webview->get_BrowserProcessId(&browserID)) && browserID)
         browserProcess=OpenProcess(SYNCHRONIZE,FALSE,browserID);
     if(controller)controller->Close();
+    fprintf(stderr,"Closed native Admin WebView\n");
     webview.reset();controller.reset();composition.reset();environment.reset();
     visual.reset();target.reset();dcomp.reset();dropTarget.reset();
     if(window) {DestroyWindow(window);window=nullptr;errorLabel=nullptr;retryButton=nullptr;}
@@ -627,6 +646,7 @@ extern "C" void ss_windows_desktop_shutdown() {
     // It also runs in IFileOpenDialog's nested pump, closes that dialog, then
     // the outer pump observes uiQuit without waiting for another message.
     HWND handle=desktop::control.load();
-    if(handle)PostMessageW(handle,desktop::shutdownMessage,0,0);
+    if(handle)fprintf(stderr,"Requested native Admin shutdown: queued=%d\n",int(PostMessageW(handle,desktop::shutdownMessage,0,0)));
     desktop::uiThread.join();
+    fprintf(stderr,"Native Admin shutdown completed\n");
 }
