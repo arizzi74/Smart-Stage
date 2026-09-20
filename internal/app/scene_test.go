@@ -74,6 +74,12 @@ func (f *sceneNative) latest() playback.Scene {
 func sceneSetup(t *testing.T, settings model.StageSettings) (*Service, *sceneNative, *memoryStore, map[string]string) {
 	t.Helper()
 	dir := t.TempDir()
+	// macOS TempDir commonly uses /var, whose real path is /private/var.
+	// Compare and gate the canonical paths supplied to native inspection.
+	dir, err := filepath.EvalSymlinks(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
 	paths := map[string]string{}
 	config := model.DefaultConfig()
 	config.Outputs = model.Outputs{AudioID: "default", DisplayID: "screen", AllowPrimary: true}
