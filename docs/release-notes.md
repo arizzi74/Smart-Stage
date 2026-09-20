@@ -4,8 +4,9 @@ This release adds **automatic updates at startup**. Smart Stage checks the
 project's GitHub releases, selects the matching architecture, verifies its
 checksum, installs the update and restarts with the saved show intact. No extra
 runtime or permanent updater service is needed. Install this release once to
-enable future automatic updates; preview 8 and earlier need this one manual
-upgrade.
+enable future automatic updates; earlier previews need this one manual upgrade.
+Preview 10 corrects preview 9's validation of optimized release binaries, which
+caused its updater to safely reject downloads before replacement.
 
 Startup checks reserve playback until complete and release controls when
 offline. Updates discovered during a running session wait until the next launch.
@@ -36,10 +37,10 @@ binary; no additional runtime is required.
 
 | Computer | Download |
 | --- | --- |
-| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.9/smartstage-darwin-arm64.zip) |
-| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.9/smartstage-darwin-amd64.zip) |
-| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.9/smartstage-windows-arm64.zip) |
-| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.9/smartstage-windows-amd64.zip) |
+| Mac — Apple Silicon (ARM64) | [smartstage-darwin-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-arm64.zip) |
+| Mac — Intel (AMD64) | [smartstage-darwin-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-amd64.zip) |
+| Windows — ARM64 | [smartstage-windows-arm64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-windows-arm64.zip) |
+| Windows — Intel / AMD (AMD64) | [smartstage-windows-amd64.zip](https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-windows-amd64.zip) |
 
 Launching Smart Stage automatically opens Admin in the system browser. Admin
 listens only on **127.0.0.1:8787**. Its Remote control area displays the phone/tablet

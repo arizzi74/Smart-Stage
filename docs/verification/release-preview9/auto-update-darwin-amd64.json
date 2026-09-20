@@ -1,0 +1,37 @@
+{
+  "status": "failed",
+  "target": "darwin/amd64",
+  "release": "v0.1.0-preview.9",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "publishedDownload": {
+    "status": "passed",
+    "target": "darwin/amd64",
+    "release": "v0.1.0-preview.9",
+    "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.9/smartstage-darwin-amd64.zip",
+    "archive": "smartstage-darwin-amd64.zip",
+    "archiveSHA256": "cc6b8c3cc7f4a3c6b6dc41e30fd69fbc06ffeaf0844f90b73bf9b656c5bc5d9b",
+    "archiveEntries": [
+      "smartstage"
+    ],
+    "executableSHA256": "abee9b7bfbffae1acbb4f380c90bf49c5ad4274ade70d8b9cb9e51cabc1dd484",
+    "executablePermissions": "0755"
+  },
+  "fixture": {
+    "version": "v0.0.0-preview.1",
+    "sourceSHA": "d0d69d93349f2ffbf4151b3d7dddea54ba0a330d",
+    "target": "darwin/amd64",
+    "archive": "fixture-darwin-amd64.app.zip",
+    "archiveSHA256": "d5aee6f0e15c07fb5fc6ed6f72e4c9febe8ef41accf1242ce4c6a91f9e196ba1",
+    "executableSHA256": "f23f53249a2a828c0154361ff8cd2a3c011b70908827636924f2ddb6448b6ec9",
+    "purpose": "Native production updater verification with older version metadata; not a published release"
+  },
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (d0d69d93349f), go1.26.5, darwin/amd64",
+  "oldInstanceID": "c432ac827694d61af247cfc8541dca29b40e0d1c8fa04a8f",
+  "startupUpdatePending": true,
+  "initialUpdatePhase": "checking",
+  "startupReservationRejectedPLAY": true,
+  "oldPID": 74239,
+  "testProcessCleanupPassed": true,
+  "error": "Production updater failed: {'currentVersion': 'v0.0.0-preview.1', 'latestVersion': 'v0.1.0-preview.9', 'phase': 'error', 'available': True, 'canInstall': True, 'message': 'Update could not be prepared: update executable version does not match the selected release', 'releaseURL': 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', 'checkedAt': '2026-09-20T12:52:33Z'}"
+}

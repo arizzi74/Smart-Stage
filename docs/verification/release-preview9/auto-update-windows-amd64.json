@@ -1,0 +1,37 @@
+{
+  "status": "failed",
+  "target": "windows/amd64",
+  "release": "v0.1.0-preview.9",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "publishedDownload": {
+    "status": "passed",
+    "target": "windows/amd64",
+    "release": "v0.1.0-preview.9",
+    "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.9/smartstage-windows-amd64.zip",
+    "archive": "smartstage-windows-amd64.zip",
+    "archiveSHA256": "31409e999354d30f938bf5c77f6b346528ad1f44c09e75bf09833f4e5bb098e5",
+    "archiveEntries": [
+      "smartstage.exe"
+    ],
+    "executableSHA256": "c6e75788330a46a63cb9347dfdb286795ab8f9c7238956d246cf139100c3985a",
+    "executablePermissions": "0755"
+  },
+  "fixture": {
+    "version": "v0.0.0-preview.1",
+    "sourceSHA": "d0d69d93349f2ffbf4151b3d7dddea54ba0a330d",
+    "target": "windows/amd64",
+    "archive": "fixture-windows-amd64.zip",
+    "archiveSHA256": "5ce631ed96a9c7f20b5c2a2f12974c9171449c5c1b699e66d4b18bad5163cf6a",
+    "executableSHA256": "32bb42ee95ab98cf890e504b3fce8e1a968795f8c2e0933d2bb2015c75557d5f",
+    "purpose": "Native production updater verification with older version metadata; not a published release"
+  },
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (d0d69d93349f), go1.26.5, windows/amd64",
+  "oldInstanceID": "d463f6f8f48fbb82f3fa2e21bfe76ddad1ee8978b0eaa4bb",
+  "startupUpdatePending": true,
+  "initialUpdatePhase": "downloading",
+  "startupReservationRejectedPLAY": true,
+  "oldPID": 1468,
+  "testProcessCleanupPassed": true,
+  "error": "Production updater failed: {'currentVersion': 'v0.0.0-preview.1', 'latestVersion': 'v0.1.0-preview.9', 'phase': 'error', 'available': True, 'canInstall': True, 'message': 'Update could not be prepared: update executable version does not match the selected release', 'releaseURL': 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', 'checkedAt': '2026-09-20T12:51:02Z'}"
+}

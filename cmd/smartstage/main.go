@@ -68,7 +68,11 @@ func main() {
 	var level slog.Level
 	if *updateReceipt != "" {
 		if err := update.RegisterStartup(*updateReceipt, version); err != nil {
-			exitError(err)
+			// Exit promptly so the helper can observe failed startup and roll
+			// back. A native error dialog here could keep an unregistered Mac
+			// candidate alive without a PID the helper can safely terminate.
+			fmt.Fprintln(os.Stderr, "Smart Stage update startup:", err)
+			os.Exit(1)
 		}
 	}
 	if err := level.UnmarshalText([]byte(*logLevel)); err != nil {

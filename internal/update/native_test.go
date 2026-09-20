@@ -59,6 +59,16 @@ func TestMain(m *testing.M) {
 			_ = os.WriteFile(filepath.Join(config, "previous-restarted"), []byte(strconv.Itoa(os.Getpid())), 0600)
 			os.Exit(0)
 		}
+		if mode == "wrong runtime version" {
+			if err := RegisterStartup(receipt, "v0.0.0-preview.2"); err == nil {
+				panic("startup accepted the wrong runtime version")
+			}
+			// Like main, fail directly before opening a native error dialog.
+			// The helper can observe this exact process exit even though strict
+			// version validation correctly prevented a PID/ready receipt.
+			_ = os.WriteFile(filepath.Join(config, "runtime-version-rejected"), []byte("yes"), 0600)
+			os.Exit(1)
+		}
 		if err := RegisterStartup(receipt, "v0.0.0-preview.1"); err != nil {
 			panic(err)
 		}
@@ -86,7 +96,7 @@ func TestNativeHelperReplacementAndStartupRollback(t *testing.T) {
 		t.Skip("subprocess replacement test")
 	}
 	t.Setenv("SMARTSTAGE_SKIP_FIREWALL", "1")
-	for _, mode := range []string{"ready", "fail"} {
+	for _, mode := range []string{"ready", "fail", "wrong runtime version"} {
 		t.Run(mode, func(t *testing.T) {
 			root, err := filepath.EvalSymlinks(t.TempDir())
 			if err != nil {
@@ -157,7 +167,7 @@ func TestNativeHelperReplacementAndStartupRollback(t *testing.T) {
 				}
 			})
 			wanted := "updated"
-			if mode == "fail" {
+			if mode != "ready" {
 				wanted = "rolled_back"
 			}
 			var outcome Outcome
@@ -180,13 +190,13 @@ func TestNativeHelperReplacementAndStartupRollback(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if os.SameFile(before, after) != (mode == "fail") {
+			if os.SameFile(before, after) != (mode != "ready") {
 				t.Fatalf("expected replacement or restoration did not occur: mode=%s", mode)
 			}
 			if _, err := os.Stat(p.Backup); !os.IsNotExist(err) {
 				t.Fatalf("backup remains after confirmed %s: %v", mode, err)
 			}
-			if mode == "fail" {
+			if mode != "ready" {
 				deadline := time.Now().Add(3 * time.Second)
 				for time.Now().Before(deadline) {
 					if _, err := os.Stat(filepath.Join(config, "previous-restarted")); err == nil {
@@ -196,6 +206,14 @@ func TestNativeHelperReplacementAndStartupRollback(t *testing.T) {
 				}
 				if _, err := os.Stat(filepath.Join(config, "previous-restarted")); err != nil {
 					t.Fatal("previous version was not restarted after rollback")
+				}
+				if mode == "wrong runtime version" {
+					if _, err := os.Stat(filepath.Join(config, "runtime-version-rejected")); err != nil {
+						t.Fatal("runtime version mismatch did not reject startup")
+					}
+					if _, err := os.Stat(filepath.Join(config, "candidate-pid")); !os.IsNotExist(err) {
+						t.Fatal("wrong runtime version passed startup registration")
+					}
 				}
 			} else {
 				_ = os.WriteFile(filepath.Join(config, "finish-test-candidate"), nil, 0600)

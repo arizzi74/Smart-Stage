@@ -1,0 +1,37 @@
+{
+  "status": "failed",
+  "target": "darwin/arm64",
+  "release": "v0.1.0-preview.9",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "publishedDownload": {
+    "status": "passed",
+    "target": "darwin/arm64",
+    "release": "v0.1.0-preview.9",
+    "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.9/smartstage-darwin-arm64.zip",
+    "archive": "smartstage-darwin-arm64.zip",
+    "archiveSHA256": "fc3ae4571f9d627fc9eb58d379d155f543d56f4febcee64b9bbea462ef88ca61",
+    "archiveEntries": [
+      "smartstage"
+    ],
+    "executableSHA256": "300d9fc1c3e8e31c2effa68428c8f7f1039f5f850e6bf4185dba2fb7ac4e2b20",
+    "executablePermissions": "0755"
+  },
+  "fixture": {
+    "version": "v0.0.0-preview.1",
+    "sourceSHA": "d0d69d93349f2ffbf4151b3d7dddea54ba0a330d",
+    "target": "darwin/arm64",
+    "archive": "fixture-darwin-arm64.app.zip",
+    "archiveSHA256": "7ca61850adc37ef7956a88816c82860426a877b86643e5aafdef92698eb413b6",
+    "executableSHA256": "5b8776e411a33ffee02e5fad3e03d61c010ff5b260851eb7c60d6abd1fce97c0",
+    "purpose": "Native production updater verification with older version metadata; not a published release"
+  },
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (d0d69d93349f), go1.26.5, darwin/arm64",
+  "oldInstanceID": "94510e8d920244d8df8371dc5182d4ea557a1140bb47d640",
+  "startupUpdatePending": true,
+  "initialUpdatePhase": "checking",
+  "startupReservationRejectedPLAY": true,
+  "oldPID": 7540,
+  "testProcessCleanupPassed": true,
+  "error": "Production updater failed: {'currentVersion': 'v0.0.0-preview.1', 'latestVersion': 'v0.1.0-preview.9', 'phase': 'error', 'available': True, 'canInstall': True, 'message': 'Update could not be prepared: update executable version does not match the selected release', 'releaseURL': 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', 'checkedAt': '2026-09-20T12:51:03Z'}"
+}

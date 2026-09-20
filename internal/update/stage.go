@@ -358,28 +358,8 @@ func validatePayload(ctx context.Context, target Target, payload, version string
 	if err != nil {
 		return fmt.Errorf("update is not a readable Go application: %w", err)
 	}
-	if info.Path != "smartstage/cmd/smartstage" {
-		return errors.New("update executable is not Smart Stage")
-	}
-	settings := map[string]string{}
-	for _, s := range info.Settings {
-		settings[s.Key] = s.Value
-	}
-	if settings["GOOS"] != target.GOOS || settings["GOARCH"] != target.GOARCH {
-		return errors.New("update Go platform does not match the installation")
-	}
-	if settings["CGO_ENABLED"] != "1" {
-		return errors.New("update executable does not contain the required native playback backend")
-	}
-	wanted := "main.version=" + version
-	found := false
-	for _, f := range strings.Fields(settings["-ldflags"]) {
-		if f == wanted || f == "-X="+wanted {
-			found = true
-		}
-	}
-	if !found {
-		return errors.New("update executable version does not match the selected release")
+	if err := validateGoBuild(info, target, version); err != nil {
+		return err
 	}
 	if target.GOOS != "windows" {
 		st, err := os.Stat(core)
@@ -391,6 +371,41 @@ func validatePayload(ctx context.Context, target Target, payload, version string
 		}
 	}
 	return verifyNativeSignature(ctx, target, payload)
+}
+
+func validateGoBuild(info *buildinfo.BuildInfo, target Target, version string) error {
+	if info.Path != "smartstage/cmd/smartstage" || info.Main.Path != "smartstage" || info.Main.Replace != nil {
+		return errors.New("update executable is not Smart Stage")
+	}
+	settings := map[string]string{}
+	for _, s := range info.Settings {
+		if _, duplicate := settings[s.Key]; duplicate {
+			return errors.New("update executable has duplicate build metadata")
+		}
+		settings[s.Key] = s.Value
+	}
+	if settings["GOOS"] != target.GOOS || settings["GOARCH"] != target.GOARCH {
+		return errors.New("update Go platform does not match the installation")
+	}
+	if settings["CGO_ENABLED"] != "1" {
+		return errors.New("update executable does not contain the required native playback backend")
+	}
+	// Go deliberately omits -ldflags from build info when -trimpath is used.
+	// Official builds instead carry the exact Git tag as their main module
+	// version. Require a clean tagged source build without executing the payload.
+	// Startup receipts additionally check the running main.version before the
+	// helper deletes its rollback copy.
+	if info.Main.Version != version {
+		return errors.New("update executable version does not match the selected release")
+	}
+	if settings["vcs"] != "git" || settings["vcs.modified"] != "false" {
+		return errors.New("update executable was not built from a clean Git revision")
+	}
+	revision := settings["vcs.revision"]
+	if _, err := hex.DecodeString(revision); err != nil || len(revision) != 40 {
+		return errors.New("update executable has invalid Git revision metadata")
+	}
+	return nil
 }
 
 func checkArchitecture(file, goos, goarch string) error {

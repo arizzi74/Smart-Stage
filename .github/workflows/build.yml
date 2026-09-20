@@ -148,6 +148,23 @@ jobs:
             dist/smartstage-*.imports.txt dist/smartstage-*.icon.json dist/smartstage-*.http-smoke.json \
             dist/toolchain-* dist/native-enumeration-* dist/native-harness-*.smoke.json \
             --verify-tag --prerelease --title "Smart Stage $RELEASE_TAG" --notes-file docs/release-notes.md
+      - name: Mark the failed preview 9 updater as superseded
+        if: github.ref_name == 'v0.1.0-preview.10'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            cat <<'NOTICE'
+          **Superseded by [preview 10](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.10).**
+
+          Preview 9's updater rejects optimized release binaries before replacing any files. Install preview 10 once using its Mac installer or matching ZIP to enable working automatic updates. Saved shows are preserved. The default Mac installer was never switched to preview 9.
+
+          ---
+
+          NOTICE
+            gh release view v0.1.0-preview.9 --json body --jq .body
+          } > "$RUNNER_TEMP/preview9-superseded.md"
+          gh release edit v0.1.0-preview.9 --title 'Smart Stage v0.1.0-preview.9 (superseded)' --notes-file "$RUNNER_TEMP/preview9-superseded.md"
   verify-download:
     needs: publish
     if: startsWith(github.ref, 'refs/tags/')
