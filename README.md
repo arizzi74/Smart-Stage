@@ -282,7 +282,8 @@ Escape while the native Smart Stage app/stage or a connected Admin/remote browse
 page has focus stops playback and closes the stage window, exposing the desktop.
 It is not a system-wide keyboard shortcut. STOP retains an enabled stage with its
 current background, or black when no background is selected.
-Quit Smart Stage (or Ctrl+C for a Terminal launch) closes the stage window.
+Quit Smart Stage closes the stage window. A standalone Mac launched in Terminal
+also accepts Ctrl+C.
 Losing browser connections or a sleeping phone does not stop playback.
 Unacknowledged STOP is shown as unconfirmed;
 PLAY is never queued or replayed on reconnect.

@@ -96,7 +96,8 @@ int main() {
         wait([]{return ss_desktop_files_pending()!=0;},"Selecting the original in the real native chooser did not queue it");report["chooserRequest"]=popRequest(1);passed("nativeFileDialogOriginalSelectionAccepted");
         auto blocked=desktop::wide(address.c_str());blocked.resize(blocked.size()-6);blocked+=L"/command";
         ui([&]{desktop::webview->Navigate(blocked.c_str());});std::this_thread::sleep_for(std::chrono::milliseconds(400));
-        require(js(L"window.__probeDraft==='preserved' && location.pathname==='/admin'")=="true","Navigation escaped Admin or lost the existing document");passed("navigationOutsideAdminBlocked");
+        require(js(L"window.__probeDraft==='preserved' && location.pathname==='/admin'")=="true","Navigation escaped Admin or lost the existing document");
+        require(ui([]{return !IsWindowVisible(desktop::errorLabel);}),"Intentionally blocked navigation displayed a connection error");passed("navigationOutsideAdminBlocked");
         js(L"window.__probeBlockedFetch=false;fetch('http://127.0.0.1:1/api/state').then(r=>window.__probeBlockedFetch=r.status===403).catch(()=>window.__probeBlockedFetch=true);true");
         wait([]{return js(L"window.__probeBlockedFetch===true")=="true";},"Cross-origin resource was not blocked");passed("crossOriginResourcesBlocked");
         // App's own native Quit is polled; it never terminates a process behind

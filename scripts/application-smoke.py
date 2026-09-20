@@ -271,7 +271,13 @@ with tempfile.TemporaryDirectory(prefix='smartstage-native-http-') as config:
             # validation. Native objects must drain before framework teardown.
             validation = admin('POST','/api/validate',{},expected=(202,503))
             if 'error' in validation: assert validation['error']['code']=='busy', validation
-            process.send_signal(signal.CTRL_BREAK_EVENT if os.name=='nt' else signal.SIGINT)
+            if os.name == 'nt':
+                # The Windows app deliberately has no console. Use its real
+                # authenticated Quit path while native validation is active.
+                quitting = admin('POST', '/api/quit', {}, expected=(202,))
+                assert quitting.get('quitting') is True, quitting
+            else:
+                process.send_signal(signal.SIGINT)
             process.wait(timeout=15)
             assert process.returncode==0, f'Unclean application shutdown: {process.returncode}'
             stderr_thread.join(timeout=2)

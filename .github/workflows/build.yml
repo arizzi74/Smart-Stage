@@ -115,6 +115,10 @@ jobs:
         if: matrix.os == 'windows'
         shell: pwsh
         run: ./scripts/ensure-webview2.ps1
+      - name: Exercise the real Windows Admin WebView, chooser and original-file drops
+        if: matrix.os == 'windows'
+        shell: bash
+        run: python3 scripts/native_admin_windows_checks.py 'dist/smartstage-windows-${{ matrix.arch }}.exe'
       - name: Native executable startup
         shell: bash
         run: |
@@ -150,10 +154,6 @@ jobs:
           python3 scripts/verify-windows-install.py --version "$VERSION" --arch '${{ matrix.arch }}' \
             --archive 'dist/smartstage-windows-${{ matrix.arch }}.zip' \
             --powershell powershell.exe --output 'dist/windows-install-${{ matrix.arch }}.json'
-      - name: Exercise the real Windows Admin WebView, chooser and original-file drops
-        if: matrix.os == 'windows'
-        shell: bash
-        run: python3 scripts/native_admin_windows_checks.py 'dist/smartstage-windows-${{ matrix.arch }}.exe'
       - name: Install pinned development-only browser tools
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         shell: bash
