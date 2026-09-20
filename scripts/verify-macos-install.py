@@ -447,14 +447,23 @@ def main():
     try:
         expected_bootstrap = args.installer.read_bytes()
         bootstrap_url = urllib.parse.urlsplit(args.bootstrap_url)
-        query = urllib.parse.parse_qsl(bootstrap_url.query, keep_blank_values=True)
-        query.append(("smartstage_verify", digest(expected_bootstrap)))
-        verification_url = urllib.parse.urlunsplit(bootstrap_url._replace(query=urllib.parse.urlencode(query)))
-        raw = fetch(verification_url, no_cache=True)
+        # Raw GitHub branch updates can briefly lag the push in another region.
+        # Keep exact-byte verification, but allow propagation and avoid caching
+        # an earlier branch snapshot under the expected installer hash.
+        for attempt in range(10):
+            query = urllib.parse.parse_qsl(bootstrap_url.query, keep_blank_values=True)
+            query.append(("smartstage_verify", f"{digest(expected_bootstrap)}-{time.time_ns()}"))
+            verification_url = urllib.parse.urlunsplit(bootstrap_url._replace(query=urllib.parse.urlencode(query)))
+            raw = fetch(verification_url, no_cache=True)
+            if raw == expected_bootstrap:
+                break
+            if attempt < 9:
+                time.sleep(3)
         assert raw == expected_bootstrap, "Published bootstrap differs from this checkout"
         script = raw.decode("utf-8")
         report.update(bootstrapURL=args.bootstrap_url, bootstrapSHA256=digest(raw),
                       bootstrapVerificationURL=verification_url,
+                      bootstrapFetchAttempts=attempt + 1,
                       publishedBootstrapMatchesCheckout=True, pipedShellEntryPoint=True)
         with tempfile.TemporaryDirectory(prefix="smartstage-macos-install-") as temporary:
             scratch = Path(temporary).resolve()
