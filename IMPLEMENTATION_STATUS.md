@@ -1,11 +1,11 @@
 # Smart Stage implementation status
 
-The application is implemented and a four-target **preview** is published.
+The desktop application and Linux gateway are implemented and a **preview** is published.
 The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.14
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.15
 
 ## Implemented
 
@@ -80,6 +80,47 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.14
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Preview 15 is source `580cbb63db18e32b4946abe49c5363eb00e50cc2`.
+[Candidate run 35530454441](https://github.com/arizzi74/Smart-Stage/actions/runs/35530454441)
+passed shared race/vet, the Linux gateway and all four native/browser targets.
+[Release run 35530818664](https://github.com/arizzi74/Smart-Stage/actions/runs/35530818664)
+passed all 21 jobs, publishing 48 assets and verifying public downloads, real
+browser controls, both Mac installers and actual updates on all four desktop
+targets. Gateway-mode update checks use no firewall-skip override and leave LAN
+closed. Independent download checks verify all
+six desktop ZIPs against checksums, architecture and clean tagged source metadata;
+both Linux binaries are static ELF files with matching architecture and checksums.
+The actual Linux daemon starts, preserves its private configuration/token, rejects
+untrusted plaintext requests, serves loopback health and shuts down on SIGTERM
+on both architectures.
+
+All four desktop targets verify default gateway startup with the LAN port closed,
+explicit LAN selection through authenticated Admin, native restart with a new PID,
+session rotation, saved show/ports/media preservation, remote access boundaries
+and graceful Quit. Separate Windows tests create, read back and remove program-only
+Private/LocalSubnet rules on both architectures without changing global settings.
+They cover ordinary, Unicode/apostrophe/space and literal PowerShell-special paths;
+expanding Windows short paths fixes the observed Error 87.
+
+Actual nginx and Caddy HTTPS proxy tests verify outbound WebSocket registration,
+streaming status, cancellation, STOP forwarding and private-route rejection.
+The TLS browser check configures Admin, follows its remote link, pairs with scoped
+Secure cookies, sends CSRF-protected PLAY/STOP, receives SSE and decodes the actual
+Admin QR. Native playback and the device wake-lock grant are simulated in that
+browser check. Real public DNS/ACME, privileged server installation, interactive
+UAC and physical phone power behavior are not established by these automated tests.
+Reports are in
+[`docs/verification/release-preview15`](docs/verification/release-preview15/).
+Both Macs also passed [default-install run 35531329120](https://github.com/arizzi74/Smart-Stage/actions/runs/35531329120)
+at installer commit `61e0fc2`, using preview 15 without a version or firewall-skip
+override. Public bootstrap, bundle and installed core hashes match. The additional
+[default updater run 35531329116](https://github.com/arizzi74/Smart-Stage/actions/runs/35531329116)
+passed both Macs and Windows ARM64; its Windows AMD64 attempt hit GitHub's anonymous
+API rate limit before replacement. That failure remains recorded separately from
+the successful tagged Windows AMD64 updater check.
+
+Historical preview 14 evidence follows.
 
 Preview 14 is source `49c9bf7051c2a5a70196dabc7e585690e7dee515`.
 [Candidate run 35525447112](https://github.com/arizzi74/Smart-Stage/actions/runs/35525447112)

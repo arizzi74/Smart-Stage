@@ -1,0 +1,79 @@
+{
+  "status": "passed",
+  "commit": "580cbb63db18e32b4946abe49c5363eb00e50cc2",
+  "workflowRunID": 35530454269,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35530454269",
+  "test": "TestWindowsLANFirewallRuleScoped",
+  "scope": {
+    "direction": "Inbound",
+    "action": "Allow",
+    "program": "Exact canonical executable path",
+    "profile": "Private",
+    "protocol": "TCP",
+    "remoteAddress": "LocalSubnet",
+    "edgeTraversalPolicy": "Block"
+  },
+  "ruleCreationReadbackAndCleanupVerified": true,
+  "globalFirewallSettingsUnchanged": true,
+  "interactiveUACVerified": false,
+  "physicalLANTrafficVerified": false,
+  "programPathNormalization": {
+    "originalDirectory": "C:\\Users\\RUNNER~1",
+    "canonicalDirectory": "C:\\Users\\runneradmin",
+    "finding": "Expanding the 8.3 directory alias resolved Windows Error 87 in both native architectures."
+  },
+  "jobs": [
+    {
+      "architecture": "amd64",
+      "jobID": 106129998558,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35530454269/job/106129998558",
+      "status": "success",
+      "cases": [
+        {
+          "filename": "smartstage.exe",
+          "status": "passed",
+          "originalProgram": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedsmartstage.exe1941478767\\001\\smartstage.exe",
+          "canonicalProgram": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedsmartstage.exe1941478767\\001\\smartstage.exe"
+        },
+        {
+          "filename": "Café's Smart Stage.exe",
+          "status": "passed",
+          "originalProgram": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedCafés_Smart_Stage.exe2148502701\\001\\Café's Smart Stage.exe",
+          "canonicalProgram": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedCafés_Smart_Stage.exe2148502701\\001\\Café's Smart Stage.exe"
+        },
+        {
+          "filename": "Café's $(Write-Error injected).exe",
+          "status": "passed",
+          "originalProgram": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedCafés_$(Write-Error_injected)774354255\\001\\Café's $(Write-Error injected).exe",
+          "canonicalProgram": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedCafés_$(Write-Error_injected)774354255\\001\\Café's $(Write-Error injected).exe"
+        }
+      ]
+    },
+    {
+      "architecture": "arm64",
+      "jobID": 106129998654,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35530454269/job/106129998654",
+      "status": "success",
+      "cases": [
+        {
+          "filename": "smartstage.exe",
+          "status": "passed",
+          "originalProgram": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedsmartstage.exe145393550\\001\\smartstage.exe",
+          "canonicalProgram": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedsmartstage.exe145393550\\001\\smartstage.exe"
+        },
+        {
+          "filename": "Café's Smart Stage.exe",
+          "status": "passed",
+          "originalProgram": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedCafés_Smart_Stage.exe2199714412\\001\\Café's Smart Stage.exe",
+          "canonicalProgram": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedCafés_Smart_Stage.exe2199714412\\001\\Café's Smart Stage.exe"
+        },
+        {
+          "filename": "Café's $(Write-Error injected).exe",
+          "status": "passed",
+          "originalProgram": "C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedCafés_$(Write-Error_injected)3790030473\\001\\Café's $(Write-Error injected).exe",
+          "canonicalProgram": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\TestWindowsLANFirewallRuleScopedCafés_$(Write-Error_injected)3790030473\\001\\Café's $(Write-Error injected).exe"
+        }
+      ]
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 Status: **preview; physical/clean-machine acceptance incomplete**. CI executes
 real native APIs but cannot verify what a human sees or hears on event hardware.
 
-## Current distribution and control access
+## Distribution and control access by release
 
 Preview 6 changes the primary downloads to four ZIPs, each containing exactly
 one executable. Launch opens local Admin in the system browser. Admin binds
@@ -63,14 +63,89 @@ crossfade outgoing sound or fade it to silence; silence-to-play starts immediate
 STOP returns to the background. Escape/Quit stop all native sources and close the
 stage. The stage uses a transparent cursor on Mac and hidden cursor on Windows.
 
+Preview 15 defaults to public gateway mode with the direct LAN listener closed,
+including before gateway setup and during disconnection. Admin stays loopback-only.
+The local Admin registers over authenticated outbound WSS and displays a separate
+HTTPS phone URL and QR code. Reconnection rotates the endpoint and pairing secret.
+Only remote-control routes traverse the relay; Admin, host files and media remain
+local. The Linux daemon has static AMD64/ARM64 builds and an interactive curl
+installer that lists eligible nginx HTTPS hosts or offers Caddy.
+
+Gateway-mode installs and updates do not configure incoming firewall rules.
+Explicitly choosing Local LAN saves the choice and restarts the desktop app to
+configure its scoped rule. The older preview 14 updater can still request its
+previous firewall approval during the first upgrade. HTTPS permits the existing
+optional Keep awake feature in supported browsers while the page remains visible;
+the operating system can release the lock.
+
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin and report
-that the operating system accepted the automatic browser launch; the separate
-remote listener must reject Admin. Published-archive checksum/extraction/startup
+that the operating system accepted the automatic browser launch. Default gateway
+startup must leave the LAN port closed; an explicit LAN restart must preserve the
+show and reject private routes on the remote listener. Published-archive checksum/extraction/startup
 and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+[Preview 15](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.15)
+is source `580cbb63db18e32b4946abe49c5363eb00e50cc2`.
+[Candidate run 35530454441](https://github.com/arizzi74/Smart-Stage/actions/runs/35530454441)
+passed shared race/vet, the Linux gateway and all four native/browser targets.
+[Tagged run 35530818664](https://github.com/arizzi74/Smart-Stage/actions/runs/35530818664)
+passed **all 21 jobs**, publishing 48 assets and verifying public downloads,
+real browser controls, both Mac installers and actual automatic updates on all
+four desktop targets. Gateway-mode updater checks use no firewall-skip override
+and leave the LAN listener closed. All six independently downloaded desktop
+ZIPs match their checksums, architecture and clean source metadata; Mac app cores
+match standalone cores. Both Linux gateway binaries have matching checksums,
+architecture and `CGO_ENABLED=0`, with no ELF interpreter or linked shared
+libraries. Actual AMD64 and ARM64 daemon processes verify private configuration,
+token preservation, loopback health, plaintext rejection and clean SIGTERM exit.
+The published gateway installer exactly matches the source bytes.
+
+Four native network-mode reports exercise default gateway startup with no LAN
+listener, authenticated Local LAN selection, a native restart to a different PID,
+rotated Admin sessions, preserved show/media/ports, LAN pairing, private-route
+rejection and graceful Quit. Those restart checks explicitly bypass OS elevation;
+separate [Windows firewall run 35530454269](https://github.com/arizzi74/Smart-Stage/actions/runs/35530454269)
+creates, reads back and removes program-only Private/LocalSubnet rules on both
+architectures while preserving global settings. Actual Windows short-path
+expansion resolves Error 87. Ordinary filenames, Unicode/apostrophe/spaces and a
+literal `$(...)` filename all pass. Mac installer checks separately exercise scoped
+firewall repair with a test elevation adapter. Interactive authorization dialogs
+and physical LAN traffic are not established by those tests.
+
+The gateway job tests real nginx/Caddy TLS proxies with outbound WSS registration,
+streaming status, request cancellation, STOP forwarding and private-route denial.
+Caddy's negative `flush_interval` override was removed after the unchanged
+cancellation test exposed its behavior on Ubuntu Caddy 2.6.2; both that version
+and Caddy 2.11.4 then passed. A real TLS browser configures Admin, opens the remote
+link, pairs with an endpoint-scoped Secure cookie, sends CSRF-protected PLAY/STOP,
+receives authoritative SSE and decodes the real Admin QR PNG. That browser test
+uses a simulated native backend and device wake-lock grant; it does not establish
+physical phone power management. Public DNS/ACME and privileged installation on
+an end-user server were not exercised.
+
+The default Mac installer changed to preview 15 at `61e0fc2` after public archive
+and tagged installer verification. The public bootstrap fetched at 19:09:19 UTC
+on 20 September 2026 matches the repository and SHA-256
+`55a6e49b1b90a74586ce9e39c967a0ba775aeb408eb4f75e1b0964a8b6abe035`.
+Both Macs passed [default-install run 35531329120](https://github.com/arizzi74/Smart-Stage/actions/runs/35531329120)
+without a version or firewall-skip override. They leave firewall settings/rules
+unchanged, keep LAN closed, preserve the dedicated window and match public
+archive, core and bootstrap hashes.
+
+An additional default-pinned updater run,
+[35531329116](https://github.com/arizzi74/Smart-Stage/actions/runs/35531329116),
+passed on both Macs and Windows ARM64 without a firewall-skip override. Its
+Windows AMD64 runner hit GitHub's anonymous API rate limit before replacement;
+the reported retry time was 19:24:31 UTC. The tagged release's Windows AMD64
+update had already installed the same public bytes successfully. The additional
+failure is retained and is not counted as a pass. Reports and provenance are in
+[`verification/release-preview15`](verification/release-preview15/).
+
+Historical preview 14 evidence follows.
 
 [Preview 14](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.14)
 is source `49c9bf7051c2a5a70196dabc7e585690e7dee515`.

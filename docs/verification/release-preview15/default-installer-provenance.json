@@ -1,0 +1,55 @@
+{
+  "release": "v0.1.0-preview.15",
+  "installerSourceRevision": "61e0fc20249aa55571f4a72adb7fb444db983adb",
+  "bootstrapURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+  "verificationURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh?smartstage_verify=55a6e49b1b90a74586ce9e39c967a0ba775aeb408eb4f75e1b0964a8b6abe035-1789931359733538818",
+  "bootstrapSHA256": "55a6e49b1b90a74586ce9e39c967a0ba775aeb408eb4f75e1b0964a8b6abe035",
+  "fetchedAt": "2026-09-20T19:09:19.941821+00:00",
+  "publicMainBootstrapMatchesCheckout": true,
+  "selectedDefaultReleaseVerified": true,
+  "status": "passed",
+  "workflowRun": 35531329120,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35531329120",
+  "workflowEvent": "push",
+  "jobs": [
+    {
+      "id": 106132333809,
+      "name": "install (macos-15-intel, amd64)",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 106132333812,
+      "name": "install (macos-15, arm64)",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "verificationCompletedAt": "2026-09-20T19:11:31.546866+00:00",
+  "reports": [
+    {
+      "target": "darwin/arm64",
+      "result": "default-installer-darwin-arm64.json",
+      "reportSHA256": "7508122807289606b6b2d4170ee1ffa694b83b8ed68a10b0de6df79e8c5014f7",
+      "archiveSHA256": "8ae6854ea9696bdadd0584401a903e9082fa28e988dd260be70ca21d15f59c82",
+      "installedCoreSHA256": "4c5b0731270b7bebf39b8aa832bc567b56434be642b4efdd99d0edd31888d96a",
+      "defaultReleaseWithoutVersionOverride": true,
+      "noFirewallOverrideNeeded": true,
+      "firewallRulesUnchanged": true,
+      "sameNativeAdminWindow": true
+    },
+    {
+      "target": "darwin/amd64",
+      "result": "default-installer-darwin-amd64.json",
+      "reportSHA256": "87a09591d25b46c4cddee9060c970327b59a1236e972c84bb7464876d726d9a5",
+      "archiveSHA256": "289a2034684a197aa5a10977ee511645f0ead78681f78e7b8bfeb4752eae86d0",
+      "installedCoreSHA256": "39314bc787747d3baf1aca215138f55b8e7d8e11908ea091d83da0ee81925961",
+      "defaultReleaseWithoutVersionOverride": true,
+      "noFirewallOverrideNeeded": true,
+      "firewallRulesUnchanged": true,
+      "sameNativeAdminWindow": true
+    }
+  ],
+  "defaultSelectionProof": "Push-triggered workflow has no version input; both reports confirm defaultReleaseSelectionTested. The verifier passes no SMARTSTAGE_VERSION override for its default installation and no firewall skip override in gateway mode.",
+  "scope": "Independent public main bootstrap byte check plus both native default-installer reports, matched to independently verified published bundle and executable hashes. Explicit separate LAN firewall fixtures in those reports are not default gateway behavior."
+}

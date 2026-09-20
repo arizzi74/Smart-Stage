@@ -1,0 +1,88 @@
+{
+  "status": "partial",
+  "workflowRunID": 35531329116,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35531329116",
+  "workflowConclusion": "failure",
+  "verifierSourceRevision": "61e0fc20249aa55571f4a72adb7fb444db983adb",
+  "fixtureRunID": 35530818664,
+  "fixtureRunURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35530818664",
+  "fixtureAndPublishedSourceRevision": "580cbb63db18e32b4946abe49c5363eb00e50cc2",
+  "release": "v0.1.0-preview.15",
+  "fixtureScope": "Production release source compiled with older version metadata; real unauthenticated GitHub discovery, download, replacement and restart. This is additional verification after the tagged release workflow.",
+  "gatewayFirewallCheck": "Verifier clears SMARTSTAGE_SKIP_FIREWALL and SMARTSTAGE_CONFIGURE_LAN_FIREWALL for preview15; successful helper logs confirm no incoming-connection firewall setup is needed.",
+  "successfulTargets": [
+    "darwin/amd64",
+    "darwin/arm64",
+    "windows/arm64"
+  ],
+  "failedTargets": [
+    "windows/amd64"
+  ],
+  "results": [
+    {
+      "target": "darwin/amd64",
+      "jobID": 106132333746,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35531329116/job/106132333746",
+      "jobConclusion": "success",
+      "artifactID": 10610974386,
+      "report": "additional-auto-update-darwin-amd64.json",
+      "reportSHA256": "3ced429067c92c5f5a5c11fe2403f8ed3d805c69d51b3449674d213a66d7c058",
+      "status": "passed",
+      "publicDownloadHashesMatchIndependentArchiveVerification": true,
+      "installedExecutableMatchesPublicRelease": true,
+      "gatewayDefaultAndLANClosedVerified": true,
+      "firewallSkipOverrideUsed": false,
+      "firewallSetupNotNeededLog": "2026/09/20 19:09:22 Public gateway mode: incoming-connection firewall setup is not needed"
+    },
+    {
+      "target": "darwin/arm64",
+      "jobID": 106132333895,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35531329116/job/106132333895",
+      "jobConclusion": "success",
+      "artifactID": 10611247291,
+      "report": "additional-auto-update-darwin-arm64.json",
+      "reportSHA256": "5883f2056a6b0e21388625bb74f2e517079e855dbf4c4281bc912c032624f4f8",
+      "status": "passed",
+      "publicDownloadHashesMatchIndependentArchiveVerification": true,
+      "installedExecutableMatchesPublicRelease": true,
+      "gatewayDefaultAndLANClosedVerified": true,
+      "firewallSkipOverrideUsed": false,
+      "firewallSetupNotNeededLog": "2026/09/20 19:08:52 Public gateway mode: incoming-connection firewall setup is not needed"
+    },
+    {
+      "target": "windows/amd64",
+      "jobID": 106132333874,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35531329116/job/106132333874",
+      "jobConclusion": "failure",
+      "artifactID": 10611133994,
+      "report": "additional-auto-update-windows-amd64.json",
+      "reportSHA256": "4ad6351849b3fc62485e3346d88841123b6982e7510b8cb41f8bf511b56fef3b",
+      "status": "failed",
+      "publicDownloadHashesMatchIndependentArchiveVerification": true,
+      "failureCategory": "external GitHub API rate limit before update replacement",
+      "initialUpdatePhase": "error",
+      "initialUpdateMessage": "Update check failed: GitHub temporarily limited update checks; retry after 2026-09-20T19:24:31Z",
+      "reportedAssertion": "Automatic startup update must reserve playback before serving Admin",
+      "replacementOrGatewayPostUpdateVerified": false,
+      "firewallSkipOverrideUsed": false
+    },
+    {
+      "target": "windows/arm64",
+      "jobID": 106132333905,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35531329116/job/106132333905",
+      "jobConclusion": "success",
+      "artifactID": 10611173798,
+      "report": "additional-auto-update-windows-arm64.json",
+      "reportSHA256": "2be9612916a47e66f874ed9fb35811573c4318d2494f1e7c3cd3b4048b464649",
+      "status": "passed",
+      "publicDownloadHashesMatchIndependentArchiveVerification": true,
+      "installedExecutableMatchesPublicRelease": true,
+      "gatewayDefaultAndLANClosedVerified": true,
+      "firewallSkipOverrideUsed": false,
+      "firewallSetupNotNeededLog": "2026/09/20 19:08:56 Public gateway mode: incoming-connection firewall setup is not needed"
+    }
+  ],
+  "physicalPlaybackVerified": false,
+  "interactiveFirewallAuthorizationVerified": false,
+  "limitation": "Windows amd64 additional attempt did not replace the executable because GitHub rate limited release discovery. Its independently downloaded public archive and executable hashes matched; no post-update success is claimed for that attempt."
+}

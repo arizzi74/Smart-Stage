@@ -1,0 +1,51 @@
+{
+  "status": "passed",
+  "releaseTag": "v0.1.0-preview.15",
+  "commit": "580cbb63db18e32b4946abe49c5363eb00e50cc2",
+  "workflowRunID": 35530818664,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35530818664",
+  "jobID": 106130971576,
+  "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35530818664/job/106130971576",
+  "jobConclusion": "success",
+  "jobCompletedAt": "2026-09-20T19:01:53Z",
+  "test": "TestGatewayBrowser",
+  "testDurationSeconds": 2.63,
+  "artifact": {
+    "name": "gateway-browser-checks",
+    "id": 10610724264,
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35530818664/artifacts/10610724264",
+    "createdAt": "2026-09-20T19:01:32Z",
+    "workflowHeadSHA": "580cbb63db18e32b4946abe49c5363eb00e50cc2",
+    "reportFile": "gateway-browser.json",
+    "reportSHA256": "daf350ceb9400eb020c4c2bccfa398ef945721d1386708b0ff1ea4e8fae994e9"
+  },
+  "provenance": "GitHub run, job and artifact metadata independently identify the same release source commit. The report tests that source through real handlers and TLS; it does not assert a released binary version.",
+  "browserChecks": {
+    "actualTLSGateway": true,
+    "actualHostTunnel": true,
+    "actualAdminConfiguration": true,
+    "actualAdminOpenRemoteLink": true,
+    "actualPairingAndScopedSecureCookie": true,
+    "actualCSRFMutations": true,
+    "actualSSEPlaybackTransitions": true,
+    "endpointRelativeAssetsAndRequests": true,
+    "publicPairingFragmentRemovedBeforeRequest": true,
+    "noPairingSecretInBrowserStorage": true,
+    "CSPWithoutViolations": true,
+    "logoutRevokesCookieAndWakeLock": true,
+    "HTTPSWakeLockRequested": true,
+    "nativePlaybackSimulated": true,
+    "deviceWakeLockGrantSimulated": true,
+    "publicRequestCount": 13,
+    "browserErrors": []
+  },
+  "actualAdminQRRoundTripVerified": true,
+  "qrEvidence": "The passing Go test decodes the real Admin PNG and compares its payload with the active public pairing URL; the gateway job log records this after the browser checks.",
+  "boundaries": {
+    "realFlow": "Browser configures local Admin, opens its public remote link, pairs through HTTPS gateway and outbound host tunnel, sends CSRF-protected PLAY/STOP and receives authoritative SSE state.",
+    "nativePlayback": "Deterministic fake playback backend; no speakers or stage display tested by this check.",
+    "wakeLock": "Actual secure-context UI calls navigator.wakeLock.request, but the browser grant/release object is mocked; device screen-lock prevention is not verified.",
+    "TLS": "Local httptest TLS certificate; browser ignores its certificate error and host uses the test trust store. Public DNS and production certificate trust are not tested here.",
+    "physicalPhoneTabletVerified": false
+  }
+}

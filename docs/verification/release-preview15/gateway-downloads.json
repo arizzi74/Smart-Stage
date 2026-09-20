@@ -1,0 +1,54 @@
+{
+  "release": "v0.1.0-preview.15",
+  "sourceRevision": "580cbb63db18e32b4946abe49c5363eb00e50cc2",
+  "status": "passed",
+  "architectures": [
+    {
+      "arch": "amd64",
+      "sha256": "0b615b853c7873493ccbd0bcf444d7fe99019c26e09626863fa4d79865be02cb",
+      "bytes": 7086206,
+      "staticELF": true,
+      "buildMetadataVerified": true
+    },
+    {
+      "arch": "arm64",
+      "sha256": "00cb6251a1e36ee286069bf1e7d86632a6bfd896eedf66389760172e53ecd74c",
+      "bytes": 6553726,
+      "staticELF": true,
+      "buildMetadataVerified": true
+    }
+  ],
+  "arm64DaemonSmoke": {
+    "binary": "smartstage-gateway-linux-arm64",
+    "sha256": "00cb6251a1e36ee286069bf1e7d86632a6bfd896eedf66389760172e53ecd74c",
+    "version": "v0.1.0-preview.15 (580cbb63db18)",
+    "actualDaemonProcess": true,
+    "privateConfigurationAndExistingTokenPreserved": true,
+    "dedicatedGroupConfigurationAccepted": true,
+    "worldReadableConfigurationRejected": true,
+    "loopbackHealthReady": true,
+    "plaintextWithoutProxyOriginRejected": true,
+    "cleanSIGTERMShutdown": true,
+    "registrationSecretNotLogged": true,
+    "embeddedDependencyLicense": true
+  },
+  "publishedAMD64DaemonSmoke": {
+    "binary": "smartstage-gateway-linux-amd64",
+    "sha256": "0b615b853c7873493ccbd0bcf444d7fe99019c26e09626863fa4d79865be02cb",
+    "version": "v0.1.0-preview.15 (580cbb63db18)",
+    "actualDaemonProcess": true,
+    "privateConfigurationAndExistingTokenPreserved": true,
+    "dedicatedGroupConfigurationAccepted": true,
+    "worldReadableConfigurationRejected": true,
+    "loopbackHealthReady": true,
+    "plaintextWithoutProxyOriginRejected": true,
+    "cleanSIGTERMShutdown": true,
+    "registrationSecretNotLogged": true,
+    "embeddedDependencyLicense": true
+  },
+  "installerSHA256": "292568106d2cd3a0e5b21bf2f20de3f0b4c7ffd97505a2fb14de90e463ddd109",
+  "sourceTagVerified": true,
+  "annotatedTagSHA": "438adfca5becbbfcac1f9538b393c5eb580b7824",
+  "verifiedAt": "2026-09-20T19:07:53.774789+00:00",
+  "versionVerification": "Published static report headers and matching-SHA native daemon version output; Go -trimpath omits linker -X flags from build metadata."
+}
