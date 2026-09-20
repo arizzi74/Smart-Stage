@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "release": "v0.1.0-preview.13",
+  "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+  "verifiedAt": "2026-09-20T16:20:55.506735+00:00",
+  "sha256": "c170764799c0e02591983cac09f88bb78deb77d844a56c24cbe245a8b0c57db6",
+  "publicBytesMatchRepository": true,
+  "defaultVersionVerified": true
+}

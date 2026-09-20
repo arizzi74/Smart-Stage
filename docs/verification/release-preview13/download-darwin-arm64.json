@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "target": "darwin/arm64",
+  "release": "v0.1.0-preview.13",
+  "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.13/smartstage-darwin-arm64.zip",
+  "archive": "smartstage-darwin-arm64.zip",
+  "archiveSHA256": "96faafa21f3e86c9508f316bbdd496d976840dc8087f6c9aafe0b9bb3c88e117",
+  "archiveEntries": [
+    "smartstage"
+  ],
+  "executableSHA256": "78c42b02ea2a8b60691cbf36fe0d58ed9dc4cf1e4ecf30023995db0ee7f15602",
+  "executablePermissions": "0755",
+  "version": "Smart Stage v0.1.0-preview.13 (824698e90b36), go1.26.5, darwin/arm64",
+  "adminServedOnLoopback": true,
+  "automaticSystemBrowserDispatchAccepted": true,
+  "adminURL": "http://127.0.0.1:49168/admin",
+  "remoteListenerRejectsAdmin": true
+}

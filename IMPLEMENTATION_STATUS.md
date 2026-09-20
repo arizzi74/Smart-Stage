@@ -63,6 +63,25 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.13
 
 ## Built and automatically tested
 
+Preview 13 is source `824698e90b360822f713840df60ae914767e21df`.
+[Candidate run 35521516191](https://github.com/arizzi74/Smart-Stage/actions/runs/35521516191)
+passed shared checks and all four native/browser targets.
+[Release run 35521992281](https://github.com/arizzi74/Smart-Stage/actions/runs/35521992281)
+passed all 20 jobs: native builds, publication, public downloads/browser checks,
+both Mac installers and actual automatic updates on all four targets. Both Macs
+verify the real WKWebView Admin session/CSRF/live controls, original-file native
+drop queue, navigation boundaries, retained close/reopen state and graceful Quit.
+Packaged apps retain one observed window ID across Dock reopen without opening
+Terminal or an external Admin browser. All six public ZIPs match the exact clean
+source and architecture. Evidence is in
+[`docs/verification/release-preview13`](docs/verification/release-preview13/).
+Both default Mac installs passed
+[run 35522396312](https://github.com/arizzi74/Smart-Stage/actions/runs/35522396312),
+with matching public installer and installed-core hashes. Physical Finder
+gestures and speaker/projector acceptance remain unverified.
+
+Historical preview 12 evidence follows.
+
 Preview 12 is source `ea9245c2b1a4d095d02f87faaa879cf434bdea77`.
 [Candidate run 35519125516](https://github.com/arizzi74/Smart-Stage/actions/runs/35519125516)
 passed shared checks and all four native/browser targets.

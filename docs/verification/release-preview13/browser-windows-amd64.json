@@ -1,0 +1,28 @@
+{
+  "passed": true,
+  "application": "Smart Stage v0.1.0-preview.13 (824698e90b36), go1.26.5, windows/amd64",
+  "platform": "windows",
+  "architecture": "amd64",
+  "node": "v22.23.2",
+  "nodeArchitecture": "x64",
+  "physicalRoutingVerified": false,
+  "checks": [
+    "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+    "Real host dotfile stayed hidden by default, appeared with Show hidden, and disappeared when disabled",
+    "Admin browser selected four real host files, saved four labels and reordered stable cue IDs",
+    "Embedded screen-wake-lock control truthfully reported Needs HTTPS and stayed disabled on real non-loopback HTTP",
+    "Admin saved a cue color through the real API; playlist/command reads and remote CSSOM styling agreed under production CSP",
+    "Missing native audio output produced a visible recoverable error; STOP remained usable",
+    "Remote Stage off stopped an actual silent video and closed the native stage; Stage on reopened it and browser Escape closed it again",
+    "Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap",
+    "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser",
+    "Admin Quit during real native video playback exited successfully and closed both HTTP listeners",
+    "Same Admin tab reconnected after relaunch, loaded new assets once, and suppressed automatic OS browser dispatch"
+  ],
+  "browser": "153.0.8010.12",
+  "origin": "Admin on 127.0.0.1; Command on an actual non-loopback host IPv4 address",
+  "cuesNativelyPlayedAndStopped": 1,
+  "audioEndpoints": 0,
+  "displays": 1,
+  "audioSkipped": true
+}

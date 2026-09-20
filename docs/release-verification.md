@@ -64,6 +64,43 @@ not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
 
+[Preview 13](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.13)
+is source `824698e90b360822f713840df60ae914767e21df`.
+[Candidate run 35521516191](https://github.com/arizzi74/Smart-Stage/actions/runs/35521516191)
+passed shared race/vet and all four native/browser targets. The exact-source
+[tagged run 35521992281](https://github.com/arizzi74/Smart-Stage/actions/runs/35521992281)
+passed **all 20 jobs**, publishing 36 assets and verifying public downloads,
+real browser controls, both Mac installers and actual automatic updates on all
+four targets. All six independently downloaded ZIPs match their checksums,
+architecture and clean source metadata; Mac app cores match standalone cores.
+
+Both Macs load the actual loopback Admin assets in the production WKWebView
+bridge, establish the local session and CSRF token, connect authenticated
+EventSource, send STOP, observe live state and use Admin Quit to stop the host.
+Closing and reopening keeps the same window/WebKit object and unsaved interface
+state. Native shutdown closes the window. Public Cocoa hit testing targets the
+Admin web view; a native file-URL pasteboard reaches the bounded original-path
+queue, preserving Unicode paths and file bytes. Mixed text cannot supply a file
+path, and navigation outside Admin is rejected. Separate packaged-app checks
+observe the real core PID, Dock icon and visible WindowServer ID across reopen,
+with no external Admin browser dispatch or Terminal. LaunchServices imports
+exercise Go validation, playlist persistence and unattended chooser/error Quit.
+These are automated native/API observations, not physical Finder mouse gestures,
+clipboard use by a human, speaker/projector output or clean-machine acceptance.
+
+The default installer changed to preview 13 at
+`d2a0926b` after the public archives were verified. The public bootstrap fetched
+at 16:20:55 UTC on 20 September 2026 matches the repository and SHA-256
+`c170764799c0e02591983cac09f88bb78deb77d844a56c24cbe245a8b0c57db6`.
+Both Macs passed installation without a version override in
+[default-install run 35522396312](https://github.com/arizzi74/Smart-Stage/actions/runs/35522396312),
+including the dedicated window and same-window Dock reopen. Installer and
+installed core hashes match the public bootstrap and archive evidence.
+Reports are retained in
+[`verification/release-preview13`](verification/release-preview13/).
+
+Historical release evidence follows.
+
 [Preview 12](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.12)
 is source `ea9245c2b1a4d095d02f87faaa879cf434bdea77`.
 [Candidate run 35519125516](https://github.com/arizzi74/Smart-Stage/actions/runs/35519125516)

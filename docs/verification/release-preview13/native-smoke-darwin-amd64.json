@@ -1,0 +1,143 @@
+[
+  {
+    "args": [
+      "--list"
+    ],
+    "returncode": 0,
+    "stdout": "{\"audio\":[{\"id\":\"NullAudioDevice_UID\",\"name\":\"Null Audio Device\",\"default\":true}],\"displays\":[{\"id\":\"19A6386A-27BA-6496-91F4-71DB1BBB8F8F\",\"name\":\"Built-in Display\",\"x\":0,\"y\":0,\"width\":1920,\"height\":1080,\"primary\":true,\"mirrored\":false}]}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--inspect",
+      "/Users/runner/work/Smart-Stage/Smart-Stage/testdata/media/Opening – café's tone.wav"
+    ],
+    "returncode": 0,
+    "stdout": "{\"kind\":\"audio\",\"duration\":3,\"hasAudio\":true,\"hasVideo\":false}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--inspect",
+      "/Users/runner/work/Smart-Stage/Smart-Stage/testdata/media/tone.mp3"
+    ],
+    "returncode": 0,
+    "stdout": "{\"kind\":\"audio\",\"duration\":3,\"hasAudio\":true,\"hasVideo\":false}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--inspect",
+      "/Users/runner/work/Smart-Stage/Smart-Stage/testdata/media/silent-1080p.mp4"
+    ],
+    "returncode": 0,
+    "stdout": "{\"kind\":\"video\",\"duration\":3,\"hasAudio\":false,\"hasVideo\":true}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--inspect",
+      "/Users/runner/work/Smart-Stage/Smart-Stage/testdata/media/video-aac-1080p.mp4"
+    ],
+    "returncode": 0,
+    "stdout": "{\"kind\":\"video\",\"duration\":3,\"hasAudio\":true,\"hasVideo\":true}\n",
+    "stderr": ""
+  },
+  {
+    "args": [
+      "--inspect",
+      "/Users/runner/work/Smart-Stage/Smart-Stage/testdata/media/damaged.mp4"
+    ],
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "Cannot Open\n"
+  },
+  {
+    "args": [
+      "--file",
+      "/Users/runner/work/Smart-Stage/Smart-Stage/testdata/media/Opening – café's tone.wav",
+      "--audio",
+      "smartstage-output-that-does-not-exist",
+      "--exit-after",
+      "5s"
+    ],
+    "returncode": 0,
+    "stdout": "{\"generation\":2,\"kind\":\"error\",\"position\":0,\"duration\":0,\"message\":\"Selected audio output is unavailable\",\"stageEnabled\":false}\n",
+    "stderr": "Commands: stop, play (restart), enable, disable, quit. Escape in the stage window stops; Ctrl+C exits.\n"
+  },
+  {
+    "args": [
+      "--file",
+      "/Users/runner/work/Smart-Stage/Smart-Stage/testdata/media/silent-1080p.mp4",
+      "--display",
+      "smartstage-output-that-does-not-exist",
+      "--exit-after",
+      "5s"
+    ],
+    "returncode": 0,
+    "stdout": "{\"generation\":2,\"kind\":\"error\",\"position\":0,\"duration\":0,\"message\":\"Select an available stage display before playing video\",\"stageEnabled\":false}\n",
+    "stderr": "Stage output will cover the selected display. STOP retains a black window; quit closes it.\nCommands: stop, play (restart), enable, disable, quit. Escape in the stage window stops; Ctrl+C exits.\n"
+  },
+  {
+    "args": [
+      "--file",
+      "/Users/runner/work/Smart-Stage/Smart-Stage/testdata/media/Opening – café's tone.wav",
+      "--audio",
+      "NullAudioDevice_UID",
+      "--stop-playing-after",
+      "500ms",
+      "--exit-after",
+      "10s"
+    ],
+    "returncode": 0,
+    "stdout": "{\"generation\":2,\"kind\":\"playing\",\"position\":0,\"duration\":3,\"stageEnabled\":false}\n{\"generation\":3,\"kind\":\"stopped\",\"position\":0,\"duration\":0,\"stageEnabled\":false}\n",
+    "stderr": "Commands: stop, play (restart), enable, disable, quit. Escape in the stage window stops; Ctrl+C exits.\n"
+  },
+  {
+    "args": [
+      "--file",
+      "/Users/runner/work/Smart-Stage/Smart-Stage/testdata/media/silent-1080p.mp4",
+      "--display",
+      "19A6386A-27BA-6496-91F4-71DB1BBB8F8F",
+      "--exit-after",
+      "40s"
+    ],
+    "returncode": 0,
+    "stdout": "{\"generation\":2,\"kind\":\"playing\",\"position\":0,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":0.000191157,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":0.250221999,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":0.500167938,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":0.750223622,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":1.00037672,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":1.25020904,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":1.500206115,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":1.750158831,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":2.000166683,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":2.250199619,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":2.500256079,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":2.750167795,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":3.000384059,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"progress\",\"position\":3,\"duration\":3,\"stageEnabled\":true}\n{\"generation\":2,\"kind\":\"ended\",\"position\":0,\"duration\":0,\"stageEnabled\":true}\n",
+    "stderr": "Stage output will cover the selected display. STOP retains a black window; quit closes it.\nCommands: stop, play (restart), enable, disable, quit. Escape in the stage window stops; Ctrl+C exits.\n",
+    "observedEventSeconds": {
+      "playing": 1.271,
+      "progress": 1.418,
+      "ended": 4.478
+    },
+    "elapsedSeconds": 4.536
+  },
+  {
+    "nativeKeyboardEvents": [
+      {
+        "nativeEscapeEvent": true,
+        "stageDisabled": true,
+        "stageWindowHidden": true,
+        "target": "stage"
+      },
+      {
+        "nativeEscapeEvent": true,
+        "stageDisabled": true,
+        "stageWindowHidden": true,
+        "target": "app"
+      },
+      {
+        "nativeDesktopActions": {
+          "nativeAdminRequestBufferedBeforeReadiness": true,
+          "nativeAdminRequestsCoalesced": true,
+          "chooserPendingAndOpenRequestsReusePanel": true,
+          "chooserCancelAddsNoFiles": true,
+          "chooserCanReopenAfterCancel": true,
+          "quitClosesOpenChooser": true,
+          "chooserUnavailableAfterShutdown": true
+        }
+      }
+    ],
+    "method": "Test-only event driver linked against the production bridge; no physical keyboard assertion"
+  }
+]

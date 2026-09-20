@@ -1,0 +1,102 @@
+{
+  "status": "passed",
+  "target": "windows/amd64",
+  "release": "v0.1.0-preview.13",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "publishedDownload": {
+    "status": "passed",
+    "target": "windows/amd64",
+    "release": "v0.1.0-preview.13",
+    "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.13/smartstage-windows-amd64.zip",
+    "archive": "smartstage-windows-amd64.zip",
+    "archiveSHA256": "72e0c1a355b23926becfb3f4e4d15fc0940d16aa1d8325df121c45bb56d75230",
+    "archiveEntries": [
+      "smartstage.exe"
+    ],
+    "executableSHA256": "627ccd50b0cf048ef5f6437bc3afcc1773ae18913bff86a2fa61e6705ce1711c",
+    "executablePermissions": "0755"
+  },
+  "expectedFixtureSource": "824698e90b360822f713840df60ae914767e21df",
+  "fixture": {
+    "version": "v0.0.0-preview.1",
+    "sourceSHA": "824698e90b360822f713840df60ae914767e21df",
+    "target": "windows/amd64",
+    "archive": "fixture-windows-amd64.zip",
+    "archiveSHA256": "418f2430364f40e9236b6d6548ae25b73a5e7a32ff3bb5d5a80521e0dc0082a8",
+    "executableSHA256": "73a47a9cff8113df61676793046a3461292569e8c3c1457dafb5211e6d21eb68",
+    "purpose": "Native production updater verification with older version metadata; not a published release"
+  },
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (824698e90b36), go1.26.5, windows/amd64",
+  "initialUpdateStatus": {
+    "currentVersion": "v0.0.0-preview.1",
+    "latestVersion": "v0.1.0-preview.13",
+    "phase": "downloading",
+    "available": true,
+    "canInstall": false,
+    "message": "Downloading and verifying the update. Smart Stage will restart when it is ready.",
+    "releaseURL": "https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.13",
+    "checkedAt": "2026-09-20T16:19:23Z"
+  },
+  "oldInstanceID": "684bf8513eb79c364d155613cc5272ac63a072854a87ca1a",
+  "startupUpdatePending": true,
+  "initialUpdatePhase": "downloading",
+  "startupReservationRejectedPLAY": true,
+  "oldPID": 3700,
+  "lastUpdateStatus": {
+    "currentVersion": "v0.1.0-preview.13",
+    "latestVersion": "v0.1.0-preview.13",
+    "phase": "idle",
+    "available": false,
+    "canInstall": false,
+    "message": "Smart Stage is up to date.",
+    "releaseURL": "",
+    "checkedAt": "2026-09-20T16:19:24Z"
+  },
+  "outcome": {
+    "version": "v0.1.0-preview.13",
+    "status": "updated",
+    "time": "2026-09-20T16:19:24.8352104Z",
+    "work": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\smartstage update verification bum2im_5\\Operator's applications â€“ cafÃ©\\.smartstage-update-973455949",
+    "helperPID": 7996
+  },
+  "observedUpdatePhases": [
+    "downloading",
+    "idle"
+  ],
+  "finalUpdateStatus": {
+    "currentVersion": "v0.1.0-preview.13",
+    "latestVersion": "v0.1.0-preview.13",
+    "phase": "idle",
+    "available": false,
+    "canInstall": false,
+    "message": "Smart Stage is up to date.",
+    "releaseURL": "",
+    "checkedAt": "2026-09-20T16:19:24Z",
+    "lastUpdate": {
+      "version": "v0.1.0-preview.13",
+      "status": "updated",
+      "time": "2026-09-20T16:19:24.8352104Z",
+      "work": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\smartstage update verification bum2im_5\\Operator's applications – café\\.smartstage-update-973455949",
+      "helperPID": 7996
+    }
+  },
+  "newPID": 3720,
+  "newInstanceID": "35b90f6a65407213f6ac13e171048f5b1060aaeb66642168",
+  "installedVersionOutput": "Smart Stage v0.1.0-preview.13 (824698e90b36), go1.26.5, windows/amd64",
+  "installedExecutableSHA256": "627ccd50b0cf048ef5f6437bc3afcc1773ae18913bff86a2fa61e6705ce1711c",
+  "oldProcessExitedCleanly": true,
+  "actualPublishedBytesInstalled": true,
+  "adminAndCommandPortsPreserved": true,
+  "savedShowPreserved": true,
+  "hostMediaPreserved": true,
+  "restartedWithoutAutoplay": true,
+  "updateHTTPInstallRequestsSent": 0,
+  "productionReleaseDiscovery": true,
+  "productionArchiveValidation": true,
+  "productionHelperHandoff": true,
+  "startupAcknowledgedBeforeBackupRemoval": true,
+  "windowsReplacementAfterOldExecutableExit": true,
+  "testDirectoryRemoved": true,
+  "testProcessCleanupPassed": true
+}
