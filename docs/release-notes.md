@@ -1,12 +1,19 @@
 Smart Stage preview for macOS Apple Silicon/Intel and Windows ARM64/AMD64.
 
+This preview adds a Smart Stage application icon. Both Windows executables
+embed the icon at nine sizes. Both Mac architectures also have an optional
+`smartstage-darwin-<arch>.app.zip` download: extract `Smart Stage.app`, move it
+to Applications if desired, and open it in Finder. It starts the bundled
+executable in Terminal so pairing keys, logs and Ctrl+C remain visible.
+The standalone Mac binaries and curl installer retain their existing behavior.
+
 Native AVFoundation/Media Foundation host playback, embedded Admin and Command
 interfaces, paired LAN access, manual cue playlists, output selection, persistent
 blackout, atomic local persistence and one-command installers are implemented.
 
-This preview releases the macOS video rendering layer with each stopped or
+The playback implementation retains preview 4's release of the macOS video rendering layer with each stopped or
 replaced cue. The stage window and opaque black overlay remain present across
-STOP. This change targets the caption-timer/timebase accumulation found in
+STOP. That change targets the caption-timer/timebase accumulation found in
 preview 3's two-hour native tests. Detailed before/after heap measurements and
 long-run status are recorded in
 [native resource verification](https://github.com/arizzi74/Smart-Stage/blob/main/docs/soak-results.md).
@@ -19,7 +26,8 @@ restart, shutdown during validation and repeated PLAY/replacement/STOP.
 
 The attached executables embed the web interfaces and native bridges. They
 require only supported OS libraries at runtime. Each has an individual SHA-256
-checksum and an import audit. Native and application smoke records are attached.
+checksum and an import audit. Native and application smoke records are attached,
+along with native icon checks and SHA-256 checksums for the Mac app archives.
 
 This is a **preview, not an accepted production release**. CI exercises real
 native APIs and HTTP controls, but does not prove physical speaker/projector

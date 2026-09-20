@@ -79,6 +79,14 @@ jobs:
           "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix" --list > "dist/native-enumeration-${{ matrix.os }}-${{ matrix.arch }}.json"
           python3 scripts/native-smoke.py "./dist/native-harness-${{ matrix.os }}-${{ matrix.arch }}$suffix"
           python3 scripts/application-smoke.py "./dist/smartstage-${{ matrix.os }}-${{ matrix.arch }}$suffix" 10
+      - name: Verify embedded icon and optional Finder app
+        shell: bash
+        run: |
+          if [[ '${{ matrix.os }}' == darwin ]]; then
+            python3 scripts/verify-icons.py './dist/smartstage-darwin-${{ matrix.arch }}' --finder-launch
+          else
+            python3 scripts/verify-icons.py './dist/smartstage-windows-${{ matrix.arch }}.exe'
+          fi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

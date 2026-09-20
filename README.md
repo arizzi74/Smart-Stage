@@ -129,6 +129,13 @@ Build on matching OS runners normally. `DEBUG=1` retains symbols;
 and toolchain records. Apple system frameworks remain dynamic; Windows compiler
 support is linked in. `CGO_ENABLED=0` cannot make a playback release.
 
+Windows builds embed the Smart Stage icon in the executable. Mac builds also
+produce `dist/smartstage-darwin-<arch>.app.zip`, an optional Finder app with the
+same icon. Extract it and open `Smart Stage.app` to start the bundled executable
+in Terminal, where pairing keys and Ctrl+C remain available. The standalone
+Mac executable and curl installation remain available. See the
+[icon source and regeneration instructions](assets/icon/README.md).
+
 ```sh
 ./dist/native-harness-darwin-arm64 --list
 ./dist/native-harness-darwin-arm64 --inspect '/Users/operator/Show/opening.wav'

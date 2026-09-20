@@ -24,6 +24,11 @@ case "$target_os/$target_arch" in
   *) echo "Unsupported release target: $target_os/$target_arch" >&2; exit 1 ;;
 esac
 mkdir -p dist
+if [[ "$target_os" == windows ]]; then
+  resource="cmd/smartstage/icon_windows_$target_arch.syso"
+  trap 'rm -f -- "$resource"' EXIT
+  "$triple-w64-mingw32-windres" --input packaging/windows/smartstage.rc --output "$resource" --output-format coff --include-dir .
+fi
 record="dist/toolchain-$target_os-$target_arch.txt"
 {
   go version
@@ -47,3 +52,7 @@ p = pathlib.Path(sys.argv[1])
 p.with_name(p.name + '.sha256').write_text(hashlib.sha256(p.read_bytes()).hexdigest() + '  ' + p.name + '\n')
 PY
 done
+
+if [[ "$target_os" == darwin ]]; then
+  python3 scripts/package-macos.py "$target_arch" "$build_version"
+fi

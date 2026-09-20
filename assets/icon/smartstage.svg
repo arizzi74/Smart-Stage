@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Smart Stage</title>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#263b40"/>
+      <stop offset="1" stop-color="#10171c"/>
+    </linearGradient>
+    <linearGradient id="light" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#adecd1" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#adecd1" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect x="64" y="64" width="896" height="896" rx="208" fill="url(#background)"/>
+  <path d="M278 262H746L838 746H186Z" fill="url(#light)"/>
+  <path d="M246 636V294Q246 262 278 262H746Q778 262 778 294V636" fill="none" stroke="#adecd1" stroke-width="52" stroke-linecap="round"/>
+  <path d="M454 378Q438 368 438 388V620Q438 640 454 630L642 518Q658 508 642 498Z" fill="#edf9f3"/>
+  <path d="M246 748H778" fill="none" stroke="#adecd1" stroke-width="52" stroke-linecap="round"/>
+</svg>
