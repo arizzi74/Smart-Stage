@@ -1,0 +1,35 @@
+{
+  "status": "failed",
+  "target": "darwin/arm64",
+  "release": "v0.1.0-preview.10",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "publishedDownload": {
+    "status": "passed",
+    "target": "darwin/arm64",
+    "release": "v0.1.0-preview.10",
+    "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-arm64.zip",
+    "archive": "smartstage-darwin-arm64.zip",
+    "archiveSHA256": "97e14eed3bdd7e7145e0296f602662952919d61065a99b0c767face0aac56e40",
+    "archiveEntries": [
+      "smartstage"
+    ],
+    "executableSHA256": "1ef75346ca66c2fae1a713d89eeddbee762f71b669d87c10c415432a763cde64",
+    "executablePermissions": "0755"
+  },
+  "fixture": {
+    "version": "v0.0.0-preview.1",
+    "sourceSHA": "3c8492f036840f64612cef12045bd718a96c9d81",
+    "target": "darwin/arm64",
+    "archive": "fixture-darwin-arm64.app.zip",
+    "archiveSHA256": "7489662d72d064d1640a1fdd4da36df112255fd6e1430cbe4ad31a4fb67f07cd",
+    "executableSHA256": "9fbb0752be21034258cd59e1fd676f044d4c2affe1217d80fb88bf9c02607c18",
+    "purpose": "Native production updater verification with older version metadata; not a published release"
+  },
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (3c8492f03684), go1.26.5, darwin/arm64",
+  "oldInstanceID": "b3cd5cfd35d4b58b0ddf762aafb063a81d699ce8e820a65b",
+  "startupUpdatePending": false,
+  "initialUpdatePhase": "error",
+  "testProcessCleanupPassed": true,
+  "error": "Automatic startup update must reserve playback before serving Admin"
+}

@@ -1,0 +1,64 @@
+{
+  "status": "failed",
+  "target": "windows/arm64",
+  "release": "v0.1.0-preview.10",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "publishedDownload": {
+    "status": "passed",
+    "target": "windows/arm64",
+    "release": "v0.1.0-preview.10",
+    "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-windows-arm64.zip",
+    "archive": "smartstage-windows-arm64.zip",
+    "archiveSHA256": "5017e57ddb373541bedcb4c99a7c456219aeaf0142d5ad13a7a68acbb842679f",
+    "archiveEntries": [
+      "smartstage.exe"
+    ],
+    "executableSHA256": "6870c9c9ffd76dcb9fcca8958e9b9792add1a376314e856e92588a5e6879863d",
+    "executablePermissions": "0755"
+  },
+  "fixture": {
+    "version": "v0.0.0-preview.1",
+    "sourceSHA": "3c8492f036840f64612cef12045bd718a96c9d81",
+    "target": "windows/arm64",
+    "archive": "fixture-windows-arm64.zip",
+    "archiveSHA256": "40a3b0cae383b3115a48f7bba6434153fdefcc01c20791f3f36875f3600dcc4c",
+    "executableSHA256": "747d4187cca2b1bccb13f6f362a1fa78bebee6f315a1f266d9b9340d38accd9a",
+    "purpose": "Native production updater verification with older version metadata; not a published release"
+  },
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (3c8492f03684), go1.26.5, windows/arm64",
+  "oldInstanceID": "6f13608ac187ada41970f246f2e78739248afcacd2f90c05",
+  "startupUpdatePending": true,
+  "initialUpdatePhase": "downloading",
+  "startupReservationRejectedPLAY": true,
+  "oldPID": 6972,
+  "outcome": {
+    "version": "v0.1.0-preview.10",
+    "status": "updated",
+    "time": "2026-09-20T13:03:03.6209862Z",
+    "work": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\smartstage update verification zctj37vc\\Operator's applications â€“ cafÃ©\\.smartstage-update-1069984100",
+    "helperPID": 7644
+  },
+  "observedUpdatePhases": [
+    "downloading",
+    "idle"
+  ],
+  "newPID": 2684,
+  "newInstanceID": "f2618a74901a90c2ef95349395ff9e3c2a314ef874892d75",
+  "installedVersionOutput": "Smart Stage v0.1.0-preview.10 (3c8492f03684), go1.26.5, windows/arm64",
+  "installedExecutableSHA256": "6870c9c9ffd76dcb9fcca8958e9b9792add1a376314e856e92588a5e6879863d",
+  "oldProcessExitedCleanly": true,
+  "actualPublishedBytesInstalled": true,
+  "adminAndCommandPortsPreserved": true,
+  "savedShowPreserved": true,
+  "hostMediaPreserved": true,
+  "restartedWithoutAutoplay": true,
+  "updateHTTPInstallRequestsSent": 0,
+  "productionReleaseDiscovery": true,
+  "productionArchiveValidation": true,
+  "productionHelperHandoff": true,
+  "startupAcknowledgedBeforeBackupRemoval": true,
+  "windowsReplacementAfterOldExecutableExit": true,
+  "testProcessCleanupPassed": true,
+  "error": "[WinError 5] Access is denied: \"C:\\\\Users\\\\RUNNER~1\\\\AppData\\\\Local\\\\Temp\\\\smartstage update verification zctj37vc\\\\Operator's applications – café\\\\smartstage.exe\""
+}

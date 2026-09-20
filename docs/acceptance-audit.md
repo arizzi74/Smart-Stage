@@ -9,7 +9,7 @@ The user has an **Apple Silicon Mac only**, an external audio output and a
 second monitor/projector available for physical testing. Its macOS version,
 exact output models and observations are not yet recorded.
 The [Mac physical procedure](macos-physical-test.md)
-uses preview 8 and a separate test configuration; it does not mark any physical
+uses preview 10 and a separate test configuration; it does not mark any physical
 check passed. Windows physical acceptance remains pending.
 
 The later user request supersedes the original networking/distribution design:
@@ -37,7 +37,35 @@ to quit. This is a positive operational report, not a completed physical test
 matrix. Physical output observations remain pending. The requested correction
 adds a regular Dock icon and standard Quit while preserving Terminal-free launch.
 
-Current release: preview 8, source `00f0c659dc01fc94432b4394e703e6b68f2a53b0`, implements
+The user subsequently requested automatic updates and explicitly chose automatic
+installation. Updates run at startup before playback is available; checks during
+an existing session defer installation until the next launch. Saved show data
+stays outside the replaced application, and restart does not begin playback or
+enable stage output. Admin exposes progress, errors and an optional update action
+while stopped. Earlier previews need one manual upgrade to acquire the working
+updater; preview 9 rejected optimized release metadata before replacement.
+
+Current release: preview 10, source `3c8492f036840f64612cef12045bd718a96c9d81`.
+All four native builds and browser checks passed in
+[run 35512154212](https://github.com/arizzi74/Smart-Stage/actions/runs/35512154212).
+Published downloads, native browser checks and both Mac installers passed in
+[tagged run 35512155124](https://github.com/arizzi74/Smart-Stage/actions/runs/35512155124).
+Its four initial updater verification failures remain recorded; corrected
+verification scripts passed all four actual automatic updates in
+[run 35512568301](https://github.com/arizzi74/Smart-Stage/actions/runs/35512568301).
+Those checks discover and install the real published bytes without an install
+API request, observe process restart and preserved show/media/ports, and confirm
+stopped playback with disabled stage output. Both Mac updates retain the
+registered icon and Dock eligibility without Terminal. These checks explicitly
+skip interactive update firewall authorization and do not establish physical
+audio/display/network acceptance. Detailed scope and raw evidence are in
+[release verification](release-verification.md).
+Both Mac architectures also passed default preview 10 installation in
+[run 35512624089](https://github.com/arizzi74/Smart-Stage/actions/runs/35512624089)
+at installer source `454324a0ceb2169c4be0463418a0ba0d7c4dee20`.
+The public unversioned bootstrap bytes match that source and select preview 10.
+
+Previous release: preview 8, source `00f0c659dc01fc94432b4394e703e6b68f2a53b0`, implements
 the Dock correction. [Native/browser run 35508597483](https://github.com/arizzi74/Smart-Stage/actions/runs/35508597483)
 passed shared checks and all four target builds. Both Mac runners independently
 observed the core as a regular application with its expected bundle identity

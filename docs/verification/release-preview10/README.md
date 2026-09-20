@@ -1,5 +1,25 @@
 # Preview 10 update verification
 
+Published source: `3c8492f036840f64612cef12045bd718a96c9d81`.
+[Native/browser checks](https://github.com/arizzi74/Smart-Stage/actions/runs/35512154212)
+passed on all four targets. The
+[tagged run](https://github.com/arizzi74/Smart-Stage/actions/runs/35512155124)
+passed 16 normal build/publication/download/browser/installer jobs, but its four
+initial updater verifications failed; those original reports are retained in
+`initial-auto-update/`. Windows failures concerned test-process cleanup after
+successful updates, Intel Mac concerned equivalent Unicode bundle paths, and
+the first Apple Silicon check reported an early error without recording its
+message. No success is inferred from those failed checks.
+
+The corrected verifier at `c0ce51559ff7a711511589d15610916e72e7f8ac` passed
+[all four automatic updates](https://github.com/arizzi74/Smart-Stage/actions/runs/35512568301)
+against the unchanged published release. The top-level `auto-update-*.json`
+reports record those successful runs. Both Mac architectures then passed
+[default installation](https://github.com/arizzi74/Smart-Stage/actions/runs/35512624089)
+at installer source `454324a0ceb2169c4be0463418a0ba0d7c4dee20`. The public
+unversioned installer bytes were checked separately; its SHA-256 and observation
+time are in `public-bootstrap-verification.json`.
+
 Preview 10 introduces automatic application updates at startup. It reserves
 playback before checking for a newer release, verifies the architecture-specific
 archive, shuts down gracefully, replaces the installation and restarts with the
@@ -11,6 +31,14 @@ paths/types, installation locking, startup receipts and rollback. The subprocess
 tests run the production helper with test executables acting as the original and
 candidate applications. These establish process replacement and failed-startup
 recovery, rather than native media playback.
+
+Preview 9's published updater rejected Go's optimized build metadata before
+replacement; its [failed results](../release-preview9/) are retained separately.
+The correction reads the exact tagged main module version and requires clean
+Git/native build metadata. A regression creates and compiles a real tagged Git
+fixture using the release's `-trimpath` options, accepts its correct version and
+rejects different versions and dirty source. The subprocess tests also cover
+rollback when the new process rejects its runtime version before registration.
 
 The published-release checks use the release's exact source compiled with older
 `v0.0.0-preview.1` metadata as a CI fixture. That application discovers the actual

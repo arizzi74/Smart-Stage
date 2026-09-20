@@ -1,0 +1,130 @@
+{
+  "status": "passed",
+  "target": "darwin/arm64",
+  "release": "v0.1.0-preview.10",
+  "macOSVersion": "15.7.9",
+  "bootstrapURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/454324a0ceb2169c4be0463418a0ba0d7c4dee20/install.sh",
+  "bootstrapSHA256": "20bd4a2023d8c7e76e9130db27e942ba0070fb181934331a2111ddae352b7cbc",
+  "bootstrapVerificationURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/454324a0ceb2169c4be0463418a0ba0d7c4dee20/install.sh?smartstage_verify=20bd4a2023d8c7e76e9130db27e942ba0070fb181934331a2111ddae352b7cbc-1789909712105819000",
+  "bootstrapFetchAttempts": 1,
+  "publishedBootstrapMatchesCheckout": true,
+  "pipedShellEntryPoint": true,
+  "archive": "smartstage-darwin-arm64.app.zip",
+  "archiveSHA256": "684621d2707a7f9817763ace88e320124ab48b6c67e5764e51d00e91fdbf9ef1",
+  "archiveChecksumVerified": true,
+  "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-arm64.app.zip",
+  "installedBundleDeclaresVisibleDockApp": true,
+  "bundleIdentifier": "com.github.arizzi74.smartstage",
+  "installedCoreSHA256": "1ef75346ca66c2fae1a713d89eeddbee762f71b669d87c10c415432a763cde64",
+  "installedLauncherSHA256": "60b7d6a63c109ae2e0350caef2d856859a926304587100e69bb3cf4122676280",
+  "installedReleaseBytesMatch": true,
+  "iconSHA256": "908ebd2e0b7ea5d6f21b6a54855796a916e5a0a7623a91e495bb02bdbac55b2a",
+  "iconDecodedByMacOS": true,
+  "adHocSignatureVerified": true,
+  "executablePermissionsPreserved": true,
+  "spacesQuotesUnicodePathPassed": true,
+  "version": "Smart Stage v0.1.0-preview.10 (3c8492f03684), go1.26.5, darwin/arm64",
+  "noLaunchOptionRespected": true,
+  "firewallSkipOptionRespected": true,
+  "defaultReleaseSelectionTested": true,
+  "reinstallationPassed": true,
+  "realQuarantineFixtureInjectedBeforeCleanup": true,
+  "nestedQuarantineRemoved": true,
+  "unrelatedBundleAttributesPreserved": true,
+  "siblingQuarantineUntouched": true,
+  "siblingFilePreserved": true,
+  "existingConfigurationUntouched": true,
+  "symlinkDestinationRefused": true,
+  "symlinkTargetPreserved": true,
+  "unrelatedApplicationRefused": true,
+  "unrelatedApplicationPreserved": true,
+  "corruptDownloadRefused": true,
+  "corruptDownloadLeftExistingAppUntouched": true,
+  "failedReplacementRestoredPreviousApp": true,
+  "failedReplacementPreservedAttributes": true,
+  "hangupAfterBackupRestoredPreviousApp": true,
+  "failedUpdatesCleanedWorkAndLock": true,
+  "firewallGlobalSettingsBefore": {
+    "--getglobalstate": "Firewall is disabled. (State = 0)",
+    "--getblockall": "Firewall has block all state set to disabled.",
+    "--getallowsigned": "Automatically allow built-in signed software ENABLED.\nAutomatically allow downloaded signed software ENABLED.",
+    "--getstealthmode": "Firewall stealth mode is off"
+  },
+  "firewallBlockedFixture": {
+    "/private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app": [
+      "blocked",
+      "Incoming connection to /private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app is blocked."
+    ],
+    "/private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app/Contents/MacOS/smartstage": [
+      "blocked",
+      "Incoming connection to /private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app/Contents/MacOS/smartstage is blocked."
+    ]
+  },
+  "firewallCancellationKeptInstalledApp": true,
+  "firewallCancellationExplainedRecovery": true,
+  "firewallCancellationKeptExistingRules": true,
+  "firewallAllowedAfterInstaller": {
+    "/private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app": [
+      "allowed",
+      "Incoming connection to /private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app is permitted."
+    ],
+    "/private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app/Contents/MacOS/smartstage": [
+      "allowed",
+      "Incoming connection to /private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app/Contents/MacOS/smartstage is permitted."
+    ]
+  },
+  "realBlockedFirewallRulesUnblocked": true,
+  "actualListeningExecutableAllowed": true,
+  "existingBlockedBundleRuleUnblocked": true,
+  "alreadyAllowedIdenticalAppSkippedElevation": true,
+  "firewallGlobalSettingsUnchanged": true,
+  "unrelatedFirewallRulesUnchanged": true,
+  "firewallElevationTestMethod": "AppleScript with test-only passwordless sudo adapter",
+  "firewallFinalReadbackBeforeCleanup": {
+    "/private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app": [
+      "allowed",
+      "Incoming connection to /private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app is permitted."
+    ],
+    "/private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app/Contents/MacOS/smartstage": [
+      "allowed",
+      "Incoming connection to /private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app/Contents/MacOS/smartstage is permitted."
+    ]
+  },
+  "firewallTestRulesRemoved": true,
+  "finderDidNotStartTerminal": true,
+  "coreHasNoControllingTerminal": true,
+  "standardInputIsDevNull": true,
+  "stdoutAndStderrUseAppLog": true,
+  "startupURLWrittenToAppLog": true,
+  "appLogPath": "/Users/runner/Library/Logs/Smart Stage/smartstage.log",
+  "reopenKeptSameCorePID": true,
+  "reopenDispatchedAdminBrowser": true,
+  "runtimeAppObservedByNSRunningApplication": true,
+  "runtimeActivationPolicyRegular": true,
+  "runtimeAppEligibleForDock": true,
+  "runtimeBundleIdentityMatched": true,
+  "runtimeBundleFilesystemIdentityMatched": true,
+  "runtimeIconMatchesBundledArtwork": true,
+  "runtimeIconMeanAbsoluteChannelDifference": 0.0,
+  "runtimeIconRenderedRGBA128SHA256": "c43ac1776715ca8a92f9ffc496761bb0b3a1af39078c4a1f6583b26fde6314fe",
+  "sourceIconRenderedRGBA128SHA256": "c43ac1776715ca8a92f9ffc496761bb0b3a1af39078c4a1f6583b26fde6314fe",
+  "runningApplication": {
+    "bundlePath": "/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage-macos-install-ktprjav2/Operator's Applications \u2013 \u6f14\u51fa/Smart Stage.app",
+    "activationPolicy": 0,
+    "localizedName": "Smart Stage",
+    "bundleIdentifier": "com.github.arizzi74.smartstage",
+    "processIdentifier": 43068,
+    "finishedLaunching": true
+  },
+  "quitEventReachedAppHandler": true,
+  "quitAppleEventStoppedCore": true,
+  "defaultPortsClosedAfterQuit": true,
+  "quitAppleEventExitCode": 0,
+  "installerLaunchedBundleAndCore": true,
+  "kernelExecutablePathMatched": true,
+  "adminServedOnLoopback": true,
+  "adminListenerOnly127001": true,
+  "remoteListenerRejectsAdmin": true,
+  "runningAppReplacementRefused": true,
+  "runningAppLeftServing": true
+}

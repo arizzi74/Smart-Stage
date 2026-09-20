@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.8
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.10
 
 ## Implemented
 
@@ -32,8 +32,35 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.8
   Admin. The Mac app has a visible Dock icon and standard application menu with
   Quit (Command-Q); its status menu also provides Admin, log access and graceful
   Quit. Standalone command-line launches retain their existing behavior.
+- Automatic startup updates from the published GitHub releases, with matching
+  architecture, checksum and native executable validation. Installation reserves
+  playback, preserves the saved show, restarts without autoplay and rolls back
+  failed startup. Periodic checks defer installation until the next launch;
+  Admin also offers an update action while playback and stage output are stopped.
 
 ## Built and automatically tested
+
+Preview 10 is source `3c8492f036840f64612cef12045bd718a96c9d81`.
+[Native/browser run 35512154212](https://github.com/arizzi74/Smart-Stage/actions/runs/35512154212)
+passed shared race/vet and all four native targets. The
+[tagged run](https://github.com/arizzi74/Smart-Stage/actions/runs/35512155124)
+passed its 16 build, publication, public-download, browser and Mac-installer
+jobs, publishing 36 assets. Its four initial updater verification failures are
+retained separately and explained in [release verification](docs/release-verification.md).
+After correcting the verification scripts, all four targets passed actual
+automatic discovery, download, replacement and restart against the same
+published binaries in
+[run 35512568301](https://github.com/arizzi74/Smart-Stage/actions/runs/35512568301).
+The checks observed exact published bytes, new process/instance identities,
+preserved shows/media/ports, and no autoplay. Both Mac updates also retained
+their registered icon and Dock identity without opening Terminal. All six
+independently downloaded ZIPs match checksums, architecture and clean source.
+Native subprocess checks cover failed-startup and wrong-runtime-version rollback.
+The default Mac installer changed to preview 10 at `454324a`; both architectures
+passed [run 35512624089](https://github.com/arizzi74/Smart-Stage/actions/runs/35512624089)
+without a version override. The unversioned public bootstrap was checked
+separately and matched the verified installer bytes. Earlier previews need one
+manual upgrade; subsequent launches update automatically.
 
 Preview 8 is source `00f0c659dc01fc94432b4394e703e6b68f2a53b0`.
 [Native/browser run 35508597483](https://github.com/arizzi74/Smart-Stage/actions/runs/35508597483)

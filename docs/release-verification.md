@@ -26,6 +26,13 @@ Launch still uses one core process without Terminal and sends output to
 `~/Library/Logs/Smart Stage/smartstage.log`. Direct command-line execution keeps
 its existing lifecycle.
 
+Preview 10 adds automatic startup updates, verified downloads and native
+replacement/restart with rollback on failed startup. Playback is reserved during
+installation. Checks during an existing session leave installation for the next
+launch, and saved shows remain outside the replaced application. Restart begins
+stopped with stage output disabled. Admin shows update status and an optional
+update action; existing releases need one manual upgrade to acquire the updater.
+
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin and report
 that the operating system accepted the automatic browser launch; the separate
@@ -34,6 +41,67 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+[Preview 10](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.10)
+is source `3c8492f036840f64612cef12045bd718a96c9d81`.
+[Native/browser run 35512154212](https://github.com/arizzi74/Smart-Stage/actions/runs/35512154212)
+passed shared race/vet and all four native build, application, icon and browser
+checks. [Tagged run 35512155124](https://github.com/arizzi74/Smart-Stage/actions/runs/35512155124)
+passed 16 jobs covering those builds, publication of 36 assets, four fresh ZIP
+downloads/startups, four real browser/native checks and both Mac installers.
+Its four first automatic-update verification jobs failed: both Windows apps
+updated correctly but Unicode/short-path cleanup in the test missed the new
+process, Intel Mac updated correctly but the test compared Unicode path spelling
+instead of filesystem identity, and Apple Silicon reported an early update
+error whose message the original verifier did not retain. These original
+results remain under `verification/release-preview10/initial-auto-update/`.
+
+The corrected verifier at `c0ce51559ff7a711511589d15610916e72e7f8ac` compares
+filesystem identity, reads Windows paths through the Unicode kernel API,
+requires verified process cleanup and records complete initial update status.
+All four targets passed
+[automatic-update run 35512568301](https://github.com/arizzi74/Smart-Stage/actions/runs/35512568301)
+against the unchanged published preview 10 binaries. Each fixture uses the
+release's exact source with older version metadata, discovers GitHub releases
+through production code and installs automatically without an install API call.
+The new executable matches an independent public download, has a new PID and
+instance, retains the show/media/ports and starts stopped with stage disabled.
+Both Mac checks additionally verify the complete signature, regular activation
+policy, matching registered icon and no Terminal launch. Interactive update
+firewall authorization is explicitly skipped and recorded; the separate
+installer checks still exercise real scoped firewall-rule changes.
+The corrected verification source also passed all four native/browser targets
+in [run 35512568540](https://github.com/arizzi74/Smart-Stage/actions/runs/35512568540).
+All six independent ZIP downloads match their checksums, architectures and
+clean source metadata. Reports and scope are retained in
+[`verification/release-preview10/`](verification/release-preview10/).
+
+The installer default changed to preview 10 at
+`454324a0ceb2169c4be0463418a0ba0d7c4dee20`.
+[Default-install run 35512624089](https://github.com/arizzi74/Smart-Stage/actions/runs/35512624089)
+passed on Apple Silicon and Intel without a release override, including the
+installed bytes, registered icon/Dock identity, Terminal-free launch, graceful
+Quit, quarantine handling and real scoped firewall-rule checks. The unversioned
+public `main/install.sh` URL was separately fetched without a cache-busting query
+on 20 September 2026 at 13:08:40 UTC. It matched the checked installer, selected
+preview 10 and had SHA-256
+`20bd4a2023d8c7e76e9130db27e942ba0070fb181934331a2111ddae352b7cbc`.
+The default installer and public-bootstrap reports retain these observations.
+
+Preview 9, source `d0d69d93349f2ffbf4151b3d7dddea54ba0a330d`, passed its
+native builds, application checks, public downloads, browser checks and Mac
+installers, but all four real automatic-update checks failed before replacement
+in [run 35511624437](https://github.com/arizzi74/Smart-Stage/actions/runs/35511624437).
+Its validator incorrectly expected linker flags in Go build information, which
+`-trimpath` intentionally omits. The downloaded executables themselves carried
+the correct tagged module version and clean source metadata. The Mac installer
+default remained preview 8. Failed reports and independently verified archive
+metadata are retained in
+[`verification/release-preview9/`](verification/release-preview9/).
+Preview 10 validates the tagged module metadata and requires the new process to
+confirm its runtime version before deleting the rollback copy. A real tagged
+build regression and a wrong-runtime-version rollback subprocess test cover the
+correction.
 
 [Preview 8](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.8)
 is source `00f0c659dc01fc94432b4394e703e6b68f2a53b0`.
@@ -54,7 +122,7 @@ Command-Q. The standard Quit AppleEvent exercises the same application
 termination handler and its deferred native/Go cleanup. The user's report that
 preview 7 now works, followed by the missing-icon complaint, remains a positive
 operational observation rather than a completed physical acceptance matrix.
-The [physical procedure](macos-physical-test.md) now targets preview 8.
+The [physical procedure](macos-physical-test.md) now targets preview 10.
 
 [Tagged run 35508890135](https://github.com/arizzi74/Smart-Stage/actions/runs/35508890135)
 completed all 16 jobs successfully: shared race/vet, four native builds and

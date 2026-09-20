@@ -1,0 +1,64 @@
+{
+  "status": "failed",
+  "target": "darwin/amd64",
+  "release": "v0.1.0-preview.10",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "publishedDownload": {
+    "status": "passed",
+    "target": "darwin/amd64",
+    "release": "v0.1.0-preview.10",
+    "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.10/smartstage-darwin-amd64.zip",
+    "archive": "smartstage-darwin-amd64.zip",
+    "archiveSHA256": "24c82648db2bef23da78cd9a32891a083f99dc6de38f28362f441043b67543c8",
+    "archiveEntries": [
+      "smartstage"
+    ],
+    "executableSHA256": "c2702a136bbfb166e751d1a836e0d26b1a58a291d347e25b315dfafa173a9ba3",
+    "executablePermissions": "0755"
+  },
+  "fixture": {
+    "version": "v0.0.0-preview.1",
+    "sourceSHA": "3c8492f036840f64612cef12045bd718a96c9d81",
+    "target": "darwin/amd64",
+    "archive": "fixture-darwin-amd64.app.zip",
+    "archiveSHA256": "e5bee92f3a272d34651eb436aef31ed8e3c6fda3a585603c6976f0c0213f2beb",
+    "executableSHA256": "7a46b6af466c174857b16d7fa8379d00554ace2b5278ec4c49cfdba242861f4b",
+    "purpose": "Native production updater verification with older version metadata; not a published release"
+  },
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (3c8492f03684), go1.26.5, darwin/amd64",
+  "oldInstanceID": "b74c1cde0673e4509397133316cf7253da43331033ed2bfa",
+  "startupUpdatePending": true,
+  "initialUpdatePhase": "checking",
+  "startupReservationRejectedPLAY": true,
+  "oldPID": 45420,
+  "outcome": {
+    "version": "v0.1.0-preview.10",
+    "status": "updated",
+    "message": "Firewall setup was explicitly skipped (SMARTSTAGE_SKIP_FIREWALL=1); no incoming-connection allowance was verified.",
+    "time": "2026-09-20T13:02:59.966119Z",
+    "work": "/private/var/folders/20/jp1_0n3n7kndh6rnbqb5344m0000gn/T/smartstage update verification _iykbuim/Operator's applications – café/.smartstage-update-3648239269",
+    "helperPID": 45436
+  },
+  "observedUpdatePhases": [
+    "checking",
+    "downloading"
+  ],
+  "newPID": 45439,
+  "newInstanceID": "9009754aa65910e6232178259f7d0d9fbddb44076625eb20",
+  "installedVersionOutput": "Smart Stage v0.1.0-preview.10 (3c8492f03684), go1.26.5, darwin/amd64",
+  "installedExecutableSHA256": "c2702a136bbfb166e751d1a836e0d26b1a58a291d347e25b315dfafa173a9ba3",
+  "oldProcessExitedCleanly": true,
+  "actualPublishedBytesInstalled": true,
+  "adminAndCommandPortsPreserved": true,
+  "savedShowPreserved": true,
+  "hostMediaPreserved": true,
+  "restartedWithoutAutoplay": true,
+  "updateHTTPInstallRequestsSent": 0,
+  "productionReleaseDiscovery": true,
+  "productionArchiveValidation": true,
+  "productionHelperHandoff": true,
+  "startupAcknowledgedBeforeBackupRemoval": true,
+  "testProcessCleanupPassed": true,
+  "error": "Running app points to another bundle"
+}

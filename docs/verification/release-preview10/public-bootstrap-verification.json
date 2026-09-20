@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "URL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+  "verifiedAt": "2026-09-20T13:08:40.362454+00:00",
+  "sha256": "20bd4a2023d8c7e76e9130db27e942ba0070fb181934331a2111ddae352b7cbc",
+  "matchesLocalInstaller": true,
+  "defaultRelease": "v0.1.0-preview.10",
+  "request": "Unversioned public URL with no cache-busting query; exact bytes compared",
+  "scope": "Public entry-point bytes observed from this verification host; native installation is recorded separately."
+}
