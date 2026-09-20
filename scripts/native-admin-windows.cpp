@@ -188,7 +188,15 @@ int main() {
         }
         ss_desktop_show_admin();ss_desktop_show_admin();wait([&]{return IsWindowVisible(original)!=FALSE && !IsIconic(original);},"Reopen did not restore Admin");
         require(ui([&]{return desktop::window==original&&desktop::webview.p==web;}),"Reopen replaced Admin or its WebView");
-        require(js(L"window.__probeDraft==='preserved' && document.getElementById('gateway-url').value==='https://unsaved.example/smartstage' && document.getElementById('remote-connection-settings').open && online")=="true","Reopen lost unsaved UI or its connection");passed("reopenKeptSameWindowAndWebView");passed("unsavedUIAndLiveConnectionPreserved");
+        const auto* draftPreserved=L"window.__probeDraft==='preserved' && document.getElementById('gateway-url').value==='https://unsaved.example/smartstage' && document.getElementById('remote-connection-settings').open";
+        auto reopenDiagnostics=[]{std::cerr<<"Reopened Admin components: "<<js(L"({draft:window.__probeDraft,url:document.getElementById('gateway-url').value,settingsOpen:document.getElementById('remote-connection-settings').open,gatewayDirty,online,eventSourceState:source?.readyState,hidden:document.hidden})")<<"\n";};
+        if(js(draftPreserved)!="true") {reopenDiagnostics();throw std::string("Reopen lost unsaved Admin fields");}
+        // Visibility restoration deliberately reconnects the live stream. Drafts
+        // must survive immediately; connectivity must recover asynchronously.
+        try {wait([]{return js(L"online && source?.readyState===EventSource.OPEN")=="true";},"Reopened Admin did not restore its live connection");}
+        catch(...) {reopenDiagnostics();throw;}
+        if(js(draftPreserved)!="true") {reopenDiagnostics();throw std::string("Reconnect replaced unsaved Admin fields");}
+        passed("reopenKeptSameWindowAndWebView");passed("unsavedUIAndLiveConnectionPreserved");
         ui([]{SendMessageW(desktop::window,WM_KEYDOWN,VK_ESCAPE,1);});
         require(ss_desktop_poll_emergency_request()==1 && ss_desktop_poll_emergency_request()==0,"Native Admin Escape did not queue exactly one emergency request");
         ui([]{SendMessageW(desktop::window,WM_KEYDOWN,VK_ESCAPE,(LPARAM(1)<<30)|1);});

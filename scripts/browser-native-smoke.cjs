@@ -27,6 +27,19 @@ async function until(check, message, timeout = 30000) {
   throw new Error(message);
 }
 
+function dedicatedWindowsAdmin(platform, release) {
+  if (platform !== 'windows') return false; // This scenario starts the portable Mac executable.
+  if (release === 'dev') return true;
+  const version = release.match(/^v?(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/);
+  assert(version, `Unrecognized Windows release: ${release}`);
+  const core = version.slice(1, 4).map(Number), baseline = [0, 1, 0];
+  for (let index = 0; index < core.length; index++) {
+    if (core[index] !== baseline[index]) return core[index] > baseline[index];
+  }
+  const preview = (version[4] || '').match(/^preview\.(\d+)(?:\.[0-9A-Za-z.-]+)?$/);
+  return preview ? Number(preview[1]) >= 17 : !version[4] || version[4].split('.')[0] > 'preview';
+}
+
 (async () => {
   const exe = path.resolve(process.argv[2] || '');
   assert(fs.statSync(exe).isFile(), 'Pass a real supported-OS Smart Stage executable');
@@ -67,6 +80,9 @@ async function until(check, message, timeout = 30000) {
   assert.equal(version.status, 0, 'Published executable must report its version');
   const target = version.stdout.match(/, (darwin|windows)\/(arm64|amd64)/);
   assert(target, 'Expected native application platform/version metadata');
+  const release = version.stdout.match(/^Smart Stage (\S+) \(/);
+  assert(release, 'Expected Smart Stage release metadata');
+  const nativeAdmin = dedicatedWindowsAdmin(target[1], release[1]);
   if (process.env.SMARTSTAGE_VERSION) assert(version.stdout.includes(`Smart Stage ${process.env.SMARTSTAGE_VERSION} (`));
   const output = path.join(root, 'dist', 'browser-native', `${target[1]}-${target[2]}`);
   fs.mkdirSync(output, { recursive: true });
@@ -523,8 +539,10 @@ async function until(check, message, timeout = 30000) {
     await until(() => {
       if (startError) throw startError;
       if (exited) throw new Error(`Relaunched host exited: ${redact(stderr)}`);
-      return launchLog.includes('Reusing the existing Admin browser page');
-    }, 'Relaunch did not detect and reuse the existing Admin tab', 20000);
+      return nativeAdmin
+        ? launchLog.includes('Requested the dedicated Admin window') && launchLog.includes('Loaded native Admin page')
+        : launchLog.includes('Reusing the existing Admin browser page');
+    }, nativeAdmin ? 'Relaunch did not load the dedicated Windows Admin window' : 'Relaunch did not detect and reuse the existing Admin tab', 30000);
     await admin.locator('#connection.live').waitFor();
     await admin.locator('#quit-app:not([disabled])').waitFor();
     await until(async () => (await snapshot()).instanceId !== oldInstance, 'Old Admin tab did not acquire the new host instance');
@@ -532,11 +550,19 @@ async function until(check, message, timeout = 30000) {
     assert.equal(reloads, 1, 'An existing Admin tab must reload new assets exactly once');
     assert.equal(admin.url(), originalURL, 'Reused Admin tab must retain its URL');
     assert.equal(adminContext.pages().length, 1, 'Admin context must retain one page');
-    assert(!launchLog.includes('Opened Admin in the system browser'), 'Presence must suppress redundant OS browser dispatch');
+    assert(!/(?:Opened|Reopened) Admin in the system browser/.test(launchLog), 'Relaunch must not dispatch another system browser page');
     assert.equal((await snapshot()).state, 'stopped', 'Relaunch must never resume playback');
     assert.equal((await snapshot()).stageEnabled, false, 'Relaunch must leave the native stage closed');
     assert.deepEqual(errors, []);
-    record.checks.push('Same Admin tab reconnected after relaunch, loaded new assets once, and suppressed automatic OS browser dispatch');
+    record.relaunchAdminMode = nativeAdmin ? 'Dedicated Windows app window' : 'Reused system-browser Admin page';
+    record.existingBrowserTabReconnectedAfterRelaunch = true;
+    record.externalBrowserDispatchedOnRelaunch = false;
+    if (nativeAdmin) {
+      record.dedicatedAdminPageLoadedOnRelaunch = true;
+      record.checks.push('Windows relaunch loaded its dedicated Admin window; the existing external Admin tab also reconnected, loaded new assets exactly once, retained its URL and stayed the only page without an OS browser dispatch');
+    } else {
+      record.checks.push('Same Admin tab reconnected after relaunch, loaded new assets once, and suppressed automatic OS browser dispatch');
+    }
     await quitFromAdmin();
     record.passed = true;
     console.log(`Real browser/native checks passed: ${played} playable cues; audio endpoints=${devices.audio.length}. Physical routing remains unverified.`);

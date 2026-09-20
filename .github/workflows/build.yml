@@ -119,6 +119,13 @@ jobs:
         if: matrix.os == 'windows'
         shell: bash
         run: python3 scripts/native_admin_windows_checks.py 'dist/smartstage-windows-${{ matrix.arch }}.exe'
+      - name: Retain native Windows window diagnostics
+        if: ${{ always() && matrix.os == 'windows' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-admin-checks-${{ matrix.arch }}
+          path: dist/smartstage-windows-${{ matrix.arch }}.exe.native-admin.json
+          if-no-files-found: warn
       - name: Native executable startup
         shell: bash
         run: |
