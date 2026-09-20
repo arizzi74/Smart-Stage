@@ -199,14 +199,18 @@ static BOOL enableStage(NSString *identity) {
         SSStageView *view = [[SSStageView alloc] initWithFrame:NSMakeRect(0,0,target.frame.size.width,target.frame.size.height)];
         view.wantsLayer = YES; view.layer.backgroundColor = NSColor.blackColor.CGColor;
         stageWindow.contentView = view;
+        blackOverlay = [CALayer layer]; blackOverlay.backgroundColor = NSColor.blackColor.CGColor;
+        blackOverlay.frame = view.bounds; blackOverlay.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
+        [view.layer addSublayer:blackOverlay];
+    }
+    if (!videoLayer) {
+        NSView *view = stageWindow.contentView;
         videoLayer = [AVPlayerLayer playerLayerWithPlayer:nil];
         videoLayer.videoGravity = AVLayerVideoGravityResizeAspect;
         videoLayer.frame = view.bounds;
         videoLayer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-        [view.layer addSublayer:videoLayer];
-        blackOverlay = [CALayer layer]; blackOverlay.backgroundColor = NSColor.blackColor.CGColor;
-        blackOverlay.frame = view.bounds; blackOverlay.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
-        [view.layer addSublayer:blackOverlay];
+        videoLayer.hidden = YES;
+        [view.layer insertSublayer:videoLayer below:blackOverlay];
     }
     [stageWindow setFrame:target.frame display:YES];
     stageDisplayID = [identity copy]; stageEnabled = YES; blackout(); [stageWindow orderFrontRegardless];
@@ -238,7 +242,15 @@ static void failPlayback(SSPlayback *p, NSString *message) {
     if (self.timeObserver) { [self.player removeTimeObserver:self.timeObserver]; self.timeObserver = nil; }
     if (self.endObserver) { [NSNotificationCenter.defaultCenter removeObserver:self.endObserver]; self.endObserver = nil; }
     if (self.failureObserver) { [NSNotificationCenter.defaultCenter removeObserver:self.failureObserver]; self.failureObserver = nil; }
-    if (videoLayer.player == self.player) videoLayer.player = nil;
+    if (videoLayer.player == self.player) {
+        // Retire the renderer with its player. Keeping a single AVPlayerLayer
+        // across replacements retained caption timers/timebases on macOS 15.
+        // The window and opaque black overlay remain in place across STOP.
+        [CATransaction begin]; [CATransaction setDisableActions:YES];
+        videoLayer.player = nil;
+        [videoLayer removeFromSuperlayer]; videoLayer = nil;
+        [CATransaction commit]; [CATransaction flush];
+    }
     [self.player replaceCurrentItemWithPlayerItem:nil];
     self.player = nil; self.item = nil; self.asset = nil;
 }
