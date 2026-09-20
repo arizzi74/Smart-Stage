@@ -5,6 +5,7 @@
 #include <chrono>
 #include <future>
 #include <iostream>
+#include <tuple>
 
 namespace probe {
 std::map<std::string,std::string> report;
@@ -126,23 +127,68 @@ bool enabledWithParents(HWND handle) {
     }
     return handle==nullptr;
 }
+std::string describeWindow(HWND handle) {
+            wchar_t name[256]{};DWORD pid=0;RECT area{};
+            if(handle) {GetClassNameW(handle,name,256);GetWindowThreadProcessId(handle,&pid);GetWindowRect(handle,&area);}
+            return "{\"hwnd\":"+std::to_string((uintptr_t)handle)+",\"class\":"+desktop::quote(desktop::utf8(name))+",\"pid\":"+std::to_string(pid)+",\"visible\":"+(IsWindowVisible(handle)?"true":"false")+",\"minimized\":"+(IsIconic(handle)?"true":"false")+",\"enabled\":"+(IsWindowEnabled(handle)?"true":"false")+",\"ancestorsEnabled\":"+(enabledWithParents(handle)?"true":"false")+",\"rect\":["+std::to_string(area.left)+","+std::to_string(area.top)+","+std::to_string(area.right)+","+std::to_string(area.bottom)+"]}";
+}
 DropHit observeDropHit(int xPercent=50,int yPercent=50) {
     return ui([xPercent,yPercent]{
         HWND admin=desktop::window;RECT bounds{};GetClientRect(admin,&bounds);
         require(bounds.right>64 && bounds.bottom>64,"Admin client area is too small for an interior drop target");
         POINT client{std::clamp(bounds.right*xPercent/100,32L,bounds.right-32),std::clamp(bounds.bottom*yPercent/100,32L,bounds.bottom-32)},screen=client;ClientToScreen(admin,&screen);
         HWND hit=WindowFromPoint(screen),root=hit?GetAncestor(hit,GA_ROOT):nullptr;
-        auto describe=[](HWND handle) {
-            wchar_t name[256]{};DWORD pid=0;RECT area{};
-            if(handle) {GetClassNameW(handle,name,256);GetWindowThreadProcessId(handle,&pid);GetWindowRect(handle,&area);}
-            return "{\"hwnd\":"+std::to_string((uintptr_t)handle)+",\"class\":"+desktop::quote(desktop::utf8(name))+",\"pid\":"+std::to_string(pid)+",\"visible\":"+(IsWindowVisible(handle)?"true":"false")+",\"minimized\":"+(IsIconic(handle)?"true":"false")+",\"enabled\":"+(IsWindowEnabled(handle)?"true":"false")+",\"ancestorsEnabled\":"+(enabledWithParents(handle)?"true":"false")+",\"rect\":["+std::to_string(area.left)+","+std::to_string(area.top)+","+std::to_string(area.right)+","+std::to_string(area.bottom)+"]}";
-        };
         DropHit result;result.screen=screen;result.matches=hit==admin;result.adminChild=hit && hit!=admin && (root==admin || IsChild(admin,hit));
         result.clientMatches=ChildWindowFromPointEx(admin,client,CWP_SKIPINVISIBLE|CWP_SKIPDISABLED|CWP_SKIPTRANSPARENT)==admin;
         result.adminEnabled=enabledWithParents(admin);result.external=hit && root && root!=admin && !result.adminChild;
-        result.evidence="{\"point\":["+std::to_string(screen.x)+","+std::to_string(screen.y)+"],\"clientPoint\":["+std::to_string(client.x)+","+std::to_string(client.y)+"],\"clientSize\":["+std::to_string(bounds.right)+","+std::to_string(bounds.bottom)+"],\"admin\":"+describe(admin)+",\"hit\":"+describe(hit)+",\"hitRoot\":"+describe(root)+",\"foreground\":"+describe(GetForegroundWindow())+",\"directChild\":"+describe(ChildWindowFromPointEx(admin,client,CWP_SKIPINVISIBLE|CWP_SKIPDISABLED|CWP_SKIPTRANSPARENT))+",\"exactAdminHit\":"+(result.matches?"true":"false")+",\"adminChildHit\":"+(result.adminChild?"true":"false")+"}";
+        result.evidence="{\"point\":["+std::to_string(screen.x)+","+std::to_string(screen.y)+"],\"clientPoint\":["+std::to_string(client.x)+","+std::to_string(client.y)+"],\"clientSize\":["+std::to_string(bounds.right)+","+std::to_string(bounds.bottom)+"],\"admin\":"+describeWindow(admin)+",\"hit\":"+describeWindow(hit)+",\"hitRoot\":"+describeWindow(root)+",\"foreground\":"+describeWindow(GetForegroundWindow())+",\"directChild\":"+describeWindow(ChildWindowFromPointEx(admin,client,CWP_SKIPINVISIBLE|CWP_SKIPDISABLED|CWP_SKIPTRANSPARENT))+",\"exactAdminHit\":"+(result.matches?"true":"false")+",\"adminChildHit\":"+(result.adminChild?"true":"false")+"}";
         return result;
     });
+}
+// A plain unowned Win32 window must exhibit the same global occlusion before
+// classifying the failure as a hosted-desktop limitation rather than Admin UI.
+void independentDropHitBaseline(POINT screen) {
+    constexpr auto className=L"SmartStageProbe-PlainDropBaseline";
+    HWND baseline=ui([screen]{
+        WNDCLASSW type{};type.lpfnWndProc=DefWindowProcW;type.hInstance=GetModuleHandleW(nullptr);type.lpszClassName=L"SmartStageProbe-PlainDropBaseline";
+        require(RegisterClassW(&type)!=0,"Could not register independent drop baseline class");
+        HWND handle=CreateWindowExW(WS_EX_TOPMOST,L"SmartStageProbe-PlainDropBaseline",L"Smart Stage native drop baseline",WS_POPUP|WS_VISIBLE,screen.x-64,screen.y-64,128,128,nullptr,nullptr,type.hInstance,nullptr);
+        require(handle && IsWindow(handle),"Could not create independent drop baseline window");
+        require(SetWindowPos(handle,HWND_TOPMOST,screen.x-64,screen.y-64,128,128,SWP_SHOWWINDOW|SWP_NOACTIVATE)!=FALSE,"Could not position independent drop baseline");
+        return handle;
+    });
+    struct Cleanup {
+        HWND handle;const wchar_t* name;
+        ~Cleanup(){try {ui([this]{if(IsWindow(handle))DestroyWindow(handle);UnregisterClassW(name,GetModuleHandleW(nullptr));report["globalDropHitBaselineDestroyed"]=IsWindow(handle)?"false":"true";});}catch(...) {}}
+    } cleanup{baseline,className};
+    bool valid=true,anyExact=false,allExternal=true;unsigned count=0;std::string observations="[";
+    auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(3);
+    do {
+        auto result=ui([baseline,screen]{
+            POINT client=screen;ScreenToClient(baseline,&client);RECT size{};GetClientRect(baseline,&size);
+            HWND hit=WindowFromPoint(screen),root=hit?GetAncestor(hit,GA_ROOT):nullptr;
+            HWND child=ChildWindowFromPointEx(baseline,client,CWP_SKIPINVISIBLE|CWP_SKIPDISABLED|CWP_SKIPTRANSPARENT);
+            bool exact=hit==baseline;
+            bool inputs=IsWindow(baseline) && IsWindowVisible(baseline) && !IsIconic(baseline) && enabledWithParents(baseline) && !GetWindow(baseline,GW_OWNER)
+                && (GetWindowLongPtrW(baseline,GWL_EXSTYLE)&WS_EX_TOPMOST) && child==baseline
+                && client.x>=32 && client.x<=size.right-32 && client.y>=32 && client.y<=size.bottom-32
+                && SendMessageW(baseline,WM_NCHITTEST,0,MAKELPARAM(screen.x,screen.y))==HTCLIENT;
+            bool external=hit && root && root!=baseline && root!=desktop::window && !IsChild(baseline,hit) && !IsChild(desktop::window,hit);
+            std::string evidence="{\"point\":["+std::to_string(screen.x)+","+std::to_string(screen.y)+"],\"clientPoint\":["+std::to_string(client.x)+","+std::to_string(client.y)+"],\"clientSize\":["+std::to_string(size.right)+","+std::to_string(size.bottom)+"],\"baseline\":"+describeWindow(baseline)+",\"hit\":"+describeWindow(hit)+",\"hitRoot\":"+describeWindow(root)+",\"directChild\":"+describeWindow(child)+",\"foreground\":"+describeWindow(GetForegroundWindow())+",\"unowned\":"+(!GetWindow(baseline,GW_OWNER)?"true":"false")+",\"topmost\":"+((GetWindowLongPtrW(baseline,GWL_EXSTYLE)&WS_EX_TOPMOST)?"true":"false")+",\"nonClientHitIsClient\":"+(SendMessageW(baseline,WM_NCHITTEST,0,MAKELPARAM(screen.x,screen.y))==HTCLIENT?"true":"false")+",\"exactBaselineHit\":"+(exact?"true":"false")+",\"externalHit\":"+(external?"true":"false")+"}";
+            return std::make_tuple(inputs,exact,external,evidence);
+        });
+        valid=valid && std::get<0>(result);anyExact=anyExact || std::get<1>(result);allExternal=allExternal && std::get<2>(result);
+        if(count++)observations+=',';observations+=std::get<3>(result);
+        report["globalDropHitBaseline"]="{\"class\":\"SmartStageProbe-PlainDropBaseline\",\"windowProcedure\":\"DefWindowProcW\",\"point\":["+std::to_string(screen.x)+","+std::to_string(screen.y)+"],\"validInputs\":"+(valid?"true":"false")+",\"anyExactGlobalHit\":"+(anyExact?"true":"false")+",\"allGlobalHitsExternal\":"+(allExternal?"true":"false")+",\"observations\":"+observations+"]}";
+        if(!valid || anyExact || !allExternal)break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }while(std::chrono::steady_clock::now()<deadline);
+    require(valid,"Independent plain drop baseline has invalid inputs; desktop capability is unresolved");
+    require(!anyExact,"Independent plain Win32 window is globally hittable while Admin is not; investigate Admin hit testing");
+    require(allExternal && count>=2,"Independent plain drop baseline did not confirm external desktop occlusion");
+    require(ui([baseline]{return DestroyWindow(baseline)!=FALSE && !IsWindow(baseline);}),"Could not destroy the independent drop baseline");
+    report["globalDropHitBaselineDestroyed"]="true";
+    std::cerr<<"Native drop independent plain Win32 baseline is also externally occluded: "<<report["globalDropHitBaseline"]<<"\n";
 }
 struct DropSurface {
     bool raised=false,globalExact=false,allGridExternal=true,allGridClient=true,allGridEnabled=true,gridChild=false;
@@ -195,6 +241,7 @@ struct DropSurface {
         globalExact=hit.matches;
         if(!globalExact) {
             require(raised && gridCount==50 && allGridExternal && allGridClient && hit.external,"Global drop hit testing failed without conclusive external desktop occlusion");
+            independentDropHitBaseline(point);
             std::cerr<<"Native drop probe: unrelated desktop windows cover all 50 interior samples; verifying the enabled Admin client OLE handler without claiming a global desktop hit\n";
         }
         report["globalDesktopHitTest"]=desktop::quote(globalExact?"exact-admin-hit":"externally-occluded");
