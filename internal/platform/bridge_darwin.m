@@ -16,6 +16,9 @@
 
 static _Atomic(uint64_t) currentGeneration;
 static _Atomic(bool) shuttingDown;
+static _Atomic(bool) desktopReady;
+static _Atomic(bool) desktopAdminRequested;
+static _Atomic(bool) desktopChooserScheduled;
 static pthread_mutex_t eventMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t commandMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t desktopFileMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -136,7 +139,6 @@ static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
 @property(nonatomic, strong) NSMutableArray<NSMenuItem *> *openItems;
 @property(nonatomic, strong) NSMutableArray<NSMenuItem *> *quitItems;
 @property(nonatomic, strong) NSURL *adminURL;
-@property(nonatomic) BOOL reopenPending;
 @property(nonatomic) BOOL quitPending;
 @property(nonatomic) BOOL quitStarted;
 @property(nonatomic) BOOL terminationPending;
@@ -171,7 +173,8 @@ static SSApplicationDelegate *applicationDelegate;
 }
 - (void)chooseMedia:(id)sender {
     (void)sender;
-    if (self.quitStarted || self.filePanel) return;
+    if (self.quitStarted || atomic_load(&shuttingDown)) return;
+    if (self.filePanel) { [self.filePanel makeKeyAndOrderFront:nil]; return; }
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     self.filePanel = panel;
     panel.title = @"Choose media for Smart Stage";
@@ -182,8 +185,10 @@ static SSApplicationDelegate *applicationDelegate;
     panel.allowsMultipleSelection = YES;
     panel.resolvesAliases = YES;
     panel.allowedContentTypes = @[UTTypeAudio, UTTypeMovie];
+    fputs("Opened native media chooser\n", stderr);
     [panel beginWithCompletionHandler:^(NSModalResponse result) {
         self.filePanel = nil;
+        if (result != NSModalResponseOK) fputs("Cancelled native media chooser\n", stderr);
         if (result != NSModalResponseOK || self.quitStarted || atomic_load(&shuttingDown)) return;
         NSString *failure = nil;
         if (!queueDesktopFiles(panel.URLs, &failure)) desktopFileAlert(failure);
@@ -191,11 +196,11 @@ static SSApplicationDelegate *applicationDelegate;
 }
 - (void)openAdmin:(id)sender {
     (void)sender;
-    if (!self.adminURL) { self.reopenPending = YES; return; }
-    if ([NSWorkspace.sharedWorkspace openURL:self.adminURL])
-        fputs("Reopened Admin in the system browser\n", stderr);
-    else
-        fputs("Smart Stage: could not reopen Admin in the system browser\n", stderr);
+    if (self.quitStarted || atomic_load(&shuttingDown)) return;
+    // Go owns tab-presence/reconnect policy for every entry point. Keep one
+    // pending request even when Finder delivers reopen before Go is ready.
+    atomic_store(&desktopAdminRequested, true);
+    fputs("Requested Admin in the system browser\n", stderr);
 }
 - (void)viewLog:(id)sender {
     (void)sender;
@@ -649,9 +654,12 @@ static void cleanupNative(void) {
     static BOOL cleaned;
     if (cleaned) return;
     cleaned = YES;
+    atomic_store(&desktopReady, false);
+    atomic_store(&desktopAdminRequested, false);
     disableStage();
     if (keyObserver) [NSEvent removeMonitor:keyObserver]; keyObserver = nil;
     [applicationDelegate.filePanel cancel:nil]; applicationDelegate.filePanel = nil;
+    atomic_store(&desktopChooserScheduled, false);
     for (SSFileAlert *controller in desktopAlerts.allObjects) [controller.alert.window close];
     desktopAlerts = nil;
     [NSNotificationCenter.defaultCenter removeObserver:screenObserver]; screenObserver = nil;
@@ -698,16 +706,53 @@ void ss_desktop_admin(const char *url) {
         NSString *value = [NSString stringWithUTF8String:url];
         onMain(^{
             applicationDelegate.adminURL = [NSURL URLWithString:value];
+            atomic_store(&desktopReady, true);
             for (NSMenuItem *item in applicationDelegate.openItems) item.enabled = YES;
             for (NSMenuItem *item in applicationDelegate.quitItems) item.enabled = YES;
             fputs("Smart Stage menu bar ready\n", stderr);
             if (applicationDelegate.quitPending) [applicationDelegate quit:nil];
-            else if (applicationDelegate.reopenPending) {
-                applicationDelegate.reopenPending = NO;
-                [applicationDelegate openAdmin:nil];
-            }
         });
     }
+}
+int ss_desktop_poll_admin_request(void) {
+    return atomic_exchange(&desktopAdminRequested, false) ? 1 : 0;
+}
+int ss_desktop_can_choose_files(void) {
+    return atomic_load(&desktopReady) && !atomic_load(&shuttingDown) ? 1 : 0;
+}
+int ss_desktop_choose_files(void) {
+    if (!ss_desktop_can_choose_files()) return 0;
+    // Coalesce queued work, while allowing a later click to bring an existing
+    // panel forward after the operator has switched back to the browser.
+    if (atomic_exchange(&desktopChooserScheduled, true)) return 1;
+    onMain(^{
+        atomic_store(&desktopChooserScheduled, false);
+        if (!applicationDelegate || applicationDelegate.quitStarted || atomic_load(&shuttingDown)) {
+            return;
+        }
+        [NSApp activateIgnoringOtherApps:YES];
+        [applicationDelegate chooseMedia:nil];
+    });
+    return 1;
+}
+int ss_desktop_activate_browser(void) {
+    if (!ss_desktop_can_choose_files()) return 0;
+    onMain(^{
+        if (atomic_load(&shuttingDown) || !applicationDelegate.adminURL) return;
+        // Activating an existing browser does not ask it to create another tab.
+        // The browser controls which window/tab is selected; no Automation
+        // permission or browser-specific scripting is involved.
+        NSURL *browserURL = [NSWorkspace.sharedWorkspace URLForApplicationToOpenURL:applicationDelegate.adminURL];
+        NSString *identifier = browserURL ? [NSBundle bundleWithURL:browserURL].bundleIdentifier : nil;
+        if (!identifier.length) return;
+        for (NSRunningApplication *browser in [NSRunningApplication runningApplicationsWithBundleIdentifier:identifier]) {
+            if ([browser activateWithOptions:NSApplicationActivateIgnoringOtherApps]) {
+                fputs("Activated the running default browser without opening another Admin URL\n", stderr);
+                break;
+            }
+        }
+    });
+    return 1;
 }
 void ss_desktop_error(const char *message) {
     if (!desktopLaunch()) return;

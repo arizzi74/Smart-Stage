@@ -3,7 +3,10 @@
 Smart Stage is one Go process with a compiled-in native bridge. It embeds the
 HTML/CSS/JavaScript with `go:embed` and uses OS-native playback without a media
 player, transcoder or separate service. After both HTTP listeners are ready, it
-asks the operating system to open local Admin in the default system browser;
+gives an existing authenticated Admin page up to six seconds to reconnect, then
+asks the operating system to open local Admin in the default system browser if
+no page is present. Active Admin SSE and authenticated page heartbeats establish
+presence. A reconnected page reloads its assets when the host instance changes;
 `--no-browser` disables that launch. A browser engine is not bundled. The native
 harness is a development artifact, not an application dependency. Unsupported platforms or
 builds without cgo fail initialization; there is no production fake backend.

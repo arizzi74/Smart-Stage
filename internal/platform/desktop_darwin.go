@@ -14,6 +14,23 @@ import (
 )
 
 var desktopFiles = make(chan DesktopFileRequest, MaxDesktopFileRequests)
+var desktopAdminRequests = make(chan struct{}, 1)
+
+// DesktopAdminRequests coalesces native Dock/menu/file-import requests. The Go
+// application decides whether to reuse an existing Admin page or open its URL.
+func DesktopAdminRequests() <-chan struct{} { return desktopAdminRequests }
+
+// DesktopCanChooseFiles reports whether the native desktop is ready for a
+// picker. It does not show a window or access files.
+func DesktopCanChooseFiles() bool { return C.ss_desktop_can_choose_files() != 0 }
+
+// DesktopChooseFiles queues the native picker or reuses its pending/open panel.
+// False means this process has no available native desktop picker.
+func DesktopChooseFiles() bool { return C.ss_desktop_choose_files() != 0 }
+
+// DesktopActivateBrowser queues activation of the running default browser. It
+// never opens a URL, starts a browser process, or selects a particular tab.
+func DesktopActivateBrowser() bool { return C.ss_desktop_activate_browser() != 0 }
 
 func DesktopFiles() <-chan DesktopFileRequest { return desktopFiles }
 
@@ -25,7 +42,10 @@ func DesktopFileResult(id uint64, message string) {
 	C.ss_desktop_files_result(C.uint64_t(id), p)
 }
 
-func pollDesktopFiles() {
+func pollDesktop() {
+	if len(desktopAdminRequests) < cap(desktopAdminRequests) && C.ss_desktop_poll_admin_request() != 0 {
+		desktopAdminRequests <- struct{}{}
+	}
 	for i := 0; i < MaxDesktopFileRequests && len(desktopFiles) < cap(desktopFiles); i++ {
 		p := C.ss_desktop_poll_files()
 		if p == nil {

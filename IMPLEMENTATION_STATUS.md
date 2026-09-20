@@ -45,6 +45,15 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.11
   Filesystem identity handles actual Unicode/case aliases without broadening roots.
 - Compact remote Stage/Disconnect controls, Escape stop-and-close behavior in
   native app/stage and connected browser pages, and persisted per-cue colors.
+- Remote cue buttons directly below the top bar, with ordinary command
+  acknowledgements retained as live announcements and errors still visible.
+- Authenticated Admin Quit requests graceful shutdown. The open page waits and
+  reconnects after relaunch; fresh page presence suppresses another automatic
+  browser launch, and a new host instance refreshes the interface once. Native
+  Mac Admin actions share that policy. Suspended tabs may not be detected.
+- Bundled Mac Admin exposes the native file chooser, preserving original file
+  paths. Browser Finder drops explain why paths cannot be read and offer the
+  chooser or Dock route instead.
 - Optional Screen Wake Lock with truthful status, opt-in and release/reacquire
   handling. The default HTTP LAN remote cannot use this HTTPS-only browser API;
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.

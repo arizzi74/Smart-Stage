@@ -119,6 +119,9 @@ expiry/logout ends them. Commands do not travel over SSE.
 
 | Route | Contract |
 | --- | --- |
+| `POST /api/quit` | `{}` requests graceful host shutdown; HTTP 202 `{quitting:true}` is flushed before playback, stage and listeners close. Admin session, same-origin and CSRF protections apply. |
+| `POST /api/admin-presence` | `{}` marks an authenticated Admin page as present for ten seconds; HTTP 200 `{present:true}`. An active Admin SSE also counts. Ordinary session/state probes do not suppress browser launch. |
+| `POST /api/choose-files` | `{}` opens the supported native media chooser; HTTP 202 `{choosing:true}`. Selected original paths pass the same root/playlist validation as native file-open events. Admin session/state responses include `capabilities.chooseFiles`; unsupported hosts do not show the action. |
 | `GET /api/update` | Update status: `currentVersion`, `latestVersion`, `phase`, `available`, `canInstall`, `message`, `releaseURL`, `checkedAt`, and optional `lastUpdate` outcome. |
 | `POST /api/update/check` | `{}` starts an asynchronous check of official GitHub releases; HTTP 202 with status. Checks within one minute reuse the existing result. |
 | `POST /api/update/install` | `{}` reserves stopped playback with stage output disabled and prepares the discovered update; HTTP 202 with status. The browser cannot supply a URL, version, executable or destination. |

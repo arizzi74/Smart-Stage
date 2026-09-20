@@ -16,6 +16,7 @@ const assert = require('node:assert/strict');
   let stateGets = 0, holdPlay = false, remoteGets = 0, links = [], sessionCounter = 0;
   let updateGets = 0, updateGetDelay = 0, failUpdateCheck = false, restarting = false;
   let hiddenListingDelay = 0;
+  let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: true };
   let update = { currentVersion: 'v0.1.0-preview.8', latestVersion: 'v0.1.0-preview.9', phase: 'available', available: true, canInstall: true, message: 'A new version is available.', releaseURL: 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', checkedAt: new Date().toISOString() };
   const labels = ['Opening music', 'Welcome video with a deliberately long label that must wrap clearly', "Café's interlude", '<img src=x onerror="window.__xss=true">'];
   const state = { instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
@@ -25,6 +26,7 @@ const assert = require('node:assert/strict');
     const url = new URL(req.url, 'http://localhost');
     const reply = (value, status = 200) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(value)); };
     if (!url.pathname.startsWith('/api/')) {
+      if (listenerRole === 'admin' && url.pathname === '/admin') adminDocumentLoads++;
       const name = url.pathname.startsWith('/assets/') ? path.basename(url.pathname) : 'index.html';
       const type = name.endsWith('.js') ? 'text/javascript' : name.endsWith('.css') ? 'text/css' : 'text/html';
       res.writeHead(200, { 'Content-Type': type, 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'" }); res.end(fs.readFileSync(path.join(assets, name))); return;
@@ -39,7 +41,7 @@ const assert = require('node:assert/strict');
     const pair = () => {
       const id = `fixture-${++sessionCounter}`; sessions.set(id, listenerRole);
       res.setHeader('Set-Cookie', `${cookieName}=${id}; Path=/; HttpOnly; SameSite=Strict`);
-      reply({ role: listenerRole, csrfToken: 'test-csrf' });
+      reply({ role: listenerRole, csrfToken: 'test-csrf', ...(listenerRole === 'admin' ? { capabilities: adminCapabilities } : {}) });
     };
     if (url.pathname === '/api/local-session' && listenerRole === 'admin') { pair(); return; }
     if (url.pathname === '/api/pair' && listenerRole === 'command') {
@@ -48,7 +50,18 @@ const assert = require('node:assert/strict');
     }
     if (role !== listenerRole) { reply({ error: { message: 'Connect this browser first' } }, 401); return; }
     if (url.pathname === '/api/logout') { sessions.delete(sessionID); res.setHeader('Set-Cookie', `${cookieName}=; Path=/; Max-Age=0`); reply({}); return; }
-    if (url.pathname === '/api/state') { stateGets++; reply({ role, csrfToken: 'test-csrf', state }); return; }
+    if (url.pathname === '/api/state') { stateGets++; reply({ role, csrfToken: 'test-csrf', state, ...(role === 'admin' ? { capabilities: adminCapabilities } : {}) }); return; }
+    if (['/api/admin-presence', '/api/quit', '/api/choose-files'].includes(url.pathname)) {
+      if (role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
+      assert.equal(req.headers['x-csrf-token'], 'test-csrf');
+      assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
+      assert.deepEqual(body, {});
+      if (url.pathname === '/api/admin-presence') { reply({ present: true }); return; }
+      if (url.pathname === '/api/choose-files') { assert(adminCapabilities.chooseFiles); reply({ choosing: true }, 202); return; }
+      reply({ quitting: true }, 202);
+      setTimeout(() => { restarting = true; for (const client of clients) client.end(); }, 25);
+      return;
+    }
     if (url.pathname === '/api/events') { res.writeHead(200, { 'Content-Type': 'text/event-stream' }); clients.add(res); res.on('close', () => clients.delete(res)); broadcast(); return; }
     if (url.pathname.startsWith('/api/update')) {
       if (role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
@@ -137,6 +150,8 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('.cue').count(), 4);
     assert.equal(await page.evaluate(() => window.__xss), undefined);
     assert.equal(await page.locator('#cue-grid img').count(), 0);
+    assert.equal(await page.locator('#page-title').isVisible(), false, 'remote control omits the Admin title and eyebrow block');
+    assert.equal(await page.locator('#quit-app').isVisible(), false, 'Quit is only offered in local Admin');
     assert.equal(await page.locator('.transport #logout').count(), 1, 'Disconnect belongs in the fixed transport');
     assert((await page.locator('#logout').boundingBox()).height <= 32, 'Disconnect remains a small secondary control');
     await page.locator('#remote-stage').click();
@@ -179,6 +194,9 @@ const assert = require('node:assert/strict');
         assert(control && control.y >= 0 && control.y + control.height <= size.height, `${selector} must remain in the fixed top bar`);
       }
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `horizontal overflow at ${size.width}`);
+      await page.evaluate(() => scrollTo(0, 0));
+      const gap = await page.evaluate(() => document.getElementById('cue-grid').getBoundingClientRect().top - document.querySelector('.transport').getBoundingClientRect().bottom);
+      assert(gap >= 12 && gap <= 20, `remote cues must sit directly below the header at ${size.width}px (gap ${gap})`);
     }
     await page.setViewportSize({ width: 390, height: 844 }); await page.evaluate(() => scrollTo(0, 0));
     await page.screenshot({ path: path.join(output, 'command-phone.png'), fullPage: true });
@@ -187,6 +205,8 @@ const assert = require('node:assert/strict');
     await context.setOffline(true); await page.waitForTimeout(200);
     await page.locator('#stop').tap();
     await page.waitForFunction(() => document.getElementById('notice').textContent.includes('unconfirmed'));
+    assert.equal(await page.locator('#notice.error').isVisible(), true, 'critical remote errors remain visible');
+    assert.equal(await page.locator('#notice').getAttribute('aria-live'), 'polite');
     assert(await page.locator('.cue').first().isDisabled(), 'disconnected cue activation must be disabled');
     const playCount = commands.filter(c => c.path === '/api/play').length;
     await context.setOffline(false); await page.waitForTimeout(1000);
@@ -206,6 +226,15 @@ const assert = require('node:assert/strict');
     assert.equal(await admin.locator('.playlist-row').count(), 4);
     assert.equal(await admin.locator('#playlist img').count(), 0);
     assert.equal(await admin.locator('#audio-output option').count(), 2);
+    await untilPresence();
+    async function untilPresence() { await admin.waitForFunction(() => !document.getElementById('quit-app').disabled); assert(requests.some(r => r.path === '/api/admin-presence' && r.listenerRole === 'admin'), 'Admin establishes authenticated presence'); }
+    assert.equal(await admin.locator('#choose-files').isVisible(), true, 'Mac native picker is offered only when the host advertises it');
+    await admin.locator('#choose-files').click();
+    await admin.waitForFunction(() => document.getElementById('file-drop-message').textContent.includes('Mac dialog'));
+    assert.equal(requests.filter(r => r.path === '/api/choose-files').length, 1);
+    adminCapabilities = { chooseFiles: false }; await admin.evaluate(() => refreshState());
+    assert.equal(await admin.locator('#choose-files').isVisible(), false, 'unsupported hosts retain Host files without a nonworking native-picker button');
+    adminCapabilities = { chooseFiles: true }; await admin.evaluate(() => refreshState());
     await admin.locator('#file-list .file-row').first().waitFor();
     assert.equal(await admin.locator('#show-hidden').isChecked(), false, 'host files hide dotfiles by default');
     assert.equal(requests.filter(r => r.path === '/api/files')[0].query.includes('showHidden'), false, 'default browsing uses the server hidden-file filter');
@@ -403,6 +432,7 @@ const assert = require('node:assert/strict');
     update = { ...update, phase: 'restarting', message: 'Restarting Smart Stage. Admin will reconnect automatically.' };
     await admin.evaluate(() => loadUpdateStatus());
     const beforeRestartSessions = requests.filter(r => r.path === '/api/local-session').length;
+    const documentsBeforeUpdateRestart = adminDocumentLoads;
     const oldRemoteURL = await admin.locator('#remote-url').textContent();
     restarting = true;
     for (const client of clients) client.end();
@@ -421,6 +451,7 @@ const assert = require('node:assert/strict');
     assert.equal(await admin.locator('.playlist-row input').first().isDisabled(), false, 'edits become available after the new host starts');
     assert.equal(await admin.locator('#install-update').isDisabled(), true, 'installed version is no longer offered');
     assert.equal(requests.filter(r => r.path === '/api/update/install').length, 1, 'reconnection does not repeat installation');
+    assert.equal(adminDocumentLoads, documentsBeforeUpdateRestart + 1, 'a new host instance reloads Admin assets exactly once');
 
     const invalid = await browser.newPage(); invalid.on('pageerror', e => errors.push(e.message));
     await invalid.goto(commandBase + '/command#token=00000000'); await invalid.locator('#pairing').waitFor();
@@ -434,9 +465,30 @@ const assert = require('node:assert/strict');
     await invalid.context().clearCookies();
     await invalid.goto(commandBase + '/command'); await invalid.locator('#pairing').waitFor();
     assert.match(await invalid.locator('#pair-form').textContent(), /Scan the QR code/);
+    assert.equal(requests.some(r => r.listenerRole === 'command' && ['/api/admin-presence', '/api/quit', '/api/choose-files'].includes(r.path)), false, 'remote pages never call local lifecycle endpoints');
+    const beforeQuitDocuments = adminDocumentLoads;
+    await admin.locator('#quit-app').click();
+    await admin.locator('#app-closed').waitFor();
+    assert.equal(requests.filter(r => r.path === '/api/quit').length, 1, 'one Admin click sends one authenticated quit request');
+    assert.equal(await admin.locator('#stop').isDisabled(), true);
+    assert.equal(await admin.locator('#admin-view').isVisible(), false);
+    await admin.waitForTimeout(2500);
+    assert.equal(await admin.locator('#notice.error').count(), 0, 'intentional shutdown stays quiet while the closed page probes for a relaunch');
+    assert.equal(await admin.locator('#connection').textContent(), 'Smart Stage is closed');
+    await admin.screenshot({ path: path.join(output, 'admin-closed.png'), fullPage: true });
+    sessions.clear(); token = '11223344';
+    state.instanceId = 'browser-fixture-after-quit'; state.revision = 1;
+    links = [fixtureLink('Wi-Fi', commandBase, 0)]; restarting = false;
+    await admin.waitForFunction(() => document.getElementById('remote-code').textContent === '11223344', { timeout: 10000 });
+    await admin.locator('#connection.live').waitFor();
+    assert.equal(await admin.locator('#app-closed').isVisible(), false);
+    assert.equal(await admin.locator('#quit-app').isDisabled(), false);
+    assert.equal(await admin.locator('#stop').isDisabled(), false);
+    assert.equal(adminDocumentLoads, beforeQuitDocuments + 1, 'relaunch refreshes the existing Admin tab once rather than opening a new page');
+    assert.equal(requests.filter(r => r.path === '/api/quit').length, 1, 'reconnection never repeats Quit');
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], hostFilesHiddenByDefault: true, hiddenFileToggleAndNavigation: true, hiddenFileResponseRace: true, compactDesktopFileRows: true, hostFileDragUsesOriginalPaths: true, externalFileDropGuidance: true, remoteStageOutputControl: true, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
-    console.log('Browser checks passed: automatic Admin, token links/session reconnect, QR panel/LAN refresh/clipboard fallback, cues/escaping/STOP/responsive layouts, and update status/retry/startup reservation/install guards/restart session and QR refresh.');
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, hostFilesHiddenByDefault: true, hiddenFileToggleAndNavigation: true, hiddenFileResponseRace: true, compactDesktopFileRows: true, hostFileDragUsesOriginalPaths: true, externalFileDropGuidance: true, remoteStageOutputControl: true, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, native file-picker capability/request, host-file selection/dragging, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer].map(server => new Promise(resolve => server.close(resolve)))); }
 })().catch(e => { console.error(e); process.exit(1); });

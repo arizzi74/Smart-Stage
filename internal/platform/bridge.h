@@ -27,6 +27,10 @@ void ss_desktop_error(const char *message);
 char *ss_desktop_poll_files(void);
 int ss_desktop_files_pending(void);
 void ss_desktop_files_result(uint64_t request_id, const char *message);
+int ss_desktop_poll_admin_request(void);
+int ss_desktop_can_choose_files(void);
+int ss_desktop_choose_files(void);
+int ss_desktop_activate_browser(void);
 #endif
 #ifdef __cplusplus
 }

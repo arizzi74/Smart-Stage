@@ -95,7 +95,8 @@ included in path-redacted remote state.
 Host-file rows can be dragged within Admin using paths already returned by its
 authenticated file browser. A web browser does not disclose full filesystem
 paths for Finder drops. The Mac app therefore accepts native Finder/Dock file-open
-events and offers Choose Media; its native queue passes original paths to the
+events and offers Choose Media, also available through Admin’s native chooser
+button; its native queue passes original paths to the
 same root validation and atomic playlist save. No files are uploaded or copied,
 and importing does not trigger playback. During an update reservation imports
 are rejected with an instruction to retry afterward. The app registers audio and
@@ -173,3 +174,27 @@ dependencies. Native Go decoder tests recover the exact URL including the token
 from generated PNGs. The upstream MIT copyright/license notice is embedded in
 the executable and available at `/licenses.txt` on either listener. Packaging
 therefore remains one executable per primary ZIP.
+
+
+## Admin lifecycle and remote layout (20 September 2026)
+
+The user requested removal of the remote heading/ordinary acknowledgement block,
+a visible Admin Quit action, and reuse of an open Admin page after relaunch.
+Command success remains available to assistive technology; errors remain visible
+without reserving an empty block above cues. Quit requires the loopback Admin
+session, Origin and CSRF, acknowledges before graceful cleanup, and does not
+require browser-window closure. The page quietly probes after Quit.
+
+A fresh authenticated Admin heartbeat or a live Admin SSE proves page presence.
+Startup allows six seconds for reconnect, then opens the URL only if no page was
+seen; diagnostics that fetch state alone do not count. Mac native menu, Dock and
+successful import requests share the Go browser-launch policy. A new host
+instance makes the existing Admin page reload current assets. Detection is best
+effort for background/discarded tabs; no browser-specific Automation permission
+is added and exact-tab selection is not promised.
+
+External Finder drops remain unable to supply native paths to a normal system
+browser. Admin can now open the existing asynchronous native chooser and asks the
+operator to select those files, keeping original references. Reading a global
+native drag pasteboard after a browser request would not reliably bind a path to
+the user's actual drop, so no such workaround is used.

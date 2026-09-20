@@ -47,22 +47,30 @@ async function until(check, message, timeout = 30000) {
   const errors = [];
   let adminBase = '';
   let stderr = '', browser, admin, command;
-  const application = spawn(exe, ['--port', '0', '--admin-port', '0', '--bind', '0.0.0.0', '--no-browser', '--config-dir', config,
-    '--media-root', mediaRoot], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
-  let exited = false, startError = null;
-  application.on('error', error => { startError = error; });
-  application.on('exit', () => { exited = true; });
-  application.stderr.setEncoding('utf8');
-  application.stderr.on('data', data => { stderr = (stderr + data).slice(-8192); });
-  const lines = readline.createInterface({ input: application.stdout });
-  lines.on('line', line => {
-    const address = line.match(/^Admin:\s+(http:\/\/[^\s]+)\/admin$/);
-    if (address) {
-      const url = new URL(address[1]);
-      assert.equal(url.hostname, '127.0.0.1', 'Admin must advertise only IPv4 localhost');
-      adminBase = url.origin;
-    }
-  });
+  let application, lines, exited = false, startError = null, exitCode = null, launchLog = '';
+  function startApplication(ports = ['--port', '0', '--admin-port', '0', '--no-browser']) {
+    exited = false; startError = null; exitCode = null; launchLog = ''; stderr = '';
+    application = spawn(exe, [...ports, '--bind', '0.0.0.0', '--no-auto-update', '--config-dir', config,
+      '--media-root', mediaRoot], { windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+    application.on('error', error => { startError = error; });
+    application.on('exit', code => { exited = true; exitCode = code; });
+    application.stderr.setEncoding('utf8');
+    application.stderr.on('data', data => {
+      stderr = (stderr + data).slice(-8192);
+      launchLog = (launchLog + data).slice(-16384);
+    });
+    lines = readline.createInterface({ input: application.stdout });
+    lines.on('line', line => {
+      launchLog = (launchLog + line + '\n').slice(-16384);
+      const address = line.match(/^Admin:\s+(http:\/\/[^\s]+)\/admin$/);
+      if (address) {
+        const url = new URL(address[1]);
+        assert.equal(url.hostname, '127.0.0.1', 'Admin must advertise only IPv4 localhost');
+        adminBase = url.origin;
+      }
+    });
+  }
+  startApplication();
   try {
     await until(() => {
       if (startError) throw startError;
@@ -207,6 +215,7 @@ async function until(check, message, timeout = 30000) {
     assert.equal(await command.locator('a[href$="/admin"]').count(), 0);
     assert.equal((await command.request.get(commandBase + '/api/remote-control')).status(), 403);
     await command.locator('.cue').nth(3).waitFor();
+    assert.equal(await command.locator('#page-title').isVisible(), false, 'Remote must not show the title block above cue buttons');
     assert.deepEqual(await command.locator('.cue-title').allTextContents(), labels);
     const controllerState = await snapshot(command);
     assert.equal(controllerState.cues.find(cue => cue.id === coloredCueID).color, '#fff000', 'Command state must carry the saved cue color');
@@ -292,10 +301,55 @@ async function until(check, message, timeout = 30000) {
     record.cuesNativelyPlayedAndStopped = played;
     record.audioEndpoints = devices.audio.length; record.displays = devices.displays.length;
     record.audioSkipped = !audio;
-    // Deliberately release stage output before test cleanup. Windows child
-    // termination below is not evidence of graceful application shutdown.
-    await admin.getByRole('button', { name: 'Disable stage output', exact: true }).click();
-    await until(async () => !(await snapshot()).stageEnabled, 'Stage disable did not complete');
+    // Quit through the real Admin page while native video is playing, then keep
+    // that same tab alive across a normal relaunch on the same addresses.
+    await command.locator('.cue').filter({ hasText: 'Finale' }).tap();
+    await waitState('playing');
+    const oldInstance = (await snapshot()).instanceId;
+    const originalURL = admin.url();
+    const originalAdminPort = new URL(adminBase).port;
+    async function quitFromAdmin() {
+      const accepted = admin.waitForResponse(response => apiPath(response) === '/api/quit');
+      await admin.getByRole('button', { name: 'Quit Smart Stage', exact: true }).click();
+      assert.equal((await accepted).status(), 202);
+      assert.deepEqual(await (await accepted).json(), { quitting: true });
+      await admin.locator('#app-closed').waitFor();
+      await until(() => exited, 'Admin Quit did not shut down the native host', 15000);
+      assert.equal(exitCode, 0, 'Admin Quit must exit cleanly');
+      for (const port of [originalAdminPort, remoteURL.port]) {
+        const listening = await new Promise(resolve => {
+          const socket = net.connect({ host: '127.0.0.1', port: Number(port) });
+          const done = result => { socket.destroy(); resolve(result); };
+          socket.once('connect', () => done(true)); socket.once('error', () => done(false));
+          socket.setTimeout(2000, () => done(false));
+        });
+        assert.equal(listening, false, 'Quit must release both listeners');
+      }
+      lines.close();
+    }
+    await quitFromAdmin();
+    record.checks.push('Admin Quit during real native video playback exited successfully and closed both HTTP listeners');
+    let reloads = 0;
+    admin.on('framenavigated', frame => { if (frame === admin.mainFrame()) reloads++; });
+    startApplication(['--port', remoteURL.port, '--admin-port', originalAdminPort]);
+    await until(() => {
+      if (startError) throw startError;
+      if (exited) throw new Error(`Relaunched host exited: ${redact(stderr)}`);
+      return launchLog.includes('Reusing the existing Admin browser page');
+    }, 'Relaunch did not detect and reuse the existing Admin tab', 20000);
+    await admin.locator('#connection.live').waitFor();
+    await admin.locator('#quit-app:not([disabled])').waitFor();
+    await until(async () => (await snapshot()).instanceId !== oldInstance, 'Old Admin tab did not acquire the new host instance');
+    await sleep(6500);
+    assert.equal(reloads, 1, 'An existing Admin tab must reload new assets exactly once');
+    assert.equal(admin.url(), originalURL, 'Reused Admin tab must retain its URL');
+    assert.equal(adminContext.pages().length, 1, 'Admin context must retain one page');
+    assert(!launchLog.includes('Opened Admin in the system browser'), 'Presence must suppress redundant OS browser dispatch');
+    assert.equal((await snapshot()).state, 'stopped', 'Relaunch must never resume playback');
+    assert.equal((await snapshot()).stageEnabled, false, 'Relaunch must leave the native stage closed');
+    assert.deepEqual(errors, []);
+    record.checks.push('Same Admin tab reconnected after relaunch, loaded new assets once, and suppressed automatic OS browser dispatch');
+    await quitFromAdmin();
     record.passed = true;
     console.log(`Real browser/native checks passed: ${played} playable cues; audio endpoints=${devices.audio.length}. Physical routing remains unverified.`);
   } catch (error) {

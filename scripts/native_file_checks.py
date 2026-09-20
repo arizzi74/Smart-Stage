@@ -115,8 +115,23 @@ def file_open_checks(bundle, evidence_path):
             check_originals(restored, 4)
             assert [cue["id"] for cue in restored["cues"][:3]] == [cue["id"] for cue in appended["cues"]], "Restart changed saved cue identities"
             report.update(closedAppAcceptedStartupFileOpen=True, savedImportsSurvivedRestart=True)
+            # Exercise the actual authenticated browser-to-native picker route.
+            # Leave its panel unattended and verify ordinary app Quit still
+            # finishes; production code must not enter a nested modal loop.
+            capabilities = admin.get("/api/state").get("capabilities", {})
+            assert capabilities.get("chooseFiles") is True, capabilities
+            chooser_snapshot = launch_snapshot()
+            for _ in range(2):
+                status, result = admin.request("POST", "/api/choose-files", {})
+                assert status == 202 and result.get("choosing") is True, (status, result)
+            helpers.wait_for(lambda: "Opened native media chooser" in appended_log(chooser_snapshot),
+                             15, "the Admin-requested native chooser")
+            assert appended_log(chooser_snapshot).count("Opened native media chooser") == 1, "Repeated Admin actions duplicated the picker"
+            check_originals(admin.get("/api/playlist"), 4)
             quit_app(pid)
             pid = None
+            report.update(adminReportedNativeChooserCapability=True, adminChooserReturnedAccepted=True,
+                          repeatedAdminChooserReusedOnePanel=True, quitCompletedWithUnattendedNativeChooser=True)
             assert not (terminal_pids() - snapshot["terminalPIDs"]), "Native file-open delivery opened Terminal"
             report.update(fileOpenDidNotStartTerminal=True, status="passed")
     except Exception as error:

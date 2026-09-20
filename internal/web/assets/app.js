@@ -9,11 +9,14 @@ let draggedHostPaths = [], hostDragDepth = 0;
 let controlSequence = 0;
 let validationSignature = '', validationRefresh = false;
 let localSessionBusy = false, localSessionRetry = null;
+let presenceBusy = false, quitBusy = false, appClosed = false, reloadingAdmin = false;
+let adminCapabilities = {}, chooseFilesBusy = false;
 let remoteLinks = [], selectedRemoteURL = '', remoteRefresh = false;
 let updateStatus = null, updateBusy = false, updatePreparing = false;
 let updateRestartInstance = '', updateRestartComplete = false, updateRestartStarted = 0;
 const cueButtons = new Map(), playlistRows = new Map();
-$('page-heading').textContent = adminPage ? 'Set the stage' : 'Show control';
+document.body.classList.toggle('remote-page', !adminPage);
+$('page-title').hidden = !adminPage;
 $('show-hidden').checked = false;
 
 function element(tag, text, className) {
@@ -34,9 +37,11 @@ function clock(seconds) {
   const whole = Math.floor(seconds); return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
 }
 function notify(message, error = false) {
+  if (appClosed || reloadingAdmin) return;
   $('notice').textContent = message; $('notice').classList.toggle('error', error);
 }
 function connection(connected) {
+  if (appClosed || quitBusy || reloadingAdmin) return;
   online = connected;
   $('connection').textContent = connected ? 'Connected to host' : expectingUpdateRestart() ? 'Restarting Smart Stage…' : 'Disconnected · status may be stale';
   $('connection').className = connected ? 'live' : 'stale';
@@ -48,6 +53,7 @@ function connection(connected) {
   if (adminPage) { renderUpdateStatus(); renderEditAvailability(); }
 }
 function showPair() {
+  if (appClosed || quitBusy || reloadingAdmin) return;
   if (!adminPage) window.smartStageWakeLock?.setConnected(false);
   connection(false); if (source) { source.close(); source = null; }
   if (adminPage) { void connectLocalAdmin(); return; }
@@ -57,25 +63,84 @@ function pairError(message = '') {
   $('pair-error').textContent = message; $('pair-error').hidden = !message;
 }
 async function connectLocalAdmin() {
-  if (localSessionBusy) return;
+  if (localSessionBusy || quitBusy || appClosed || reloadingAdmin) return;
   localSessionBusy = true; clearTimeout(localSessionRetry);
   try {
     const session = await api('POST', '/api/local-session', {});
     role = session.role; csrf = session.csrfToken;
+    adminCapabilities = session.capabilities || {};
     if (role !== 'admin') throw new Error('Open Admin on the host computer.');
+    void sendAdminPresence(true);
     if (!await initializeSession()) throw new Error('Could not load the host status.');
     notify(updateRestartComplete ? 'Smart Stage restarted. Use the new remote control link or QR code to reconnect phones and tablets.' : '');
     updateRestartComplete = false;
   } catch (error) {
+    if (quitBusy || appClosed || reloadingAdmin) return;
     connection(false);
     if (expectingUpdateRestart()) notify('Smart Stage is restarting. Admin will reconnect automatically.');
     else notify(`Cannot connect to Admin. ${error.message} Retrying…`, true);
     localSessionRetry = setTimeout(() => { void connectLocalAdmin(); }, 5000);
   } finally { localSessionBusy = false; }
 }
+async function sendAdminPresence(force = false) {
+  if (!adminPage || role !== 'admin' || !csrf || presenceBusy || quitBusy || reloadingAdmin || (!online && !force)) return;
+  presenceBusy = true;
+  try { await api('POST', '/api/admin-presence', {}); }
+  catch { /* Presence is a best-effort hint, not a playback command. */ }
+  finally { presenceBusy = false; }
+}
+function reloadAdmin() {
+  if (reloadingAdmin) return;
+  reloadingAdmin = true;
+  clearTimeout(localSessionRetry);
+  if (source) { source.close(); source = null; }
+  location.reload();
+}
+async function probeClosedAdmin() {
+  if (!appClosed || localSessionBusy || reloadingAdmin) return;
+  clearTimeout(localSessionRetry);
+  localSessionBusy = true;
+  try {
+    const session = await api('POST', '/api/local-session', {});
+    if (session.role !== 'admin') return;
+    role = session.role; csrf = session.csrfToken;
+    void sendAdminPresence(true);
+    const result = await api('GET', '/api/state');
+    if (result.role === 'admin' && result.state.instanceId !== state?.instanceId) reloadAdmin();
+  } catch { /* A deliberately closed app should not produce connection errors. */ }
+  finally {
+    localSessionBusy = false;
+    if (appClosed && !reloadingAdmin) localSessionRetry = setTimeout(() => { void probeClosedAdmin(); }, 2000);
+  }
+}
+function showAppClosed() {
+  appClosed = true; quitBusy = false; online = false; role = ''; csrf = '';
+  clearTimeout(localSessionRetry);
+  if (source) { source.close(); source = null; }
+  $('page-title').hidden = true; $('admin-view').hidden = true; $('playback-error').hidden = true;
+  $('notice').textContent = ''; $('notice').classList.remove('error');
+  $('app-closed').hidden = false; $('stop').disabled = true; $('quit-app').disabled = true;
+  $('connection').textContent = 'Smart Stage is closed'; $('connection').className = '';
+  $('play-state').textContent = 'Closed'; $('current-cue').textContent = 'No playback'; $('time').textContent = '0:00';
+  localSessionRetry = setTimeout(() => { void probeClosedAdmin(); }, 2000);
+}
+$('quit-app').addEventListener('click', async () => {
+  if (!adminPage || role !== 'admin' || !online || quitBusy || appClosed) return;
+  quitBusy = true; $('quit-app').disabled = true; $('quit-app').textContent = 'Closing…';
+  $('admin-view').inert = true;
+  $('connection').textContent = 'Closing Smart Stage…'; notify('Closing Smart Stage…');
+  try {
+    const result = await api('POST', '/api/quit', {});
+    if (result.quitting !== true) throw new Error('The host did not acknowledge the quit request.');
+    showAppClosed();
+  } catch (error) {
+    quitBusy = false; $('quit-app').textContent = 'Quit Smart Stage'; $('admin-view').inert = false;
+    connection(online); notify(`Quit is unconfirmed. ${error.message}`, true); void refreshState();
+  }
+});
 async function api(method, path, body) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), path === '/api/stop' ? 5000 : 30000);
+  const timeout = setTimeout(() => controller.abort(), appClosed || path === '/api/admin-presence' ? 2000 : path === '/api/stop' ? 5000 : 30000);
   try {
     const response = await fetch(path, {
       method, credentials: 'same-origin', cache: 'no-store', signal: controller.signal,
@@ -95,12 +160,16 @@ async function api(method, path, body) {
   } finally { clearTimeout(timeout); }
 }
 async function refreshState() {
-  if (refreshing) return;
+  if (refreshing || quitBusy || appClosed || reloadingAdmin) return;
   refreshing = true;
   try {
-    const result = await api('GET', '/api/state'); role = result.role; csrf = result.csrfToken;
-    applyState(result.state); return true;
+    const result = await api('GET', '/api/state');
+    if (quitBusy || appClosed || reloadingAdmin) return false;
+    role = result.role; csrf = result.csrfToken;
+    if (adminPage) adminCapabilities = result.capabilities || {};
+    applyState(result.state); return !reloadingAdmin;
   } catch (error) {
+    if (quitBusy || appClosed || reloadingAdmin) return false;
     connection(false);
     if (expectingUpdateRestart()) notify('Smart Stage is restarting. Admin will reconnect automatically.');
     else if (!$('pairing').open) notify(error.message, true);
@@ -109,6 +178,7 @@ async function refreshState() {
   finally { refreshing = false; }
 }
 function connectEvents() {
+  if (quitBusy || appClosed || reloadingAdmin) return;
   if (source) source.close();
   source = new EventSource('/api/events');
   source.addEventListener('state', event => {
@@ -120,10 +190,12 @@ function connectEvents() {
     } catch { connection(false); }
   });
   source.addEventListener('heartbeat', () => { lastSeen = Date.now(); });
-  source.addEventListener('open', () => { void refreshState(); });
+  source.addEventListener('open', () => { void refreshState(); void sendAdminPresence(true); });
   source.addEventListener('error', () => { connection(false); void refreshState(); });
 }
 function applyState(next) {
+  if (quitBusy || appClosed || reloadingAdmin) return;
+  if (adminPage && state && next.instanceId !== state.instanceId) { reloadAdmin(); return; }
   if (state?.instanceId === next.instanceId && next.revision < state.revision) return;
   if (updateRestartInstance && next.instanceId !== updateRestartInstance) {
     updatePreparing = false; updateRestartInstance = ''; updateRestartStarted = 0; updateRestartComplete = true;
@@ -248,7 +320,7 @@ function renderRemoteLink() {
   }
 }
 async function loadRemoteControl() {
-  if (!adminPage || role !== 'admin' || remoteRefresh) return;
+  if (!adminPage || role !== 'admin' || remoteRefresh || quitBusy || appClosed || reloadingAdmin) return;
   remoteRefresh = true;
   try {
     const result = await api('GET', '/api/remote-control');
@@ -301,6 +373,9 @@ function expectingUpdateRestart() {
 }
 function renderEditAvailability() {
   if (!adminPage || !state) return;
+  $('quit-app').disabled = !online || role !== 'admin' || quitBusy || appClosed || reloadingAdmin;
+  $('choose-files').hidden = adminCapabilities.chooseFiles !== true;
+  $('choose-files').disabled = !online || role !== 'admin' || chooseFilesBusy || quitBusy || appClosed || updatePending() || playlistBusy;
   const pending = updatePending();
   $('save-outputs').disabled = pending || !['stopped', 'error'].includes(state.state);
   $('enable-stage').disabled = pending || !['stopped', 'error'].includes(state.state) || state.outputFault;
@@ -368,7 +443,7 @@ function applyUpdateStatus(result) {
   }
 }
 async function loadUpdateStatus() {
-  if (!adminPage || role !== 'admin' || updateBusy) return;
+  if (!adminPage || role !== 'admin' || updateBusy || quitBusy || appClosed || reloadingAdmin) return;
   updateBusy = true;
   try { applyUpdateStatus(await api('GET', '/api/update')); }
   catch (error) {
@@ -431,6 +506,16 @@ function fileDropMessage(message, error = false) {
   $('file-drop-message').textContent = message;
   $('file-drop-message').classList.toggle('error', error);
 }
+$('choose-files').addEventListener('click', async () => {
+  if (!adminPage || adminCapabilities.chooseFiles !== true || $('choose-files').disabled) return;
+  chooseFilesBusy = true; renderEditAvailability();
+  try {
+    const result = await api('POST', '/api/choose-files', {});
+    if (result.choosing !== true) throw new Error('The host did not open the file chooser.');
+    fileDropMessage('Choose files in the Mac dialog. Originals stay in place.');
+  } catch (error) { fileDropMessage(error.message, true); }
+  finally { chooseFilesBusy = false; renderEditAvailability(); }
+});
 function canDropHostFiles() { return online && role === 'admin' && playlist && !playlistBusy && !updatePending(); }
 function selectedHostPaths() { return [...new Set(fileEntries.filter(file => !file.directory && fileSelection.has(file.path)).map(file => file.path))]; }
 async function addDroppedHostFiles(paths) {
@@ -454,7 +539,7 @@ if (adminPage) {
     if (!dragHasType(event, 'Files') && !dragHasType(event, hostFileDragType)) return;
     event.preventDefault(); hostDragDepth = 0; $('playlist-drop').classList.remove('drag-over');
     if (dragHasType(event, 'Files')) {
-      const message = 'To keep files in place, drop Finder files onto Smart Stage’s Dock icon on Mac, or select them in Host files below.';
+      const message = adminCapabilities.chooseFiles === true ? 'Your browser cannot read Finder file paths. Choose the files in the Mac dialog, or drop them onto the Smart Stage Dock icon.' : 'Your browser cannot read original file paths. Select files in Host files below to keep them in place.';
       fileDropMessage(message); notify(message); return;
     }
     // Paths come only from rows rendered by this Admin page. Never accept paths
@@ -630,11 +715,14 @@ async function initializeSession() {
 setInterval(() => { if (Date.now() - lastSeen > 18000) connection(false); }, 2000);
 setInterval(() => { if (!document.hidden) void loadRemoteControl(); }, 10000);
 setInterval(() => { if (!document.hidden) void loadUpdateStatus(); }, 5000);
+setInterval(() => { if (online && !appClosed) void sendAdminPresence(); }, 5000);
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && csrf) { connection(false); void refreshState(); connectEvents(); void loadRemoteControl(); }
+  if (!document.hidden && appClosed) { void probeClosedAdmin(); return; }
+  if (!document.hidden && csrf) { connection(false); void refreshState(); connectEvents(); void loadRemoteControl(); void sendAdminPresence(true); }
 });
 window.addEventListener('offline', () => connection(false));
 window.addEventListener('online', () => {
+  if (appClosed) { void probeClosedAdmin(); return; }
   if (csrf) { void refreshState(); connectEvents(); void loadRemoteControl(); }
   else if (adminPage) void connectLocalAdmin();
 });

@@ -173,6 +173,8 @@ func main() {
 		adminServer, commandServer := newServer(adminAPI), newServer(commandAPI)
 		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer cancel()
+		adminAPI.SetQuit(cancel)
+		adminAPI.SetChooseFiles(platform.DesktopChooseFiles, platform.DesktopCanChooseFiles)
 		updateReady := make(chan *update.Prepared, 1)
 		executable, _ := os.Executable()
 		// Normalize parsed options, retaining assigned ports and absolute media
@@ -226,19 +228,21 @@ func main() {
 			exitHint = "Right-click the Smart Stage Dock icon and choose Quit"
 		}
 		fmt.Printf("Open Admin to scan or copy the remote-control link. %s; STOP retains an enabled black stage.\n", exitHint)
+		browserCtx, cancelBrowser := context.WithCancel(ctx)
+		defer cancelBrowser()
+		adminBrowser := newAdminBrowser(browserCtx, adminAPI.HasAdminPresence,
+			func() bool { return service.Snapshot(true).UpdatePending },
+			func() error { return browseropen.Open(adminURL) },
+			func() { platform.DesktopActivateBrowser() })
 		if !*noBrowser {
-			go func() {
-				if err := browseropen.Open(adminURL); err != nil {
-					slog.Warn("Could not open the system browser; open the printed Admin URL", "error", err)
-				} else {
-					slog.Info("Opened Admin in the system browser")
-				}
-			}()
+			adminBrowser.Request(false)
 		}
 		ticker := time.NewTicker(10 * time.Second)
 		defer ticker.Stop()
 		for {
 			select {
+			case <-platform.DesktopAdminRequests():
+				adminBrowser.Request(true)
 			case request := <-platform.DesktopFiles():
 				// Native Finder/Dock actions carry original host paths. Keep the
 				// save in this loop so shutdown cannot overtake an accepted append.
@@ -261,6 +265,7 @@ func main() {
 				// This is the commit boundary. A later Quit still allows the
 				// verified update to finish after all cleanup and process exit.
 				pendingUpdate = prepared
+				cancelBrowser()
 				service.Close()
 				shutdownCtx, done := context.WithTimeout(context.Background(), 3*time.Second)
 				_ = adminServer.Shutdown(shutdownCtx)

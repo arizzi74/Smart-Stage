@@ -36,4 +36,11 @@ def escape_checks(display):
             result = subprocess.run([str(probe), display["id"], target], capture_output=True, text=True, timeout=20)
             assert result.returncode == 0, f"Native {target} Escape probe failed ({result.returncode}): {result.stderr}"
             evidence.append(json.loads(result.stdout))
+        if sys.platform == "darwin":
+            environment = os.environ.copy()
+            environment["SMARTSTAGE_APP_ICON"] = str(root / "assets/icon/smartstage.icns")
+            result = subprocess.run([str(probe), display["id"], "desktop"], env=environment,
+                                    capture_output=True, text=True, timeout=20)
+            assert result.returncode == 0, f"Native desktop action probe failed ({result.returncode}): {result.stderr}"
+            evidence.append({"nativeDesktopActions": json.loads(result.stdout)})
         return evidence

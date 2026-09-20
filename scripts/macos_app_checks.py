@@ -123,16 +123,22 @@ def background_launch_checks(bundle, pid, snapshot, find_core_pid):
     deadline = time.monotonic() + 15
     while time.monotonic() < deadline:
         assert find_core_pid(bundle) == pid, "Reopening the app replaced its running core"
-        if "Reopened Admin in the system browser" in appended_log(reopen_snapshot):
+        reopen_log = appended_log(reopen_snapshot)
+        if ("Opened Admin in the system browser" in reopen_log
+                or "Reopened Admin in the system browser" in reopen_log
+                or "Reusing the existing Admin browser page" in reopen_log):
             break
         time.sleep(0.25)
     else:
-        raise AssertionError("Reopening the app did not dispatch Admin to the system browser")
+        raise AssertionError("Reopening the app did not open or reuse Admin in the system browser")
     assert not (terminal_pids() - snapshot["terminalPIDs"]), "Reopening the app started Terminal"
     result = {"finderDidNotStartTerminal": True, "coreHasNoControllingTerminal": True,
               "standardInputIsDevNull": True, "stdoutAndStderrUseAppLog": True,
               "startupURLWrittenToAppLog": True, "appLogPath": str(LOG_PATH),
-              "reopenKeptSameCorePID": True, "reopenDispatchedAdminBrowser": True}
+              "reopenKeptSameCorePID": True, "reopenOpenedOrReusedAdminBrowser": True,
+              "reopenDispatchedAdminBrowser": ("Opened Admin in the system browser" in reopen_log
+                                               or "Reopened Admin in the system browser" in reopen_log),
+              "reopenReusedAdminBrowser": "Reusing the existing Admin browser page" in reopen_log}
     if dock:
         result.update(dock_app_checks(bundle, pid))
     return result

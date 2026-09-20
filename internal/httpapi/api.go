@@ -30,17 +30,23 @@ type RemoteLink struct {
 }
 
 type API struct {
-	app         *app.Service
-	auth        *auth.Manager
-	assets      http.Handler
-	mu          sync.RWMutex
-	hosts       map[string]bool
-	port        string
-	ordinary    chan struct{}
-	role        string
-	cookieName  string
-	remoteLinks []RemoteLink
-	updater     UpdateController
+	app            *app.Service
+	auth           *auth.Manager
+	assets         http.Handler
+	mu             sync.RWMutex
+	hosts          map[string]bool
+	port           string
+	ordinary       chan struct{}
+	role           string
+	cookieName     string
+	remoteLinks    []RemoteLink
+	updater        UpdateController
+	quit           func()
+	quitOnce       sync.Once
+	adminSeen      time.Time
+	adminEvents    int
+	chooseFiles    func() bool
+	canChooseFiles func() bool
 }
 
 // New defaults to the loopback-only Admin handler. A network controller must use
@@ -310,8 +316,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fail(w, 403, "admin_required", "Admin pairing is required")
 		return
 	}
-	// STOP bypasses the bounded ordinary-operation slots and all rate limiters.
-	if path != "/api/stop" && path != "/api/events" && path != "/api/state" {
+	// STOP and Quit bypass bounded ordinary-operation slots.
+	if path != "/api/stop" && path != "/api/quit" && path != "/api/events" && path != "/api/state" {
 		select {
 		case a.ordinary <- struct{}{}:
 			defer func() { <-a.ordinary }()
@@ -322,6 +328,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	key := r.Method + " " + path
 	switch key {
+	case "POST /api/quit", "POST /api/admin-presence", "POST /api/choose-files":
+		a.lifecycleRequest(w, r)
 	case "GET /api/update", "POST /api/update/check", "POST /api/update/install":
 		a.updateRequest(w, r)
 	case "GET /api/remote-control":
@@ -354,7 +362,9 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/png")
 		_, _ = w.Write(png)
 	case "GET /api/state":
-		writeJSON(w, 200, map[string]any{"role": session.Role, "csrfToken": session.CSRF, "state": a.app.Snapshot(admin)})
+		reply := map[string]any{"role": session.Role, "csrfToken": session.CSRF, "state": a.app.Snapshot(admin)}
+		a.addCapabilities(reply)
+		writeJSON(w, 200, reply)
 	case "GET /api/events":
 		a.events(w, r, session)
 	case "POST /api/logout":
@@ -479,7 +489,9 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 func (a *API) setSession(w http.ResponseWriter, r *http.Request, s auth.Session) {
 	http.SetCookie(w, &http.Cookie{Name: a.cookieName, Value: s.ID, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: int(auth.Lifetime.Seconds())})
-	writeJSON(w, 200, map[string]any{"role": s.Role, "csrfToken": s.CSRF, "expires": s.Expires})
+	reply := map[string]any{"role": s.Role, "csrfToken": s.CSRF, "expires": s.Expires}
+	a.addCapabilities(reply)
+	writeJSON(w, 200, reply)
 }
 
 func (a *API) events(w http.ResponseWriter, r *http.Request, session auth.Session) {
@@ -494,6 +506,16 @@ func (a *API) events(w http.ResponseWriter, r *http.Request, session auth.Sessio
 		return
 	}
 	defer unsubscribe()
+	if session.Role == "admin" {
+		a.mu.Lock()
+		a.adminEvents++
+		a.mu.Unlock()
+		defer func() {
+			a.mu.Lock()
+			a.adminEvents--
+			a.mu.Unlock()
+		}()
+	}
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("X-Accel-Buffering", "no")
 	controller := http.NewResponseController(w)

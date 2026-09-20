@@ -34,9 +34,9 @@ enabled and other applications' rules are preserved. Saved shows are retained.
 
 Admin opens automatically in your system browser. You can close Terminal after
 installation: the app runs independently, without a Terminal window. Its icon
-appears in the Dock. Right-click the Dock icon and choose **Quit**, or use
-**Smart Stage → Quit Smart Stage** when the app is active. Clicking the Dock icon
-reopens Admin. Its additional menu bar control provides Admin, logs and Quit. Later, open
+appears in the Dock. Use **Quit Smart Stage** in Admin, right-click the Dock icon
+and choose **Quit**, or use **Smart Stage → Quit Smart Stage** when the app is active.
+Clicking the Dock icon opens or reuses Admin. Its additional menu bar control provides Admin, logs and Quit. Later, open
 **Smart Stage.app** from the Applications folder inside your home folder. Quit
 the app before running the installer again to update it.
 
@@ -48,7 +48,8 @@ local-network access, may still need approval.
 
 Starting with preview 10, Smart Stage **updates automatically when it starts**.
 It checks GitHub, downloads the correct version for your computer, verifies the
-checksum, installs it and restarts. Admin reopens automatically. Saved shows
+checksum, installs it and restarts. An open Admin tab reconnects; otherwise a new
+page opens automatically. Saved shows
 and output preferences stay in place; playback never resumes automatically.
 
 Install the current release once using the Mac command above or the matching
@@ -123,10 +124,12 @@ acceptance testing.
    until **Show hidden** is selected. Set labels, order and button colors in
    Playlist; **Default** resets a cue's color. Wait for native validation;
    missing/unsupported files remain visible. Adding a cue does not copy its file.
-   On Mac, drop Finder files onto the running **Smart Stage Dock icon**, or use
-   **Choose Media…** in its app menu. The original files stay in place. Browsers
-   cannot read full Finder paths, so dropping Finder files into the web page
-   instead explains the Dock action. During an update, wait and add files again.
+   On Mac, use **Choose files on this Mac…** in Admin, drop Finder files onto the
+   running **Smart Stage Dock icon**, or use **Choose Media…** in its app menu.
+   The original files stay in place. Browsers cannot read full Finder paths,
+   so dropping Finder files into the web page explains how to open the native
+   chooser and select those files, or use the Dock. During an update, wait and
+   add files again.
 3. Select audio and stage outputs, then Save outputs. Explicitly acknowledge
    primary/only-display coverage. Audio works without a stage display. Use an
    extended desktop for independent projection; mirrored displays are identified.
@@ -138,6 +141,14 @@ acceptance testing.
    Natural completion does the same, without auto-advance. The remote's small
    **Stage on/off** control opens or closes the stage; turning it off also stops
    playback. **Disconnect** is in the remote's top bar.
+
+**Quit Smart Stage** in Admin stops playback, closes the stage and exits the app.
+Leave that browser tab open to reconnect after relaunch. Smart Stage allows up to
+six seconds for an existing Admin page to reconnect before opening another one;
+the reconnected page reloads its interface for the running version. This is best
+effort: a browser-discarded or heavily suspended tab may not respond in time.
+An already open tab is reused without requiring browser Automation permission;
+Smart Stage cannot guarantee that the browser selects that particular tab.
 
 The remote's optional **Keep awake** control uses the browser Screen Wake Lock
 API. It requires HTTPS and a supported browser; the default HTTP LAN address
