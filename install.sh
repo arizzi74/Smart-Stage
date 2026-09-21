@@ -153,10 +153,10 @@ cleanup() {
 
 main() {
     [ "$(/usr/bin/uname -s)" = Darwin ] || fail 'This installer is for macOS. Use a Windows ZIP from the GitHub release on Windows.'
-    version=${SMARTSTAGE_VERSION:-v0.1.0-preview.21}
+    version=${SMARTSTAGE_VERSION:-v1.0.0}
     case "$version" in
         v[0-9]*) ;;
-        *) fail 'SMARTSTAGE_VERSION must be a release tag such as v0.1.0-preview.6.' ;;
+        *) fail 'SMARTSTAGE_VERSION must be a release tag such as v1.0.0.' ;;
     esac
     case "$version" in
         *[!A-Za-z0-9._-]*) fail 'SMARTSTAGE_VERSION contains an invalid character.' ;;

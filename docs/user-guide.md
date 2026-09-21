@@ -18,7 +18,7 @@ icon into `~/Applications`. It removes `com.apple.quarantine` only from that app
 and its contents, then launches it. Copying the app needs no administrator
 password, and no extra runtime is required. Public gateway mode is now the default:
 installation and subsequent updates need no incoming firewall rule. Explicitly
-selecting **Local LAN** in Admin restarts Smart Stage and requests authorization
+selecting **Local network** in Admin restarts Smart Stage and requests authorization
 to configure only this app's incoming rule. Saved shows are retained.
 
 Admin opens automatically in Smart Stage's own window. You can close Terminal after
@@ -193,7 +193,7 @@ acceptance testing.
    extended desktop for independent projection; mirrored displays are identified.
 4. In Admin, find **Remote control → Connection settings**. Configure your public gateway URL/token,
    then scan its QR code or copy its URL. Alternatively, explicitly select
-   **Local LAN** and save to restart with a local listener and firewall setup.
+   **Local network** and save to restart with a local listener and firewall setup.
    The link pairs the browser without a separate key entry.
 5. In **Stage and sound**, choose an optional saved image or looping video
    background. Enable its soundtrack if wanted. Set optional audio fades and

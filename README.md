@@ -35,7 +35,7 @@ Prefer a ZIP? Download, extract and open the app. See the [manual installation n
 
 1. Drop media from Finder or Explorer into Admin, or click **Choose Media…**.
 2. Choose your audio output and stage display. Set cue labels, colors and an optional stage background.
-3. Open **Remote control → Connection settings**. Configure your public gateway URL and token, or choose **Local LAN** and follow the firewall guidance.
+3. Open **Remote control → Connection settings**. Configure your public gateway URL and token, or choose **Local network** and follow the firewall guidance.
 4. Scan the QR code with your phone or tablet and tap a cue to play. **Escape** stops playback and closes the stage.
 
 Public gateway is the default; it needs a configured server and internet access. Local LAN works without a gateway.

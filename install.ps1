@@ -150,9 +150,9 @@ namespace SmartStageInstaller {
         } finally { $process.Dispose() }
     }
 
-    $version = 'v0.1.0-preview.21'
+    $version = 'v1.0.0'
     if ($env:SMARTSTAGE_VERSION) { $version = $env:SMARTSTAGE_VERSION }
-    if ($version -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9.]+)?$') { throw 'SMARTSTAGE_VERSION must be a release version, for example v0.1.0-preview.21.' }
+    if ($version -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9.]+)?$') { throw 'SMARTSTAGE_VERSION must be a release version, for example v1.0.0.' }
     $architecture = Get-NativeArchitecture
     $parent = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Programs'
     if ($env:SMARTSTAGE_INSTALL_DIR) { $parent = $env:SMARTSTAGE_INSTALL_DIR }
