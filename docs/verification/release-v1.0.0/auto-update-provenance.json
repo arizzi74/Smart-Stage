@@ -1,0 +1,61 @@
+{
+  "workflowRunID": 35648131738,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35648131738",
+  "sourceRevision": "6b4638e4c5805089da8bbae4999339247d4f0369",
+  "release": "v1.0.0",
+  "collectedAt": "2026-09-21T20:13:53.441532+00:00",
+  "fixtureScope": "Synthetic old-version fixture built from the exact v1.0.0 release source with v0.0.0-preview.1 metadata; verifies actual public discovery/download/replacement/relaunch. This is not a direct upgrade from the published preview.21 executable.",
+  "successfulTargets": [
+    "windows-arm64",
+    "windows-amd64",
+    "darwin-amd64"
+  ],
+  "unverifiedTargets": [
+    "darwin-arm64"
+  ],
+  "results": [
+    {
+      "target": "windows-arm64",
+      "jobID": 106498425227,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35648131738/job/106498425227",
+      "jobConclusion": "success",
+      "artifactID": 10661597765,
+      "artifactSHA256": "47c7360ae900a51f22c751ee6284ec44e2b5fea9f0149c43280e333ebce7798e",
+      "report": "auto-update-windows-arm64.json",
+      "reportSHA256": "739173b3a43372e12b63eb9130b81e60dc9fc05f530274de41b9d84747d26d26"
+    },
+    {
+      "target": "darwin-arm64",
+      "jobID": 106498425256,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35648131738/job/106498425256",
+      "jobConclusion": "failure",
+      "artifactID": 10661157918,
+      "artifactSHA256": "284819911e78b3cc6ef849a9f4a533a1d714754abca92495099222ca9db50628",
+      "report": "auto-update-darwin-arm64.json",
+      "reportSHA256": "f398129f5f42e6b82fce6c4ddcfba3bd53210f670d3ef54104f2cb32aac6780f",
+      "failureCategory": "github-api-rate-limit-before-update-installation",
+      "lastUpdateMessage": "Update check failed: GitHub temporarily limited update checks; retry after 2026-09-21T21:03:50Z"
+    },
+    {
+      "target": "windows-amd64",
+      "jobID": 106498425270,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35648131738/job/106498425270",
+      "jobConclusion": "success",
+      "artifactID": 10661886046,
+      "artifactSHA256": "22952dbdf3ce53d8380e1184fe41f88a1e548a57c11102f25877b846f0403428",
+      "report": "auto-update-windows-amd64.json",
+      "reportSHA256": "2d852217092007c90dfde88cf558856c859335a5865e859121e9897ab853f6cb"
+    },
+    {
+      "target": "darwin-amd64",
+      "jobID": 106498425419,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35648131738/job/106498425419",
+      "jobConclusion": "success",
+      "artifactID": 10662100002,
+      "artifactSHA256": "a3b48f53b3813ac83b9b3aa45e745b6ea92b86c52618aa4604dacb3cbfbda9f5",
+      "report": "auto-update-darwin-amd64.json",
+      "reportSHA256": "cdd423851e6f7893bcded3bc7295f40b6fb33e36baa2d227141e79703f8501d9"
+    }
+  ],
+  "limitation": "Mac ARM64 automatic update was not completed: GitHub rate-limited the hosted runner before release discovery. Startup playback reservation, rejected PLAY and independent published ZIP verification passed before the quota response. No retry was performed."
+}

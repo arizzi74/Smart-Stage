@@ -1,0 +1,31 @@
+{
+  "sourceCommit": "f4f4b3df5fa51b87be199cd0c6f65e37371fcdf3",
+  "defaultVersion": "v1.0.0",
+  "checkedAt": "2026-09-21T20:14:56.298812+00:00",
+  "results": [
+    {
+      "file": "install.sh",
+      "publicURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+      "sha256": "8891efe12f291e0acc2805c42fe16275e5a9d3b63eda3c3f2726985ac99e4552",
+      "matchesCommittedBytes": true
+    },
+    {
+      "file": "install.ps1",
+      "publicURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1",
+      "sha256": "525756bb1018d9395b8439715fe948433f859fe0d7542028c9f331b66b7e7a8e",
+      "matchesCommittedBytes": true
+    },
+    {
+      "file": "install-gateway.sh",
+      "publicURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install-gateway.sh",
+      "sha256": "9d50d6e83f08f1ebe299eb5bca7aece115a1637b49883e3761133db584edd4f4",
+      "matchesCommittedBytes": true
+    },
+    {
+      "file": "README.md",
+      "publicURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/README.md",
+      "sha256": "fd2c8632438d3acbc175be28dd9669185c75e286c303881a570e275bc395fb0d",
+      "matchesCommittedBytes": true
+    }
+  ]
+}

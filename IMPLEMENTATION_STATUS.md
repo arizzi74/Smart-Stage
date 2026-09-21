@@ -96,6 +96,15 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.0.0
 
 ## Built and automatically tested
 
+Version 1.0.0 is the first stable release, built from
+`6b4638e4c5805089da8bbae4999339247d4f0369`. All native build gates, all four
+published ZIP startup checks and all four browser checks passed. Both Windows
+architectures and Intel Mac passed automatic replacement/restart; Apple Silicon's
+updater verification hit GitHub's API quota before discovery. Stable-channel
+selection and preview-to-stable discovery are covered by regression tests.
+The gateway installer is now pinned to its own release version. See
+[release verification](docs/release-verification.md) for exact evidence and limits.
+
 Preview 21 publishes the Windows transparent color-cursor compatibility change
 from `acac0468bd03e1a51a16774542d22a98b4e5b94d`. Both Windows architectures
 passed bitmap transparency and cursor-message checks; AMD64 passed global

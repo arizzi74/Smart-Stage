@@ -1,0 +1,59 @@
+{
+  "status": "failed",
+  "target": "darwin/arm64",
+  "release": "v1.0.0",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "publishedDownload": {
+    "status": "passed",
+    "target": "darwin/arm64",
+    "release": "v1.0.0",
+    "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.0.0/smartstage-darwin-arm64.zip",
+    "archive": "smartstage-darwin-arm64.zip",
+    "archiveSHA256": "8bac656e62b425cc1c758d980df558d69b5a6da535b2d305954ebce30d03f65f",
+    "archiveEntries": [
+      "smartstage"
+    ],
+    "executableSHA256": "e103050cffb6bea74a4b9668accbe4cfbeceb175581d06730442058f9c8ba0bd",
+    "executablePermissions": "0755"
+  },
+  "expectedFixtureSource": "6b4638e4c5805089da8bbae4999339247d4f0369",
+  "fixture": {
+    "version": "v0.0.0-preview.1",
+    "sourceSHA": "6b4638e4c5805089da8bbae4999339247d4f0369",
+    "target": "darwin/arm64",
+    "archive": "fixture-darwin-arm64.app.zip",
+    "archiveSHA256": "b75179db443cab669c768dfa76b653326aea947e6936869b54a191514b3d7770",
+    "executableSHA256": "436bfef32374021c20e78afcb378935159c4449537fa5cfdf38f0ae22694ce30",
+    "purpose": "Native production updater verification with older version metadata; not a published release"
+  },
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (6b4638e4c580), go1.26.5, darwin/arm64",
+  "initialUpdateStatus": {
+    "currentVersion": "v0.0.0-preview.1",
+    "latestVersion": "",
+    "phase": "checking",
+    "available": false,
+    "canInstall": false,
+    "message": "Checking for a startup update before enabling playback…",
+    "releaseURL": "",
+    "checkedAt": ""
+  },
+  "oldInstanceID": "6fb2c1d8d46d833fc9c96a8ed7378eacb24a076c6c0d36fb",
+  "startupUpdatePending": true,
+  "initialUpdatePhase": "checking",
+  "startupReservationRejectedPLAY": true,
+  "oldPID": 2700,
+  "lastUpdateStatus": {
+    "currentVersion": "v0.0.0-preview.1",
+    "latestVersion": "",
+    "phase": "error",
+    "available": false,
+    "canInstall": false,
+    "message": "Update check failed: GitHub temporarily limited update checks; retry after 2026-09-21T21:03:50Z",
+    "releaseURL": "",
+    "checkedAt": "2026-09-21T20:12:36Z"
+  },
+  "testDirectoryRemoved": true,
+  "testProcessCleanupPassed": true,
+  "error": "Production updater failed: {'currentVersion': 'v0.0.0-preview.1', 'latestVersion': '', 'phase': 'error', 'available': False, 'canInstall': False, 'message': 'Update check failed: GitHub temporarily limited update checks; retry after 2026-09-21T21:03:50Z', 'releaseURL': '', 'checkedAt': '2026-09-21T20:12:36Z'}"
+}

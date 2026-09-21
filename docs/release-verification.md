@@ -132,6 +132,32 @@ not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
 
+Version 1.0.0 is source `6b4638e4c5805089da8bbae4999339247d4f0369`, published as
+GitHub's latest stable release (`prerelease: false`) in
+[run 35648131738](https://github.com/arizzi74/Smart-Stage/actions/runs/35648131738).
+All six shared/gateway/native build jobs and publication passed. Independent
+public downloads matched the GitHub digests for all 50 assets and the eight
+binary/archive checksum sidecars. The gateway bootstrap contains `v1.0.0`,
+matching its binaries. Build tests cover exact stable/prerelease bootstrap URLs
+on both architectures; updater discovery tests cover preview 21 to 1.0.0 and
+stable installations ignoring future previews.
+
+All four published ZIP startup checks and all four native browser jobs passed.
+Actual update/replacement/restart passed on Windows ARM64, Windows AMD64 and
+Mac AMD64. The Mac ARM64 updater check hit GitHub's unauthenticated API quota
+before discovery (retry time reported as 21 September 2026, 21:03:50 UTC).
+Its reference download and fixture checks passed, but its automatic update is
+recorded as unverified. The native updater fixtures use this exact release
+source with deliberately older `v0.0.0-preview.1` metadata; they are not the
+published preview 21 executable. No new physical/UTM observations are claimed.
+
+Publication and updater evidence is under
+[`release-v1.0.0`](verification/release-v1.0.0/). Public installer bytes and the
+short README match commit `f4f4b3d`; all three installer defaults select 1.0.0.
+The README screenshots show unchanged production UI with sample data;
+[`capture.json`](screenshots/capture.json) records their scope and asset hashes.
+Detailed instructions moved to the [user guide](user-guide.md).
+
 Preview 21 is source `acac0468bd03e1a51a16774542d22a98b4e5b94d`.
 [Candidate run 35615318752](https://github.com/arizzi74/Smart-Stage/actions/runs/35615318752)
 passed all six jobs. The six build/test jobs and publication in
