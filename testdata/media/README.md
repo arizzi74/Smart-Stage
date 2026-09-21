@@ -8,6 +8,9 @@ FFmpeg; the shipped application never invokes it or includes its libraries.
 - `Opening – café's tone.wav`: PCM signed 16-bit little endian, stereo 48 kHz,
   3 seconds; left 440 Hz, right 660 Hz; approximately -24 dBFS peak.
 - `tone.mp3`: same audio, MPEG-1 Layer III, stereo 48 kHz, 128 kbit/s.
+- `tone-aac.m4a`: same audio, AAC-LC stereo 48 kHz, 128 kbit/s, in an MP4
+  container with the `dash` major brand. The Windows source regression copies
+  it unchanged to `.mp3` to exercise content detection after a handler mismatch.
 - `silent-1080p.mp4`: H.264 High, level 4.0, 8-bit YUV 4:2:0, 1920×1080,
   30 frames/s, 3 seconds, no audio track.
 - `video-aac-1080p.mp4`: same video with AAC-LC stereo 48 kHz, 128 kbit/s.

@@ -32,25 +32,31 @@ def source_checks():
         renamed = temporary / "unchanged-wave.mp3"
         shutil.copyfile(wave, renamed)
         assert renamed.read_bytes() == wave.read_bytes()
+        m4a = media / "tone-aac.m4a"
+        renamed_m4a = temporary / "unchanged-mp4-audio.mp3"
+        shutil.copyfile(m4a, renamed_m4a)
+        assert renamed_m4a.read_bytes() == m4a.read_bytes()
         result = subprocess.run([str(probe), str(media / "tone.mp3"), str(wave), str(renamed),
+                                 str(m4a), str(renamed_m4a),
                                  str(media / "damaged.mp4"), str(temporary / "does-not-exist.mp3")],
                                 capture_output=True, text=True, encoding="utf-8", timeout=45)
         assert result.returncode == 0, f"Native source probe failed ({result.returncode}): {result.stdout}\n{result.stderr}"
         report = json.loads(result.stdout)
         assert report["status"] == "passed", report
         cases = {case["fixture"]: case for case in report["cases"]}
-        assert set(cases) == {"mp3", "wav-unicode-path", "wav-renamed-mp3", "damaged", "missing"}, report
-        for name in ("mp3", "wav-unicode-path", "wav-renamed-mp3"):
+        assert set(cases) == {"mp3", "wav-unicode-path", "wav-renamed-mp3", "m4a", "m4a-renamed-mp3", "damaged", "missing"}, report
+        for name in ("mp3", "wav-unicode-path", "wav-renamed-mp3", "m4a", "m4a-renamed-mp3"):
             case = cases[name]
             assert case["productionOpenSucceeded"] and case["sourceHasAudio"], case
             inspection = case["inspection"]
             assert inspection["kind"] == "audio" and inspection["hasAudio"] and not inspection["hasVideo"], case
             assert 2.5 < inspection["duration"] < 3.5, case
-        renamed_case = cases["wav-renamed-mp3"]
-        assert renamed_case["strictHRESULT"] == "0xc00d36c4" and renamed_case["strictUnsupportedByteStreamObserved"], renamed_case
+        for name in ("wav-renamed-mp3", "m4a-renamed-mp3"):
+            renamed_case = cases[name]
+            assert renamed_case["strictHRESULT"] == "0xc00d36c4" and renamed_case["strictUnsupportedByteStreamObserved"], renamed_case
         for name in ("damaged", "missing"):
             assert cases[name]["productionOpenRejected"] and cases[name]["inspection"]["error"], cases[name]
-        report["method"] = "Production Media Foundation source opener and first-sample decoder inspection; unchanged WAV bytes renamed .mp3 reproduce the prior strict resolver failure; no audio renderer or physical output"
+        report["method"] = "Production Media Foundation source opener and first-sample decoder inspection; unchanged WAV and AAC/MP4 bytes renamed .mp3 reproduce the prior strict resolver failure; no audio renderer or physical output"
         return report
 
 

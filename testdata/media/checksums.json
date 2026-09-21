@@ -11,6 +11,10 @@
     "sha256": "1bc73b0f690b4c83f4a38fe1e28e73507a04ce08a18c7cc0bfcda4887668b6a0",
     "bytes": 827974
   },
+  "tone-aac.m4a": {
+    "sha256": "327171d479f0fc75adc93628cb1c4b711652fbd39d8a73adc101d825f15ab66a",
+    "bytes": 49761
+  },
   "tone.mp3": {
     "sha256": "8a72856ac23c7ec3c8689a3d276dfb6b6a89ee3afd299d3f3feb2e789d93aa7d",
     "bytes": 48813

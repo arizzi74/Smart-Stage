@@ -51,7 +51,7 @@ std::string accepted(const char *name, const std::string &path, bool mismatch) {
     currentStrictHRESULT = hexResult(strict);
     if (mismatch) {
         require(strict == MF_E_UNSUPPORTED_BYTESTREAM_TYPE,
-                "Renamed WAV did not reproduce the strict resolver's unsupported byte-stream error");
+                "Renamed audio did not reproduce the strict resolver's unsupported byte-stream error");
     } else {
         check(strict, "Strict resolver rejected a correctly named fixture");
     }
@@ -109,7 +109,7 @@ std::string rejected(const char *name, const std::string &path) {
 }
 
 int wmain(int argc, wchar_t **argv) {
-    if (argc != 6) return 2;
+    if (argc != 8) return 2;
     Apartment apartment;
     std::vector<std::string> records;
     std::string error;
@@ -121,8 +121,10 @@ int wmain(int argc, wchar_t **argv) {
         records.push_back(accepted("mp3", utf8(argv[1]), false));
         records.push_back(accepted("wav-unicode-path", utf8(argv[2]), false));
         records.push_back(accepted("wav-renamed-mp3", utf8(argv[3]), true));
-        records.push_back(rejected("damaged", utf8(argv[4])));
-        records.push_back(rejected("missing", utf8(argv[5])));
+        records.push_back(accepted("m4a", utf8(argv[4]), false));
+        records.push_back(accepted("m4a-renamed-mp3", utf8(argv[5]), true));
+        records.push_back(rejected("damaged", utf8(argv[6])));
+        records.push_back(rejected("missing", utf8(argv[7])));
     } catch (const std::string &message) { error = message; }
     if (started) MFShutdown();
     std::ostringstream result;

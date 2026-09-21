@@ -23,6 +23,8 @@ def encode(args):
     subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', *args], check=True)
 
 encode(['-i', str(tone), '-c:a', 'libmp3lame', '-b:a', '128k', str(root/'tone.mp3')])
+encode(['-i', str(tone), '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart',
+        '-brand', 'dash', '-f', 'mp4', str(root/'tone-aac.m4a')])
 video = ['-f', 'lavfi', '-i', 'testsrc2=size=1920x1080:rate=30', '-t', '3',
          '-c:v', 'libx264', '-preset', 'fast', '-profile:v', 'high', '-level:v', '4.0',
          '-pix_fmt', 'yuv420p', '-crf', '30', '-movflags', '+faststart', '-an']
@@ -32,6 +34,6 @@ encode(['-i', str(root/'silent-1080p.mp4'), '-i', str(tone), '-c:v', 'copy', '-c
 (root/'damaged.mp4').write_bytes(b'Smart Stage self-authored invalid media fixture\x00\xff')
 records = {}
 for p in sorted(root.iterdir()):
-    if p.suffix in {'.mp3', '.mp4', '.wav'}:
+    if p.suffix in {'.mp3', '.mp4', '.m4a', '.wav'}:
         records[p.name] = {'sha256': hashlib.sha256(p.read_bytes()).hexdigest(), 'bytes': p.stat().st_size}
 (root/'checksums.json').write_text(json.dumps(records, indent=2, ensure_ascii=False)+'\n')

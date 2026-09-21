@@ -2,7 +2,7 @@ Smart Stage preview 18 fixes a Windows media-opening mismatch between import and
 
 - When Windows rejects a file's byte-stream type (`0xc00d36c4`), Smart Stage
   retries using Windows' content detection. This allows supported media with
-  a misleading extension, such as WAV content named `.mp3`, to open without
+  a misleading extension, such as MP4/AAC or WAV content named `.mp3`, to open without
   renaming or converting the file.
 - Import and playback now use the same source-opening policy. Import still
   decodes a real sample before marking a cue ready; damaged files remain errors.
