@@ -111,6 +111,13 @@ Both Windows architectures passed the source-opening regression in both runs,
 using the production C++ bridge.
 The tagged workflow published 50 assets after the shared, gateway and four
 native build/test jobs passed, including the Windows installation checks.
+All four published downloads and all four real automatic-update checks passed.
+The updater records and artifact hashes are retained beside the source reports;
+they cover public discovery/download, replacement, native restart, preserved
+show/media, and closed LAN access in default gateway mode. The default Mac
+installer run [35594963387](https://github.com/arizzi74/Smart-Stage/actions/runs/35594963387)
+also passed. The public `main` bootstrap bytes matched installer source
+`a363c6436f54178df0f44458bf732853411b8122`, with preview 18 selected by default.
 The source probe requires the prior strict resolver to return `0xc00d36c4` for
 unchanged WAV and AAC/MP4 fixtures renamed to `.mp3`, then requires the production
 fallback to open each source and decode its first audio sample. Correctly named

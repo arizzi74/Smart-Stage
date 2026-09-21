@@ -1,0 +1,49 @@
+{
+  "workflowRunID": 35593580384,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35593580384",
+  "sourceRevision": "fbf19f5a1f581ac6eb097219e19b9f900e0b103b",
+  "release": "v0.1.0-preview.18",
+  "collectedAt": "2026-09-21T11:37:36.315432+00:00",
+  "results": [
+    {
+      "target": "darwin-amd64",
+      "jobID": 106317381252,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35593580384/job/106317381252",
+      "jobConclusion": "success",
+      "artifactID": 10636470134,
+      "artifactSHA256": "4293337198f4acc73ada2ed28e8036b55dddfd92d056f8d1777d2ca28a55246b",
+      "report": "auto-update-darwin-amd64.json",
+      "reportSHA256": "ed52a27b023e0452d78b9ce33624cf2ee847fe0683b33c7934390fe8b98af342"
+    },
+    {
+      "target": "windows-amd64",
+      "jobID": 106317381269,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35593580384/job/106317381269",
+      "jobConclusion": "success",
+      "artifactID": 10636213776,
+      "artifactSHA256": "76cba8ba1ba86ad0b4a6a1f572b27943f8d41a4a4656c72db0a34480feb7578b",
+      "report": "auto-update-windows-amd64.json",
+      "reportSHA256": "a09bedb789e562ff7e28cd35248568f213f1c6aaf0163d42ce93e151dd53571a"
+    },
+    {
+      "target": "windows-arm64",
+      "jobID": 106317381276,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35593580384/job/106317381276",
+      "jobConclusion": "success",
+      "artifactID": 10636485092,
+      "artifactSHA256": "6185d4cf15195208680e0ef56dd4716bfde9df8b1304287f3bdf439a8c5e0f55",
+      "report": "auto-update-windows-arm64.json",
+      "reportSHA256": "b1a3e7571cb8bdfbaaea72d828bb22b9e6ccde4c0ce0c66837c2aa1c3f741849"
+    },
+    {
+      "target": "darwin-arm64",
+      "jobID": 106317381287,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35593580384/job/106317381287",
+      "jobConclusion": "success",
+      "artifactID": 10636283489,
+      "artifactSHA256": "783679de727136bbc9671c507c90b886e4087347b65ab49b053a93f5182b2963",
+      "report": "auto-update-darwin-arm64.json",
+      "reportSHA256": "175f9166f2a712f2be5ffabc090d48f4f54ef8fc26b504dec7652e861ca775b5"
+    }
+  ]
+}

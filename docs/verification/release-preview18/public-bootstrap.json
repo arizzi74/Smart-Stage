@@ -1,0 +1,17 @@
+{
+  "sourceCommit": "a363c6436f54178df0f44458bf732853411b8122",
+  "version": "v0.1.0-preview.18",
+  "checkedAt": "2026-09-21T11:37:38.021915+00:00",
+  "bootstraps": {
+    "install.sh": {
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+      "matchesCommittedBytes": true,
+      "sha256": "e1264914c95eb7573f1adc4784eb04a2838d5a7ff9beed4079f1cb9918049e1a"
+    },
+    "install.ps1": {
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1",
+      "matchesCommittedBytes": true,
+      "sha256": "3de3fbae62a7ac3cdfc86e9f85c57108a89e9d9f70a55373ab732c27a5b88f84"
+    }
+  }
+}
