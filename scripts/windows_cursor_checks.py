@@ -53,5 +53,5 @@ def cursor_checks(display):
                         "foregroundVideoCursor", "imageOverlayCursor", "imageBackgroundCursor", "sceneStageOffRestoresCursor",
                         "nativeEscapeRestoresCursor", "applicationQuitRestoresCursor"}
             assert required <= set(global_cursor["passedChecks"]), report
-        report["method"] = "Production cursor leaves checkerboard pixels unchanged under DrawIconEx; actual SetCursorPos/WindowFromPoint/GetCursorInfo checks with an independent operator window on a separate STA/input thread; desktop capability reported separately; not a physical mouse or VM viewer observation"
+        report["method"] = "Production cursor leaves checkerboard pixels unchanged under DrawIconEx; a bounded SendInput mouse movement pair prepares an independent operator-window baseline on a separate STA/input thread; actual SetCursorPos/WindowFromPoint/GetCursorInfo checks follow, with no input injected during stationary-stage checks; desktop capability reported separately; not a physical mouse or VM viewer observation"
         return report

@@ -15,6 +15,9 @@ bool pointerSaved = false, initialized = false, bitmapVerified = false, messageV
 bool separateOperatorThreadVerified = false;
 bool globalAvailable = false, globalPassed = false;
 std::string unavailableReason, currentCheck, probeError, baseline;
+std::string beforeMouseInput, afterMouseInput;
+UINT mouseInputsInserted = 0;
+DWORD mouseInputError = ERROR_SUCCESS;
 std::vector<std::string> passedChecks;
 ss_scene_request desired{};
 uint64_t revision = 0;
@@ -244,12 +247,40 @@ void checkGlobal(const std::string &display, const std::string &video, const std
         unavailableReason = "Independent native baseline could not position the current input desktop pointer";
         return;
     }
+    // Hosted desktops may start in CURSOR_SUPPRESSED (touch/pen input mode).
+    // SetCursorPos alone changes coordinates without delivering mouse input.
+    // Drive a bounded, reversible pair of actual mouse movements before the
+    // independent baseline; never inject input during stationary-stage tests.
+    beforeMouseInput = observation();
+    INPUT inputs[2]{};
+    for (INPUT &input : inputs) {
+        input.type = INPUT_MOUSE;
+        input.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_MOVE_NOCOALESCE;
+    }
+    inputs[0].mi.dx = 1;
+    inputs[1].mi.dx = -1;
+    SetLastError(ERROR_SUCCESS);
+    mouseInputsInserted = SendInput(2, inputs, sizeof(INPUT));
+    mouseInputError = mouseInputsInserted == 2 ? ERROR_SUCCESS : GetLastError();
+    waitFor([] {
+        CURSORINFO info{}; info.cbSize = sizeof(info);
+        return GetCursorInfo(&info) && (info.flags & CURSOR_SHOWING);
+    }, 300);
+    if (!SetCursorPos(probePoint.x, probePoint.y)) {
+        baseline = observation();
+        afterMouseInput = baseline;
+        unavailableReason = "Independent native baseline could not position the pointer after mouse input";
+        return;
+    }
     bool reachable = waitFor([] {
         CURSORINFO info{}; info.cbSize = sizeof(info);
+        POINT position{};
         return WindowFromPoint(probePoint) == operatorWindow && GetCursorInfo(&info) &&
-            (info.flags & CURSOR_SHOWING) && info.hCursor == LoadCursorW(nullptr, IDC_ARROW);
+            (info.flags & CURSOR_SHOWING) && info.hCursor == LoadCursorW(nullptr, IDC_ARROW) &&
+            GetCursorPos(&position) && position.x == probePoint.x && position.y == probePoint.y;
     }, 2500);
     baseline = observation();
+    afterMouseInput = baseline;
     if (!reachable) {
         unavailableReason = "Independent visible topmost test window could not own a globally visible arrow cursor; desktop/input capability unavailable";
         return;
@@ -375,6 +406,10 @@ int wmain(int argc, wchar_t **argv) {
            << ",\"globalCursor\":{\"available\":" << (globalAvailable ? "true" : "false")
            << ",\"status\":" << quote(!probeError.empty() ? "failed" : globalPassed ? "passed" : "unavailable")
            << ",\"unavailableReason\":" << quote(unavailableReason)
+           << ",\"baselineMouseInput\":{\"requested\":2,\"inserted\":" << mouseInputsInserted
+           << ",\"win32Error\":" << mouseInputError
+           << ",\"before\":" << (beforeMouseInput.empty() ? "null" : beforeMouseInput)
+           << ",\"after\":" << (afterMouseInput.empty() ? "null" : afterMouseInput) << '}'
            << ",\"baseline\":" << (baseline.empty() ? "null" : baseline)
            << ",\"lastObservation\":" << finalObservation << ",\"passedChecks\":[";
     for (size_t index = 0; index < passedChecks.size(); ++index) { if (index) result << ','; result << quote(passedChecks[index]); }
