@@ -31,7 +31,9 @@ jobs:
       - name: Install proxy configuration validators
         run: sudo apt-get update && sudo apt-get install -y nginx caddy
       - name: Test gateway and installer with real proxy configuration validation
-        run: go test -race -v ./internal/gateway ./internal/gatewayinstall ./internal/remote ./internal/httpapi ./cmd/smartstage-gateway
+        run: |
+          python3 scripts/test-gateway-build.py
+          go test -race -v ./internal/gateway ./internal/gatewayinstall ./internal/remote ./internal/httpapi ./cmd/smartstage-gateway
       - name: Install browser verification tools
         run: |
           npm ci --prefix scripts/browser --ignore-scripts --no-audit --no-fund
@@ -209,16 +211,21 @@ jobs:
         with:
           name: gateway-linux
           path: dist/gateway
-      - name: Publish verified builds as a preview
+      - name: Publish verified builds to the matching release channel
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
+          if [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            release_flags=(--latest)
+          else
+            release_flags=(--prerelease --latest=false)
+          fi
           gh release create "$RELEASE_TAG" dist/smartstage-*.zip dist/smartstage-*.zip.sha256 \
             dist/smartstage-*.imports.txt dist/smartstage-*.icon.json dist/smartstage-*.http-smoke.json dist/smartstage-*.network-mode.json \
             dist/smartstage-windows-*.native-admin.json \
             dist/toolchain-* dist/native-enumeration-* dist/native-harness-*.smoke.json dist/gateway/* \
-            --verify-tag --prerelease --title "Smart Stage $RELEASE_TAG" --notes-file docs/release-notes.md
+            --verify-tag "${release_flags[@]}" --title "Smart Stage $RELEASE_TAG" --notes-file docs/release-notes.md
       - name: Mark the failed preview 9 updater as superseded
         if: github.ref_name == 'v0.1.0-preview.10'
         env:

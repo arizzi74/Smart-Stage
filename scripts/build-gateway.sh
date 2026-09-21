@@ -7,6 +7,12 @@ gateway_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 cd "$gateway_root"
 gateway_out=${1:-dist/gateway}
 gateway_version=${VERSION:-dev}
+case "$gateway_version" in
+    *[!0-9A-Za-z.-]*) printf 'Invalid gateway release version.\n' >&2; exit 1 ;;
+esac
+if [ "$gateway_version" != dev ] && ! printf '%s\n' "$gateway_version" | LC_ALL=C grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+    printf 'Invalid gateway release version: %s\n' "$gateway_version" >&2; exit 1
+fi
 gateway_commit=$(git rev-parse --short=12 HEAD 2>/dev/null || printf unknown)
 mkdir -p "$gateway_out"
 for gateway_arch in amd64 arm64; do
@@ -39,4 +45,11 @@ for gateway_arch in amd64 arm64; do
         (cd "$gateway_out" && shasum -a 256 "smartstage-gateway-linux-$gateway_arch" > "smartstage-gateway-linux-$gateway_arch.sha256")
     fi
 done
-cp install-gateway.sh "$gateway_out/install-gateway.sh"
+# Pin the generated bootstrap to this build, even before main's installer
+# default advances to the newly published release.
+awk -v version="$gateway_version" '
+    /^    gateway_version=/ { $0 = "    gateway_version=" version; replacements++ }
+    { print }
+    END { if (replacements != 1) exit 1 }
+' install-gateway.sh > "$gateway_out/install-gateway.sh"
+chmod +x "$gateway_out/install-gateway.sh"

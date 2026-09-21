@@ -5,7 +5,7 @@ Smart Stage Gateway is a separate, static Go executable for Linux amd64 or arm64
 Install on the public Linux server from an interactive SSH terminal:
 
 ```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/install-gateway.sh | sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/latest/download/install-gateway.sh | sh
 ```
 
 The bootstrap downloads the matching architecture, checks its published SHA-256 checksum, and runs the Go installer with `sudo`. It reads choices from the terminal even when the script is piped into `sh`. You can also download the raw executable and its `.sha256` file from the release, verify them, and run `sudo ./smartstage-gateway-linux-amd64 install` (or `arm64`).

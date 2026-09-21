@@ -1,11 +1,11 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are implemented and a **preview** is published.
-The full specification's physical acceptance is still incomplete; the project
-is not declared production-ready or complete.
+The desktop application and Linux gateway are released as **Smart Stage 1.0.0**.
+This is the first stable release. The release channel is separate from test
+coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.21
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.0.0
 
 ## Implemented
 

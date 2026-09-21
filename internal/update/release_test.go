@@ -67,6 +67,45 @@ func TestDiscoverSelectsChannelVersionAndCompleteExactAssets(t *testing.T) {
 	}
 }
 
+func TestDiscoverPreviewToStableAndStableChannel(t *testing.T) {
+	name := "smartstage-windows-arm64.zip"
+	preview21 := managerRelease("v0.1.0-preview.21", name)
+	preview21.Prerelease = true
+	stable := managerRelease("v1.0.0", name)
+	patch := managerRelease("v1.0.1", name)
+	futurePreview := managerRelease("v1.1.0-preview.1", name)
+	futurePreview.Prerelease = true
+	// Stable installs must respect both the semantic version and GitHub's flag.
+	mislabelledPreview := managerRelease("v2.0.0-preview.1", name)
+	flaggedStable := managerRelease("v3.0.0", name)
+	flaggedStable.Prerelease = true
+	for _, tc := range []struct {
+		name, current, want string
+		releases            []githubRelease
+	}{
+		{"preview21 migrates to first stable", "v0.1.0-preview.21", "v1.0.0", []githubRelease{preview21, stable}},
+		{"stable excludes all future previews", "v1.0.0", "", []githubRelease{futurePreview, mislabelledPreview, flaggedStable, stable, preview21}},
+		{"stable finds newer stable among previews", "v1.0.0", "v1.0.1", []githubRelease{futurePreview, patch, mislabelledPreview, flaggedStable, stable}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			data, err := json.Marshal(tc.releases)
+			if err != nil {
+				t.Fatal(err)
+			}
+			m := &Manager{options: Options{CurrentVersion: tc.current}, target: Target{Kind: "binary", GOOS: "windows", GOARCH: "arm64"}, client: &http.Client{Transport: managerRoundTripper(func(*http.Request) (*http.Response, error) {
+				return managerResponse(string(data)), nil
+			})}}
+			got, err := m.discover(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.want == "" && got != nil || tc.want != "" && (got == nil || got.version != tc.want) {
+				t.Fatalf("candidate = %+v, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 func TestDiscoverPaginatesInsteadOfTrustingReleaseOrder(t *testing.T) {
 	name := "smartstage-windows-amd64.zip"
 	page1 := make([]githubRelease, 100)

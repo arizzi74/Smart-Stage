@@ -1,31 +1,18 @@
-Smart Stage preview 21 changes the Windows stage cursor format for virtual
-display compatibility.
+Smart Stage 1.0.0 is the first stable release for Mac and Windows, with a Linux public gateway.
 
-- Uses a fully transparent 32-bit color cursor instead of a monochrome cursor.
-  This avoids the monochrome-shape path rejected by some virtual display
-  drivers and targets the stale visible pointer reported in Windows ARM64
-  under UTM 4.6.4. The affected VM still needs a visual retest; this release
-  does not establish that its host-rendered cursor is fixed.
-- Keeps immediate hiding when Stage turns on, refreshes during playback,
-  and restores the pointer outside the stage and when Stage turns off.
-  Mac cursor behavior is unchanged.
+- Dedicated desktop Admin with Finder/Explorer drag-and-drop, media chooser, app icons and Quit controls.
+- Audio, video and image cues, configurable button colors, stage backgrounds and audio fades/crossfades.
+- Phone/tablet controls with a QR code, Stage controls and optional Keep awake over HTTPS.
+- Public gateway by default, or Local LAN with guided firewall setup. Admin remains local to the host.
+- Automatic updates on launch before playback, preserving saved shows. Preview installations can upgrade to 1.0.0; stable installations receive stable updates.
+- Includes the Windows media-format detection, close confirmation and transparent color-cursor changes from the previews.
+- Shorter README with Admin and Remote screenshots, quick setup and installation commands.
 
-- Clicking **X** or pressing **Alt+F4** opens **Quit Smart Stage?**
-  Choose **OK** to stop playback, close the stage and quit the application.
-  **Cancel** is selected by default and keeps the window and playback running.
-- Minimize Windows Admin to keep playback running in the background.
-  Existing **Quit Smart Stage** menu/Admin controls still exit directly.
-- Repeated close requests do not stack confirmations. Application shutdown and
-  update restarts can dismiss an open confirmation without getting stuck.
-- Retains preview 18's file-detection fix for supported MP4 audio or WAV content
-  named `.mp3`; no renaming or conversion is needed for those supported files.
-- Retains the dedicated Mac and Windows Admin windows, original-file drops,
-  **Choose Media…**, icons, Quit controls and automatic updates before playback.
-  Public gateway remains the default and needs no incoming firewall rule.
+Install on Mac:
 
-Native cursor checks verify the color format, transparent pixels and actual
-Windows rendering. Global pointer observations depend on the runner's input
-desktop and do not verify UTM's macOS display.
+```sh
+curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
+```
 
 Install on Windows from a normal PowerShell window:
 
@@ -33,46 +20,14 @@ Install on Windows from a normal PowerShell window:
 irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | iex
 ```
 
-Install the gateway on a Linux server with systemd:
+Install the gateway on a public Linux server with systemd:
 
 ```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.21/install-gateway.sh | sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v1.0.0/install-gateway.sh | sh
 ```
 
-[Gateway setup, prerequisites and recovery](https://github.com/arizzi74/Smart-Stage/blob/main/docs/gateway-install.md).
-Caddy needs a domain pointing at the server and reachable ports 80/443. A public
-server is required; Smart Stage does not provision hosting. Existing shows are
-preserved. Installations without saved remote-mode settings now start in public
-gateway mode: configure a gateway or explicitly select Local LAN to reconnect
-phones. Local Admin still opens at `http://127.0.0.1:8787/admin`.
+Downloads include Mac app bundles, standalone desktop ZIPs for ARM64/AMD64, static Linux gateway binaries and checksums. The desktop installers choose the architecture automatically. [First-show setup](https://github.com/arizzi74/Smart-Stage#start-a-show) · [Gateway guide](https://github.com/arizzi74/Smart-Stage/blob/main/docs/gateway-install.md).
 
-Mac installation with the app icon and dedicated window:
+Mac builds remain ad-hoc signed and unnotarized; the Mac installer removes quarantine only from Smart Stage. Windows binaries are not Authenticode signed. Windows uses Microsoft WebView2, supplied by the installer if missing.
 
-```sh
-curl -fsSL https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh | sh
-```
-
-The Mac installer verifies the matching archive, installs in `~/Applications`,
-and removes quarantine only from Smart Stage. The Windows installer uses
-`%LOCALAPPDATA%\Programs\SmartStage`; no administrator prompt is needed in
-default gateway mode. Standalone desktop ZIPs still
-contain one executable. Mac app bundles and all four desktop architectures are
-available below. Windows ZIP users need Microsoft Evergreen WebView2 installed;
-the one-command installer checks this automatically. Also available are the two Linux gateway binaries and checksums.
-
-Automatic updates install on launch before playback. An update from preview 14
-or earlier uses that older updater and may still show its firewall approval
-once; later gateway-mode updates skip firewall setup. Mac releases remain ad-hoc
-signed, not Developer ID signed/notarized; Windows executables are not
-Authenticode signed.
-
-The public gateway and all stage/image/background/audio-fade features are retained.
-Gateway and browser integration checks cover authenticated registration, scoped
-pairing/cookies, CSRF, streaming status, STOP capacity, private API exclusion,
-reconnection and closed LAN access. Native builds, extracted downloads,
-installers and actual automatic updates are checked on all four desktop targets.
-Physical speaker/projector routing and phone power-management behavior still
-require testing on real equipment. This remains a preview release.
-
-[Downloads and first-show setup](https://github.com/arizzi74/Smart-Stage#download-zips) ·
-[Verification](https://github.com/arizzi74/Smart-Stage/blob/main/docs/release-verification.md)
+The stable release label does not change the recorded test scope. Physical speakers/projectors and the remaining UTM cursor observation still need confirmation on the affected equipment. [Verification and known limits](https://github.com/arizzi74/Smart-Stage/blob/main/docs/release-verification.md).

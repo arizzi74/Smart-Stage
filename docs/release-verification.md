@@ -1,7 +1,8 @@
 # Release verification
 
-Status: **preview; physical/clean-machine acceptance incomplete**. CI executes
-real native APIs but cannot verify what a human sees or hears on event hardware.
+Release channel: **v1.0.0 stable**. Physical/clean-machine acceptance is still
+incomplete. CI executes real native APIs but cannot verify what a human sees or
+hears on event hardware. Stable publication does not mark these open checks passed.
 
 ## Distribution and control access by release
 

@@ -1,0 +1,23 @@
+{
+  "sourceRevision": "b8896d4d4b079167654a594fee4be627aa448b7a",
+  "browser": "Chromium 153.0.8010.12 via Playwright 1.63.0",
+  "method": "Screenshots of unchanged embedded production HTML, CSS and JavaScript served through the real Go HTTP API and app service. Admin uses the native desktop user-agent token for native-window copy and is scrolled to Playlist; Remote uses a touch-enabled phone viewport. No CSS overrides, DOM edits, request interception, generated artwork or image compositing.",
+  "fixture": "Six synthetic demo cues with synthetic media validation and device data, ready/stopped with Stage on and Stage backdrop selected. Test-only playback backend does not render audio or video. Gateway, updater and native chooser capabilities are fixture data; these captures are UI illustrations, not native playback, OS window or device-routing evidence.",
+  "credentials": "No live gateway URL, credential, personal path or pairing token is visible. Any fixture session tokens remained on an isolated loopback server.",
+  "images": {
+    "admin.png": {
+      "width": 1400,
+      "height": 1070
+    },
+    "remote.png": {
+      "width": 430,
+      "height": 860
+    }
+  },
+  "assets": {
+    "internal/web/assets/index.html": "ee83e5ac3b080775b6631063b58aa9e0c900ce3f3a6e3da22c550ef9414f8904",
+    "internal/web/assets/style.css": "c7c91ac6b7943c83f0ad6360158d474f27debbfe12fe42f4b325e285a2b3bdff",
+    "internal/web/assets/app.js": "ddb0e36eba55ac542f63e3cd0da665b1fa2d69995360c64881f12a29d5a5cd1e",
+    "internal/web/assets/wake-lock.js": "068d832d050196017f1c618b8e0df6dffed825bf54a67ac14ea76c7c8d8271a5"
+  }
+}
