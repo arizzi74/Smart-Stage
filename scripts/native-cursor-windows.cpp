@@ -15,6 +15,8 @@ bool pointerSaved = false, initialized = false, bitmapVerified = false, messageV
 bool separateOperatorThreadVerified = false;
 bool globalAvailable = false, globalPassed = false;
 std::string unavailableReason, currentCheck, probeError, baseline;
+std::string transparentCursorFormat;
+int transparentCursorSize = 0;
 std::string beforeMouseInput, afterMouseInput;
 UINT mouseInputsInserted = 0;
 DWORD mouseInputError = ERROR_SUCCESS;
@@ -90,7 +92,7 @@ bool hitStage() {
 bool hiddenGlobally() {
     CURSORINFO info = cursorInfo();
     // The intentionally transparent shape is still a selected/shown cursor;
-    // its all-AND/no-XOR bitmap proves that it renders no visible pixels.
+    // its zero color/alpha and all-AND mask prove it renders no visible pixels.
     return hitStage() && info.hCursor == stageCursor;
 }
 bool arrowGlobally() {
@@ -160,22 +162,70 @@ void createOperatorWindow() {
 }
 void verifyTransparentBitmap() {
     currentCheck = "transparentCursorBitmap";
+    // Cover the complete 64x64 hardware cursor resource used by UTM's
+    // viogpu driver; a smaller transparent shape can leave stale pixels.
+    constexpr int cursorSize = 64;
     require(stageCursor != nullptr, "Production stage has no owned cursor");
     ICONINFO icon{};
     require(GetIconInfo(stageCursor, &icon) != FALSE, "Read production cursor bitmap");
-    BITMAP bitmap{};
-    bool transparent = !icon.fIcon && !icon.hbmColor && icon.hbmMask &&
-        GetObjectW(icon.hbmMask, sizeof(bitmap), &bitmap) == sizeof(bitmap) &&
-        bitmap.bmWidth == 32 && bitmap.bmHeight == 64 && bitmap.bmBitsPixel == 1;
+    BITMAP color{}, mask{};
+    bool colorShape = !icon.fIcon && icon.hbmColor && icon.hbmMask &&
+        GetObjectW(icon.hbmColor, sizeof(color), &color) == sizeof(color) &&
+        color.bmWidth == cursorSize && color.bmHeight == cursorSize && color.bmPlanes == 1 && color.bmBitsPixel == 32 &&
+        GetObjectW(icon.hbmMask, sizeof(mask), &mask) == sizeof(mask) &&
+        mask.bmWidth == cursorSize && mask.bmHeight == cursorSize && mask.bmPlanes == 1 && mask.bmBitsPixel == 1;
+    bool zeroColor = false, allAnd = false;
+    HDC bitmapDC = CreateCompatibleDC(nullptr);
+    if (colorShape && bitmapDC) {
+        // Ask GDI for a defined DIB representation. GetIconInfo's copied
+        // bitmaps may use a device-dependent row layout, so do not inspect
+        // bmBits or assume that GetBitmapBits exposes packed source bytes.
+        BITMAPINFO colorFormat{};
+        colorFormat.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+        colorFormat.bmiHeader.biWidth = color.bmWidth;
+        colorFormat.bmiHeader.biHeight = -color.bmHeight;
+        colorFormat.bmiHeader.biPlanes = 1;
+        colorFormat.bmiHeader.biBitCount = 32;
+        colorFormat.bmiHeader.biCompression = BI_RGB;
+        const size_t colorStride = ((color.bmWidth * 32 + 31) / 32) * 4;
+        std::vector<BYTE> colorPixels(colorStride * color.bmHeight, 0xff);
+        zeroColor = GetDIBits(bitmapDC, icon.hbmColor, 0, color.bmHeight, colorPixels.data(),
+                             &colorFormat, DIB_RGB_COLORS) == color.bmHeight &&
+            std::all_of(colorPixels.begin(), colorPixels.end(), [](BYTE value) { return value == 0; });
+        struct MaskFormat {
+            BITMAPINFOHEADER header;
+            RGBQUAD colors[2];
+        } maskFormat{};
+        maskFormat.header.biSize = sizeof(BITMAPINFOHEADER);
+        maskFormat.header.biWidth = mask.bmWidth;
+        maskFormat.header.biHeight = -mask.bmHeight;
+        maskFormat.header.biPlanes = 1;
+        maskFormat.header.biBitCount = 1;
+        maskFormat.header.biCompression = BI_RGB;
+        maskFormat.colors[1] = {255, 255, 255, 0};
+        const size_t maskStride = ((mask.bmWidth + 31) / 32) * 4;
+        std::vector<BYTE> maskPixels(maskStride * mask.bmHeight, 0);
+        allAnd = GetDIBits(bitmapDC, icon.hbmMask, 0, mask.bmHeight, maskPixels.data(),
+                          reinterpret_cast<BITMAPINFO *>(&maskFormat), DIB_RGB_COLORS) == mask.bmHeight;
+        // Check meaningful bits only; row padding is not part of the mask.
+        for (LONG y = 0; allAnd && y < mask.bmHeight; ++y)
+            for (LONG x = 0; allAnd && x < mask.bmWidth; ++x)
+                allAnd = (maskPixels[y * maskStride + x / 8] & (0x80 >> (x % 8))) != 0;
+    }
+    if (bitmapDC) DeleteDC(bitmapDC);
     if (icon.hbmMask) DeleteObject(icon.hbmMask);
     if (icon.hbmColor) DeleteObject(icon.hbmColor);
-    require(transparent, "Owned cursor is not a monochrome 32x32 cursor");
-    // Observe actual rasterization rather than assuming the driver-dependent
-    // row layout returned by GetBitmapBits for the combined AND/XOR mask.
+    require(colorShape, "Owned cursor is not a 64x64 32-bit color cursor with a matching 1-bit mask");
+    require(zeroColor, "Production cursor color bitmap does not contain only zero RGB and alpha pixels");
+    require(allAnd, "Production cursor AND mask does not preserve every background pixel");
+    transparentCursorFormat = "color32";
+    transparentCursorSize = cursorSize;
+    // Independently observe actual rasterization on both light and dark
+    // colored pixels, in addition to validating the color and mask bytes.
     BITMAPINFO format{};
     format.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    format.bmiHeader.biWidth = 32;
-    format.bmiHeader.biHeight = -32;
+    format.bmiHeader.biWidth = cursorSize;
+    format.bmiHeader.biHeight = -cursorSize;
     format.bmiHeader.biPlanes = 1;
     format.bmiHeader.biBitCount = 32;
     format.bmiHeader.biCompression = BI_RGB;
@@ -187,13 +237,13 @@ void verifyTransparentBitmap() {
         if (dc) DeleteDC(dc);
         throw std::string("Create cursor rasterization observation surface");
     }
-    std::vector<DWORD> expected(32 * 32);
-    for (int y = 0; y < 32; ++y)
-        for (int x = 0; x < 32; ++x)
-            expected[y * 32 + x] = (x + y) % 2 ? 0x00f13480 : 0x0012db65;
+    std::vector<DWORD> expected(cursorSize * cursorSize);
+    for (int y = 0; y < cursorSize; ++y)
+        for (int x = 0; x < cursorSize; ++x)
+            expected[y * cursorSize + x] = (x + y) % 2 ? 0x00f13480 : 0x0012db65;
     memcpy(pixels, expected.data(), expected.size() * sizeof(DWORD));
     HGDIOBJ previous = SelectObject(dc, target);
-    bool rendered = DrawIconEx(dc, 0, 0, stageCursor, 32, 32, 0, nullptr, DI_NORMAL) != FALSE;
+    bool rendered = DrawIconEx(dc, 0, 0, stageCursor, cursorSize, cursorSize, 0, nullptr, DI_NORMAL) != FALSE;
     GdiFlush();
     for (size_t index = 0; rendered && index < expected.size(); ++index)
         rendered = (static_cast<DWORD *>(pixels)[index] & 0x00ffffff) == expected[index];
@@ -401,6 +451,8 @@ int wmain(int argc, wchar_t **argv) {
     std::ostringstream result;
     result << "{\"status\":" << quote(!probeError.empty() ? "failed" : globalPassed ? "passed" : "unavailable")
            << ",\"transparentCursorBitmapVerified\":" << (bitmapVerified ? "true" : "false")
+           << ",\"transparentCursorFormat\":" << quote(transparentCursorFormat)
+           << ",\"transparentCursorSize\":" << transparentCursorSize
            << ",\"stageCursorMessageHandling\":" << (messageVerified ? "true" : "false")
            << ",\"operatorUsesSeparateInputThread\":" << (separateOperatorThreadVerified ? "true" : "false")
            << ",\"globalCursor\":{\"available\":" << (globalAvailable ? "true" : "false")

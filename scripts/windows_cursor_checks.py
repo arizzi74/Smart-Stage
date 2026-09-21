@@ -40,6 +40,8 @@ def cursor_checks(display):
         reports = [json.loads(line) for line in result.stdout.splitlines() if line.startswith("{")]
         assert len(reports) == 1, result.stdout
         report = reports[0]
+        assert report["transparentCursorFormat"] == "color32", report
+        assert report["transparentCursorSize"] == 64, report
         assert report["transparentCursorBitmapVerified"] and report["stageCursorMessageHandling"] and report["operatorUsesSeparateInputThread"], report
         global_cursor = report["globalCursor"]
         if report["status"] == "unavailable":
@@ -53,5 +55,5 @@ def cursor_checks(display):
                         "foregroundVideoCursor", "imageOverlayCursor", "imageBackgroundCursor", "sceneStageOffRestoresCursor",
                         "nativeEscapeRestoresCursor", "applicationQuitRestoresCursor"}
             assert required <= set(global_cursor["passedChecks"]), report
-        report["method"] = "Production cursor leaves checkerboard pixels unchanged under DrawIconEx; a bounded SendInput mouse movement pair prepares an independent operator-window baseline on a separate STA/input thread; actual SetCursorPos/WindowFromPoint/GetCursorInfo checks follow, with no input injected during stationary-stage checks; desktop capability reported separately; not a physical mouse or VM viewer observation"
+        report["method"] = "Production cursor has a 64x64 32-bit color bitmap with zero RGB/alpha and a matching all-AND 1-bit mask verified through GetDIBits, and independently leaves the entire 64x64 checkerboard unchanged under DrawIconEx; a bounded SendInput mouse movement pair prepares an independent operator-window baseline on a separate STA/input thread; actual SetCursorPos/WindowFromPoint/GetCursorInfo checks follow, with no input injected during stationary-stage checks; desktop capability reported separately; not a physical mouse or VM viewer observation"
         return report

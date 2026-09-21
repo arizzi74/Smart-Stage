@@ -108,6 +108,18 @@ and shutdown dismisses an open prompt before releasing the native window.
 Minimize keeps the Windows app running in the background. Mac close behavior
 is unchanged.
 
+Preview 21 changes only the Windows stage cursor image format: a zero-BGRA
+32-bit color bitmap with an all-one AND mask replaces the monochrome cursor.
+Its 64x64 size covers the virtual driver's full pointer buffer so a prior larger
+cursor cannot leave pixels outside the updated area.
+The native probe checks that Windows retains the color format and renders no
+visible pixels, then runs the same global ownership/restoration observations.
+This targets the remaining frozen cursor reported on preview 20 in UTM 4.6.4;
+the guest continues receiving motion even when its captured cursor image freezes.
+UTM's [virtual display driver source](https://github.com/utmapp/kvm-guest-drivers-windows/blob/fbe8f667df7d3daf8064e7f4577501d17597abd4/viogpu/viogpudo/viogpudo.cpp#L2601-L2617)
+rejects monochrome shapes. A color cursor avoids that path, but the user's
+installed driver has not been identified and a visual UTM retest is still needed.
+
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin. Standalone
 Mac launches must report an accepted system-browser hand-off; Windows must show

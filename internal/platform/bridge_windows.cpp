@@ -113,6 +113,42 @@ bool stageCursorSelected = false;
 std::mutex eventMutex;
 std::deque<std::string> eventQueue;
 
+HCURSOR createStageCursor() {
+    // Some virtual display drivers reject monochrome pointer shapes. Supply a
+    // real 32-bit color shape instead, with zero RGB/alpha and a transparent
+    // AND mask so both alpha-aware and mask-based rendering leave no pixels.
+    // Cover the full 64x64 virtio cursor resource, including pixels left by a
+    // larger previous pointer on drivers that only update the supplied area.
+    constexpr int size = 64;
+    BITMAPINFO format{};
+    format.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+    format.bmiHeader.biWidth = size;
+    format.bmiHeader.biHeight = -size;
+    format.bmiHeader.biPlanes = 1;
+    format.bmiHeader.biBitCount = 32;
+    format.bmiHeader.biCompression = BI_RGB;
+    void *pixels = nullptr;
+    HBITMAP color = CreateDIBSection(nullptr, &format, DIB_RGB_COLORS, &pixels, nullptr, 0);
+    if (!color) return nullptr;
+    memset(pixels, 0, size * size * sizeof(DWORD));
+    std::array<BYTE, size * size / 8> maskBits;
+    maskBits.fill(0xff);
+    HBITMAP mask = CreateBitmap(size, size, 1, 1, maskBits.data());
+    HCURSOR cursor = nullptr;
+    if (mask) {
+        ICONINFO icon{};
+        icon.fIcon = FALSE;
+        icon.hbmColor = color;
+        icon.hbmMask = mask;
+        cursor = reinterpret_cast<HCURSOR>(CreateIconIndirect(&icon));
+    }
+    DWORD error = cursor ? ERROR_SUCCESS : GetLastError();
+    // CreateIconIndirect copies the bitmaps; the cursor owns its own image.
+    if (mask) DeleteObject(mask);
+    DeleteObject(color);
+    if (!cursor) SetLastError(error);
+    return cursor;
+}
 bool stageSurface(HWND window) {
     return stageWindow && (window == stageWindow || IsChild(stageWindow, window));
 }
@@ -963,9 +999,7 @@ extern "C" char *ss_init() {
         return copy(message);
     };
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
-    std::array<BYTE, 32*32/8> andMask, xorMask{};
-    andMask.fill(0xff);
-    stageCursor = CreateCursor(GetModuleHandleW(nullptr), 0, 0, 32, 32, andMask.data(), xorMask.data());
+    stageCursor = createStageCursor();
     if (!stageCursor) return initializationFailure(failure(HRESULT_FROM_WIN32(GetLastError()), "Create transparent stage cursor"));
     WNDCLASSW cls{}; cls.lpfnWndProc = windowProc; cls.hInstance = GetModuleHandleW(nullptr);
     cls.lpszClassName = L"SmartStageNative"; cls.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);

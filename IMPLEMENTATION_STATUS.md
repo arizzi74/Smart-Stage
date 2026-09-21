@@ -25,7 +25,7 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.20
 - Routed foreground audio/video playback with independent stage visibility and
   image cues, looping image/video backgrounds, optional background sound,
   bounded native audio crossfades, output enumeration, hotplug handling,
-  emergency Escape and power assertions. The Windows stage uses an owned transparent cursor, refreshes it immediately
+  emergency Escape and power assertions. The Windows stage uses an owned transparent 32-bit color cursor, refreshes it immediately
   when enabled and during playback, and restores the pointer outside the stage
   or when disabled. Mac stage cursor handling is unchanged.
 - Saved background selection and session background cue buttons, hidden remote

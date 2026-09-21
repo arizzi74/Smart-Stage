@@ -1,4 +1,14 @@
-Smart Stage preview 20 asks for confirmation when you close Windows Admin.
+Smart Stage preview 21 changes the Windows stage cursor format for virtual
+display compatibility.
+
+- Uses a fully transparent 32-bit color cursor instead of a monochrome cursor.
+  This avoids the monochrome-shape path rejected by some virtual display
+  drivers and targets the stale visible pointer reported in Windows ARM64
+  under UTM 4.6.4. The affected VM still needs a visual retest; this release
+  does not establish that its host-rendered cursor is fixed.
+- Keeps immediate hiding when Stage turns on, refreshes during playback,
+  and restores the pointer outside the stage and when Stage turns off.
+  Mac cursor behavior is unchanged.
 
 - Clicking **X** or pressing **Alt+F4** opens **Quit Smart Stage?**
   Choose **OK** to stop playback, close the stage and quit the application.
@@ -7,16 +17,15 @@ Smart Stage preview 20 asks for confirmation when you close Windows Admin.
   Existing **Quit Smart Stage** menu/Admin controls still exit directly.
 - Repeated close requests do not stack confirmations. Application shutdown and
   update restarts can dismiss an open confirmation without getting stuck.
-- Retains preview 19's Windows stage cursor fix for stationary and moving
-  pointers, with restoration outside the stage or when it turns off.
 - Retains preview 18's file-detection fix for supported MP4 audio or WAV content
   named `.mp3`; no renaming or conversion is needed for those supported files.
 - Retains the dedicated Mac and Windows Admin windows, original-file drops,
   **Choose Media…**, icons, Quit controls and automatic updates before playback.
   Public gateway remains the default and needs no incoming firewall rule.
 
-The stage cursor change uses Windows' native cursor APIs. The affected UTM VM
-still needs a visual check to confirm what its host display shows.
+Native cursor checks verify the color format, transparent pixels and actual
+Windows rendering. Global pointer observations depend on the runner's input
+desktop and do not verify UTM's macOS display.
 
 Install on Windows from a normal PowerShell window:
 
@@ -27,7 +36,7 @@ irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | ie
 Install the gateway on a Linux server with systemd:
 
 ```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.20/install-gateway.sh | sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.21/install-gateway.sh | sh
 ```
 
 [Gateway setup, prerequisites and recovery](https://github.com/arizzi74/Smart-Stage/blob/main/docs/gateway-install.md).
