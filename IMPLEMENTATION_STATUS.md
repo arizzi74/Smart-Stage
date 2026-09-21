@@ -5,7 +5,7 @@ The full specification's physical acceptance is still incomplete; the project
 is not declared production-ready or complete.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.17
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.18
 
 ## Implemented
 
@@ -91,6 +91,19 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.17
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Preview 18 is source `fbf19f5a1f581ac6eb097219e19b9f900e0b103b` and fixes the
+Windows import/playback source-opening mismatch for supported media with a
+misleading filename extension. Windows ARM64 and AMD64 native regression checks
+reproduce `0xc00d36c4` with the old strict resolver on unchanged AAC/MP4 and WAV
+fixtures named `.mp3`. The production fallback opens both and decodes their
+first audio samples. Genuine MP3 and correctly named WAV/M4A still pass, while
+damaged and missing input remains rejected. This source-opening regression
+requires no audio output device and does not establish physical playback or
+full-file integrity. See [release verification](docs/release-verification.md)
+for the current release evidence.
+
+Historical preview 17 evidence follows.
 
 Preview 17 is source `47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e`.
 [Release run 35541865946](https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946)

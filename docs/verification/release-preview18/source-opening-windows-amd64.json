@@ -1,0 +1,101 @@
+{
+  "runID": 35593580384,
+  "jobID": 106313220287,
+  "artifactID": 10635222702,
+  "sourceCommit": "fbf19f5a1f581ac6eb097219e19b9f900e0b103b",
+  "tag": "v0.1.0-preview.18",
+  "report": {
+    "status": "passed",
+    "requiresAudioEndpoint": false,
+    "physicalPlaybackVerified": false,
+    "cases": [
+      {
+        "fixture": "mp3",
+        "strictHRESULT": "0x0",
+        "strictUnsupportedByteStreamObserved": false,
+        "productionOpenSucceeded": true,
+        "sourceHasAudio": true,
+        "sourceDuration": 3.048,
+        "inspection": {
+          "kind": "audio",
+          "hasAudio": true,
+          "hasVideo": false,
+          "duration": 3.048
+        }
+      },
+      {
+        "fixture": "wav-unicode-path",
+        "strictHRESULT": "0x0",
+        "strictUnsupportedByteStreamObserved": false,
+        "productionOpenSucceeded": true,
+        "sourceHasAudio": true,
+        "sourceDuration": 3,
+        "inspection": {
+          "kind": "audio",
+          "hasAudio": true,
+          "hasVideo": false,
+          "duration": 3
+        }
+      },
+      {
+        "fixture": "wav-renamed-mp3",
+        "strictHRESULT": "0xc00d36c4",
+        "strictUnsupportedByteStreamObserved": true,
+        "productionOpenSucceeded": true,
+        "sourceHasAudio": true,
+        "sourceDuration": 3,
+        "inspection": {
+          "kind": "audio",
+          "hasAudio": true,
+          "hasVideo": false,
+          "duration": 3
+        }
+      },
+      {
+        "fixture": "m4a",
+        "strictHRESULT": "0x0",
+        "strictUnsupportedByteStreamObserved": false,
+        "productionOpenSucceeded": true,
+        "sourceHasAudio": true,
+        "sourceDuration": 3,
+        "inspection": {
+          "kind": "audio",
+          "hasAudio": true,
+          "hasVideo": false,
+          "duration": 3
+        }
+      },
+      {
+        "fixture": "m4a-renamed-mp3",
+        "strictHRESULT": "0xc00d36c4",
+        "strictUnsupportedByteStreamObserved": true,
+        "productionOpenSucceeded": true,
+        "sourceHasAudio": true,
+        "sourceDuration": 3,
+        "inspection": {
+          "kind": "audio",
+          "hasAudio": true,
+          "hasVideo": false,
+          "duration": 3
+        }
+      },
+      {
+        "fixture": "damaged",
+        "productionOpenRejected": true,
+        "error": "Open local media (0xc00d36c4): The byte stream type of the given URL is unsupported.",
+        "inspection": {
+          "error": "Open local media (0xc00d36c4): The byte stream type of the given URL is unsupported."
+        }
+      },
+      {
+        "fixture": "missing",
+        "productionOpenRejected": true,
+        "error": "Open local media (0x80070002): The system cannot find the file specified.\r\n",
+        "inspection": {
+          "error": "Open local media (0x80070002): The system cannot find the file specified.\r\n"
+        }
+      }
+    ],
+    "method": "Production Media Foundation source opener and first-sample decoder inspection; unchanged WAV and AAC/MP4 bytes renamed .mp3 reproduce the prior strict resolver failure; no audio renderer or physical output"
+  }
+}

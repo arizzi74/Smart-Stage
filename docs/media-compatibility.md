@@ -32,6 +32,16 @@ no audio/video renderer. macOS loads native asset metadata asynchronously and
 decodes a sample per media type using AVAssetReader, with no AVPlayer/window.
 Type/duration come from native metadata; zero duration is shown as unknown.
 
+Starting with preview 18, Windows import and playback share one source opener.
+If the handler selected by the filename rejects the byte-stream type
+(`0xc00d36c4`), it retries using Windows' registered content handlers. This fixes
+supported MP4 audio or WAV content saved with a `.mp3` extension without
+conversion. The [native source regression](../scripts/windows-source-checks.py)
+uses byte-identical renamed fixtures and still requires real sample decoding;
+it also checks that damaged and missing files remain rejected. The fallback
+uses Microsoft's documented [source resolver flags](https://learn.microsoft.com/en-us/windows/win32/medfound/source-resolver-flags),
+and supplies no additional codecs.
+
 Validation runs on startup, cue edits, Validate all cues, and PLAY preparation
 when cached readiness or size/modification time changed. Missing/invalid cues
 remain visible. An accepted changed/inaccessible source fails into silence and

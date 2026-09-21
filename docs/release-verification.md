@@ -103,6 +103,27 @@ not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
 
+Preview 18 is source `fbf19f5a1f581ac6eb097219e19b9f900e0b103b`.
+[Candidate run 35592869581](https://github.com/arizzi74/Smart-Stage/actions/runs/35592869581)
+passed all six jobs. The same source is used by
+[tagged run 35593580384](https://github.com/arizzi74/Smart-Stage/actions/runs/35593580384).
+Both Windows architectures passed the source-opening regression in both runs,
+using the production C++ bridge.
+The tagged workflow published 50 assets after the shared, gateway and four
+native build/test jobs passed, including the Windows installation checks.
+The source probe requires the prior strict resolver to return `0xc00d36c4` for
+unchanged WAV and AAC/MP4 fixtures renamed to `.mp3`, then requires the production
+fallback to open each source and decode its first audio sample. Correctly named
+MP3, WAV and M4A pass; damaged and missing files remain rejected. Reports retain
+the exact runner job, artifact and source commit under
+[`release-preview18`](verification/release-preview18/).
+
+This check intentionally needs no audio endpoint: the reported failure occurred
+before renderer creation. It establishes source opening and first-sample decoding,
+not physical audio output, full-file playback or the original user's UTM VM.
+
+Historical preview 17 evidence follows.
+
 [Preview 17](https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.17)
 is source `47f75a9d3e4295a77d6dff1a9b337977f2ebdf7e`.
 [Tagged run 35541865946](https://github.com/arizzi74/Smart-Stage/actions/runs/35541865946)
