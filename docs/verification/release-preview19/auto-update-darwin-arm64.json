@@ -1,0 +1,135 @@
+{
+  "status": "passed",
+  "target": "darwin/arm64",
+  "release": "v0.1.0-preview.19",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "publishedDownload": {
+    "status": "passed",
+    "target": "darwin/arm64",
+    "release": "v0.1.0-preview.19",
+    "downloadURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.19/smartstage-darwin-arm64.zip",
+    "archive": "smartstage-darwin-arm64.zip",
+    "archiveSHA256": "a309c5ec24edc08a3643d54f81ba22137901288239564deb0eb1ceed34450cb5",
+    "archiveEntries": [
+      "smartstage"
+    ],
+    "executableSHA256": "1ae0b2e2ddc90f6b716beb4984d46b85cf8ea33721ddc3f1c40a78cd08ef7033",
+    "executablePermissions": "0755"
+  },
+  "expectedFixtureSource": "7b13af7126e557c3c8b9750a09ddec7a463d1028",
+  "fixture": {
+    "version": "v0.0.0-preview.1",
+    "sourceSHA": "7b13af7126e557c3c8b9750a09ddec7a463d1028",
+    "target": "darwin/arm64",
+    "archive": "fixture-darwin-arm64.app.zip",
+    "archiveSHA256": "c0f59e123a2cec99c11c2c47cf3c9d09146771dc718a47b66b3a5773d264cf0e",
+    "executableSHA256": "38e778312939800b580b8a5311909afde1c5aed8b06da8f3cc376702d2a05645",
+    "purpose": "Native production updater verification with older version metadata; not a published release"
+  },
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (7b13af7126e5), go1.26.5, darwin/arm64",
+  "initialUpdateStatus": {
+    "currentVersion": "v0.0.0-preview.1",
+    "latestVersion": "",
+    "phase": "checking",
+    "available": false,
+    "canInstall": false,
+    "message": "Checking for a startup update before enabling playback…",
+    "releaseURL": "",
+    "checkedAt": ""
+  },
+  "oldInstanceID": "58be8ea4c9c42aebedf7b8fa077c1c6a9f911af41d56921c",
+  "startupUpdatePending": true,
+  "initialUpdatePhase": "checking",
+  "startupReservationRejectedPLAY": true,
+  "oldPID": 2387,
+  "lastUpdateStatus": {
+    "currentVersion": "v0.0.0-preview.1",
+    "latestVersion": "v0.1.0-preview.19",
+    "phase": "downloading",
+    "available": true,
+    "canInstall": false,
+    "message": "Downloading and verifying the update. Smart Stage will restart when it is ready.",
+    "releaseURL": "https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.19",
+    "checkedAt": "2026-09-21T12:21:50Z"
+  },
+  "outcome": {
+    "version": "v0.1.0-preview.19",
+    "status": "updated",
+    "time": "2026-09-21T12:21:51.491912Z",
+    "work": "/private/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage update verification 7n1t1vv5/Operator's applications – café/.smartstage-update-2141260446",
+    "helperPID": 2398
+  },
+  "observedUpdatePhases": [
+    "checking",
+    "downloading"
+  ],
+  "finalUpdateStatus": {
+    "currentVersion": "v0.1.0-preview.19",
+    "latestVersion": "",
+    "phase": "checking",
+    "available": false,
+    "canInstall": false,
+    "message": "Checking GitHub for a newer release…",
+    "releaseURL": "",
+    "checkedAt": ""
+  },
+  "gatewayModeDefault": true,
+  "lanListenerClosedAfterUpdate": true,
+  "newPID": 2400,
+  "newInstanceID": "f882a81c4e4d8cc12f6fa2991f61254d37d48bd2cd123eee",
+  "installedVersionOutput": "Smart Stage v0.1.0-preview.19 (7b13af7126e5), go1.26.5, darwin/arm64",
+  "installedExecutableSHA256": "1ae0b2e2ddc90f6b716beb4984d46b85cf8ea33721ddc3f1c40a78cd08ef7033",
+  "oldProcessExitedCleanly": true,
+  "actualPublishedBytesInstalled": true,
+  "adminPortPreserved": true,
+  "savedShowPreserved": true,
+  "hostMediaPreserved": true,
+  "restartedWithoutAutoplay": true,
+  "updateHTTPInstallRequestsSent": 0,
+  "productionReleaseDiscovery": true,
+  "productionArchiveValidation": true,
+  "productionHelperHandoff": true,
+  "startupAcknowledgedBeforeBackupRemoval": true,
+  "runtimeAppObservedByNSRunningApplication": true,
+  "runtimeActivationPolicyRegular": true,
+  "runtimeAppEligibleForDock": true,
+  "runtimeBundleIdentityMatched": true,
+  "runtimeBundleFilesystemIdentityMatched": true,
+  "runtimeIconMatchesBundledArtwork": true,
+  "runtimeIconMeanAbsoluteChannelDifference": 0.0,
+  "runtimeIconRenderedRGBA128SHA256": "c43ac1776715ca8a92f9ffc496761bb0b3a1af39078c4a1f6583b26fde6314fe",
+  "sourceIconRenderedRGBA128SHA256": "c43ac1776715ca8a92f9ffc496761bb0b3a1af39078c4a1f6583b26fde6314fe",
+  "runningApplication": {
+    "bundlePath": "/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/smartstage update verification 7n1t1vv5/Operator's applications – café/Smart Stage.app",
+    "activationPolicy": 0,
+    "localizedName": "Smart Stage",
+    "bundleIdentifier": "com.github.arizzi74.smartstage",
+    "processIdentifier": 2400,
+    "visibleNormalWindows": [
+      {
+        "title": "Smart Stage — Admin",
+        "windowID": 37,
+        "bounds": {
+          "X": 40,
+          "Height": 632,
+          "Y": 51,
+          "Width": 944
+        }
+      }
+    ],
+    "finishedLaunching": true
+  },
+  "nativeAdminPageLoaded": true,
+  "nativeAdminWindowVisible": true,
+  "nativeAdminSingleWindow": true,
+  "nativeAdminWindowID": 37,
+  "dockReopenPreservedNativeAdminWindowID": true,
+  "nativeAdminDidNotDispatchExternalBrowser": true,
+  "reopenKeptSameCorePID": true,
+  "restartedWithoutTerminal": true,
+  "appSignatureVerified": true,
+  "firewallAuthorizationExercised": false,
+  "testDirectoryRemoved": true,
+  "testProcessCleanupPassed": true
+}

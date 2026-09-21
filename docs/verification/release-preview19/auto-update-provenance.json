@@ -1,0 +1,49 @@
+{
+  "workflowRunID": 35597651336,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35597651336",
+  "sourceRevision": "7b13af7126e557c3c8b9750a09ddec7a463d1028",
+  "release": "v0.1.0-preview.19",
+  "collectedAt": "2026-09-21T12:22:54.308906+00:00",
+  "results": [
+    {
+      "target": "darwin-arm64",
+      "jobID": 106330452807,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35597651336/job/106330452807",
+      "jobConclusion": "success",
+      "artifactID": 10637952407,
+      "artifactSHA256": "2bca57d42838c489e1f31ae8519b14096f200c14d396cdb79230e8fa9e873f55",
+      "report": "auto-update-darwin-arm64.json",
+      "reportSHA256": "288ce691bd845f6e252051e9e13c714c426b35ed73114276cc5793b83063a569"
+    },
+    {
+      "target": "darwin-amd64",
+      "jobID": 106330452890,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35597651336/job/106330452890",
+      "jobConclusion": "success",
+      "artifactID": 10637159428,
+      "artifactSHA256": "1ea75fbee1098d10e2e5495651122531c789c7bf8d610a65d57219d812a244e2",
+      "report": "auto-update-darwin-amd64.json",
+      "reportSHA256": "26b14623a1b4cd42b43721f98c18c94798a02f014f75965a630ba08c2d31f625"
+    },
+    {
+      "target": "windows-arm64",
+      "jobID": 106330452892,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35597651336/job/106330452892",
+      "jobConclusion": "success",
+      "artifactID": 10637379234,
+      "artifactSHA256": "881064d5a2daa2464b483a863ea3160a855a810dd0cc62301d0853fa3e9f1667",
+      "report": "auto-update-windows-arm64.json",
+      "reportSHA256": "a20682912077c1d9ff4e4bf05b93575724218dafbf5cc7a9080915b08d609e28"
+    },
+    {
+      "target": "windows-amd64",
+      "jobID": 106330452963,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35597651336/job/106330452963",
+      "jobConclusion": "success",
+      "artifactID": 10637902388,
+      "artifactSHA256": "60127aa4b4cfef17ac2134fb36ab282a8d818dbf0e1ace781d6a4cfac8cb70b7",
+      "report": "auto-update-windows-amd64.json",
+      "reportSHA256": "c4586bf46c7aa75aacb6055442048806beab0eca4497b0fdf233a1ce50bf274d"
+    }
+  ]
+}

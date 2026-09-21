@@ -1,0 +1,101 @@
+{
+  "runID": 35597651336,
+  "jobID": 106326091827,
+  "artifactID": 10637532096,
+  "sourceCommit": "7b13af7126e557c3c8b9750a09ddec7a463d1028",
+  "tag": "v0.1.0-preview.19",
+  "report": {
+    "status": "passed",
+    "transparentCursorBitmapVerified": true,
+    "stageCursorMessageHandling": true,
+    "operatorUsesSeparateInputThread": true,
+    "globalCursor": {
+      "available": true,
+      "status": "passed",
+      "unavailableReason": "",
+      "baselineMouseInput": {
+        "requested": 2,
+        "inserted": 2,
+        "win32Error": 0,
+        "before": {
+          "x": 512,
+          "y": 384,
+          "hitClass": "SmartStageCursorIndependentBaseline",
+          "hitRootClass": "SmartStageCursorIndependentBaseline",
+          "hitPID": 2744,
+          "hitIsStage": false,
+          "hitIsOperator": true,
+          "cursorInfoAvailable": true,
+          "cursorFlags": 2,
+          "cursorHandle": 0,
+          "cursorIsOwnedTransparent": false
+        },
+        "after": {
+          "x": 512,
+          "y": 384,
+          "hitClass": "SmartStageCursorIndependentBaseline",
+          "hitRootClass": "SmartStageCursorIndependentBaseline",
+          "hitPID": 2744,
+          "hitIsStage": false,
+          "hitIsOperator": true,
+          "cursorInfoAvailable": true,
+          "cursorFlags": 1,
+          "cursorHandle": 65539,
+          "cursorIsOwnedTransparent": false
+        }
+      },
+      "baseline": {
+        "x": 512,
+        "y": 384,
+        "hitClass": "SmartStageCursorIndependentBaseline",
+        "hitRootClass": "SmartStageCursorIndependentBaseline",
+        "hitPID": 2744,
+        "hitIsStage": false,
+        "hitIsOperator": true,
+        "cursorInfoAvailable": true,
+        "cursorFlags": 1,
+        "cursorHandle": 65539,
+        "cursorIsOwnedTransparent": false
+      },
+      "lastObservation": {
+        "x": 512,
+        "y": 384,
+        "hitClass": "SmartStageNative",
+        "hitRootClass": "SmartStageNative",
+        "hitPID": 2744,
+        "hitIsStage": true,
+        "hitIsOperator": false,
+        "cursorInfoAvailable": true,
+        "cursorFlags": 1,
+        "cursorHandle": 328355,
+        "cursorIsOwnedTransparent": true
+      },
+      "passedChecks": [
+        "independentDesktopCursorBaseline",
+        "stationaryStageActivation",
+        "stationaryRendererResetRecovery",
+        "movingOverBlankStage",
+        "returnToStageCenter",
+        "operatorWindowVisibleWhileStageEnabled",
+        "stationaryReturnFromOperatorWindow",
+        "stationaryStageOffRestoresCursor",
+        "repeatedStageTogglesRestoreCursor",
+        "backgroundVideoCursor",
+        "foregroundVideoCursor",
+        "imageOverlayCursor",
+        "imageBackgroundCursor",
+        "sceneStageOffRestoresCursor",
+        "nativeEscapeRestoresCursor",
+        "applicationQuitRestoresCursor"
+      ]
+    },
+    "physicalMouseVerified": false,
+    "method": "Production cursor leaves checkerboard pixels unchanged under DrawIconEx; a bounded SendInput mouse movement pair prepares an independent operator-window baseline on a separate STA/input thread; actual SetCursorPos/WindowFromPoint/GetCursorInfo checks follow, with no input injected during stationary-stage checks; desktop capability reported separately; not a physical mouse or VM viewer observation"
+  },
+  "artifactName": "native-windows-amd64",
+  "artifactCreatedAt": "2026-09-21T12:10:41Z",
+  "artifactSHA256": "a323abe9024dc8843c83865ad445e32fa41ff16388157384bab7c6163617c060",
+  "artifactDigestVerified": true,
+  "artifactURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35597651336/artifacts/10637532096",
+  "smokeReportSHA256": "dacadb32a4811780182760e37608b15cfdbf4bdd1d0a7411ea9434c76b040603"
+}

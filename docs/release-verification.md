@@ -92,6 +92,15 @@ Admin window, native file drops/chooser and taskbar/tray controls. Its irm
 installer supplies the matching executable and checks the Microsoft runtime.
 Original media and per-user show data remain in place.
 
+Preview 19 uses an owned transparent Windows cursor and refreshes it when the
+stage opens, content changes and during the native timer. Stage-off paths
+restore the pointer, and delayed Admin cursor callbacks apply only when the
+pointer is actually over the Admin client area. The native probe verifies the
+cursor's rendered transparency and separately observes global pointer state
+with a test operator window on another input thread. Desktop capability is
+reported explicitly; unavailable global observations are not passes. A visual
+check in the affected UTM viewer remains necessary.
+
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin. Standalone
 Mac launches must report an accepted system-browser hand-off; Windows must show
@@ -102,6 +111,42 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+Preview 19 is source `7b13af7126e557c3c8b9750a09ddec7a463d1028`.
+[Candidate run 35596890940](https://github.com/arizzi74/Smart-Stage/actions/runs/35596890940)
+passed all six jobs with the production cursor change. The tagged source adds
+test-only mouse input to establish a visible-pointer baseline before observing
+the production stage; this does not move the pointer in the shipped app.
+
+The Windows AMD64 job in
+[tagged run 35597651336](https://github.com/arizzi74/Smart-Stage/actions/runs/35597651336)
+passed all 16 global cursor observations after verifying its independent
+operator window had a visible arrow. Checks cover stationary stage activation,
+recovery after a visible-cursor reset without movement, moving over blank output,
+image/video/background transitions, operator-window visibility, repeated toggles,
+stage-off, Escape and Quit. A checkerboard rendering check also confirms the
+owned cursor changes no visible pixels. The operator window uses a separate
+input thread, and global state is read with `GetCursorInfo`, not inferred from
+the stage thread's selected cursor. This does not verify UTM's host viewer or
+a physical mouse/projector.
+
+Windows ARM64 passed transparent rendering and native cursor-message handling.
+Its global observation is recorded as **unavailable**, not passed: a
+`Shell_SystemDialog` covered the independent operator baseline even after mouse
+input restored a visible arrow. Both architecture reports include source,
+run/job IDs and verified artifact hashes under
+[`release-preview19`](verification/release-preview19/).
+
+The tagged workflow published 50 assets after all six build/test jobs passed.
+All four published-download checks and all four actual automatic-update checks
+passed. The updater reports cover discovery, replacement/restart, preserved
+show/media and closed LAN access in gateway mode; their artifact hashes are
+retained beside the cursor reports. Both published Mac installation checks and
+the default Mac installer run
+[35599080429](https://github.com/arizzi74/Smart-Stage/actions/runs/35599080429)
+also passed.
+Public `main` bootstrap bytes matched source
+`f15aa33898d5b01b935e254b62d2f8ff36607e23`, with preview 19 selected by default.
 
 Preview 18 is source `fbf19f5a1f581ac6eb097219e19b9f900e0b103b`.
 [Candidate run 35592869581](https://github.com/arizzi74/Smart-Stage/actions/runs/35592869581)

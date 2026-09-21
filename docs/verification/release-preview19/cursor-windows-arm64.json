@@ -1,0 +1,84 @@
+{
+  "runID": 35597651336,
+  "jobID": 106326091976,
+  "artifactID": 10638166573,
+  "sourceCommit": "7b13af7126e557c3c8b9750a09ddec7a463d1028",
+  "tag": "v0.1.0-preview.19",
+  "artifactName": "native-windows-arm64",
+  "artifactCreatedAt": "2026-09-21T12:20:28Z",
+  "artifactSHA256": "0da40df6cff354658e995c1a0fc61faaf96d2d2f0d6be7e45fd417a94a4c8649",
+  "artifactDigestVerified": true,
+  "artifactURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35597651336/artifacts/10638166573",
+  "smokeReportSHA256": "e7c35574e591d1291249415d42ae2d3977869f3c761a00617e51a086a99f541b",
+  "report": {
+    "status": "unavailable",
+    "transparentCursorBitmapVerified": true,
+    "stageCursorMessageHandling": true,
+    "operatorUsesSeparateInputThread": true,
+    "globalCursor": {
+      "available": false,
+      "status": "unavailable",
+      "unavailableReason": "Independent visible topmost test window could not own a globally visible arrow cursor; desktop/input capability unavailable",
+      "baselineMouseInput": {
+        "requested": 2,
+        "inserted": 2,
+        "win32Error": 0,
+        "before": {
+          "x": 512,
+          "y": 384,
+          "hitClass": "Shell_SystemDialog",
+          "hitRootClass": "Shell_SystemDialog",
+          "hitPID": 8016,
+          "hitIsStage": false,
+          "hitIsOperator": false,
+          "cursorInfoAvailable": true,
+          "cursorFlags": 2,
+          "cursorHandle": 0,
+          "cursorIsOwnedTransparent": false
+        },
+        "after": {
+          "x": 512,
+          "y": 384,
+          "hitClass": "Shell_SystemDialog",
+          "hitRootClass": "Shell_SystemDialog",
+          "hitPID": 8016,
+          "hitIsStage": false,
+          "hitIsOperator": false,
+          "cursorInfoAvailable": true,
+          "cursorFlags": 1,
+          "cursorHandle": 65539,
+          "cursorIsOwnedTransparent": false
+        }
+      },
+      "baseline": {
+        "x": 512,
+        "y": 384,
+        "hitClass": "Shell_SystemDialog",
+        "hitRootClass": "Shell_SystemDialog",
+        "hitPID": 8016,
+        "hitIsStage": false,
+        "hitIsOperator": false,
+        "cursorInfoAvailable": true,
+        "cursorFlags": 1,
+        "cursorHandle": 65539,
+        "cursorIsOwnedTransparent": false
+      },
+      "lastObservation": {
+        "x": 512,
+        "y": 384,
+        "hitClass": "Shell_SystemDialog",
+        "hitRootClass": "Shell_SystemDialog",
+        "hitPID": 8016,
+        "hitIsStage": false,
+        "hitIsOperator": false,
+        "cursorInfoAvailable": true,
+        "cursorFlags": 1,
+        "cursorHandle": 65539,
+        "cursorIsOwnedTransparent": false
+      },
+      "passedChecks": []
+    },
+    "physicalMouseVerified": false,
+    "method": "Production cursor leaves checkerboard pixels unchanged under DrawIconEx; a bounded SendInput mouse movement pair prepares an independent operator-window baseline on a separate STA/input thread; actual SetCursorPos/WindowFromPoint/GetCursorInfo checks follow, with no input injected during stationary-stage checks; desktop capability reported separately; not a physical mouse or VM viewer observation"
+  }
+}
