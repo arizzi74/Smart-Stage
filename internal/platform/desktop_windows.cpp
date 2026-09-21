@@ -345,7 +345,19 @@ void configureWebView() {
     check(webview->add_NavigationCompleted(completed.p,&token),"Observe Admin navigation");
     auto failed=callback<ICoreWebView2ProcessFailedEventHandler,ICoreWebView2*,ICoreWebView2ProcessFailedEventArgs*>([](auto*,auto*) { showError("The Admin page stopped responding. Reload to reconnect; playback is still running."); return S_OK; });
     check(webview->add_ProcessFailed(failed.p,&token),"Observe Admin process");
-    auto cursor=callback<ICoreWebView2CursorChangedEventHandler,ICoreWebView2CompositionController*,IUnknown*>([](auto* sender,auto*) { HCURSOR value=nullptr; if(SUCCEEDED(sender->get_Cursor(&value)))SetCursor(value); return S_OK; });
+    auto cursor=callback<ICoreWebView2CursorChangedEventHandler,ICoreWebView2CompositionController*,IUnknown*>([](auto* sender,auto*) {
+        // WebView cursor updates can arrive after the pointer has left Admin.
+        // Do not let a delayed update replace the fullscreen stage's cursor.
+        POINT point{};
+        if(!window || !IsWindowVisible(window) || IsIconic(window) || !GetCursorPos(&point))return S_OK;
+        HWND underPointer=WindowFromPoint(point);
+        if(underPointer!=window && !IsChild(window,underPointer))return S_OK;
+        RECT client{};
+        if(!ScreenToClient(window,&point) || !GetClientRect(window,&client) || !PtInRect(&client,point))return S_OK;
+        HCURSOR value=nullptr;
+        if(SUCCEEDED(sender->get_Cursor(&value)))SetCursor(value);
+        return S_OK;
+    });
     check(composition->add_CursorChanged(cursor.p,&token),"Track Admin cursor");
     auto accelerator=callback<ICoreWebView2AcceleratorKeyPressedEventHandler,ICoreWebView2Controller*,ICoreWebView2AcceleratorKeyPressedEventArgs*>([](auto*,auto* args) {
         COREWEBVIEW2_KEY_EVENT_KIND kind{}; UINT key=0; args->get_KeyEventKind(&kind); args->get_VirtualKey(&key);

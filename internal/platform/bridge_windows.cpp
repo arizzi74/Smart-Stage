@@ -108,8 +108,42 @@ std::atomic<bool> quitting{false};
 std::atomic<bool> cleanupQuitting{false};
 bool stageEnabled = false;
 std::string stageDisplay;
+HCURSOR stageCursor = nullptr;
+bool stageCursorSelected = false;
 std::mutex eventMutex;
 std::deque<std::string> eventQueue;
+
+bool stageSurface(HWND window) {
+    return stageWindow && (window == stageWindow || IsChild(stageWindow, window));
+}
+void selectStageCursor() {
+    // Use an actual transparent shape, so cursor-shape consumers (including
+    // remote/virtual desktops) receive a blank image rather than a null handle.
+    SetCursor(stageCursor);
+    stageCursorSelected = true;
+}
+void syncStageCursor() {
+    if (!stageEnabled && !stageCursorSelected) return;
+    POINT position;
+    if (!GetCursorPos(&position)) return;
+    HWND target = WindowFromPoint(position);
+    if (stageEnabled && IsWindowVisible(stageWindow) && stageSurface(target)) {
+        selectStageCursor();
+    } else if (stageCursorSelected) {
+        CURSORINFO cursor{}; cursor.cbSize = sizeof(cursor);
+        // Restore only our own cursor. Another window may already have chosen
+        // its text/link/resize cursor, which must not be replaced by this timer.
+        if (GetCursorInfo(&cursor) && cursor.hCursor == stageCursor)
+            SetCursor(LoadCursorW(nullptr, IDC_ARROW));
+        stageCursorSelected = false;
+    }
+}
+void hideStageWindow() {
+    stageEnabled = false; stageDisplay.clear();
+    ShowWindow(stageWindow, SW_HIDE);
+    syncStageCursor();
+    SetThreadExecutionState(ES_CONTINUOUS);
+}
 
 void emit(uint64_t g, const char *kind, const std::string &message = "", double pos = 0, double duration = 0) {
     std::ostringstream s;
@@ -274,13 +308,12 @@ bool enableStage(const std::string &id) {
     SetWindowPos(videoWindow, nullptr, 0, 0, r.right-r.left, r.bottom-r.top, SWP_NOZORDER | SWP_NOACTIVATE);
     stageDisplay = id; stageEnabled = true;
     black(); ShowWindow(stageWindow, SW_SHOWNOACTIVATE);
+    syncStageCursor();
     SetThreadExecutionState(ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_DISPLAY_REQUIRED);
     return true;
 }
 void disableStage() {
-    stopCurrent(); stageEnabled = false; stageDisplay.clear();
-    ShowWindow(stageWindow, SW_HIDE);
-    SetThreadExecutionState(ES_CONTINUOUS);
+    stopCurrent(); hideStageWindow();
 }
 
 void addBranch(Playback &p, IMFTopology *topology, IMFPresentationDescriptor *pd,
@@ -482,6 +515,7 @@ void sceneVisuals() {
         ShowWindow(backgroundWindow, SW_SHOWNOACTIVATE);
     }
     RedrawWindow(stageWindow, nullptr, nullptr, RDW_INVALIDATE|RDW_ERASE|RDW_UPDATENOW);
+    syncStageCursor();
 }
 Playback *visualImage() {
     if (!sceneMode || !stageEnabled) return nullptr;
@@ -516,10 +550,7 @@ void clearScene(bool hide) {
       pending.erase(std::remove_if(pending.begin(), pending.end(), [](const Request &r) { return r.sceneRole != 0; }), pending.end()); }
     halt(sceneIncoming); halt(sceneForeground); halt(sceneBackground); halt(sceneImage); halt(sceneRetiring);
     stoppedGeneration = 0;
-    if (hide) {
-        stageEnabled = false; stageDisplay.clear(); ShowWindow(stageWindow, SW_HIDE);
-        SetThreadExecutionState(ES_CONTINUOUS);
-    }
+    if (hide) hideStageWindow();
 }
 bool queueScene(int role, const std::string &path, bool image, bool video, bool mute, uint64_t gen, HWND target) {
     { std::lock_guard<std::mutex> lock(cleanupMutex);
@@ -557,8 +588,7 @@ void processSceneCommand() {
             resizeSceneRenderers();
         }
     } else if (stageEnabled) {
-        stageEnabled = false; stageDisplay.clear(); ShowWindow(stageWindow, SW_HIDE);
-        SetThreadExecutionState(ES_CONTINUOUS);
+        hideStageWindow();
     }
     emitScene(scene.gen, "stage");
     if (scene.foregroundPath.empty() && scene.gen != previous.gen) stoppedGeneration = scene.gen;
@@ -883,7 +913,10 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         // single latest-command slot, never an unbounded OS message backlog.
         SendMessageW(controlWindow, commandMessage, 0, 0);
         processSceneCommand();
-        if (sceneMode) tickScene(); else tick(); return 0;
+        if (sceneMode) tickScene(); else tick();
+        // Stage changes, capture and renderer/WebView callbacks can change the
+        // pointer without another WM_SETCURSOR. Reconcile its actual owner.
+        syncStageCursor(); return 0;
     }
     if (msg == deviceMessage || msg == WM_DISPLAYCHANGE || msg == WM_DEVICECHANGE) { checkDevices(); return 0; }
     if (msg == WM_KEYDOWN && wp == VK_ESCAPE) {
@@ -891,7 +924,7 @@ LRESULT CALLBACK windowProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
         uint64_t g = generation.fetch_add(1); disableStage(); emit(g, "escape"); return 0;
     }
     if (msg == WM_CLOSE && hwnd != controlWindow) { if (sceneMode) { clearScene(true); emitScene(scene.gen, "escape"); return 0; } uint64_t g = generation.fetch_add(1); disableStage(); emit(g, "escape"); return 0; }
-    if (msg == WM_SETCURSOR && hwnd != controlWindow && stageEnabled) { SetCursor(nullptr); return TRUE; }
+    if (msg == WM_SETCURSOR && stageSurface(hwnd) && stageEnabled) { selectStageCursor(); return TRUE; }
     if (msg == WM_ERASEBKGND) { RECT r; GetClientRect(hwnd,&r); FillRect((HDC)wp,&r,(HBRUSH)GetStockObject(BLACK_BRUSH)); return TRUE; }
     if (msg == WM_PAINT) {
         PAINTSTRUCT ps; HDC dc = BeginPaint(hwnd, &ps);
@@ -918,10 +951,26 @@ extern "C" char *ss_init() {
     if (FAILED(hr)) return copy(failure(hr, "Initialize COM MTA"));
     hr = MFStartup(MF_VERSION, MFSTARTUP_FULL);
     if (FAILED(hr)) { CoUninitialize(); return copy(failure(hr, "Media Foundation unavailable; check Windows multimedia components")); }
+    bool registered = false;
+    auto initializationFailure = [&](const std::string &message) {
+        if (stageWindow) DestroyWindow(stageWindow);
+        if (controlWindow) DestroyWindow(controlWindow);
+        stageWindow = controlWindow = videoWindow = backgroundWindow = nullptr;
+        for (HWND &window : sceneVideoWindows) window = nullptr;
+        if (registered) UnregisterClassW(L"SmartStageNative", GetModuleHandleW(nullptr));
+        if (stageCursor) { DestroyCursor(stageCursor); stageCursor = nullptr; }
+        MFShutdown(); CoUninitialize();
+        return copy(message);
+    };
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    std::array<BYTE, 32*32/8> andMask, xorMask{};
+    andMask.fill(0xff);
+    stageCursor = CreateCursor(GetModuleHandleW(nullptr), 0, 0, 32, 32, andMask.data(), xorMask.data());
+    if (!stageCursor) return initializationFailure(failure(HRESULT_FROM_WIN32(GetLastError()), "Create transparent stage cursor"));
     WNDCLASSW cls{}; cls.lpfnWndProc = windowProc; cls.hInstance = GetModuleHandleW(nullptr);
     cls.lpszClassName = L"SmartStageNative"; cls.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-    if (!RegisterClassW(&cls)) return copy("Cannot register native stage window");
+    if (!RegisterClassW(&cls)) return initializationFailure("Cannot register native stage window");
+    registered = true;
     // Hidden top-level control window receives broadcast display-change events.
     controlWindow = CreateWindowExW(0, cls.lpszClassName, L"Smart Stage", 0, 0,0,0,0, nullptr,nullptr,cls.hInstance,nullptr);
     stageWindow = CreateWindowExW(WS_EX_TOPMOST | WS_EX_TOOLWINDOW, cls.lpszClassName, L"", WS_POPUP | WS_CLIPCHILDREN, 0,0,1,1,nullptr,nullptr,cls.hInstance,nullptr);
@@ -929,7 +978,8 @@ extern "C" char *ss_init() {
     backgroundWindow = CreateWindowExW(0, cls.lpszClassName, L"", WS_CHILD, 0,0,1,1,stageWindow,nullptr,cls.hInstance,nullptr);
     for (HWND &window : sceneVideoWindows)
         window = CreateWindowExW(0, cls.lpszClassName, L"", WS_CHILD, 0,0,1,1,stageWindow,nullptr,cls.hInstance,nullptr);
-    if (!controlWindow || !stageWindow || !videoWindow || !backgroundWindow || !sceneVideoWindows[0] || !sceneVideoWindows[1]) return copy("Cannot create native stage windows in this desktop session");
+    if (!controlWindow || !stageWindow || !videoWindow || !backgroundWindow || !sceneVideoWindows[0] || !sceneVideoWindows[1])
+        return initializationFailure("Cannot create native stage windows in this desktop session");
     if (SUCCEEDED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER,
                                   __uuidof(IMMDeviceEnumerator), (void**)notificationEnumerator.out()))) {
         notifications = new DeviceNotifications();
@@ -952,7 +1002,10 @@ extern "C" void ss_run() {
     { std::lock_guard<std::mutex> lock(commandMutex); latestCommand.reset(); }
     cleanupQuitting.store(true); cleanupCV.notify_all(); if (cleaner.joinable()) cleaner.join();
     ss_windows_desktop_shutdown();
+    hideStageWindow();
     DestroyWindow(stageWindow); DestroyWindow(controlWindow);
+    if (GetCursor() == stageCursor) SetCursor(LoadCursorW(nullptr, IDC_ARROW));
+    if (stageCursor) { DestroyCursor(stageCursor); stageCursor = nullptr; }
     if (notificationEnumerator.p) { notificationEnumerator.p->Release(); notificationEnumerator.p = nullptr; }
     MFShutdown(); CoUninitialize();
 }

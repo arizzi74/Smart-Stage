@@ -1,19 +1,20 @@
-Smart Stage preview 18 fixes a Windows media-opening mismatch between import and playback.
+Smart Stage preview 19 keeps the Windows pointer invisible over the active stage.
 
-- When Windows rejects a file's byte-stream type (`0xc00d36c4`), Smart Stage
-  retries using Windows' content detection. This allows supported media with
-  a misleading extension, such as MP4/AAC or WAV content named `.mp3`, to open without
-  renaming or converting the file.
-- Import and playback now use the same source-opening policy. Import still
-  decodes a real sample before marking a cue ready; damaged files remain errors.
+- Uses an explicitly transparent cursor over the stage, including black output,
+  images, foreground video and background video. Stage activation refreshes
+  the cursor immediately, and pointer ownership is checked during playback even
+  when no mouse-movement event arrives.
+- Restores a visible pointer when the stage turns off or the pointer leaves
+  the stage. Admin keeps its normal pointer on the operator's display.
+- Prevents delayed Admin WebView cursor events from replacing the stage cursor.
+- Retains preview 18's file-detection fix for supported MP4 audio or WAV content
+  named `.mp3`; no renaming or conversion is needed for those supported files.
 - Retains the dedicated Mac and Windows Admin windows, original-file drops,
   **Choose Media…**, icons, Quit controls and automatic updates before playback.
   Public gateway remains the default and needs no incoming firewall rule.
 
-This change addresses the source-opening failure before audio output starts.
-It does not add codecs or establish physical audio/VM compatibility for every
-file. Retesting the originally reported file on the affected Windows VM is
-still required.
+The stage cursor change uses Windows' native cursor APIs. The affected UTM VM
+still needs a visual check to confirm what its host display shows.
 
 Install on Windows from a normal PowerShell window:
 
@@ -24,7 +25,7 @@ irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | ie
 Install the gateway on a Linux server with systemd:
 
 ```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.18/install-gateway.sh | sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.19/install-gateway.sh | sh
 ```
 
 [Gateway setup, prerequisites and recovery](https://github.com/arizzi74/Smart-Stage/blob/main/docs/gateway-install.md).

@@ -90,6 +90,13 @@ try:
         from native_keyboard_checks import escape_checks
         records.append({'nativeKeyboardEvents':escape_checks(screen),
                         'method':'Test-only event driver linked against the production bridge; no physical keyboard assertion'})
+        if sys.platform == 'win32':
+            from windows_cursor_checks import cursor_checks
+            try:
+                records.append({'nativeStageCursor': cursor_checks(screen)})
+            except Exception as error:
+                records.append({'nativeStageCursor': {'status': 'failed', 'diagnostic': str(error)}})
+                raise
     if devices['displays'] and (sys.platform == 'win32' or devices['audio']):
         if sys.platform == 'darwin':
             from native_scene_checks import scene_checks

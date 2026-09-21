@@ -103,10 +103,10 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
                 require(GetRValue(pixel) > 200 && GetGValue(pixel) < 40 && GetBValue(pixel) < 40, "Background fixture image was not painted");
                 SetCursor(LoadCursorW(nullptr, IDC_ARROW));
                 SendMessageW(stageWindow, WM_SETCURSOR, (WPARAM)stageWindow, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
-                require(GetCursor() == nullptr, "Stage did not hide the cursor");
+                require(stageCursor && GetCursor() == stageCursor, "Stage message did not select the transparent cursor");
                 SetCursor(LoadCursorW(nullptr, IDC_ARROW));
                 SendMessageW(controlWindow, WM_SETCURSOR, (WPARAM)controlWindow, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
-                require(GetCursor() != nullptr, "Control window inherited the hidden cursor");
+                require(GetCursor() != stageCursor, "Control window inherited the stage cursor");
                 desired.hard_stop = 1; desired.stage_enabled = 0; desired.generation = 12; apply(); next(108);
             }
             break;
@@ -212,10 +212,10 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
                 require(GetRValue(pixel) > 200 && GetGValue(pixel) < 40 && GetBValue(pixel) < 40, "Stage image was not painted with the fixture pixels");
                 SetCursor(LoadCursorW(nullptr, IDC_ARROW));
                 SendMessageW(stageWindow, WM_SETCURSOR, (WPARAM)stageWindow, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
-                require(GetCursor() == nullptr, "Stage did not hide the cursor");
+                require(stageCursor && GetCursor() == stageCursor, "Stage message did not select the transparent cursor");
                 SetCursor(LoadCursorW(nullptr, IDC_ARROW));
                 SendMessageW(controlWindow, WM_SETCURSOR, (WPARAM)controlWindow, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
-                require(GetCursor() != nullptr, "Control window inherited the hidden stage cursor");
+                require(GetCursor() != stageCursor, "Control window inherited the stage cursor");
                 desired.generation = desired.foreground_id = 20; desired.foreground_path = probeWaveA.c_str();
                 desired.foreground_kind = "audio"; desired.foreground_has_audio = 1;
                 apply(); next(10);
@@ -275,9 +275,9 @@ int main(int argc, char **argv) {
     phaseStart = GetTickCount64(); SetTimer(nullptr, 0, 20, probeTick); ss_run();
     if (!passed) { fprintf(stderr, "%s\n", probeFailure.c_str()); return 5; }
     if (!soundAvailable) {
-        puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":false,\"audioFadesVerified\":false,\"audioUnavailableReason\":\"No active runner audio endpoint\",\"backgroundLoop\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesForeground\":true,\"imagePixelsRendered\":true,\"stageCursorHidden\":true,\"hardStopClearsScene\":true,\"physicalOutputsVerified\":false}");
+        puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":false,\"audioFadesVerified\":false,\"audioUnavailableReason\":\"No active runner audio endpoint\",\"backgroundLoop\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesForeground\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR and current-thread GetCursor only\",\"hardStopClearsScene\":true,\"physicalOutputsVerified\":false}");
         return 0;
     }
-    puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":true,\"backgroundLoop\":true,\"backgroundToCueCrossfade\":true,\"cueToCueCrossfade\":true,\"stopToBackgroundCrossfade\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesMusic\":true,\"imagePixelsRendered\":true,\"stageCursorHidden\":true,\"startFromSilenceImmediate\":true,\"backgroundFailurePreservesMusic\":true,\"hardStopCancelsIncoming\":true,\"physicalOutputsVerified\":false}");
+    puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":true,\"backgroundLoop\":true,\"backgroundToCueCrossfade\":true,\"cueToCueCrossfade\":true,\"stopToBackgroundCrossfade\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesMusic\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR and current-thread GetCursor only\",\"startFromSilenceImmediate\":true,\"backgroundFailurePreservesMusic\":true,\"hardStopCancelsIncoming\":true,\"physicalOutputsVerified\":false}");
     return 0;
 }
