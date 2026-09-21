@@ -131,6 +131,44 @@ not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
 
+Preview 21 is source `acac0468bd03e1a51a16774542d22a98b4e5b94d`.
+[Candidate run 35615318752](https://github.com/arizzi74/Smart-Stage/actions/runs/35615318752)
+passed all six jobs. The six build/test jobs and publication in
+[tagged run 35616207921](https://github.com/arizzi74/Smart-Stage/actions/runs/35616207921)
+also passed, publishing 50 assets. Both Windows architectures retained a
+64x64, 32-bit color cursor with zero RGB/alpha, an all-one AND mask and no
+changed checkerboard pixels under `DrawIconEx`. Cursor-message handling passed.
+AMD64 passed all 16 global observations; ARM64 global observation was unavailable
+because `Shell_SystemDialog` covered the independent operator baseline. These
+results do not verify the affected UTM viewer. Public smoke-report digests and
+source/run/asset provenance are retained under
+[`release-preview21`](verification/release-preview21/).
+The tagged workflow completed with 21 of 23 jobs successful, including all four
+published installer jobs and all four browser jobs; the two failures are below.
+
+The initial published Windows ARM64 download job received HTTP 504 from GitHub
+before extraction. Its separate automatic-update job subsequently downloaded
+the published bytes, replaced the app and restarted successfully. Windows AMD64
+and Mac AMD64 automatic updates also passed. The initial Mac ARM64 updater check
+was prevented by GitHub's unauthenticated API rate limit before discovery;
+it is not recorded as a successful update.
+
+The public Mac and Windows installer bytes matched commit
+`5211063`, with preview 21 selected by default. The later verification-only
+commit `5355d4b` pins standalone updater checks to the same published preview 21
+fixtures; it does not change the release binaries.
+[Replacement updater run 35618121861](https://github.com/arizzi74/Smart-Stage/actions/runs/35618121861)
+passed Windows ARM64 and Mac AMD64 again. Mac ARM64 again encountered an API
+rate limit before update discovery; Windows AMD64 received HTTP 504 during
+the verification script's reference download, before launching the updater.
+The original successful Windows AMD64 update remains recorded separately.
+The main-bootstrap Mac ARM64 installer check also received HTTP 504 from its
+download, after verifying the bootstrap and reference archive. These network
+failures are retained as failures, not converted to application passes.
+A separate local attempt to fetch the public Windows ARM64 ZIP also received
+HTTP 504, including two curl retries. Successful downloads on other runners do
+not establish that every GitHub edge was available at verification time.
+
 Preview 20 is source `a288ba7e52e84e757c12ca2b79f34bdd20efc181`.
 Both Windows architectures passed the close-confirmation checks in
 [candidate run 35605191487](https://github.com/arizzi74/Smart-Stage/actions/runs/35605191487)

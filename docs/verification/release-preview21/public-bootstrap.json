@@ -1,0 +1,18 @@
+{
+  "sourceCommit": "52110633619148a60a49695cf5fe25c02c964ba9",
+  "defaultVersion": "v0.1.0-preview.21",
+  "results": [
+    {
+      "file": "install.sh",
+      "publicURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+      "sha256": "6f70d845d1f1153ff728796d23b9e3edd4071a3c1581fa7e573857ea8be85919",
+      "matchesCommittedBytes": true
+    },
+    {
+      "file": "install.ps1",
+      "publicURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1",
+      "sha256": "f6b6034b86e1de2ab42ef39f6454dedcfd3faff1ea9ac2986fa8368f8c03ef72",
+      "matchesCommittedBytes": true
+    }
+  ]
+}

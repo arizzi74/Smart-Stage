@@ -1,0 +1,6 @@
+{
+  "status": "failed",
+  "target": "windows/amd64",
+  "release": "v0.1.0-preview.21",
+  "error": "HTTP Error 504: Gateway Time-out"
+}

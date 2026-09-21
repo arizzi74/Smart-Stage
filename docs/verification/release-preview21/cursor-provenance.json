@@ -1,0 +1,30 @@
+{
+  "workflowRunID": 35616207921,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35616207921",
+  "workflowStatusAtCollection": "in_progress",
+  "workflowConclusionAtCollection": null,
+  "sourceRevision": "acac0468bd03e1a51a16774542d22a98b4e5b94d",
+  "release": "v0.1.0-preview.21",
+  "releaseID": 393067258,
+  "publishJobID": 106393206060,
+  "collectedAt": "2026-09-21T15:18:24.521099+00:00",
+  "results": [
+    {
+      "target": "windows-amd64",
+      "report": "cursor-windows-amd64.json",
+      "reportSHA256": "ee476e24b212d5fb75e15e839fcead997b0cf362d0113573fe111ad7cade8d20",
+      "assetSHA256": "88e34397511a72838ae96eedfb09298ded15a6ab5bb11aed27e9276e5b97a88f",
+      "globalCursorStatus": "passed",
+      "physicalMouseVerified": false
+    },
+    {
+      "target": "windows-arm64",
+      "report": "cursor-windows-arm64.json",
+      "reportSHA256": "e944ae6eec1e0f594e6fab65ca9dfb468626259241fcc49ac493bf6471d269bc",
+      "assetSHA256": "23c8e73dbda37a04a4b81f05f25e962b50dfe30768ae50b4aff0710726104ddb",
+      "globalCursorStatus": "unavailable",
+      "physicalMouseVerified": false
+    }
+  ],
+  "provenanceMethod": "Public GitHub release assets downloaded without authentication and matched to GitHub asset SHA256 digests; tag target, tag-workflow head revision, successful native jobs, and successful publication job checked through GitHub API. Raw metadata and unchanged smoke JSON retained in raw/."
+}

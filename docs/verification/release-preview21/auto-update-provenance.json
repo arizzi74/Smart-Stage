@@ -1,0 +1,108 @@
+{
+  "release": "v0.1.0-preview.21",
+  "sourceRevision": "acac0468bd03e1a51a16774542d22a98b4e5b94d",
+  "releaseWorkflowRunID": 35616207921,
+  "releaseWorkflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35616207921",
+  "collectedAt": "2026-09-21T15:21:43.474799+00:00",
+  "successfulTargets": [
+    "darwin-amd64",
+    "windows-amd64",
+    "windows-arm64"
+  ],
+  "unverifiedTargets": [
+    "darwin-arm64"
+  ],
+  "results": [
+    {
+      "target": "windows-arm64",
+      "jobID": 106393314614,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35616207921/job/106393314614",
+      "jobConclusion": "success",
+      "artifactID": 10647880690,
+      "artifactSHA256": "8d8f695b036492b5203337dbb7bc440ea1724f7638e235017d10eabe2bcc5cbd",
+      "workflowRunID": 35616207921,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35616207921",
+      "testSourceRevision": "acac0468bd03e1a51a16774542d22a98b4e5b94d",
+      "report": "auto-update-windows-arm64.json",
+      "reportSHA256": "c212a67ff42cad019110c7bc3fb23de9e58e96780939bf3d91f1a814a93b8a80"
+    },
+    {
+      "target": "darwin-amd64",
+      "jobID": 106393314622,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35616207921/job/106393314622",
+      "jobConclusion": "success",
+      "artifactID": 10647446229,
+      "artifactSHA256": "e46b899a9da2ae54e0d04b037af36a698e5a90f9459e0440cbc10d42be4b76a4",
+      "workflowRunID": 35616207921,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35616207921",
+      "testSourceRevision": "acac0468bd03e1a51a16774542d22a98b4e5b94d",
+      "report": "auto-update-darwin-amd64.json",
+      "reportSHA256": "ccb46692b2452af4e5cd4d77b5bcc37c86392b04e0ec62c3b0f426e0f9bc297f"
+    },
+    {
+      "target": "windows-amd64",
+      "jobID": 106393314652,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35616207921/job/106393314652",
+      "jobConclusion": "success",
+      "artifactID": 10646658631,
+      "artifactSHA256": "e13537c5f93e8c0bed5bb18ac71e45fa2faaa2076fad2ddd6fc20a5d1e055f2b",
+      "workflowRunID": 35616207921,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35616207921",
+      "testSourceRevision": "acac0468bd03e1a51a16774542d22a98b4e5b94d",
+      "report": "auto-update-windows-amd64.json",
+      "reportSHA256": "158afa628b1ea34b24d5988ec8fb8349e2527773cc85763717ee6272126e5e49"
+    }
+  ],
+  "failedAttempts": [
+    {
+      "target": "darwin-arm64",
+      "jobID": 106393314765,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35616207921/job/106393314765",
+      "jobConclusion": "failure",
+      "artifactID": 10647041169,
+      "artifactSHA256": "03366921a4323f1521c2596d4fa2a44ac99a55df5d657c9359d3ae1b45fccac1",
+      "workflowRunID": 35616207921,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35616207921",
+      "testSourceRevision": "acac0468bd03e1a51a16774542d22a98b4e5b94d",
+      "report": "auto-update-darwin-arm64-initial-failure.json",
+      "reportSHA256": "695ea6ecc792cf8c79d166a5f242cf04a4b7efeb64bf6ad1f71b26e276b8d473",
+      "failureCategory": "github-api-rate-limit-before-update-installation",
+      "initialUpdateMessage": "Update check failed: GitHub temporarily limited update checks; retry after 2026-09-21T15:40:05Z"
+    },
+    {
+      "target": "windows-amd64",
+      "jobID": 106394003546,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35618121861/job/106394003546",
+      "jobConclusion": "failure",
+      "artifactID": 10646644166,
+      "artifactSHA256": "af792b16fb1da2336f4a885a8781fe9e8744aa3eca9ba4d939f2db55e824d71a",
+      "workflowRunID": 35618121861,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35618121861",
+      "testSourceRevision": "5355d4bb5d9f90bda409977638d9aec1eaa7b915",
+      "report": "auto-update-windows-amd64-retry-failure.json",
+      "reportSHA256": "f97839689252fd0cf252d6a8a646015386351b5961f3d063d92d08bedf384c1c",
+      "failureCategory": "http-504-before-fixture-launch",
+      "referenceDownloadReport": "auto-update-windows-amd64-retry-download-failure.json",
+      "referenceDownloadReportSHA256": "aa5bf341b11977a7c2f019cd58763220de0f7a25574d99dca938fa1a8e2b9d35"
+    },
+    {
+      "target": "darwin-arm64",
+      "jobID": 106394003658,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35618121861/job/106394003658",
+      "jobConclusion": "failure",
+      "artifactID": 10646811642,
+      "artifactSHA256": "fcaa927ed5e19dd32248aee9e9626c2a791a6cb25ea266ad04846c30f88d3306",
+      "workflowRunID": 35618121861,
+      "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35618121861",
+      "testSourceRevision": "5355d4bb5d9f90bda409977638d9aec1eaa7b915",
+      "report": "auto-update-darwin-arm64-retry-failure.json",
+      "reportSHA256": "2c80b269f4bd903d4ab94e56ab7f5661c7fe0af717cf2ab7a38525217a17c875",
+      "failureCategory": "github-api-rate-limit-before-update-installation",
+      "initialUpdateMessage": "Update check failed: GitHub temporarily limited update checks; retry after 2026-09-21T15:20:28Z"
+    }
+  ],
+  "limitations": [
+    "The Mac ARM64 automatic update could not be verified: both attempts encountered GitHub API rate limits before installing.",
+    "The later Windows AMD64 retry failed during its independent reference download with HTTP 504; the initial actual automatic update succeeded."
+  ]
+}

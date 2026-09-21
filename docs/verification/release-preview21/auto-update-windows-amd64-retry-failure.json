@@ -1,0 +1,8 @@
+{
+  "status": "failed",
+  "target": "windows/amd64",
+  "release": "v0.1.0-preview.21",
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "physicalPlaybackVerified": false,
+  "error": "Command '['C:\\\\hostedtoolcache\\\\windows\\\\Python\\\\3.12.10\\\\x64\\\\python3.exe', 'D:\\\\a\\\\Smart-Stage\\\\Smart-Stage\\\\scripts\\\\verify-download.py', '--version', 'v0.1.0-preview.21', '--os', 'windows', '--arch', 'amd64', '--destination', 'D:\\\\a\\\\Smart-Stage\\\\Smart-Stage\\\\dist\\\\auto-update\\\\windows-amd64\\\\reference']' returned non-zero exit status 1."
+}

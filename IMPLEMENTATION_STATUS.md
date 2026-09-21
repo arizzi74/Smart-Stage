@@ -96,6 +96,15 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.21
 
 ## Built and automatically tested
 
+Preview 21 publishes the Windows transparent color-cursor compatibility change
+from `acac0468bd03e1a51a16774542d22a98b4e5b94d`. Both Windows architectures
+passed bitmap transparency and cursor-message checks; AMD64 passed global
+pointer observations, while ARM64's hosted desktop prevented that observation.
+The affected UTM 4.6.4 VM still needs a visual retest. Both Windows automatic
+updates passed against the published binaries. GitHub rate limits/timeouts
+prevented some separate post-publication checks; see
+[release verification](docs/release-verification.md) for exact results.
+
 Preview 18 is source `fbf19f5a1f581ac6eb097219e19b9f900e0b103b` and fixes the
 Windows import/playback source-opening mismatch for supported media with a
 misleading filename extension. Windows ARM64 and AMD64 native regression checks
