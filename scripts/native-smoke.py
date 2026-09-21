@@ -62,6 +62,13 @@ try:
         result = run('--inspect',media/name)[0]
         assert result['kind'] == kind and result['hasAudio'] is audio and 2.5 < result['duration'] < 3.5, result
     run('--inspect',media/'damaged.mp4',success=False)
+    if sys.platform == 'win32':
+        source = subprocess.run([sys.executable, str(root/'scripts/windows-source-checks.py')],
+                                capture_output=True, text=True, encoding='utf-8', timeout=150)
+        records.append({'nativeSourceOpening': {
+            'returncode': source.returncode, 'stdout': source.stdout, 'stderr': source.stderr}})
+        assert source.returncode == 0, f'Native source opening regression failed: {source.stdout}\n{source.stderr}'
+        records[-1]['nativeSourceOpening'] = json.loads(source.stdout)
     # A real native source with an unavailable output must fail rather than
     # silently routing to a default speaker or an unrelated display.
     for name,option in [("Opening – café's tone.wav",'--audio'), ('silent-1080p.mp4','--display')]:

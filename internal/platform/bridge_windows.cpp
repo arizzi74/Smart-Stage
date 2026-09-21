@@ -81,6 +81,25 @@ std::string failure(HRESULT hr, const char *action) {
 }
 void check(HRESULT hr, const char *action) { if (FAILED(hr)) throw failure(hr, action); }
 
+void openLocalMedia(const std::string &path, IMFMediaSource **source) {
+    Com<IMFSourceResolver> resolver; Com<IUnknown> object;
+    check(MFCreateSourceResolver(resolver.out()), "Create media resolver");
+    MF_OBJECT_TYPE type = MF_OBJECT_INVALID;
+    const auto filename = wide(path);
+    const DWORD flags = MF_RESOLUTION_MEDIASOURCE | MF_RESOLUTION_READ;
+    HRESULT hr = resolver->CreateObjectFromURL(filename.c_str(), flags, nullptr, &type, object.out());
+    if (hr == MF_E_UNSUPPORTED_BYTESTREAM_TYPE) {
+        // A supported file can have a misleading extension (for example WAV
+        // content named .mp3). Ask Windows to try its other registered handlers
+        // before rejecting it. Both inspection and playback use this policy.
+        hr = resolver->CreateObjectFromURL(filename.c_str(),
+            flags | MF_RESOLUTION_CONTENT_DOES_NOT_HAVE_TO_MATCH_EXTENSION_OR_MIME_TYPE,
+            nullptr, &type, object.out());
+    }
+    check(hr, "Open local media");
+    check(object->QueryInterface(__uuidof(IMFMediaSource), (void**)source), "Get media source");
+}
+
 constexpr UINT commandMessage = WM_APP+1, readyMessage = WM_APP+2, deviceMessage = WM_APP+3, quitMessage = WM_APP+4, sceneMessage = WM_APP+5;
 HWND controlWindow = nullptr, stageWindow = nullptr, videoWindow = nullptr;
 HWND sceneVideoWindows[2] = {nullptr, nullptr}, backgroundWindow = nullptr;
@@ -312,12 +331,7 @@ std::unique_ptr<Playback> prepare(const Request &r) {
     p->path = r.path; p->sceneRole = r.sceneRole; p->token = r.token; p->target = r.target;
     try {
         if (r.image) { decodeImage(*p, r.path); return p; }
-        Com<IMFSourceResolver> resolver; Com<IUnknown> object;
-        check(MFCreateSourceResolver(resolver.out()), "Create media resolver");
-        MF_OBJECT_TYPE type;
-        check(resolver->CreateObjectFromURL(wide(r.path).c_str(), MF_RESOLUTION_MEDIASOURCE | MF_RESOLUTION_READ,
-                                           nullptr, &type, object.out()), "Open local media");
-        check(object->QueryInterface(__uuidof(IMFMediaSource), (void**)p->source.out()), "Get media source");
+        openLocalMedia(r.path, p->source.out());
         if (!requestCurrent(r)) return p;
         Com<IMFPresentationDescriptor> pd; Com<IMFTopology> topology;
         check(p->source->CreatePresentationDescriptor(pd.out()), "Read media tracks");
@@ -981,10 +995,15 @@ extern "C" char *ss_inspect(const char *path) {
             Playback image; decodeImage(image, path);
             return copy("{\"kind\":\"image\",\"hasAudio\":false,\"hasVideo\":false,\"duration\":0}");
         } catch (const std::string &) { /* Let Media Foundation inspect audio/video. */ }
-        Com<IMFSourceReader> reader; Com<IMFAttributes> attrs;
+        Com<IMFMediaSource> source; Com<IMFSourceReader> reader; Com<IMFAttributes> attrs;
         check(MFCreateAttributes(attrs.out(), 1), "Create reader attributes");
         check(attrs->SetUINT32(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING, TRUE), "Enable native video decoding");
-        check(MFCreateSourceReaderFromURL(wide(path).c_str(), attrs.p, reader.out()), "Inspect local media");
+        openLocalMedia(path, source.out());
+        HRESULT readerResult = MFCreateSourceReaderFromMediaSource(source.p, attrs.p, reader.out());
+        // On success the reader owns shutdown. If construction fails, there
+        // is no reader to shut down the source we created.
+        if (FAILED(readerResult)) source->Shutdown();
+        check(readerResult, "Inspect local media");
         check(reader->SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS, FALSE), "Isolate inspection tracks");
         bool audio = false, video = false;
         for (DWORD i=0; i<128; ++i) {

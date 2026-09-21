@@ -1,21 +1,19 @@
-Smart Stage preview 17 brings the dedicated Admin app experience to Windows.
+Smart Stage preview 18 fixes a Windows media-opening mismatch between import and playback.
 
-- Adds an icon-bearing Windows Admin window with original-file Explorer
-  drag-and-drop, **Choose Media…**, taskbar/tray controls and **Quit Smart Stage**.
-  Closing the window keeps playback running; relaunching the shortcut restores
-  the same window without opening a duplicate browser page or terminal.
-  If Windows cannot register a tray icon, closing Admin minimizes it to the
-  taskbar. Escape in Admin performs an emergency stop.
-- Restores a single PowerShell installation command that detects native ARM64
-  or Intel/AMD64, verifies the release ZIP and installs per user with Desktop
-  and Start menu shortcuts. It checks Microsoft WebView2 and installs the
-  Microsoft-signed runtime for the current user if missing.
-- Retains automatic updates on launch, before playback starts, on both Windows
-  architectures. Updates reopen Admin and preserve the icon, shortcuts, show
-  and media locations. Gateway mode leaves incoming firewall rules unchanged.
-- Keeps **Public gateway** as the default, connection settings collapsed, and
-  the remote link/QR visible. Select **Local LAN** explicitly for a local
-  listener and the app-specific firewall setup.
+- When Windows rejects a file's byte-stream type (`0xc00d36c4`), Smart Stage
+  retries using Windows' content detection. This allows supported media with
+  a misleading extension, such as WAV content named `.mp3`, to open without
+  renaming or converting the file.
+- Import and playback now use the same source-opening policy. Import still
+  decodes a real sample before marking a cue ready; damaged files remain errors.
+- Retains the dedicated Mac and Windows Admin windows, original-file drops,
+  **Choose Media…**, icons, Quit controls and automatic updates before playback.
+  Public gateway remains the default and needs no incoming firewall rule.
+
+This change addresses the source-opening failure before audio output starts.
+It does not add codecs or establish physical audio/VM compatibility for every
+file. Retesting the originally reported file on the affected Windows VM is
+still required.
 
 Install on Windows from a normal PowerShell window:
 
@@ -26,7 +24,7 @@ irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | ie
 Install the gateway on a Linux server with systemd:
 
 ```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.17/install-gateway.sh | sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v0.1.0-preview.18/install-gateway.sh | sh
 ```
 
 [Gateway setup, prerequisites and recovery](https://github.com/arizzi74/Smart-Stage/blob/main/docs/gateway-install.md).
