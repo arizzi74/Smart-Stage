@@ -64,9 +64,11 @@ non-administrator PowerShell window. Gateway mode needs no firewall change.
 
 Smart Stage opens its own Admin window with its icon in the taskbar and a tray
 menu. Drop original files from **File Explorer** into the window or use
-**Choose Media…**; files remain in place. Closing the window keeps playback
-running. Open the shortcut or use **Open Admin** in the tray menu to restore the
-same window. **Quit Smart Stage** in Admin or the tray menu stops playback and
+**Choose Media…**; files remain in place. Closing the window asks **Quit Smart
+Stage?** Choose **OK** to stop playback, close the stage and exit, or **Cancel**
+to keep the window and playback running. Minimize the window to keep playback
+running in the background. Open the shortcut or use **Open Admin** in the tray
+menu to restore the same window. **Quit Smart Stage** in Admin or the tray menu stops playback and
 exits. You can close PowerShell after installation; later launches and updates
 run without a terminal. Application logs are in `%APPDATA%\SmartStage\smartstage.log`.
 
@@ -225,10 +227,11 @@ acceptance testing.
    stops all sound and closes the stage. **Disconnect** is in the top bar.
 
 **Quit Smart Stage** in Admin stops playback, closes the stage and exits the app.
-Closing the Admin window keeps playback running. It hides the window, or
-minimizes it to the Windows taskbar if no tray icon is available. Click the Dock
-or taskbar icon, reopen the Windows shortcut, or choose Open Admin to bring back
-the same window with its current interface state.
+Closing the Windows Admin window asks for confirmation: **OK** quits the app,
+while **Cancel** keeps it open. Minimize it to keep playback running in the
+background. Closing the Mac Admin window hides it and keeps playback running.
+Click the Dock or taskbar icon, reopen the Windows shortcut, or choose Open
+Admin to bring back the same window with its current interface state.
 
 For the standalone Mac executable or an external browser, leave the Admin tab open to
 reconnect after relaunch. Smart Stage allows up to

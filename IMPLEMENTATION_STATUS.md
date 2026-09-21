@@ -86,7 +86,9 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.19
 - Windows Admin uses a separate COM STA and DirectComposition while Media
   Foundation keeps its existing MTA. The WebView has no privileged script bridge;
   normal loopback sessions, CSRF and SSE remain in use. Second launches reuse the
-  same process/window; hidden windows retain drafts. Normal Quit cleans up the
+  same process/window. Closing Windows Admin asks for confirmation; Cancel
+  preserves its window and drafts, while OK requests normal app shutdown.
+  Minimize keeps playback running. Normal Quit cleans up the
   private WebView profile, including while a media dialog is open.
 - Optional Screen Wake Lock with truthful status, opt-in and release/reacquire
   handling. The public HTTPS gateway enables this browser API; Local LAN HTTP cannot use it;

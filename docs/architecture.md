@@ -39,9 +39,13 @@ do not create a terminal. Missing stdout/stderr handles are directed to
 `%APPDATA%\SmartStage\smartstage.log`; parent-provided pipes remain intact for
 CLI tools and updater diagnostics. The taskbar and tray use its embedded icon.
 A second launch locates the current user's window for the same configuration
-directory and sends a focus-only request. The retained Admin window preserves
-unsaved UI state when hidden and reopened. Tray and Admin Quit requests enter
-the normal Go shutdown flow before the native UI thread is joined.
+directory and sends a focus-only request. Closing Admin opens an owned native
+OK/Cancel dialog, with Cancel selected by default. Cancel preserves the window,
+unsaved UI state and playback; OK queues the normal Go shutdown request.
+Repeated close events reuse the confirmation. Native shutdown dismisses an
+open confirmation and waits for its message pump to unwind before destroying
+the WebView and joining the UI thread. Minimizing retains the window and
+playback. Tray and Admin Quit use the same Go shutdown flow.
 
 The dedicated window loads the actual loopback Admin URL, using the existing
 session, Origin, CSRF and local-listener protections. Native navigation policy

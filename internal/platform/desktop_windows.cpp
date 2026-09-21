@@ -88,6 +88,8 @@ std::mutex initMutex, tasksMutex, filesMutex;
 std::condition_variable initCV;
 bool initialized = false, uiQuit = false, creating = false, trayAdded = false, mouseTracking = false;
 bool chooserActive = false, chooserShowing = false;
+bool closeConfirmationActive = false, closeConfirmationAccepted = false;
+constexpr wchar_t closeConfirmationTitle[] = L"Quit Smart Stage?";
 std::deque<std::function<void()>> tasks;
 struct FileRequest { uint64_t id; std::vector<std::string> paths; };
 std::deque<FileRequest> files;
@@ -170,6 +172,47 @@ void openExternal(const wchar_t* url, BOOL user) {
 void showWindow();
 void createWebView();
 void shutdownUI();
+HWND closeConfirmationWindow() {
+    HWND dialog = nullptr;
+    EnumThreadWindows(GetCurrentThreadId(), [](HWND candidate, LPARAM result) -> BOOL {
+        wchar_t name[32]{}, title[64]{};
+        if(GetWindow(candidate,GW_OWNER)==window &&
+           GetClassNameW(candidate,name,32) && wcscmp(name,L"#32770")==0 &&
+           GetWindowTextW(candidate,title,64) && wcscmp(title,closeConfirmationTitle)==0) {
+            *reinterpret_cast<HWND*>(result)=candidate;
+            return FALSE;
+        }
+        return TRUE;
+    },reinterpret_cast<LPARAM>(&dialog));
+    return dialog;
+}
+void cancelCloseConfirmation() {
+    if(closeConfirmationActive) {
+        HWND dialog=closeConfirmationWindow();
+        if(dialog)PostMessageW(dialog,WM_COMMAND,IDCANCEL,0);
+    }
+}
+void confirmWindowClose() {
+    if(stopping.load() || quitRequested.load() || closeConfirmationAccepted || chooserActive)return;
+    if(closeConfirmationActive) {
+        if(HWND dialog=closeConfirmationWindow())SetForegroundWindow(dialog);
+        return;
+    }
+    closeConfirmationActive=true;
+    int answer=MessageBoxW(window,L"Quit Smart Stage?\n\nPlayback will stop and the stage will close.",
+        closeConfirmationTitle,MB_OKCANCEL|MB_DEFBUTTON2);
+    DWORD error=answer ? ERROR_SUCCESS : GetLastError();
+    closeConfirmationActive=false;
+    // MessageBox has its own message pump. Shutdown may arrive while it is
+    // open; finish that teardown only after the dialog has returned.
+    if(stopping.load()) {shutdownUI();return;}
+    if(answer==IDOK) {
+        closeConfirmationAccepted=true;
+        if(!quitRequested.exchange(true))fprintf(stderr,"Quitting Smart Stage after window-close confirmation\n");
+    } else if(!answer) {
+        showError("Could not show the quit confirmation (Windows error "+std::to_string(error)+"). Use Quit Smart Stage in the app menu.");
+    }
+}
 void resize() {
     RECT bounds{}; GetClientRect(window, &bounds);
     if (controller) controller->put_Bounds(bounds);
@@ -219,7 +262,7 @@ Ptr<IDropTarget> dropTarget;
 
 void chooseMedia() {
     chooserScheduled.store(false);
-    if (!ready.load() || stopping.load() || chooserActive) return;
+    if (!ready.load() || stopping.load() || chooserActive || closeConfirmationActive) return;
     showWindow();
     chooserActive=true;
     struct FinishChooser {
@@ -442,6 +485,10 @@ HMENU appMenu() {
 }
 void showWindow() {
     if(stopping.load())return;
+    if(closeConfirmationActive) {
+        if(HWND dialog=closeConfirmationWindow())SetForegroundWindow(dialog);
+        return;
+    }
     if(!validAdmin(adminURL)) { showPending.store(true);return; }
     showPending.store(false);
     if(!window) {
@@ -508,7 +555,7 @@ LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
     try {
         if(message==shutdownMessage) {shutdownUI();return 0;}
         if(message==WM_TIMER && wp==0x535) {addTray();return 0;}
-        if(message==WM_TIMER && wp==0x534 && stopping.load()) {cancelChooser();return 0;}
+        if(message==WM_TIMER && wp==0x534 && stopping.load()) {cancelChooser();cancelCloseConfirmation();return 0;}
         if(message==wakeMessage) {drainTasks();return 0;}
         if(taskbarCreated && message==taskbarCreated && hwnd==control.load()) {trayAdded=false;trayAttempts=0;addTray();return 0;}
         if(message==trayMessage) {
@@ -523,13 +570,7 @@ LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
             return 0;
         }
         if(message==WM_CLOSE && hwnd==window) {
-            // Retain a taskbar entry when the shell has rejected the tray icon,
-            // so closing Admin never hides the user's only way back to the app.
-            ShowWindow(window,trayAdded?SW_HIDE:SW_MINIMIZE);
-            // A minimized window can be restored directly by the taskbar,
-            // without showWindow(), so keep its WebView visible in that case.
-            if(controller && trayAdded)controller->put_IsVisible(FALSE);
-            fprintf(stderr,trayAdded?"Hid native Admin window\n":"Minimized native Admin window; notification icon unavailable\n");
+            confirmWindowClose();
             return 0;
         }
         if(message==WM_QUERYENDSESSION) { quitRequested.store(true);return TRUE; }
@@ -582,11 +623,12 @@ bool browserExitRegistered=false, shutdownHadRuntime=false;
 
 void shutdownUI() {
     if(uiQuit)return;
-    if(!stopping.load())fprintf(stderr,"Closing native Admin: chooserActive=%d chooserShowing=%d\n",int(chooserActive),int(chooserShowing));
+    if(!stopping.load())fprintf(stderr,"Closing native Admin: chooserActive=%d chooserShowing=%d closeConfirmationActive=%d\n",int(chooserActive),int(chooserShowing),int(closeConfirmationActive));
     stopping.store(true);ready.store(false);
-    if(chooserActive) {
+    if(chooserActive || closeConfirmationActive) {
         SetTimer(control.load(),0x534,50,nullptr);
         cancelChooser();
+        cancelCloseConfirmation();
         return;
     }
     KillTimer(control.load(),0x534);
@@ -726,8 +768,8 @@ extern "C" void ss_desktop_files_result(uint64_t id,const char* message) {
 extern "C" void ss_windows_desktop_shutdown() {
     if(!desktop::uiThread.joinable())return;
     // A separate message is never dropped by the bounded ordinary-task queue.
-    // It also runs in IFileOpenDialog's nested pump, closes that dialog, then
-    // the outer pump observes uiQuit without waiting for another message.
+    // It also runs in the file chooser or close confirmation's nested pump,
+    // dismisses that dialog, then the outer pump observes uiQuit.
     HWND handle=desktop::control.load();
     if(handle)fprintf(stderr,"Requested native Admin shutdown: queued=%d\n",int(PostMessageW(handle,desktop::shutdownMessage,0,0)));
     desktop::uiThread.join();

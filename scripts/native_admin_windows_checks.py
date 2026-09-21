@@ -8,6 +8,8 @@ import struct
 import subprocess
 import tempfile
 
+from windows_close_checks import shipped_close_confirmation_checks
+
 
 def admin_window_checks(executable, evidence_path):
     executable = Path(executable).resolve()
@@ -59,6 +61,15 @@ def admin_window_checks(executable, evidence_path):
                     startup = subprocess.STARTUPINFO()
                     startup.dwFlags |= subprocess.STARTF_USESHOWWINDOW
                     startup.wShowWindow = subprocess.SW_HIDE
+                    shutdown = subprocess.run([str(binary), "--shutdown-confirmation"], env=environment,
+                                              capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                              timeout=70, startupinfo=startup)
+                    shutdown_report = {"probeLog": shutdown.stderr[-18000:]}
+                    if shutdown.stdout.strip():
+                        shutdown_report.update(json.loads(shutdown.stdout))
+                    report["shutdownWithOpenConfirmation"] = shutdown_report
+                    assert shutdown.returncode == 0, f"Shutdown with quit confirmation failed: {shutdown.stderr}"
+                    assert shutdown_report.get("shutdownWithOpenQuitConfirmationCompleted") is True
                     try:
                         result = subprocess.run([str(binary)], env=environment, capture_output=True, text=True,
                                                 encoding="utf-8", errors="replace", timeout=150, startupinfo=startup)
@@ -83,6 +94,8 @@ def admin_window_checks(executable, evidence_path):
                     assert process.wait(timeout=20) == 0, "Authenticated Admin Quit did not stop the real host cleanly"
                     report.update(originalDropPathsAndBytesPreserved=True, nativeChooserOriginalPathPreserved=True,
                                   realAdminQuitStoppedHost=True)
+                    close_report = report["shippedExecutableClose"] = {"status": "incomplete"}
+                    shipped_close_confirmation_checks(executable, work, config, media, helpers, close_report)
                 finally:
                     if process.poll() is None:
                         process.terminate()

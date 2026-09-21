@@ -27,6 +27,47 @@ std::string js(const wchar_t* script) {
     require(result.wait_for(std::chrono::seconds(10))==std::future_status::ready,"WebView script did not finish");return result.get();
 }
 template<class F> void wait(F fn,const char* message) {auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(35);while(std::chrono::steady_clock::now()<deadline) {if(fn())return;std::this_thread::sleep_for(std::chrono::milliseconds(100));}throw std::string(message);}
+std::vector<HWND> quitDialogs(HWND owner) {
+    struct Search {HWND owner;std::vector<HWND> dialogs;};Search found{owner,{}};
+    DWORD thread=GetWindowThreadProcessId(owner,nullptr);
+    require(thread!=0,"Admin has no native UI thread");
+    EnumThreadWindows(thread,[](HWND handle,LPARAM parameter)->BOOL {
+        auto& found=*reinterpret_cast<Search*>(parameter);wchar_t kind[64]{},title[128]{};
+        GetClassNameW(handle,kind,64);GetWindowTextW(handle,title,128);
+        if(GetWindow(handle,GW_OWNER)==found.owner && IsWindowVisible(handle)
+           && wcscmp(kind,L"#32770")==0 && wcscmp(title,L"Quit Smart Stage?")==0)found.dialogs.push_back(handle);
+        return TRUE;
+    },reinterpret_cast<LPARAM>(&found));
+    return found.dialogs;
+}
+HWND beginQuitConfirmation(HWND owner) {
+    require(quitDialogs(owner).empty(),"A quit confirmation was already open before closing Admin");
+    // Use the actual system-close route asynchronously: its WM_CLOSE handler
+    // enters MessageBox's modal pump and must not block this observer thread.
+    require(PostMessageW(owner,WM_SYSCOMMAND,SC_CLOSE,0)!=FALSE,"Could not request native Admin close");
+    HWND dialog=nullptr;
+    wait([&]{auto found=quitDialogs(owner);require(found.size()<=1,"Closing Admin opened multiple quit confirmations");if(!found.empty())dialog=found.front();return dialog!=nullptr;},"Closing Admin did not show its owned native quit confirmation");
+    require(IsWindowVisible(owner) && !IsIconic(owner) && !IsWindowEnabled(owner),"Quit confirmation did not keep its visible Admin owner modal");
+    require(GetDlgItem(dialog,IDOK) && GetDlgItem(dialog,IDCANCEL),"Quit confirmation is missing OK or Cancel");
+    DWORD_PTR defaultButton=0;
+    require(SendMessageTimeoutW(dialog,DM_GETDEFID,0,0,SMTO_ABORTIFHUNG,2000,&defaultButton)!=0
+            && HIWORD(defaultButton)==DC_HASDEFID && LOWORD(defaultButton)==IDCANCEL,"Quit confirmation must default to Cancel");
+    bool warning=false;
+    EnumChildWindows(dialog,[](HWND handle,LPARAM parameter)->BOOL {
+        wchar_t text[512]{};GetWindowTextW(handle,text,512);
+        if(wcsstr(text,L"Playback will stop and the stage will close."))*reinterpret_cast<bool*>(parameter)=true;
+        return TRUE;
+    },reinterpret_cast<LPARAM>(&warning));
+    require(warning,"Quit confirmation does not explain that playback and the stage will stop");
+    return dialog;
+}
+void clickQuitChoice(HWND dialog,int choice) {
+    HWND button=GetDlgItem(dialog,choice);
+    // Deliver the real control's notification. A hosted runner may have an
+    // unrelated active shell dialog, where synthetic BM_CLICK can be ignored.
+    require(button && PostMessageW(dialog,WM_COMMAND,MAKEWPARAM(choice,BN_CLICKED),reinterpret_cast<LPARAM>(button)),"Could not press the native quit confirmation button");
+    wait([&]{return !IsWindow(dialog);},"Native quit confirmation did not close after its button was pressed");
+}
 bool chooserVisible() {
     return ui([]{
         if(!desktop::chooser)return false;
@@ -285,7 +326,7 @@ std::string popRequest(size_t count) {
     ss_desktop_files_result(id,"");require(!ss_desktop_files_pending(),"Native file acknowledgement was not applied");return value;
 }
 }
-int main() {
+int main(int argc,char** argv) {
     using namespace probe;
     // Match production ss_init before creating any native UI or WebView.
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
@@ -295,7 +336,20 @@ int main() {
         auto address=desktop::utf8(addressWide);
         ss_desktop_identity("native-probe");ss_desktop_admin(address.c_str());ui([]{});
         require(ss_desktop_show_admin(),"Native Admin show was rejected");
+        bool shutdownConfirmation=argc==2 && strcmp(argv[1],"--shutdown-confirmation")==0;
         wait([]{return js(L"typeof role!=='undefined' && role==='admin' && !localSessionBusy && typeof csrf!=='undefined' && csrf.length>0 && source?.readyState===EventSource.OPEN && state?.cues?.length===1 && document.getElementById('connection')?.textContent==='Connected to host'")=="true";},"Real Admin did not authenticate and connect its EventSource");
+        if(shutdownConfirmation) {
+            HWND original=ui([]{return desktop::window;});HWND dialog=beginQuitConfirmation(original);
+            require(ss_desktop_poll_quit_request()==0,"Opening a quit confirmation prematurely requested shutdown");
+            passed("quitConfirmationOpenBeforeExternalShutdown");
+            auto started=std::chrono::steady_clock::now();ss_windows_desktop_shutdown();
+            require(!IsWindow(original) && !IsWindow(dialog),"Native shutdown left Admin or its confirmation open");
+            require(ss_desktop_poll_quit_request()==0,"Dismissing a confirmation for native shutdown queued a new quit request");
+            report["shutdownMilliseconds"]=std::to_string(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now()-started).count());
+            passed("shutdownWithOpenQuitConfirmationCompleted");
+            require(!std::filesystem::exists(desktop::directory),"Shutdown with an open confirmation left the private browser profile behind");
+            passed("privateWebViewProfileRemovedAfterShutdown");report["status"]="\"passed\"";emitReport();return 0;
+        }
         passed("realAdminAssetsLoadedInWebView2");passed("localSessionAndCSRFInitialized");passed("authenticatedEventSourceConnected");
         require(js(L"navigator.userAgent.includes('SmartStageDesktop') && navigator.userAgent.includes('SmartStageWindowsDesktop') && document.getElementById('playlist').children.length>0 && !document.getElementById('choose-files').hidden && document.getElementById('media-path-settings').hidden")=="true","Desktop UI identity or chooser capability missing");
         passed("nativeUserAgentAndPlaylistRendered");
@@ -306,8 +360,8 @@ int main() {
         try {wait([]{return ui([]{return desktop::trayAdded;});},"Smart Stage notification icon was not registered; see native shell diagnostics");}
         catch(...) {
             require(!trayDiagnostics(),"Smart Stage tray registration failed although an independent tray baseline or production readback succeeded");
-            report["trayUnavailableReason"]=desktop::quote("The host shell rejected all six independent Win32 registrations with valid window and system icon; this run verifies the taskbar fallback instead of claiming tray registration.");
-            std::cerr<<"Native Admin probe: host notification area unavailable; verifying minimized taskbar fallback\n";
+            report["trayUnavailableReason"]=desktop::quote("The host shell rejected all six independent Win32 registrations with valid window and system icon; native close confirmation is verified independently of tray availability.");
+            std::cerr<<"Native Admin probe: host notification area unavailable; close confirmation remains independent of the tray\n";
         }
         report["trayIconRegistered"]=ui([]{return desktop::trayAdded;})?"true":"false";
         report["trayCapability"]=desktop::quote(report["trayIconRegistered"]=="true"?"available":"unavailable");
@@ -316,19 +370,29 @@ int main() {
         long stopX=0,stopY=0;require(sscanf(stopPosition.c_str(),"[%ld,%ld]",&stopX,&stopY)==2,"Could not locate rendered STOP button");
         ui([&]{SendMessageW(desktop::window,WM_LBUTTONDOWN,MK_LBUTTON,MAKELPARAM(stopX,stopY));SendMessageW(desktop::window,WM_LBUTTONUP,0,MAKELPARAM(stopX,stopY));});
         wait([]{return js(L"state.stopEpoch>window.__probeEpoch && online && source.readyState===EventSource.OPEN")=="true";},"Native mouse input did not activate real CSRF-protected STOP");passed("compositionMouseInputActivatedStop");passed("realCSRFProtectedStopAccepted");passed("liveStateAfterStopObserved");
-        bool closedToTray=ui([]{bool available=desktop::trayAdded;SendMessageW(desktop::window,WM_CLOSE,0,0);return available;});
-        if(closedToTray) {
-            require(!IsWindowVisible(original),"Closing Admin with its notification icon did not hide the window");passed("closeHidWindowWithoutTerminating");
-            report["closeBehavior"]=desktop::quote("hidden-to-tray");
-        } else {
-            require(IsWindowVisible(original) && IsIconic(original),"Closing Admin without a notification icon did not retain its minimized window");
-            require(!(GetWindowLongPtrW(original,GWL_EXSTYLE)&WS_EX_TOOLWINDOW) && GetWindow(original,GW_OWNER)==nullptr,"Minimized Admin is not eligible for a taskbar entry");
-            passed("closeMinimizedToTaskbarWithoutTerminating");report["closeBehavior"]=desktop::quote("minimized-to-taskbar");
-            ui([]{SendMessageW(desktop::window,WM_SYSCOMMAND,SC_RESTORE,0);});
-            require(IsWindowVisible(original) && !IsIconic(original),"Taskbar restore did not restore the existing Admin window");
-            require(ui([]{BOOL visible=FALSE;return desktop::controller && SUCCEEDED(desktop::controller->get_IsVisible(&visible)) && visible;}),"Taskbar restore left Admin's WebView hidden");
-            passed("taskbarRestoreKeptWebViewVisible");
-        }
+        const wchar_t* playbackState=L"JSON.stringify({state:state.state,stopEpoch:state.stopEpoch,stageEnabled:state.stageEnabled,activeCueId:state.activeCueId})";
+        require(js(L"typeof state.state==='string' && typeof state.stopEpoch==='number' && typeof state.stageEnabled==='boolean' && typeof state.activeCueId==='string'")=="true","Host playback snapshot is missing required fields");
+        auto beforeClose=js(playbackState);
+        HWND confirmation=beginQuitConfirmation(original);
+        passed("closeShowsOwnedNativeConfirmation");passed("quitConfirmationDefaultsToCancel");
+        require(ss_desktop_poll_quit_request()==0 && ss_desktop_poll_emergency_request()==0,"Opening the confirmation requested Quit or STOP before a choice");
+        require(PostMessageW(original,WM_CLOSE,0,0) && PostMessageW(original,WM_CLOSE,0,0),"Could not repeat Admin close while confirming");
+        ui([]{});auto openDialogs=quitDialogs(original);
+        require(openDialogs.size()==1 && openDialogs.front()==confirmation,"Repeated close created a nested confirmation");
+        passed("repeatedCloseKeepsSingleConfirmation");
+        clickQuitChoice(confirmation,IDCANCEL);
+        wait([&]{return IsWindowEnabled(original)!=FALSE;},"Cancel did not re-enable Admin");
+        require(IsWindowVisible(original) && !IsIconic(original),"Cancel hid or minimized Admin");
+        require(ui([&]{BOOL visible=FALSE;return desktop::window==original && desktop::webview.p==web && desktop::controller
+            && SUCCEEDED(desktop::controller->get_IsVisible(&visible)) && visible;}),"Cancel replaced or hid the existing Admin WebView");
+        require(ss_desktop_poll_quit_request()==0 && ss_desktop_poll_emergency_request()==0,"Cancel queued an unexpected Quit or STOP");
+        require(js(playbackState)==beforeClose,"Cancel changed host playback or stage state");
+        passed("cancelKeepsAdminAndPlaybackState");
+        confirmation=beginQuitConfirmation(original);
+        require(PostMessageW(confirmation,WM_CLOSE,0,0)!=FALSE,"Could not close the quit confirmation itself");
+        wait([&]{return !IsWindow(confirmation) && IsWindowEnabled(original);},"Closing the confirmation did not cancel it");
+        require(ss_desktop_poll_quit_request()==0 && IsWindowVisible(original),"Closing the confirmation requested Quit or hid Admin");
+        passed("closingConfirmationCancelsQuit");report["closeBehavior"]=desktop::quote("confirm-quit-or-cancel");
         ss_desktop_show_admin();ss_desktop_show_admin();wait([&]{return IsWindowVisible(original)!=FALSE && !IsIconic(original);},"Reopen did not restore Admin");
         require(ui([&]{return desktop::window==original&&desktop::webview.p==web;}),"Reopen replaced Admin or its WebView");
         const auto* draftPreserved=L"window.__probeDraft==='preserved' && document.getElementById('gateway-url').value==='https://unsaved.example/smartstage' && document.getElementById('remote-connection-settings').open";
@@ -377,6 +441,14 @@ int main() {
         // App's own native Quit is polled; it never terminates a process behind
         // Go's back. Then verify authenticated UI Quit against the real host.
         ui([]{desktop::command(desktop::quitID);});require(ss_desktop_poll_quit_request()==1 && ss_desktop_poll_quit_request()==0,"Native Quit request was not polled exactly once");passed("nativeQuitRequestPolled");
+        confirmation=beginQuitConfirmation(original);clickQuitChoice(confirmation,IDOK);
+        wait([]{return ss_desktop_poll_quit_request()==1;},"Confirming close did not queue the normal Quit request");
+        require(ss_desktop_poll_quit_request()==0,"Confirming close queued more than one Quit request");
+        require(IsWindow(original),"Confirming close destroyed Admin before the host could perform orderly shutdown");
+        passed("confirmedCloseQueuesOneOrderlyQuit");
+        require(PostMessageW(original,WM_CLOSE,0,0)!=FALSE,"Could not repeat close after confirmation");ui([]{});
+        require(quitDialogs(original).empty() && ss_desktop_poll_quit_request()==0,"Repeated close after confirmation reopened the prompt or queued another Quit");
+        passed("confirmedCloseDoesNotPromptAgain");
         js(L"document.getElementById('quit-app').click();true");wait([]{return js(L"document.getElementById('app-closed').hidden===false")=="true";},"Real Admin Quit was not acknowledged");passed("realAdminQuitAcknowledged");
         require(ss_desktop_choose_files(),"Could not open native chooser for shutdown verification");
         wait(chooserVisible,"Native shutdown-test chooser did not become visible");
