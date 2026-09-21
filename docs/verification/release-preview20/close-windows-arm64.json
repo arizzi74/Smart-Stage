@@ -1,0 +1,42 @@
+{
+  "status": "passed",
+  "tag": "v0.1.0-preview.20",
+  "sourceCommit": "a288ba7e52e84e757c12ca2b79f34bdd20efc181",
+  "runID": 35606035395,
+  "runURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35606035395",
+  "jobID": 106353227416,
+  "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35606035395/job/106353227416",
+  "artifactID": 10642265224,
+  "artifactName": "windows-admin-checks-arm64",
+  "artifactSHA256": "a055280af80730282877d061647f1f068bfcf9d2cb2cac74eec8f098c95751b5",
+  "reportFile": "smartstage-windows-arm64.exe.native-admin.json",
+  "reportSHA256": "690d006604e03be59d254a9b6c0d2c2863748b2133d9687e5b1635c8b3433724",
+  "sourceExecutableSHA256": "f31b4497bd6efc15deeae989ec11de9e89f157d68d696cc51b264495f1a93c90",
+  "nativeCloseConfirmation": {
+    "closeBehavior": "confirm-quit-or-cancel",
+    "closeShowsOwnedNativeConfirmation": true,
+    "quitConfirmationDefaultsToCancel": true,
+    "repeatedCloseKeepsSingleConfirmation": true,
+    "cancelKeepsAdminAndPlaybackState": true,
+    "closingConfirmationCancelsQuit": true,
+    "confirmedCloseQueuesOneOrderlyQuit": true,
+    "confirmedCloseDoesNotPromptAgain": true
+  },
+  "shutdownWithOpenConfirmation": {
+    "privateWebViewProfileRemovedAfterShutdown": true,
+    "quitConfirmationOpenBeforeExternalShutdown": true,
+    "shutdownMilliseconds": 323,
+    "shutdownWithOpenQuitConfirmationCompleted": true,
+    "status": "passed"
+  },
+  "shippedExecutableClose": {
+    "status": "passed",
+    "cancelKeptProcessAndAdminRunning": true,
+    "cancelPreservedHostPlaybackState": true,
+    "method": "Actual shipped process; native SC_CLOSE and owned MessageBox button notifications (not physical mouse input)",
+    "confirmExitedProcessCleanly": true,
+    "confirmClosedAdminListener": true,
+    "confirmDestroyedNativeWindows": true,
+    "shutdownMilliseconds": 2740
+  }
+}

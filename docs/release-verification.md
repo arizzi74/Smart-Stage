@@ -101,6 +101,13 @@ with a test operator window on another input thread. Desktop capability is
 reported explicitly; unavailable global observations are not passes. A visual
 check in the affected UTM viewer remains necessary.
 
+Preview 20 changes the Windows Admin close button to an owned native quit
+confirmation. Cancel is the default and preserves the existing window and
+playback; OK queues normal Go shutdown. Repeated closes reuse one confirmation,
+and shutdown dismisses an open prompt before releasing the native window.
+Minimize keeps the Windows app running in the background. Mac close behavior
+is unchanged.
+
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin. Standalone
 Mac launches must report an accepted system-browser hand-off; Windows must show
@@ -111,6 +118,33 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+Preview 20 is source `a288ba7e52e84e757c12ca2b79f34bdd20efc181`.
+Both Windows architectures passed the close-confirmation checks in
+[candidate run 35605191487](https://github.com/arizzi74/Smart-Stage/actions/runs/35605191487)
+and again in
+[tagged run 35606035395](https://github.com/arizzi74/Smart-Stage/actions/runs/35606035395).
+The tests observe the real owned MessageBox, its default Cancel button and one
+dialog after repeated close requests. Cancel preserves the existing Admin
+window, WebView, drafts and host playback state. Confirm queues graceful Quit
+once, and subsequent close requests do not reopen the prompt.
+
+A separate process test runs the actual built executable: Cancel keeps its
+process and Admin HTTP listener alive; Confirm exits with code zero, destroys
+the native windows and closes the listener. Native shutdown with a confirmation
+already open also completes and removes its private WebView profile. These
+checks use native window messages and button notifications, not a physical
+mouse gesture. The compact reports, source/run/job IDs and verified artifact
+hashes are under [`release-preview20`](verification/release-preview20/).
+
+The candidate completed all six jobs successfully. The tagged workflow published
+50 assets after its shared, gateway and four native build/test jobs passed.
+All four published-download checks and all four actual automatic-update checks
+passed. The retained updater reports cover public discovery/download,
+replacement and native restart, preserved show/media and closed direct LAN
+access in default gateway mode.
+The public installer bytes matched source
+`d6e9eeb2ecadb55dd546e3e2c71d63e10b6530c4`, with preview 20 selected by default.
 
 Preview 19 is source `7b13af7126e557c3c8b9750a09ddec7a463d1028`.
 [Candidate run 35596890940](https://github.com/arizzi74/Smart-Stage/actions/runs/35596890940)
@@ -147,6 +181,10 @@ the default Mac installer run
 also passed.
 Public `main` bootstrap bytes matched source
 `f15aa33898d5b01b935e254b62d2f8ff36607e23`, with preview 19 selected by default.
+The tagged workflow subsequently completed with all 23 jobs successful;
+the default Windows installer run
+[35599080458](https://github.com/arizzi74/Smart-Stage/actions/runs/35599080458)
+also passed on both architectures with PowerShell 5.1 and 7.
 
 Preview 18 is source `fbf19f5a1f581ac6eb097219e19b9f900e0b103b`.
 [Candidate run 35592869581](https://github.com/arizzi74/Smart-Stage/actions/runs/35592869581)
