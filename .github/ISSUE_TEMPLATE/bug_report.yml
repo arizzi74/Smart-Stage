@@ -1,0 +1,63 @@
+name: Bug report
+description: Report a problem with playback, Admin, remote control, installation or the gateway.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe what happened and how to reproduce it. Before posting logs or screenshots, remove tokens, QR codes, full remote-control URLs, personal file paths and other private details.
+  - type: input
+    id: operating-system
+    attributes:
+      label: Operating system and version
+      description: For a remote-control issue, also include the phone or tablet OS and browser. For a gateway issue, include the Linux distribution.
+      placeholder: Windows 11 24H2, macOS 15.7, or Ubuntu 24.04
+    validations:
+      required: true
+  - type: dropdown
+    id: architecture
+    attributes:
+      label: Computer or gateway architecture
+      options:
+        - ARM64 / Apple Silicon
+        - AMD64 / Intel / AMD
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: installed-version
+    attributes:
+      label: Installed Smart Stage version
+      description: See Admin → Updates. For the gateway, use smartstage-gateway --version.
+      placeholder: v1.0.0
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Include relevant media format, output devices and gateway or local LAN mode.
+      placeholder: |
+        1. Open Smart Stage…
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the exact error text, if any.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs or additional details
+      description: Optional. Paste only the relevant excerpt, with private information removed.
+      render: text

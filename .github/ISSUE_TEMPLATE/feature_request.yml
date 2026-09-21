@@ -1,0 +1,29 @@
+name: Feature request
+description: Suggest an improvement for preparing or running a show.
+title: "[Feature]: "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: Describe the show workflow or problem this would help with.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested behavior
+      description: Explain how you would like Smart Stage to work.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Relevant platform and installed version
+      description: If this is platform-specific, include the operating system, ARM64 or AMD64 architecture, and Smart Stage version.
+      placeholder: Windows 11 ARM64, Smart Stage v1.0.0
+  - type: textarea
+    id: context
+    attributes:
+      label: Alternatives or additional context
+      description: Optional. Remove tokens, QR codes, remote-control URLs and private paths from any examples or screenshots.

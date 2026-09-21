@@ -1,6 +1,6 @@
 # Smart Stage
 
-Play music, video and image cues on a Mac or Windows PC, controlled from your phone or tablet. Build your show in the desktop app, choose your speakers and stage display, then trigger colored cue buttons remotely. Media files stay on your computer.
+Live show control for Mac and Windows: play music, video and image cues from your phone or tablet. Build your show in the desktop app, choose your speakers and stage display, then trigger colored cue buttons remotely. Media files stay on your computer.
 
 | Desktop Admin | Phone / tablet remote |
 | --- | --- |

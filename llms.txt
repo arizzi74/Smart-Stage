@@ -1,0 +1,26 @@
+# Smart Stage
+
+> Smart Stage is a desktop app for macOS and Windows that plays audio, video and image cues for live performances, with phone or tablet remote control.
+
+The dedicated Admin window manages original local media files, playlists, button colors, audio outputs and a stage display. Features include image or looping-video backgrounds, optional background sound, audio fades and crossfades, and independent Stage on/off controls. Media and playback stay on the computer.
+
+Desktop downloads support ARM64 and Intel/AMD64. Mac builds target macOS 12 or newer; Windows 11 is the intended Windows baseline. Desktop updates install automatically on launch before playback starts.
+
+Public gateway mode is the default and requires a configured server and internet access. The separate static Linux gateway supports ARM64 and AMD64, with systemd and an nginx or Caddy HTTPS reverse proxy. Local LAN control is an alternative. Admin listens only on 127.0.0.1. The gateway forwards control traffic, not media.
+
+## Project
+
+- [Website](https://arizzi74.github.io/Smart-Stage/): product overview and installation.
+- [Website overview in Markdown](https://arizzi74.github.io/Smart-Stage/index.md): readable overview, commands, downloads and first-show setup.
+- [Repository](https://github.com/arizzi74/Smart-Stage): source, issues and project history.
+- [Latest release](https://github.com/arizzi74/Smart-Stage/releases/latest): desktop and gateway downloads with checksums.
+
+## Documentation
+
+- [README](https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/README.md): quick installation and first-show instructions.
+- [User guide](https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/docs/user-guide.md): supported environments, installation, controls, troubleshooting and build instructions.
+- [Gateway deployment](https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/docs/gateway-install.md): proxy setup, registration, service administration and manual gateway updates.
+- [Media compatibility](https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/docs/media-compatibility.md): native format handling and playback limits.
+- [Architecture](https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/docs/architecture.md): native desktop windows, playback, remote control and updates.
+- [Release notes](https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/docs/release-notes.md): release changes.
+- [Release verification](https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/docs/release-verification.md): test evidence and known limits.

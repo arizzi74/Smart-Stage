@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Installation and user guide
+    url: https://github.com/arizzi74/Smart-Stage/blob/main/docs/user-guide.md
+    about: Read installation, show setup and troubleshooting instructions.
