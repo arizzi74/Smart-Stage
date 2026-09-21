@@ -114,5 +114,44 @@
     "site.js": "4367e9acd2051fa0a2bebb2ac188ccb7a06aa228f5bd773a4a2147549325196f",
     "sitemap.xml": "af3849b5746a515990a45001032e4942af9260d190b238a51b964308cdc4763c",
     "styles.css": "72a13cb0e278b09787efd92fbeaaf6304c4e9b0f656ec1388180b7b40cb130c5"
-  }
+  },
+  "githubWorkflow": {
+    "sourceCommit": "8fa82e183cbdfde5858b94c76be4f128eb3d2137",
+    "run": "https://github.com/arizzi74/Smart-Stage/actions/runs/35657031059",
+    "build": "success",
+    "configuration": "completed; Pages not enabled",
+    "deploy": "skipped"
+  },
+  "publicSourceChecks": [
+    {
+      "path": "README.md",
+      "matches": true,
+      "sha256": "96c022cfd0d24b0ce668ef872876bf4859296add4a95647ad917d5cf16d28616"
+    },
+    {
+      "path": "llms.txt",
+      "matches": true,
+      "sha256": "568e1753a7da662269c369edbff2ccebb7635c39bf52ce29e5cdb56805c0dbdd"
+    },
+    {
+      "path": "docs/site/index.html",
+      "matches": true,
+      "sha256": "ec10061b739244d3ad9eefd687e6580686b186c62abc55752899c8621ebc36cf"
+    },
+    {
+      "path": "docs/site/assets/social-preview.png",
+      "matches": true,
+      "sha256": "10ec7ca3a70c549d24b6031d8b15b0f63502d0e523eb0b89a48a5de9dbd1d1aa"
+    },
+    {
+      "path": "docs/discoverability.md",
+      "matches": true,
+      "sha256": "43f3462173b0938e742adc73338b0f71b0145361b96f72b335d9c81a0d4a5add"
+    },
+    {
+      "path": ".github/workflows/site.yml",
+      "matches": true,
+      "sha256": "71296828d1700cf507a6c739db17a4e0205a9c286bec0a22f9debab8b177a7e7"
+    }
+  ]
 }
