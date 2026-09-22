@@ -1,4 +1,4 @@
-Smart Stage 1.1.0 adds Italian and English throughout the desktop app and phone/tablet remote.
+Smart Stage 1.1.1 adds Italian and English throughout the desktop app and phone/tablet remote.
 
 - Admin starts in the system’s preferred supported language. Choose System, English or Italiano from the top bar; the choice survives restarts and updates.
 - Native Mac and Windows menus, media chooser, app messages and Windows quit confirmation follow the Admin language.

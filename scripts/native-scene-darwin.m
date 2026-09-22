@@ -41,6 +41,9 @@ int main(void) {
         dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 20 * NSEC_PER_MSEC), 20 * NSEC_PER_MSEC, NSEC_PER_MSEC);
         dispatch_source_set_event_handler(timer, ^{
             @autoreleasepool {
+                // ss_quit stops AppKit asynchronously. A pending timer delivery
+                // must not repeat the final report or advance after a failure.
+                if (passed || atomic_load(&shuttingDown)) return;
                 double now = NSProcessInfo.processInfo.systemUptime;
                 if (now - began > 35) { fprintf(stderr, "Scene probe timed out at phase %lu\n", (unsigned long)phase); ss_quit(); return; }
                 char *raw;
@@ -156,6 +159,7 @@ int main(void) {
                     phase = 13; phaseBegan = now;
                 } else if (phase == 13 && now - phaseBegan > .1) {
                     passed = YES;
+                    dispatch_source_cancel(timer);
                     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:@{@"status":@"passed",@"observations":observations,
                         @"physicalSpeakerOutputVerified":@NO,@"physicalPointerVisibilityVerified":@NO,
                         @"method":@"Real AVPlayer timelines/volume overlap and CALayer images observed inside a test process compiling the production bridge"} options:0 error:NULL];
