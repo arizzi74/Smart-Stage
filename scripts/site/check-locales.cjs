@@ -42,6 +42,7 @@ const mimeTypes = {
   '.json': 'application/json',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.gif': 'image/gif',
   '.txt': 'text/plain; charset=utf-8',
   '.md': 'text/markdown; charset=utf-8',
   '.xml': 'application/xml'
@@ -325,6 +326,49 @@ async function main() {
         assert(await button.isEnabled());
         assert.equal((await page.locator('#mac-command').textContent()).trim(), commands['mac-command']);
       }));
+
+    for (const language of ['en', 'it']) {
+      await check('Feature demos /' + language + '/: animation, stop, reduced motion and static fallback', () =>
+        withPage({}, async page => {
+          await page.emulateMedia({ reducedMotion: 'reduce' });
+          await page.goto(new URL(language + '/#features', base).href);
+          const demos = page.locator('.feature-card [data-demo]');
+          assert.equal(await demos.count(), 3);
+          for (let i = 0; i < 3; i++) {
+            const demo = demos.nth(i);
+            const img = demo.locator('img');
+            const button = demo.locator('.demo-toggle');
+            await demo.scrollIntoViewIfNeeded();
+            assert((await img.getAttribute('src')).endsWith('-' + language + '.png'));
+            await button.click();
+            await page.waitForFunction(index => {
+              const img = document.querySelectorAll('[data-demo] img')[index];
+              return img.src.endsWith('.gif') && img.complete && img.naturalWidth > 100;
+            }, i);
+            assert.equal(await button.getAttribute('aria-pressed'), 'true');
+            await button.click();
+            assert((await img.getAttribute('src')).endsWith('.png'));
+            assert.equal(await button.getAttribute('aria-pressed'), 'false');
+          }
+          await page.emulateMedia({ reducedMotion: 'no-preference' });
+          await demos.first().scrollIntoViewIfNeeded();
+          await page.waitForFunction(() => document.querySelector('[data-demo] img').src.endsWith('.gif'));
+          await page.emulateMedia({ reducedMotion: 'reduce' });
+          await page.waitForFunction(() => [...document.querySelectorAll('[data-demo] img')].every(img => img.src.endsWith('.png')));
+        }));
+      await check('Feature demos /' + language + '/: no JavaScript poster and direct GIF links', () =>
+        withPage({ javaScriptEnabled: false }, async page => {
+          await page.goto(new URL(language + '/', base).href);
+          const demos = page.locator('[data-demo]');
+          assert.equal(await demos.count(), 3);
+          for (let i = 0; i < 3; i++) {
+            const demo = demos.nth(i);
+            assert(await demo.locator('button').isHidden());
+            assert((await demo.locator('a').getAttribute('href')).endsWith('-' + language + '.gif'));
+            assert((await demo.locator('img').getAttribute('src')).endsWith('.png'));
+          }
+        }));
+    }
 
     report.status = report.checks.every(item => item.status === 'passed') ? 'passed' : 'failed';
     if (report.status !== 'passed') process.exitCode = 1;

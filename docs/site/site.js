@@ -37,18 +37,54 @@
   }
 
   const messages = document.documentElement.lang === 'it' ? {
+    playDemo: 'Riproduci demo',
+    pauseDemo: 'Ferma demo',
     copy: 'Copia comando',
     copied: 'Copiato',
     success: 'Comando copiato. Incollalo nel terminale indicato sopra.',
     manual: 'Seleziona e copia il comando',
     unavailable: 'Accesso agli appunti non disponibile. Seleziona il comando e copialo manualmente.'
   } : {
+    playDemo: 'Play demo',
+    pauseDemo: 'Stop demo',
     copy: 'Copy command',
     copied: 'Copied',
     success: 'Command copied. Paste it into the terminal indicated above.',
     manual: 'Select and copy above',
     unavailable: 'Clipboard access was unavailable. Select the command and copy it manually.'
   };
+
+  // Real GIF recordings play only while visible. Reduced-motion users see the
+  // static poster and can opt in. Without JS the poster links to the GIF.
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  for (const demo of document.querySelectorAll('[data-demo]')) {
+    const img = demo.querySelector('img[data-gif]');
+    const button = demo.querySelector('.demo-toggle');
+    if (!img || !button) continue;
+    const poster = img.getAttribute('src');
+    let playing = false;
+    let visible = false;
+    let manual = false;
+    const setPlaying = next => {
+      playing = next;
+      img.setAttribute('src', next ? img.dataset.gif : poster);
+      button.textContent = next ? messages.pauseDemo : messages.playDemo;
+      button.setAttribute('aria-pressed', String(next));
+    };
+    button.hidden = false;
+    button.addEventListener('click', () => { manual = true; setPlaying(!playing); });
+    motion.addEventListener('change', () => {
+      manual = false;
+      setPlaying(visible && !motion.matches);
+    });
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(entries => {
+        visible = entries[0].isIntersecting;
+        if (!visible) setPlaying(false);
+        else if (!manual) setPlaying(!motion.matches);
+      }, { threshold: 0.1 }).observe(demo);
+    }
+  }
 
   // Installation commands remain selectable and complete without JavaScript.
   if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {

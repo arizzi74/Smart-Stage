@@ -1,0 +1,154 @@
+{
+  "sourceRevision": "466cd9eb41d2a2edb07d32016a4332e83687e860",
+  "sourceRevisionMeaning": "Git HEAD at capture time. Embedded asset hashes identify the exact working-tree UI, including any uncommitted changes.",
+  "browser": "153.0.8010.12",
+  "method": "Real embedded Admin HTML/CSS/JavaScript, production Go HTTP API and app service; Playwright interactions; relevant panel screenshots resized and padded to a stable canvas, then encoded with a common GIF palette. No DOM overrides or fabricated operating-system dialogs.",
+  "scope": "Documentation tutorial with synthetic native media validation/devices, simulated native chooser completion and simulated public gateway registration. No hardware playback, native OS chooser or external/public service was tested. Example.com and all-zero tokens are nonfunctional placeholders. The original-path file append, output save, gateway form submission, QR rendering and language UI use real application paths.",
+  "framesDirectory": "/tmp/smartstage-tutorial-kzYbMM",
+  "assets": {
+    "internal/web/assets/app.js": "5129db166c4366f1dd672fc6beae0b466aea88a2647cc17fd3655b1764cd30da",
+    "internal/web/assets/i18n.js": "41b33b57862ffd1f7c7ffd5c4cad1667da84b8bc12c3de44b8fe95222728b0a2",
+    "internal/web/assets/index.html": "700afc0213a2b8793a734f0f62f14fa0823f81ebb2a35f49731f07204527fb45",
+    "internal/web/assets/style.css": "d084e9e9274446425649918527b950df788adfcf9e36b1de31b8923f014d34cd",
+    "internal/web/assets/wake-lock.js": "3434456199922b7ac0df08b090a84632527ebb32d4850760421680f60a2c9899"
+  },
+  "tooling": {
+    "capture.cjs": "2437969c50544eaa973960641039d5819b8111167d3b0bd904a12a18ba9cd6b1",
+    "fixture_test.go.txt": "ab9ed9842fa0abe6661aa50fc483705392085f60f38f8ae3dca64e317cac3945",
+    "encode.py": "8db0daa7726cbea83c45e015c52af0a86d079d45a1c8b9f5320213a73abc4164"
+  },
+  "clips": [
+    {
+      "language": "en",
+      "scenario": "add-media",
+      "width": 720,
+      "height": 625,
+      "durationMs": 7500,
+      "frames": 30,
+      "bytes": 117707,
+      "files": [
+        {
+          "path": "add-media-en.gif",
+          "sha256": "d8f73b6c1848f992e1e5fc24553215f898fd283498fcd1a9461804372a2c725c"
+        },
+        {
+          "path": "add-media-en.png",
+          "sha256": "3dd240776f09b151d510ca220d84b1f9fc8bc8191d309117aa7a4f148d578b03"
+        }
+      ]
+    },
+    {
+      "language": "en",
+      "scenario": "outputs",
+      "width": 720,
+      "height": 620,
+      "durationMs": 5250,
+      "frames": 21,
+      "bytes": 71376,
+      "files": [
+        {
+          "path": "outputs-en.gif",
+          "sha256": "810affaa3aa027fd493b228e9f4a78eb16ac776f348b141a37c73fd91e46af16"
+        },
+        {
+          "path": "outputs-en.png",
+          "sha256": "447dbd3c834578143911ac05d2a38c8062685e23901b7c9aeefc0ffb685e2102"
+        }
+      ]
+    },
+    {
+      "language": "en",
+      "scenario": "remote",
+      "width": 720,
+      "height": 731,
+      "durationMs": 5750,
+      "frames": 23,
+      "bytes": 252377,
+      "files": [
+        {
+          "path": "remote-en.gif",
+          "sha256": "103655654f21f6bd2fb3119e09e9c21bfc25353baee1a47c4b679872cc3c5c08"
+        },
+        {
+          "path": "remote-en.png",
+          "sha256": "b2867b4eb0a43d6f6ee0304bbe045ebb6169184fd92a095484c76bdd0ff471de"
+        }
+      ]
+    },
+    {
+      "language": "it",
+      "scenario": "add-media",
+      "width": 720,
+      "height": 625,
+      "durationMs": 7500,
+      "frames": 30,
+      "bytes": 134391,
+      "files": [
+        {
+          "path": "add-media-it.gif",
+          "sha256": "e14547d1a0f310c2a2e777c3cdaa00b1ddecb71c7e5b4abed9caf398aa0a6e74"
+        },
+        {
+          "path": "add-media-it.png",
+          "sha256": "f21300c7990ecc7e05c119988655706ea6df3e635322e27225e18e38a52e916a"
+        }
+      ]
+    },
+    {
+      "language": "it",
+      "scenario": "outputs",
+      "width": 720,
+      "height": 640,
+      "durationMs": 5250,
+      "frames": 21,
+      "bytes": 74456,
+      "files": [
+        {
+          "path": "outputs-it.gif",
+          "sha256": "314d7ac1e58a237e4f43fb4ed0e386501dd13fb6206c334b58419be99b346110"
+        },
+        {
+          "path": "outputs-it.png",
+          "sha256": "9cc3fd335602611e4f88da65e2a5db9b62637452a56e2f26d00e1375594ff6bc"
+        }
+      ]
+    },
+    {
+      "language": "it",
+      "scenario": "remote",
+      "width": 720,
+      "height": 745,
+      "durationMs": 5750,
+      "frames": 23,
+      "bytes": 271358,
+      "files": [
+        {
+          "path": "remote-it.gif",
+          "sha256": "5e5a5a9c5d6f78caff25416d5c926a1669adcefba32722f567b38a6a4ace0919"
+        },
+        {
+          "path": "remote-it.png",
+          "sha256": "0f29140e8557d6a018bd55fb4f7104534d8027c2a6a68aa58a940efb2320f71d"
+        }
+      ]
+    },
+    {
+      "language": "it",
+      "scenario": "overview",
+      "files": [
+        {
+          "path": "overview-admin-it.png",
+          "width": 1400,
+          "height": 1070,
+          "sha256": "2a82bcdca73c6dae31c704c37ce42f8ccee0a7027b3879fe277d3ccd27bc85c9"
+        },
+        {
+          "path": "overview-remote-it.png",
+          "width": 430,
+          "height": 860,
+          "sha256": "65ae4dff6e0155a601611517b58803803e2d55e09f4bf8c5f0c9bd48d7f2a38b"
+        }
+      ]
+    }
+  ]
+}

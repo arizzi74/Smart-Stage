@@ -6,6 +6,8 @@ The dedicated Admin window manages original local media files, playlists, button
 
 Desktop downloads support ARM64 and Intel/AMD64. Mac builds target macOS 12 or newer; Windows 11 is the intended Windows baseline. Desktop updates install automatically on launch before playback starts.
 
+Admin supports English and Italian, selecting the system's preferred supported language with a saved manual override. The phone/tablet remote uses its own browser language and independent manual choice. The website has localized animated tutorials for media, outputs and remote setup.
+
 Public gateway mode is the default and requires a configured server and internet access. The separate static Linux gateway supports ARM64 and AMD64, with systemd and an nginx or Caddy HTTPS reverse proxy. Local LAN control is an alternative. Admin listens only on 127.0.0.1. The gateway forwards control traffic, not media.
 
 ## Project

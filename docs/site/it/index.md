@@ -2,6 +2,8 @@
 
 Riproduci contenuti audio, video e immagini sul computer e controllali dal telefono o dal tablet. Prepara una playlist nella finestra Admin dell'app, scegli gli altoparlanti e lo schermo di scena, poi avvia i contenuti con i pulsanti colorati del telecomando. I file multimediali restano sul tuo computer.
 
+L’app è disponibile in italiano e inglese: segue la lingua del sistema e permette di cambiarla dalla barra superiore di Admin. Il telecomando segue la lingua del telefono o tablet.
+
 Smart Stage permette di gestire la riproduzione e le immagini di scena durante gli spettacoli dal vivo. Puoi scegliere un'immagine o un video in loop come sfondo, attivare il suo audio, regolare le dissolvenze e le dissolvenze incrociate dell'audio, e attivare o disattivare lo schermo di scena in modo indipendente.
 
 [Sito in italiano](https://arizzi74.github.io/Smart-Stage/it/) · [English](https://arizzi74.github.io/Smart-Stage/en/) · [Repository GitHub](https://github.com/arizzi74/Smart-Stage) · [Ultima versione](https://github.com/arizzi74/Smart-Stage/releases/latest)
@@ -37,12 +39,12 @@ Su Mac, i download effettuati dal browser possono richiedere **Apri comunque** (
 
 ## Prepara uno spettacolo
 
-1. Trascina i file multimediali dal Finder o da Esplora file nella finestra Admin dell'app, oppure premi **Choose Media…**. I file restano nella loro posizione originale.
+1. Trascina i file multimediali dal Finder o da Esplora file nella finestra Admin dell'app, oppure premi **Scegli file…**. I file restano nella loro posizione originale.
 2. Scegli l'uscita audio e lo schermo di scena. Imposta le etichette e i colori dei pulsanti e, se vuoi, un'immagine o un video come sfondo.
-3. Apri **Remote control → Connection settings**. Configura l'URL e il token del gateway, oppure seleziona **Local network** e segui le indicazioni per il firewall.
+3. Apri **Telecomando → Impostazioni di connessione**. Configura l'URL e il token del gateway, oppure seleziona **Rete locale** e segui le indicazioni per il firewall.
 4. Inquadra il codice QR con il telefono o il tablet e tocca un pulsante per avviare la riproduzione.
 
-Le immagini possono cambiare ciò che appare sullo schermo di scena mentre la musica continua. **Stage on/off** controlla lo schermo di scena in modo indipendente. **STOP** torna allo sfondo corrente; **Escape** interrompe immediatamente tutto l'audio e chiude lo schermo di scena quando la finestra nativa di Smart Stage è attiva. **Quit Smart Stage** in Admin interrompe la riproduzione e chiude l'app.
+Le immagini possono cambiare ciò che appare sullo schermo di scena mentre la musica continua. **Attiva/Disattiva scena** controlla lo schermo di scena in modo indipendente. **STOP** torna allo sfondo corrente; **Escape** interrompe immediatamente tutto l'audio e chiude lo schermo di scena quando la finestra nativa di Smart Stage è attiva. **Esci da Smart Stage** in Admin interrompe la riproduzione e chiude l'app.
 
 ## Controllo remoto e gateway Linux
 

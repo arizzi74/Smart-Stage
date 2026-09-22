@@ -1,0 +1,233 @@
+// This source is overlaid into internal/httpapi only by scripts/demo/capture.cjs.
+// It is never compiled into Smart Stage. No native window, playback or public
+// gateway is exercised: those capabilities are deterministic tutorial fixtures.
+package httpapi
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strings"
+	"sync"
+	"syscall"
+	"testing"
+	"time"
+
+	"smartstage/internal/app"
+	"smartstage/internal/auth"
+	"smartstage/internal/files"
+	"smartstage/internal/locale"
+	"smartstage/internal/model"
+	"smartstage/internal/playback"
+	"smartstage/internal/remote"
+	"smartstage/internal/update"
+	"smartstage/internal/web"
+)
+
+type tutorialBackend struct {
+	events  chan playback.Event
+	italian bool
+}
+
+func (b *tutorialBackend) Devices(context.Context) (playback.Devices, error) {
+	builtIn, speakers, display, projector := "Built-in speakers", "Venue speakers", "Built-in display", "Stage projector"
+	if b.italian {
+		builtIn, speakers, display, projector = "Altoparlanti integrati", "Altoparlanti sala", "Schermo integrato", "Proiettore palco"
+	}
+	return playback.Devices{
+		Audio:    []playback.AudioDevice{{ID: "built-in", Name: builtIn, Default: true}, {ID: "venue", Name: speakers}},
+		Displays: []playback.Display{{ID: "built-in", Name: display, Width: 1440, Height: 900, Primary: true}, {ID: "projector", Name: projector, Width: 1920, Height: 1080}},
+	}, nil
+}
+func (b *tutorialBackend) Inspect(_ context.Context, path string) (playback.Media, error) {
+	switch filepath.Ext(path) {
+	case ".png":
+		return playback.Media{Kind: "image", HasVideo: true}, nil
+	case ".mp3":
+		return playback.Media{Kind: "audio", HasAudio: true, Duration: 225}, nil
+	default:
+		return playback.Media{Kind: "video", HasVideo: true, HasAudio: true, Duration: 135}, nil
+	}
+}
+func (b *tutorialBackend) Start(playback.Start) error { return nil }
+func (b *tutorialBackend) Stop(uint64) error          { return nil }
+func (b *tutorialBackend) Stage(g uint64, _ string, on bool) error {
+	b.events <- playback.Event{Generation: g, Kind: "stopped", StageEnabled: on}
+	return nil
+}
+func (b *tutorialBackend) Events() <-chan playback.Event { return b.events }
+func (b *tutorialBackend) Close() error                  { return nil }
+
+type tutorialStore struct{}
+
+func (tutorialStore) Save(model.Config) error { return nil }
+
+type tutorialUpdater struct{}
+
+func (tutorialUpdater) Status() update.Status {
+	return update.Status{CurrentVersion: "v1.0.0", LatestVersion: "v1.0.0", Phase: "current"}
+}
+func (tutorialUpdater) Check() error   { return nil }
+func (tutorialUpdater) Install() error { return nil }
+
+type tutorialGateway struct {
+	mu     sync.Mutex
+	api    *API
+	status remote.Status
+}
+
+func (g *tutorialGateway) Status() remote.Status { g.mu.Lock(); defer g.mu.Unlock(); return g.status }
+func (g *tutorialGateway) Configure(edit remote.Edit) (remote.Status, error) {
+	// Only this public documentation placeholder is accepted. No network calls
+	// occur, and the all-zero registration/control tokens authorize nothing.
+	if edit.Mode != "gateway" || edit.URL != "https://stage.example.com/smartstage" || edit.Token != strings.Repeat("0", 64) {
+		return g.Status(), errors.New("Use the tutorial placeholder gateway and token")
+	}
+	time.Sleep(350 * time.Millisecond)
+	link := edit.URL + "/e/" + strings.Repeat("0", 32) + "/command#token=" + strings.Repeat("0", 64)
+	g.mu.Lock()
+	g.status = remote.Status{Mode: "gateway", URL: edit.URL, HasToken: true, Status: "connected", RemoteURL: link}
+	result := g.status
+	g.mu.Unlock()
+	g.api.SetRemoteControl([]RemoteLink{{Label: "Public gateway", URL: link}}, "", "gateway")
+	return result, nil
+}
+func (g *tutorialGateway) Reconnect() (remote.Status, error) { return g.Status(), nil }
+
+func TestWebsiteTutorialFixture(t *testing.T) {
+	work := os.Getenv("SMARTSTAGE_DEMO_WORK")
+	if work == "" {
+		t.Skip("Only the dedicated tutorial capture driver starts this fixture")
+	}
+	italian := os.Getenv("SMARTSTAGE_DEMO_LANGUAGE") == "it"
+	overview := os.Getenv("SMARTSTAGE_DEMO_SCENARIO") == "overview"
+	media := filepath.Join(work, "Media")
+	if err := os.MkdirAll(media, 0700); err != nil {
+		t.Fatal(err)
+	}
+	name := "Opening film.mp4"
+	if italian {
+		name = "Video apertura.mp4"
+	}
+	path := filepath.Join(media, name)
+	if err := os.WriteFile(path, []byte("Documentation fixture: no actual playback"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfg := model.DefaultConfig()
+	if overview {
+		labels := []string{"Opening film", "Walk-on music", "Keynote intro", "Interlude", "Thank you", "Stage backdrop"}
+		if italian {
+			labels = []string{"Video di apertura", "Musica d’ingresso", "Introduzione", "Intermezzo", "Grazie", "Sfondo della scena"}
+		}
+		extensions := []string{".mp4", ".mp3", ".mp4", ".mp3", ".png", ".png"}
+		colors := []string{"#5567d9", "#93ceb3", "#e3ac75", "#b19ce4", "#e6a0ac", "#94bac8"}
+		for i, label := range labels {
+			file := filepath.Join(media, label+extensions[i])
+			if err := os.WriteFile(file, []byte("Documentation fixture: no actual playback"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			cfg.Cues = append(cfg.Cues, model.Cue{ID: fmt.Sprint("demo-", i+1), Label: label, Path: file, Color: colors[i], Background: i == 5})
+		}
+		cfg.Outputs = model.Outputs{AudioID: "venue", DisplayID: "projector"}
+		cfg.Stage = model.StageSettings{BackgroundCueID: "demo-6", FadeEnabled: true, FadeSeconds: 1, ToggleAudio: true}
+	}
+	browser, err := files.New([]string{media})
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := app.New(&tutorialBackend{events: make(chan playback.Event, 16), italian: italian}, browser, tutorialStore{}, cfg)
+	defer service.Close()
+	listener, err := net.Listen("tcp4", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	authentication := auth.New()
+	api := NewAdmin(service, authentication, web.Handler(), nil, listener.Addr().(*net.TCPAddr).Port)
+	api.SetUpdater(tutorialUpdater{})
+	api.SetQuit(func() {})
+	api.SetRemoteControl(nil, "", "gateway")
+	gateway := &tutorialGateway{api: api, status: remote.Status{Mode: "gateway", Status: "unconfigured"}}
+	api.SetGateway(gateway)
+	var chooseOnce sync.Once
+	api.SetChooseFiles(func() bool {
+		chooseOnce.Do(func() {
+			go func() {
+				time.Sleep(600 * time.Millisecond)
+				if _, err := service.AppendHostFiles([]string{path}); err != nil {
+					t.Errorf("Fixture chooser append: %v", err)
+				}
+			}()
+		})
+		return true
+	}, func() bool { return true })
+	systemLanguage := "en"
+	if italian {
+		systemLanguage = "it"
+	}
+	language, err := locale.New(work, systemLanguage, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	api.SetLanguage(language)
+	server := &http.Server{Handler: api}
+	go server.Serve(listener)
+	endpoints := map[string]string{"admin": "http://" + listener.Addr().String() + "/admin"}
+	if overview {
+		if err := service.Validate(); err != nil {
+			t.Fatal(err)
+		}
+		deadline := time.Now().Add(10 * time.Second)
+		for {
+			ready := true
+			for _, cue := range service.Snapshot(true).Cues {
+				if cue.Validation != "ready" {
+					ready = false
+				}
+			}
+			if ready {
+				break
+			}
+			if time.Now().After(deadline) {
+				t.Fatal("fixture validation timed out")
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		if err := service.Stage(context.Background(), true); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := gateway.Configure(remote.Edit{Mode: "gateway", URL: "https://stage.example.com/smartstage", Token: strings.Repeat("0", 64)}); err != nil {
+			t.Fatal(err)
+		}
+		commandListener, err := net.Listen("tcp4", "127.0.0.1:0")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer commandListener.Close()
+		command := NewCommand(service, authentication, web.Handler(), []string{"127.0.0.1"}, commandListener.Addr().(*net.TCPAddr).Port)
+		commandServer := &http.Server{Handler: command}
+		go commandServer.Serve(commandListener)
+		defer commandServer.Close()
+		endpoints["remote"] = "http://" + commandListener.Addr().String() + "/command#token=" + authentication.CommandToken()
+	}
+	data, _ := json.Marshal(endpoints)
+	if err := os.WriteFile(filepath.Join(work, "server.json"), data, 0600); err != nil {
+		t.Fatal(err)
+	}
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGTERM, os.Interrupt)
+	defer signal.Stop(signals)
+	select {
+	case <-signals:
+	case <-time.After(5 * time.Minute):
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_ = server.Shutdown(ctx)
+}

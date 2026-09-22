@@ -1,0 +1,177 @@
+{
+  "checkedAt": "2026-09-22T05:51:43.606958+00:00",
+  "appSource": "466cd9eb41d2a2edb07d32016a4332e83687e860",
+  "scope": "Bilingual public website tutorials; actual embedded UI recorded with documented synthetic device, media and gateway fixtures. Native hardware playback is outside this artifact scope.",
+  "browserChecks": {
+    "startedAt": "2026-09-22T05:50:03.637Z",
+    "checks": [
+      {
+        "name": "Root: Italian Italy",
+        "status": "passed",
+        "durationMs": 329
+      },
+      {
+        "name": "Root: Italian Switzerland",
+        "status": "passed",
+        "durationMs": 270
+      },
+      {
+        "name": "Root: English Britain",
+        "status": "passed",
+        "durationMs": 291
+      },
+      {
+        "name": "Root: Unsupported French falls back to English",
+        "status": "passed",
+        "durationMs": 280
+      },
+      {
+        "name": "Root: First supported language in ordered preferences",
+        "status": "passed",
+        "durationMs": 257
+      },
+      {
+        "name": "Root: English preferred before Italian",
+        "status": "passed",
+        "durationMs": 250
+      },
+      {
+        "name": "Root: Empty languages falls back to navigator.language",
+        "status": "passed",
+        "durationMs": 336
+      },
+      {
+        "name": "Root: Stored English overrides Italian browser",
+        "status": "passed",
+        "durationMs": 336
+      },
+      {
+        "name": "Root: Stored Italian overrides English browser",
+        "status": "passed",
+        "durationMs": 305
+      },
+      {
+        "name": "Root: Invalid stored preference is ignored",
+        "status": "passed",
+        "durationMs": 350
+      },
+      {
+        "name": "Storage denied: root fallback and manual language switch remain usable",
+        "status": "passed",
+        "durationMs": 393
+      },
+      {
+        "name": "Explicit /en/ ignores opposite browser and saved preference",
+        "status": "passed",
+        "durationMs": 294
+      },
+      {
+        "name": "Explicit /it/ ignores opposite browser and saved preference",
+        "status": "passed",
+        "durationMs": 277
+      },
+      {
+        "name": "Click and keyboard language changes preserve URL and persist across root visits",
+        "status": "passed",
+        "durationMs": 872
+      },
+      {
+        "name": "JavaScript disabled: root language links and translated commands work",
+        "status": "passed",
+        "durationMs": 510
+      },
+      {
+        "name": "Clipboard /en/: all three commands copied exactly with localized feedback",
+        "status": "passed",
+        "durationMs": 396
+      },
+      {
+        "name": "Clipboard /it/: all three commands copied exactly with localized feedback",
+        "status": "passed",
+        "durationMs": 415
+      },
+      {
+        "name": "Italian clipboard denial shows translated manual-copy feedback",
+        "status": "passed",
+        "durationMs": 265
+      },
+      {
+        "name": "Feature demos /en/: animation, stop, reduced motion and static fallback",
+        "status": "passed",
+        "durationMs": 777
+      },
+      {
+        "name": "Feature demos /en/: no JavaScript poster and direct GIF links",
+        "status": "passed",
+        "durationMs": 255
+      },
+      {
+        "name": "Feature demos /it/: animation, stop, reduced motion and static fallback",
+        "status": "passed",
+        "durationMs": 804
+      },
+      {
+        "name": "Feature demos /it/: no JavaScript poster and direct GIF links",
+        "status": "passed",
+        "durationMs": 204
+      }
+    ],
+    "baseURL": "http://127.0.0.1:42129/Smart-Stage/",
+    "mode": "local-built-site",
+    "browserVersion": "153.0.8010.12",
+    "status": "passed",
+    "finishedAt": "2026-09-22T05:50:12.244Z"
+  },
+  "viewportChecks": [
+    {
+      "lang": "en",
+      "width": 320,
+      "viewport": 320,
+      "document": 320
+    },
+    {
+      "lang": "en",
+      "width": 390,
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "lang": "en",
+      "width": 768,
+      "viewport": 768,
+      "document": 768
+    },
+    {
+      "lang": "en",
+      "width": 1440,
+      "viewport": 1440,
+      "document": 1440
+    },
+    {
+      "lang": "it",
+      "width": 320,
+      "viewport": 320,
+      "document": 320
+    },
+    {
+      "lang": "it",
+      "width": 390,
+      "viewport": 390,
+      "document": 390
+    },
+    {
+      "lang": "it",
+      "width": 768,
+      "viewport": 768,
+      "document": 768
+    },
+    {
+      "lang": "it",
+      "width": 1440,
+      "viewport": 1440,
+      "document": 1440
+    }
+  ],
+  "recordings": "../site/assets/demos/provenance.json",
+  "publicDeployment": null
+}

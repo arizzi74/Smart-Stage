@@ -14,8 +14,15 @@ parameters. With JavaScript disabled, the main address offers both language link
 
 Translate website content in `docs/site/en/index.html` and
 `docs/site/it/index.html`, and the overview in `docs/site/index.md` (English) and
-`docs/site/it/index.md` (Italian). App screenshots retain the real English app
-interface. Language routing and translated clipboard messages live in `site.js`.
+`docs/site/it/index.md` (Italian). Language routing, translated clipboard messages
+and the tutorial play/stop controls live in `site.js`.
+
+Each feature card (01–03) includes a localized GIF recorded from the actual Admin
+interface with sample data. Posters and GIFs live in `docs/site/assets/demos`.
+The clips autoplay only while visible and show static posters when reduced motion
+is preferred; viewers can explicitly play or stop them. Without JavaScript,
+posters link to the full-size GIF. See `scripts/demo` for the capture fixture and
+recording scripts, and `assets/demos/provenance.json` for source and asset hashes.
 
 ## Publication and remaining account settings
 

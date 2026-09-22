@@ -399,6 +399,43 @@ strong {
   margin-top:14px;
 }
 
+.feature-demo {
+  margin: 22px 0 0;
+}
+
+.feature-demo a {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #101519;
+}
+
+.feature-demo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.feature-demo figcaption {
+  margin-top: 10px;
+  font-size: .76rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.demo-toggle {
+  margin-top: 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: .75rem;
+  color: var(--mint);
+  background: transparent;
+  cursor: pointer;
+}
+
 .install-section {
   background:#141e20;
   border-top:1px solid var(--line);

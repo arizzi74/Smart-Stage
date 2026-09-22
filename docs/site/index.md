@@ -2,6 +2,8 @@
 
 Play audio, video and image cues on your computer, controlled from a phone or tablet. Build a playlist in the dedicated desktop Admin window, choose your speakers and stage display, then trigger colored cue buttons from the remote. Media files stay on your computer.
 
+The app supports English and Italian, following the system language with a manual selector in Admin’s top bar. The remote follows the phone or tablet language.
+
 Smart Stage is for live performance playback and stage presentation. It supports image or looping-video backgrounds, optional background sound, adjustable audio fades and crossfades, and independent Stage on/off controls.
 
 [English website](https://arizzi74.github.io/Smart-Stage/en/) · [Italiano](https://arizzi74.github.io/Smart-Stage/it/) · [GitHub repository](https://github.com/arizzi74/Smart-Stage) · [Latest release](https://github.com/arizzi74/Smart-Stage/releases/latest)
