@@ -27,19 +27,77 @@ let gateway = null, gatewayDirty = false, gatewayBusy = false, gatewayRefresh = 
 let updateStatus = null, updateBusy = false, updatePreparing = false;
 let updateRestartInstance = '', updateRestartComplete = false, updateRestartStarted = 0;
 const cueButtons = new Map(), playlistRows = new Map();
+const i18n = window.smartStageI18n;
+const t = (key, values) => i18n.t(key, values);
+const localizedText = (node, read) => i18n.text(node, read);
+const localizedAttribute = (node, name, read) => i18n.attribute(node, name, read);
+function localizedNode(read) { const node = document.createTextNode(''); localizedText(node, read); return node; }
+function errorText(error) { return i18n.diagnostic(error?.message || ''); }
+let languageMode = 'system', hostLanguageLoaded = false, languageBusy = false;
+const languageControls = [$('language-mode'), $('pair-language-mode')];
+function renderLanguageControls() {
+  for (const control of languageControls) {
+    control.value = languageMode;
+    control.disabled = languageBusy || (adminPage && (!online || role !== 'admin' || quitBusy || appClosed));
+  }
+}
+function applyHostLanguage(value, force = false) {
+  if (!adminPage || !value || !['system', 'en', 'it'].includes(value.mode) || !['en', 'it'].includes(value.effective) || (languageBusy && !force)) return;
+  hostLanguageLoaded = true; languageMode = value.mode;
+  i18n.setLanguage(value.effective); renderLanguageControls();
+}
+async function loadLanguage() {
+  if (!adminPage || role !== 'admin' || hostLanguageLoaded) return;
+  try { applyHostLanguage(await api('GET', '/api/language')); }
+  catch { /* Older hosts may not expose preferences; keep the browser-language fallback. */ }
+}
+function remoteLanguageMode() {
+  try { const saved = localStorage.getItem('smartstage.remote.language'); return ['en', 'it'].includes(saved) ? saved : 'system'; }
+  catch { return 'system'; }
+}
+function applyRemoteLanguage() {
+  if (adminPage) return;
+  i18n.setLanguage(languageMode === 'system' ? i18n.systemLanguage() : languageMode);
+  renderLanguageControls();
+}
+for (const control of languageControls) control.addEventListener('change', async () => {
+  const mode = control.value;
+  if (!['system', 'en', 'it'].includes(mode) || languageBusy) { renderLanguageControls(); return; }
+  if (!adminPage) {
+    languageMode = mode;
+    try {
+      if (mode === 'system') localStorage.removeItem('smartstage.remote.language');
+      else localStorage.setItem('smartstage.remote.language', mode);
+    } catch { /* The selection still works for this page when storage is unavailable. */ }
+    applyRemoteLanguage(); return;
+  }
+  if (!online || role !== 'admin') { renderLanguageControls(); return; }
+  languageBusy = true; renderLanguageControls();
+  try { applyHostLanguage(await api('PUT', '/api/language', {mode}), true); }
+  catch (error) { notify(() => t('Could not save the language. {0}', {0: errorText(error)}), true); }
+  finally { languageBusy = false; renderLanguageControls(); }
+});
+window.addEventListener('languagechange', () => {
+  if (!adminPage && languageMode === 'system') applyRemoteLanguage();
+});
+window.addEventListener('storage', event => {
+  if (!adminPage && event.key === 'smartstage.remote.language') { languageMode = remoteLanguageMode(); applyRemoteLanguage(); }
+});
+if (!adminPage) { languageMode = remoteLanguageMode(); applyRemoteLanguage(); }
+renderLanguageControls();
 document.body.classList.toggle('remote-page', !adminPage);
 $('page-title').hidden = !adminPage;
 if (gatewayRoute) {
-  $('pair-guidance').textContent = 'Scan the current QR code or open the remote control link shown in Admin on the host computer. You can also paste the access key from that link below.';
-  $('pair-key-label').textContent = 'Access key';
+  localizedText($('pair-guidance'), () => t("Scan the current QR code or open the remote control link shown in Admin on the host computer. You can also paste the access key from that link below."));
+  localizedText($('pair-key-label'), () => t("Access key"));
   $('pair-key').inputMode = 'text'; $('pair-key').maxLength = 64; $('pair-key').minLength = 64;
   $('pair-key').pattern = '[0-9a-fA-F]{64}';
-  $('pair-network-hint').textContent = 'Keep Smart Stage running and connected to the public gateway.';
+  localizedText($('pair-network-hint'), () => t("Keep Smart Stage running and connected to the public gateway."));
 }
 
 function element(tag, text, className) {
   const node = document.createElement(tag);
-  if (text !== undefined) node.textContent = text;
+  if (text !== undefined && text !== '') node.append(localizedNode(text));
   if (className) node.className = className;
   return node;
 }
@@ -56,12 +114,12 @@ function clock(seconds) {
 }
 function notify(message, error = false) {
   if (appClosed || reloadingAdmin) return;
-  $('notice').textContent = message; $('notice').classList.toggle('error', error);
+  localizedText($('notice'), () => message); $('notice').classList.toggle('error', error);
 }
 function connection(connected) {
   if (appClosed || quitBusy || reloadingAdmin) return;
   online = connected;
-  $('connection').textContent = connected ? 'Connected to host' : expectingUpdateRestart() ? 'Restarting Smart Stage…' : 'Disconnected · status may be stale';
+  localizedText($('connection'), () => connected ? t("Connected to host") : expectingUpdateRestart() ? t("Restarting Smart Stage…") : t("Disconnected · status may be stale"));
   $('connection').className = connected ? 'live' : 'stale';
   renderRemoteStage();
   for (const [id, node] of cueButtons) {
@@ -69,6 +127,7 @@ function connection(connected) {
     node.disabled = !connected || updatePending() || !cue || ['missing', 'unsupported', 'error'].includes(cue.validation);
   }
   if (adminPage) { renderUpdateStatus(); renderEditAvailability(); }
+  renderLanguageControls();
 }
 function showPair() {
   if (appClosed || quitBusy || reloadingAdmin) return;
@@ -78,7 +137,7 @@ function showPair() {
   if (!$('pairing').open) $('pairing').showModal();
 }
 function pairError(message = '') {
-  $('pair-error').textContent = message; $('pair-error').hidden = !message;
+  localizedText($('pair-error'), () => message); $('pair-error').hidden = !i18n.resolve(message);
 }
 async function connectLocalAdmin() {
   if (localSessionBusy || quitBusy || appClosed || reloadingAdmin) return;
@@ -86,17 +145,17 @@ async function connectLocalAdmin() {
   try {
     const session = await api('POST', '/api/local-session', {});
     role = session.role; csrf = session.csrfToken;
-    adminCapabilities = session.capabilities || {};
+    adminCapabilities = session.capabilities || {}; applyHostLanguage(session.language);
     if (role !== 'admin') throw new Error('Open Admin on the host computer.');
     void sendAdminPresence(true);
     if (!await initializeSession()) throw new Error('Could not load the host status.');
-    notify(updateRestartComplete ? 'Smart Stage restarted. Use the new remote control link or QR code to reconnect phones and tablets.' : '');
+    notify(updateRestartComplete ? () => t("Smart Stage restarted. Use the new remote control link or QR code to reconnect phones and tablets.") : '');
     updateRestartComplete = false;
   } catch (error) {
     if (quitBusy || appClosed || reloadingAdmin) return;
     connection(false);
-    if (expectingUpdateRestart()) notify('Smart Stage is restarting. Admin will reconnect automatically.');
-    else notify(`Cannot connect to Admin. ${error.message} Retrying…`, true);
+    if (expectingUpdateRestart()) notify(() => t("Smart Stage is restarting. Admin will reconnect automatically."));
+    else notify(() => t("Cannot connect to Admin. {0} Retrying…", {0: errorText(error)}), true);
     localSessionRetry = setTimeout(() => { void connectLocalAdmin(); }, 5000);
   } finally { localSessionBusy = false; }
 }
@@ -105,6 +164,7 @@ async function sendAdminPresence(force = false) {
   presenceBusy = true;
   try {
     const result = await api('POST', '/api/admin-presence', {});
+    if (!appClosed && !quitBusy && !reloadingAdmin) applyHostLanguage(result.language);
     if (result.capabilities && !appClosed && !quitBusy && !reloadingAdmin) {
       adminCapabilities = result.capabilities;
       renderEditAvailability();
@@ -142,24 +202,24 @@ function showAppClosed() {
   clearTimeout(localSessionRetry);
   if (source) { source.close(); source = null; }
   $('page-title').hidden = true; $('admin-view').hidden = true; $('playback-error').hidden = true;
-  $('notice').textContent = ''; $('notice').classList.remove('error');
+  localizedText($('notice'), () => ''); $('notice').classList.remove('error');
   $('app-closed').hidden = false; $('stop').disabled = true; $('quit-app').disabled = true;
-  $('connection').textContent = 'Smart Stage is closed'; $('connection').className = '';
-  $('play-state').textContent = 'Closed'; $('current-cue').textContent = 'No playback'; $('time').textContent = '0:00';
+  localizedText($('connection'), () => t("Smart Stage is closed")); $('connection').className = '';
+  localizedText($('play-state'), () => t("Closed")); localizedText($('current-cue'), () => t("No playback")); localizedText($('time'), () => '0:00');
   localSessionRetry = setTimeout(() => { void probeClosedAdmin(); }, 2000);
 }
 $('quit-app').addEventListener('click', async () => {
   if (!adminPage || role !== 'admin' || !online || quitBusy || appClosed) return;
-  quitBusy = true; $('quit-app').disabled = true; $('quit-app').textContent = 'Closing…';
+  quitBusy = true; $('quit-app').disabled = true; localizedText($('quit-app'), () => t("Closing…"));
   $('admin-view').inert = true;
-  $('connection').textContent = 'Closing Smart Stage…'; notify('Closing Smart Stage…');
+  localizedText($('connection'), () => t("Closing Smart Stage…")); notify(() => t("Closing Smart Stage…"));
   try {
     const result = await api('POST', '/api/quit', {});
     if (result.quitting !== true) throw new Error('The host did not acknowledge the quit request.');
     showAppClosed();
   } catch (error) {
-    quitBusy = false; $('quit-app').textContent = 'Quit Smart Stage'; $('admin-view').inert = false;
-    connection(online); notify(`Quit is unconfirmed. ${error.message}`, true); void refreshState();
+    quitBusy = false; localizedText($('quit-app'), () => t("Quit Smart Stage")); $('admin-view').inert = false;
+    connection(online); notify(() => t("Quit is unconfirmed. {0}", {0: errorText(error)}), true); void refreshState();
   }
 });
 async function api(method, path, body) {
@@ -190,13 +250,13 @@ async function refreshState() {
     const result = await api('GET', '/api/state');
     if (quitBusy || appClosed || reloadingAdmin) return false;
     role = result.role; csrf = result.csrfToken;
-    if (adminPage) adminCapabilities = result.capabilities || {};
+    if (adminPage) { adminCapabilities = result.capabilities || {}; applyHostLanguage(result.language); }
     applyState(result.state); return !reloadingAdmin;
   } catch (error) {
     if (quitBusy || appClosed || reloadingAdmin) return false;
     connection(false);
-    if (expectingUpdateRestart()) notify('Smart Stage is restarting. Admin will reconnect automatically.');
-    else if (!$('pairing').open) notify(error.message, true);
+    if (expectingUpdateRestart()) notify(() => t("Smart Stage is restarting. Admin will reconnect automatically."));
+    else if (!$('pairing').open) notify(() => errorText(error), true);
     return false;
   }
   finally { refreshing = false; }
@@ -227,43 +287,47 @@ function applyState(next) {
   state = next;
   renderRemoteStage();
   const current = next.cues.find(c => c.id === next.activeCueId);
-  $('play-state').textContent = next.state;
-  $('current-cue').textContent = current ? `${current.position}. ${current.label}` : next.state === 'error' ? 'Operator attention needed' : 'Ready when you are';
-  $('time').textContent = `${clock(next.elapsed)}${next.duration > 0 ? ` / ${clock(next.duration)}` : ''}`;
-  $('playback-error').hidden = !next.lastError; $('playback-error').textContent = next.lastError;
+  localizedText($('play-state'), () => t(next.state));
+  localizedText($('current-cue'), () => current ? `${current.position}. ${current.label}` : next.state === 'error' ? t("Operator attention needed") : t("Ready when you are"));
+  localizedText($('time'), () => `${clock(next.elapsed)}${next.duration > 0 ? ` / ${clock(next.duration)}` : ''}`);
+  $('playback-error').hidden = !next.lastError; localizedText($('playback-error'), () => t(next.lastError));
   renderCues();
   if (adminPage && role === 'admin') {
-    $('stage-state').textContent = next.stageEnabled ? 'Stage output enabled · STOP returns to background' : 'Stage output disabled · music is independent';
+    localizedText($('stage-state'), () => next.stageEnabled ? t("Stage output enabled · STOP returns to background") : t("Stage output disabled · music is independent"));
     renderBackgroundStatus();
     const job = next.validationJob;
-    $('validate').textContent = job.running ? `Validating ${job.completed}/${job.total}…` : 'Validate all cues';
+    localizedText($('validate'), () => job.running ? t("Validating {0}/{1}…", {0: job.completed, 1: job.total}) : t("Validate all cues"));
     for (const c of next.cues) {
       const row = playlistRows.get(c.id);
       if (row) {
         const reason = playlist?.cues.find(item => item.id === c.id)?.cache.reason;
-        row.validation.textContent = `${c.kind || 'Unknown type'} · ${c.duration ? clock(c.duration) : 'Duration unknown'} · ${c.validation}${reason ? ` · ${reason}` : ''}`;
+        localizedText(row.validation, () => `${t(c.kind) || t("Unknown type")} · ${c.duration ? clock(c.duration) : t("Duration unknown")} · ${t(c.validation)}${reason ? ` · ${t(reason)}` : ''}`);
       }
     }
     const signature = next.cues.map(c => `${c.id}:${c.validation}`).join('|');
     if (playlist && signature !== validationSignature && !validationRefresh) {
       validationSignature = signature; void refreshValidationDetails();
     }
-    const details = $('status-details'); details.replaceChildren();
-    for (const [label, value] of [
-      ['Playback', next.state], ['Current cue', current?.label || 'None'],
-      ['Stage', next.stageEnabled ? 'Enabled' : 'Disabled'], ['Output selection', next.outputFault ? 'Re-select outputs required' : 'Configured'],
-      ['Audio route', next.resolvedAudioId ? (devices?.audio.find(d => d.id === next.resolvedAudioId)?.name || next.resolvedAudioId) : 'No active route'],
-      ['Background', next.cues.find(c => c.id === next.backgroundCueId)?.label || 'None — black'],
-      ['Stage image', next.cues.find(c => c.id === next.imageCueId)?.label || 'None'],
-      ['Background error', next.backgroundError || 'None'],
-      ['Playlist revision', next.playlistRevision], ['Validation', job.running ? `${job.completed} of ${job.total}` : 'Idle']
-    ]) { details.append(element('dt', label), element('dd', String(value))); }
+    renderStatusDetails(next);
     if (playlist && playlist.playlistRevision !== next.playlistRevision && !playlistBusy && !playlistRefresh) {
-      if ($('playlist').contains(document.activeElement)) notify('The playlist changed in another tab. Finish or discard your edit, then Reload.', true);
+      if ($('playlist').contains(document.activeElement)) notify(() => t("The playlist changed in another tab. Finish or discard your edit, then Reload."), true);
       else void loadPlaylist();
     }
     renderEditAvailability(); renderUpdateStatus();
   }
+}
+function renderStatusDetails(next) {
+  const current = next.cues.find(c => c.id === next.activeCueId), job = next.validationJob;
+    const details = $('status-details'); details.replaceChildren();
+    for (const [label, value] of [
+      [t("Playback"), t(next.state)], [t("Current cue"), current?.label || t("None")],
+      [t("Stage"), next.stageEnabled ? t("Enabled") : t("Disabled")], [t("Output selection"), next.outputFault ? t("Re-select outputs required") : t("Configured")],
+      [t("Audio route"), next.resolvedAudioId ? (devices?.audio.find(d => d.id === next.resolvedAudioId)?.name || next.resolvedAudioId) : t("No active route")],
+      [t("Background"), next.cues.find(c => c.id === next.backgroundCueId)?.label || t("None — black")],
+      [t("Stage image"), next.cues.find(c => c.id === next.imageCueId)?.label || t("None")],
+      [t("Background error"), t(next.backgroundError) || t("None")],
+      [t("Playlist revision"), next.playlistRevision], [t("Validation"), job.running ? t("{0} of {1}", {0: job.completed, 1: job.total}) : t("Idle")]
+    ]) { details.append(element('dt', label), element('dd', String(value))); }
 }
 function renderCues() {
   const visible = state.cues.filter(cue => !cue.hidden);
@@ -276,7 +340,7 @@ function renderCues() {
       node.append(element('span', '', 'cue-title'), element('span', '', 'cue-meta'));
       cueButtons.set(cue.id, node);
     }
-    node.firstChild.textContent = cue.label;
+    localizedText(node.firstChild, () => cue.label);
     const color = validCueColor(cue.color);
     node.classList.toggle('custom-color', Boolean(color));
     if (color) { node.style.setProperty('--cue-fill', color); node.style.setProperty('--cue-ink', cueTextColor(color)); }
@@ -285,18 +349,18 @@ function renderCues() {
     const image = state.stageEnabled && state.imageCueId === cue.id;
     const background = Boolean(cue.background && state.backgroundCueId === cue.id);
     const active = foreground || image || background;
-    let action = cue.background ? 'Set background ↗' : cue.kind === 'image' ? 'Show image ↗' : 'Start cue ↗';
-    if (background) action = 'Background selected';
-    if (image) action = 'On stage';
-    if (foreground) action = cue.kind === 'audio' && state.stage?.toggleAudio ? 'Press again to stop' : state.state;
-    if (cue.validation !== 'ready' && !active) action = cue.validation;
-    node.lastChild.replaceChildren(element('span', `${String(cue.position).padStart(2, '0')} · ${cue.background ? 'background ' : ''}${cue.kind || 'unchecked'}`), element('span', action));
+    let action = cue.background ? t("Set background ↗") : cue.kind === 'image' ? t("Show image ↗") : t("Start cue ↗");
+    if (background) action = t("Background selected");
+    if (image) action = t("On stage");
+    if (foreground) action = cue.kind === 'audio' && state.stage?.toggleAudio ? t("Press again to stop") : t(state.state);
+    if (cue.validation !== 'ready' && !active) action = t(cue.validation);
+    node.lastChild.replaceChildren(element('span', () => `${String(cue.position).padStart(2, '0')} · ${cue.background ? t("background ") : ''}${t(cue.kind || 'unchecked')}`), element('span', action));
     node.classList.toggle('active', active); node.setAttribute('aria-pressed', String(active));
     node.disabled = !online || updatePending() || ['missing', 'unsupported', 'error'].includes(cue.validation);
     if (renderedOrder !== order) $('cue-grid').append(node);
   }
   renderedOrder = order; $('empty-cues').hidden = visible.length > 0;
-  $('empty-cues').textContent = state.cues.length ? 'No visible buttons. Show cue buttons in Admin on the host computer.' : 'Your show is empty. Add cues on the host computer to get started.';
+  localizedText($('empty-cues'), () => state.cues.length ? t("No visible buttons. Show cue buttons in Admin on the host computer.") : t("Your show is empty. Add cues on the host computer to get started."));
 }
 function validCueColor(value) { return /^#[0-9a-f]{6}$/i.test(value || '') ? value : ''; }
 function cueTextColor(color) {
@@ -306,26 +370,26 @@ function cueTextColor(color) {
 }
 function renderRemoteStage() {
   const enabled = Boolean(state?.stageEnabled), control = $('remote-stage');
-  control.textContent = enabled ? 'Stage on' : 'Stage off';
+  localizedText(control, () => enabled ? t("Stage on") : t("Stage off"));
   control.setAttribute('aria-pressed', String(enabled));
-  control.setAttribute('aria-label', enabled ? 'Disable stage output' : 'Enable stage output');
+  localizedAttribute(control, 'aria-label', () => enabled ? t("Disable stage output") : t("Enable stage output"));
   control.disabled = !online || !state || (!enabled && (state.outputFault || updatePending()));
-  control.title = enabled ? 'Close the stage display; music keeps playing' : 'Open the stage display; music keeps playing';
+  localizedAttribute(control, 'title', () => enabled ? t("Close the stage display; music keeps playing") : t("Open the stage display; music keeps playing"));
 }
 async function trigger(cueId) {
-  if (updatePending()) { notify('Smart Stage is preparing an update. Playback is unavailable until it finishes.'); return; }
-  if (!online || Date.now() - lastSeen > 18000 || !state) { connection(false); notify('Disconnected: PLAY was not sent. Reconnect before triggering a cue.', true); return; }
+  if (updatePending()) { notify(() => t("Smart Stage is preparing an update. Playback is unavailable until it finishes.")); return; }
+  if (!online || Date.now() - lastSeen > 18000 || !state) { connection(false); notify(() => t("Disconnected: PLAY was not sent. Reconnect before triggering a cue."), true); return; }
   const request = { requestId: requestID(), instanceId: state.instanceId, stopEpoch: state.stopEpoch, cueId };
   const sequence = ++controlSequence;
-  try { await api('POST', '/api/play', request); if (sequence === controlSequence) notify('Cue accepted. Check host playback status.'); await refreshState(); }
-  catch (error) { if (sequence === controlSequence) notify(error.message, true); await refreshState(); }
+  try { await api('POST', '/api/play', request); if (sequence === controlSequence) notify(() => t("Cue accepted. Check host playback status.")); await refreshState(); }
+  catch (error) { if (sequence === controlSequence) notify(() => errorText(error), true); await refreshState(); }
 }
 $('stop').addEventListener('click', async () => {
   if (!csrf) { showPair(); return; }
   const sequence = ++controlSequence;
-  notify('Sending STOP…');
-  try { await api('POST', '/api/stop', { requestId: requestID() }); if (sequence === controlSequence) notify('STOP accepted by host. Check the playback status for native completion.'); await refreshState(); }
-  catch (error) { if (sequence === controlSequence) notify(`STOP is unconfirmed. ${error.message}`, true); }
+  notify(() => t("Sending STOP…"));
+  try { await api('POST', '/api/stop', { requestId: requestID() }); if (sequence === controlSequence) notify(() => t("STOP accepted by host. Check the playback status for native completion.")); await refreshState(); }
+  catch (error) { if (sequence === controlSequence) notify(() => t("STOP is unconfirmed. {0}", {0: errorText(error)}), true); }
 });
 $('pairing').addEventListener('cancel', event => event.preventDefault());
 $('pair-form').addEventListener('submit', async event => {
@@ -336,11 +400,11 @@ $('pair-form').addEventListener('submit', async event => {
     const result = await api('POST', '/api/pair', { key: token });
     role = result.role; csrf = result.csrfToken; $('pairing').close();
     await initializeSession();
-  } catch (error) { pairError(error.message); }
+  } catch (error) { pairError(() => errorText(error)); }
   finally { token = ''; submit.disabled = false; }
 });
 $('logout').addEventListener('click', async () => {
-  try { await api('POST', '/api/logout', {}); csrf = ''; role = ''; pairError(); showPair(); } catch (error) { notify(error.message, true); }
+  try { await api('POST', '/api/logout', {}); csrf = ''; role = ''; pairError(); showPair(); } catch (error) { notify(() => errorText(error), true); }
 });
 
 function renderRemoteLink() {
@@ -349,21 +413,21 @@ function renderRemoteLink() {
   if (!link) return;
   const changed = selectedRemoteURL !== link.url;
   selectedRemoteURL = link.url;
-  $('remote-url').textContent = link.url; $('remote-url').href = link.url;
+  localizedText($('remote-url'), () => link.url); $('remote-url').href = link.url;
   $('open-remote-url').href = link.url;
   // The QR is served by the host, without sending the link to another service.
   if (changed || $('remote-qr').getAttribute('src') !== link.qrURL || ($('remote-qr').complete && !$('remote-qr').naturalWidth)) {
     $('remote-qr').src = link.qrURL;
-    $('remote-message').textContent = '';
+    localizedText($('remote-message'), () => '');
   }
 }
 function clearRemoteLinks() {
   remoteLinks = []; selectedRemoteURL = '';
   $('remote-ready').hidden = true; $('remote-unavailable').hidden = false;
   $('remote-network').replaceChildren();
-  $('remote-url').removeAttribute('href'); $('remote-url').textContent = '';
+  $('remote-url').removeAttribute('href'); localizedText($('remote-url'), () => '');
   $('open-remote-url').removeAttribute('href'); $('remote-qr').removeAttribute('src');
-  $('remote-code').textContent = ''; $('remote-message').textContent = '';
+  localizedText($('remote-code'), () => ''); localizedText($('remote-message'), () => '');
 }
 async function loadRemoteControl() {
   if (!adminPage || role !== 'admin' || remoteRefresh || quitBusy || appClosed || reloadingAdmin) return;
@@ -374,27 +438,27 @@ async function loadRemoteControl() {
     if (sequence !== gatewaySequence || quitBusy || appClosed || reloadingAdmin) return;
     remoteLinks = result.links || [];
     const publicMode = result.mode === 'gateway';
-    $('remote-code').textContent = result.token;
+    localizedText($('remote-code'), () => result.token);
     $('remote-code-row').hidden = publicMode;
-    $('remote-guidance').textContent = publicMode ? 'Scan this QR code or open the link from any phone or tablet with an internet connection. Keep Smart Stage running.' : 'Connect your phone or tablet to the same network, then scan this QR code with its camera or open the link.';
+    localizedText($('remote-guidance'), () => publicMode ? t("Scan this QR code or open the link from any phone or tablet with an internet connection. Keep Smart Stage running.") : t("Connect your phone or tablet to the same network, then scan this QR code with its camera or open the link."));
     $('remote-ready').hidden = !remoteLinks.length;
     $('remote-unavailable').hidden = remoteLinks.length > 0;
     if (!remoteLinks.length) {
       clearRemoteLinks();
-      $('remote-unavailable').textContent = publicMode ? 'The public gateway is not connected. The remote link and QR code appear after Smart Stage connects.' : 'No network address is available. Connect this computer to Wi-Fi or Ethernet to use remote control.';
-      $('remote-message').textContent = ''; return;
+      localizedText($('remote-unavailable'), () => publicMode ? t("The public gateway is not connected. The remote link and QR code appear after Smart Stage connects.") : t("No network address is available. Connect this computer to Wi-Fi or Ethernet to use remote control."));
+      localizedText($('remote-message'), () => ''); return;
     }
     $('remote-network').replaceChildren(...remoteLinks.map(link => option(link.url, link.label)));
     $('remote-network-choice').hidden = remoteLinks.length < 2;
     $('remote-network').value = remoteLinks.some(link => link.url === selectedRemoteURL) ? selectedRemoteURL : remoteLinks[0].url;
     renderRemoteLink();
   } catch (error) {
-    $('remote-message').textContent = `Could not refresh the remote control link. ${error.message}`;
+    localizedText($('remote-message'), () => t("Could not refresh the remote control link. {0}", {0: errorText(error)}));
   } finally { remoteRefresh = false; }
 }
 $('remote-network').addEventListener('change', renderRemoteLink);
 $('remote-qr').addEventListener('error', () => {
-  if (selectedRemoteURL) $('remote-message').textContent = 'The QR code could not load. Use the remote control link above.';
+  if (selectedRemoteURL) localizedText($('remote-message'), () => t("The QR code could not load. Use the remote control link above."));
 });
 async function copyRemoteURL() {
   if (!selectedRemoteURL) return;
@@ -405,14 +469,14 @@ async function copyRemoteURL() {
     // Clipboard API is absent on ordinary HTTP LAN pages in many browsers.
     const previousFocus = document.activeElement;
     const copy = element('textarea'); copy.value = selectedRemoteURL; copy.readOnly = true;
-    copy.className = 'clipboard-copy'; copy.setAttribute('aria-label', 'Remote control link');
+    copy.className = 'clipboard-copy'; localizedAttribute(copy, 'aria-label', () => t("Remote control link"));
     document.body.append(copy); copy.select(); copy.setSelectionRange(0, copy.value.length);
     let copied = false;
     try { copied = document.execCommand('copy'); } catch { /* Show the manual fallback below. */ }
     finally { copy.remove(); previousFocus?.focus(); }
-    if (!copied) { $('remote-message').textContent = 'Select and copy the link above to share it.'; return; }
+    if (!copied) { localizedText($('remote-message'), () => t("Select and copy the link above to share it.")); return; }
   }
-  $('remote-message').textContent = 'Remote control link copied.';
+  localizedText($('remote-message'), () => t("Remote control link copied."));
 }
 $('copy-remote-url').addEventListener('click', () => { void copyRemoteURL(); });
 
@@ -427,31 +491,31 @@ function renderGateway() {
   $('gateway-fields').hidden = !publicDraft;
   $('gateway-url').required = publicDraft;
   $('gateway-token').required = publicDraft && !stored;
-  $('gateway-token').placeholder = stored ? 'Leave blank to keep saved token' : 'Token from the gateway installer';
-  $('gateway-token-hint').textContent = stored ? 'A token is stored for this gateway. Leave blank to keep it, or enter a replacement.' : 'Enter the token printed by the gateway installer. Changing the gateway URL requires its token.';
+  localizedAttribute($('gateway-token'), 'placeholder', () => stored ? t("Leave blank to keep saved token") : t("Token from the gateway installer"));
+  localizedText($('gateway-token-hint'), () => stored ? t("A token is stored for this gateway. Leave blank to keep it, or enter a replacement.") : t("Enter the token printed by the gateway installer. Changing the gateway URL requires its token."));
   for (const id of ['gateway-mode', 'gateway-url', 'gateway-token', 'save-gateway']) $(id).disabled = unavailable;
   $('reconnect-gateway').hidden = gateway?.mode !== 'gateway';
   $('reconnect-gateway').disabled = unavailable || gatewayDirty;
   const status = gateway?.status;
-  const description = gateway?.mode === 'gateway' ? {
-    unconfigured: 'Configure your gateway URL and token to connect. Local network remote access is disabled.',
-    connecting: 'Connecting to public gateway… Local network remote access is disabled.',
-    connected: 'Connected to public gateway. Local network remote access is disabled.',
-    error: 'Public gateway is unavailable. Smart Stage will retry automatically. Local network remote access is disabled.',
-    disabled: gateway?.url ? 'Public gateway is not connected. Local network remote access is disabled.' : 'Configure your gateway URL and token to connect. Local network remote access is disabled.'
-  }[status] || 'Waiting for the public gateway connection…' : gateway ? 'Local network remote control is enabled.' : 'Loading connection settings…';
-  $('gateway-status').textContent = description + (gateway?.message ? ` ${gateway.message}` : '');
+  const description = () => gateway?.mode === 'gateway' ? {
+    unconfigured: t("Configure your gateway URL and token to connect. Local network remote access is disabled."),
+    connecting: t("Connecting to public gateway… Local network remote access is disabled."),
+    connected: t("Connected to public gateway. Local network remote access is disabled."),
+    error: t("Public gateway is unavailable. Smart Stage will retry automatically. Local network remote access is disabled."),
+    disabled: gateway?.url ? t("Public gateway is not connected. Local network remote access is disabled.") : t("Configure your gateway URL and token to connect. Local network remote access is disabled.")
+  }[status] || t("Waiting for the public gateway connection…") : gateway ? t("Local network remote control is enabled.") : t("Loading connection settings…");
+  localizedText($('gateway-status'), () => description() + (gateway?.message ? ` ${t(gateway.message)}` : ''));
   $('gateway-status').classList.toggle('error', status === 'error');
   $('lan-firewall-guidance').hidden = gateway?.mode !== 'lan';
-  $('network-note-title').textContent = gateway?.mode === 'gateway' ? 'Public gateway over HTTPS' : 'Trusted LAN only';
-  $('network-note-text').textContent = gateway?.mode === 'gateway' ? 'Remote commands travel through your gateway over HTTPS. Anyone with the remote link can control playback. Admin stays on this computer. HTTPS also allows supported phones and tablets to use Keep awake.' : 'HTTP traffic is not encrypted. Pairing protects control access, but cannot protect against someone listening on the network. Keep the host and controllers on a trusted network.';
+  localizedText($('network-note-title'), () => gateway?.mode === 'gateway' ? t("Public gateway over HTTPS") : t("Trusted LAN only"));
+  localizedText($('network-note-text'), () => gateway?.mode === 'gateway' ? t("Remote commands travel through your gateway over HTTPS. Anyone with the remote link can control playback. Admin stays on this computer. HTTPS also allows supported phones and tablets to use Keep awake.") : t("HTTP traffic is not encrypted. Pairing protects control access, but cannot protect against someone listening on the network. Keep the host and controllers on a trusted network."));
 }
 function applyGateway(value) {
   if (value.mode === 'gateway' && (value.status !== 'connected' || (gateway?.remoteURL && gateway.remoteURL !== value.remoteURL))) {
     clearRemoteLinks();
-    $('remote-unavailable').textContent = 'The public gateway is not connected. The remote link and QR code appear after Smart Stage connects.';
+    localizedText($('remote-unavailable'), () => t("The public gateway is not connected. The remote link and QR code appear after Smart Stage connects."));
   }
-  if (value.status === 'connected' && gateway?.status !== 'connected' && !$('gateway-message').classList.contains('error')) $('gateway-message').textContent = '';
+  if (value.status === 'connected' && gateway?.status !== 'connected' && !$('gateway-message').classList.contains('error')) localizedText($('gateway-message'), () => '');
   gateway = value;
   if (!gatewayDirty) { $('gateway-mode').value = value.mode; $('gateway-url').value = value.url || ''; }
   renderGateway();
@@ -466,11 +530,11 @@ async function loadGateway() {
     applyGateway(value);
     await loadRemoteControl();
   } catch (error) {
-    if (sequence === gatewaySequence) $('gateway-status').textContent = `Could not refresh gateway status. ${error.message}`;
+    if (sequence === gatewaySequence) localizedText($('gateway-status'), () => t("Could not refresh gateway status. {0}", {0: errorText(error)}));
   } finally { gatewayRefresh = false; }
 }
 for (const id of ['gateway-mode', 'gateway-url', 'gateway-token']) $(id).addEventListener('input', () => {
-  gatewayDirty = true; $('gateway-message').textContent = ''; renderGateway();
+  gatewayDirty = true; localizedText($('gateway-message'), () => ''); renderGateway();
 });
 $('gateway-form').addEventListener('submit', async event => {
   event.preventDefault();
@@ -481,26 +545,26 @@ $('gateway-form').addEventListener('submit', async event => {
   // or retained in browser storage, even when saving fails.
   $('gateway-token').value = '';
   gatewayBusy = true; gatewaySequence++; renderGateway();
-  $('gateway-message').textContent = 'Saving connection…'; $('gateway-message').classList.remove('error');
+  localizedText($('gateway-message'), () => t("Saving connection…")); $('gateway-message').classList.remove('error');
   try {
     const result = await api('PUT', '/api/gateway', body);
     gatewayDirty = false; applyGateway(result);
-    $('gateway-message').textContent = result.restart ? 'Saved. Smart Stage is restarting to enable local network remote control. Approve its firewall setup and allow Smart Stage incoming connections when prompted.' : result.mode === 'gateway' ? 'Saved. The public link and QR code appear once connected.' : 'Saved. Local network remote control is enabled. Allow Smart Stage incoming connections if your firewall asks.';
+    localizedText($('gateway-message'), () => result.restart ? t("Saved. Smart Stage is restarting to enable local network remote control. Approve its firewall setup and allow Smart Stage incoming connections when prompted.") : result.mode === 'gateway' ? t("Saved. The public link and QR code appear once connected.") : t("Saved. Local network remote control is enabled. Allow Smart Stage incoming connections if your firewall asks."));
     await loadRemoteControl();
   } catch (error) {
-    $('gateway-message').textContent = `Could not save the connection. ${error.message}`;
+    localizedText($('gateway-message'), () => t("Could not save the connection. {0}", {0: errorText(error)}));
     $('gateway-message').classList.add('error');
   } finally { delete body.token; gatewayBusy = false; renderGateway(); }
 });
 $('reconnect-gateway').addEventListener('click', async () => {
   if (gatewayBusy || gatewayDirty || !online || role !== 'admin' || updatePending()) return;
   gatewayBusy = true; gatewaySequence++; renderGateway();
-  $('gateway-message').textContent = 'Reconnecting…'; $('gateway-message').classList.remove('error');
+  localizedText($('gateway-message'), () => t("Reconnecting…")); $('gateway-message').classList.remove('error');
   try {
     applyGateway(await api('POST', '/api/gateway/reconnect', {}));
     await loadRemoteControl();
-    $('gateway-message').textContent = 'Reconnecting. Use the current link or QR code after the gateway connects.';
-  } catch (error) { $('gateway-message').textContent = error.message; $('gateway-message').classList.add('error'); }
+    localizedText($('gateway-message'), () => t("Reconnecting. Use the current link or QR code after the gateway connects."));
+  } catch (error) { localizedText($('gateway-message'), () => errorText(error)); $('gateway-message').classList.add('error'); }
   finally { gatewayBusy = false; renderGateway(); }
 });
 
@@ -514,8 +578,8 @@ function renderEditAvailability() {
   $('quit-app').disabled = !online || role !== 'admin' || quitBusy || appClosed || reloadingAdmin;
   $('choose-files').hidden = adminCapabilities.chooseFiles !== true;
   $('choose-files').disabled = !online || role !== 'admin' || chooseFilesBusy || quitBusy || appClosed || updatePending() || playlistBusy;
-  $('playlist-drop-title').textContent = desktopAdmin ? `Drop ${fileManagerName} files here` : adminCapabilities.chooseFiles === true ? windowsPlatform ? 'Add media from this PC' : 'Add media from this Mac' : 'Add media from this computer';
-  $('playlist-drop-hint').textContent = desktopAdmin ? `Use Choose Media, or drag files from ${fileManagerName} into this window. Originals stay in place; nothing is uploaded or copied.` : adminCapabilities.chooseFiles === true ? windowsPlatform ? 'Use Choose Media to select files on this PC. Browser drops cannot provide their original paths. You can also drag File Explorer files into the Smart Stage app window.' : 'Use Choose Media to select files on this Mac. Browser drops cannot provide their original paths. You can also drop files onto Smart Stage’s Dock icon.' : 'Browsers cannot read original file paths from a drop. Use Add files by path below, or open the Smart Stage app on Mac or Windows to choose files or drop them into its window.';
+  localizedText($('playlist-drop-title'), () => desktopAdmin ? t("Drop {0} files here", {0: t(fileManagerName)}) : adminCapabilities.chooseFiles === true ? windowsPlatform ? t("Add media from this PC") : t("Add media from this Mac") : t("Add media from this computer"));
+  localizedText($('playlist-drop-hint'), () => desktopAdmin ? t("Use Choose Media, or drag files from {0} into this window. Originals stay in place; nothing is uploaded or copied.", {0: t(fileManagerName)}) : adminCapabilities.chooseFiles === true ? windowsPlatform ? t("Use Choose Media to select files on this PC. Browser drops cannot provide their original paths. You can also drag File Explorer files into the Smart Stage app window.") : t("Use Choose Media to select files on this Mac. Browser drops cannot provide their original paths. You can also drop files onto Smart Stage’s Dock icon.") : t("Browsers cannot read original file paths from a drop. Use Add files by path below, or open the Smart Stage app on Mac or Windows to choose files or drop them into its window."));
   $('media-path-settings').hidden = desktopAdmin || adminCapabilities.chooseFiles === true;
   for (const id of ['media-paths', 'add-media-paths']) $(id).disabled = !online || role !== 'admin' || !playlist || playlistBusy || quitBusy || appClosed || updatePending();
   const pending = updatePending();
@@ -540,7 +604,7 @@ function renderEditAvailability() {
     const foreground = state.activeCueId === id && ['loading', 'playing'].includes(state.state);
     const selected = foreground || (state.stageEnabled && state.imageCueId === id) || (cue?.background && state.backgroundCueId === id);
     row.play.setAttribute('aria-pressed', String(Boolean(selected)));
-    row.play.textContent = cue?.background ? 'Set background' : cue?.cache.media.kind === 'image' ? 'Show image' : foreground && cue?.cache.media.kind === 'audio' && state.stage?.toggleAudio ? 'Stop music' : 'Play';
+    localizedText(row.play, () => cue?.background ? t("Set background") : cue?.cache.media.kind === 'image' ? t("Show image") : foreground && cue?.cache.media.kind === 'audio' && state.stage?.toggleAudio ? t("Stop music") : t("Play"));
     row.background.disabled = pending || playlistBusy || !['image', 'video'].includes(cue?.cache.media.kind);
     row.backgroundLabel.hidden = !['image', 'video'].includes(cue?.cache.media.kind) && !cue?.background;
   }
@@ -557,28 +621,28 @@ function renderUpdateStatus() {
   if (!adminPage) return;
   const phase = updateStatus?.phase || 'idle';
   const busy = updateBusy || updatePending() || ['checking', 'downloading', 'restarting'].includes(phase);
-  $('update-current').textContent = updateStatus?.currentVersion || 'Loading…';
-  $('update-latest').textContent = updateStatus?.latestVersion || 'Not checked yet';
+  localizedText($('update-current'), () => updateStatus?.currentVersion || t("Loading…"));
+  localizedText($('update-latest'), () => updateStatus?.latestVersion || t("Not checked yet"));
   const defaults = {
-    idle: 'No newer version is available.', checking: 'Checking for updates…',
-    available: 'A new version is available.', downloading: 'Downloading and verifying the update…',
-    restarting: 'Restarting Smart Stage. Admin will reconnect automatically.',
-    error: 'Could not check or install the update. Try again when connected.',
-    unsupported: 'Automatic updates are not available for this installation.'
+    idle: t("No newer version is available."), checking: t("Checking for updates…"),
+    available: t("A new version is available."), downloading: t("Downloading and verifying the update…"),
+    restarting: t("Restarting Smart Stage. Admin will reconnect automatically."),
+    error: t("Could not check or install the update. Try again when connected."),
+    unsupported: t("Automatic updates are not available for this installation.")
   };
-  $('update-message').textContent = updateStatus?.message || (updateStatus ? defaults[phase] || 'Update status unavailable.' : 'Loading update status…');
+  localizedText($('update-message'), () => i18n.diagnostic(updateStatus?.message) || (updateStatus ? defaults[phase] || t("Update status unavailable.") : t("Loading update status…")));
   $('update-message').classList.toggle('error', phase === 'error');
   const outcome = updateStatus?.lastUpdate;
   $('update-outcome').hidden = !outcome?.message;
-  $('update-outcome').textContent = outcome?.message || '';
+  localizedText($('update-outcome'), () => i18n.diagnostic(outcome?.message) || '');
   $('update-outcome').classList.toggle('error', ['error', 'rolled_back'].includes(outcome?.status));
   const safeToInstall = state?.state === 'stopped' && !state.stageEnabled && !updatePending();
-  $('update-requirements').textContent = updatePending() ? (phase === 'checking' ? 'Checking for an update before starting. Playback and edits are temporarily unavailable; STOP remains available.' : 'Preparing the update. Playback and edits are temporarily unavailable; STOP remains available.') :
-    safeToInstall ? 'Ready to update when a new version is available.' : 'Stop playback and disable stage output before updating.';
+  localizedText($('update-requirements'), () => updatePending() ? (phase === 'checking' ? t("Checking for an update before starting. Playback and edits are temporarily unavailable; STOP remains available.") : t("Preparing the update. Playback and edits are temporarily unavailable; STOP remains available.")) :
+    safeToInstall ? t("Ready to update when a new version is available.") : t("Stop playback and disable stage output before updating."));
   $('check-update').disabled = !online || busy || phase === 'unsupported';
-  $('check-update').textContent = phase === 'checking' ? 'Checking…' : 'Check for updates';
+  localizedText($('check-update'), () => phase === 'checking' ? t("Checking…") : t("Check for updates"));
   $('install-update').disabled = !online || busy || !safeToInstall || !updateStatus?.available || !updateStatus?.canInstall;
-  $('install-update').textContent = phase === 'downloading' ? 'Downloading…' : phase === 'restarting' ? 'Restarting…' : 'Update and restart';
+  localizedText($('install-update'), () => phase === 'downloading' ? t("Downloading…") : phase === 'restarting' ? t("Restarting…") : t("Update and restart"));
   const href = releaseLink(updateStatus?.releaseURL);
   $('update-release').hidden = !href;
   if (href) $('update-release').href = href; else $('update-release').removeAttribute('href');
@@ -599,7 +663,7 @@ async function loadUpdateStatus() {
   updateBusy = true;
   try { applyUpdateStatus(await api('GET', '/api/update')); }
   catch (error) {
-    if (!expectingUpdateRestart()) updateStatus = { ...updateStatus, phase: 'error', message: `Update status unavailable. ${error.message}` };
+    if (!expectingUpdateRestart()) updateStatus = { ...updateStatus, phase: 'error', message: () => t("Update status unavailable. {0}", {0: errorText(error)}) };
   } finally { updateBusy = false; renderUpdateStatus(); renderEditAvailability(); }
 }
 async function updateAction(install) {
@@ -609,11 +673,11 @@ async function updateAction(install) {
     const result = await api('POST', `/api/update/${install ? 'install' : 'check'}`, {});
     if (install) {
       updatePreparing = true; updateRestartInstance = state.instanceId; updateRestartStarted = Date.now();
-      notify('Preparing the update. Smart Stage will restart and Admin will reconnect automatically.');
+      notify(() => t("Preparing the update. Smart Stage will restart and Admin will reconnect automatically."));
     }
     applyUpdateStatus(result);
   } catch (error) {
-    updateStatus = { ...updateStatus, phase: 'error', message: error.message };
+    updateStatus = { ...updateStatus, phase: 'error', message: () => errorText(error) };
     updatePreparing = false; updateRestartInstance = ''; updateRestartStarted = 0;
   } finally { updateBusy = false; renderUpdateStatus(); renderEditAvailability(); }
 }
@@ -629,10 +693,10 @@ async function loadPlaylist() {
     if (desktopAdmin && previous && previous.playlistRevision !== playlist.playlistRevision) {
       const previousIDs = new Set(previous.cues.map(cue => cue.id));
       const added = playlist.cues.filter(cue => !previousIDs.has(cue.id)).length;
-      if (added) fileDropMessage(`Added ${added} ${added === 1 ? 'file' : 'files'} to the playlist. Originals stay in place.`);
+      if (added) fileDropMessage(() => t(added === 1 ? 'Added {0} file to the playlist. Originals stay in place.' : 'Added {0} files to the playlist. Originals stay in place.', {0: added}));
     }
   }
-  catch (error) { notify(error.message, true); }
+  catch (error) { notify(() => errorText(error), true); }
   finally { playlistRefresh = false; }
 }
 async function refreshValidationDetails() {
@@ -644,25 +708,25 @@ async function refreshValidationDetails() {
         const existing = playlist.cues.find(c => c.id === cue.id);
         if (existing) existing.cache = cue.cache;
         const row = playlistRows.get(cue.id);
-        if (row) row.validation.textContent = `${cue.cache.media.kind || 'Unknown type'} · ${cue.cache.media.duration ? clock(cue.cache.media.duration) : 'Duration unknown'} · ${cue.cache.status}${cue.cache.reason ? ` · ${cue.cache.reason}` : ''}`;
+        if (row) localizedText(row.validation, () => `${t(cue.cache.media.kind) || t("Unknown type")} · ${cue.cache.media.duration ? clock(cue.cache.media.duration) : t("Duration unknown")} · ${t(cue.cache.status)}${cue.cache.reason ? ` · ${t(cue.cache.reason)}` : ''}`);
       }
     }
-  } catch (error) { notify(error.message, true); }
+  } catch (error) { notify(() => errorText(error), true); }
   finally { validationRefresh = false; renderStageSettings(); renderEditAvailability(); }
 }
 function cueEdits() { return playlist.cues.map(({ id, label, path, color, hidden, background }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background) })); }
 async function savePlaylist(cues) {
-  if (updatePending()) { notify('Smart Stage is preparing an update. Wait before editing the show.'); return false; }
-  if (playlistBusy) { notify('An edit is being saved. Wait before making another edit.', true); return false; }
+  if (updatePending()) { notify(() => t("Smart Stage is preparing an update. Wait before editing the show.")); return false; }
+  if (playlistBusy) { notify(() => t("An edit is being saved. Wait before making another edit."), true); return false; }
   playlistBusy = true; renderEditAvailability();
   try {
     playlist = await api('PUT', '/api/playlist', { expectedRevision: playlist.playlistRevision, cues });
-    renderPlaylist(); notify('Playlist saved.'); await refreshState(); return true;
-  } catch (error) { notify(`${error.message} Your edit was not saved. Reload to use the host version.`, true); return false; }
+    renderPlaylist(); notify(() => t("Playlist saved.")); await refreshState(); return true;
+  } catch (error) { notify(() => t("{0} Your edit was not saved. Reload to use the host version.", {0: errorText(error)}), true); return false; }
   finally { playlistBusy = false; renderEditAvailability(); }
 }
 function fileDropMessage(message, error = false) {
-  $('file-drop-message').textContent = message;
+  localizedText($('file-drop-message'), () => message);
   $('file-drop-message').classList.toggle('error', error);
 }
 $('choose-files').addEventListener('click', async () => {
@@ -671,8 +735,8 @@ $('choose-files').addEventListener('click', async () => {
   try {
     const result = await api('POST', '/api/choose-files', {});
     if (result.choosing !== true) throw new Error('The host did not open the file chooser.');
-    fileDropMessage(`Choose files in the ${windowsPlatform ? 'Windows' : 'Mac'} dialog. Originals stay in place.`);
-  } catch (error) { fileDropMessage(error.message, true); }
+    fileDropMessage(() => t("Choose files in the {0} dialog. Originals stay in place.", {0: windowsPlatform ? 'Windows' : 'Mac'}));
+  } catch (error) { fileDropMessage(() => errorText(error), true); }
   finally { chooseFilesBusy = false; renderEditAvailability(); }
 });
 $('media-path-form').addEventListener('submit', async event => {
@@ -682,15 +746,15 @@ $('media-path-form').addEventListener('submit', async event => {
     const path = value.trim();
     return path.length > 1 && ['"', "'"].includes(path[0]) && path.at(-1) === path[0] ? path.slice(1, -1) : path;
   }).filter(Boolean))];
-  if (!paths.length) { fileDropMessage('Enter one original file path per line.', true); return; }
+  if (!paths.length) { fileDropMessage(() => t("Enter one original file path per line."), true); return; }
   if (paths.some(path => !/^(?:\/|[A-Za-z]:[\\/]|\\\\)/.test(path))) {
-    fileDropMessage('Use absolute file paths on the computer running Smart Stage, one per line.', true); return;
+    fileDropMessage(() => t("Use absolute file paths on the computer running Smart Stage, one per line."), true); return;
   }
-  if (playlist.cues.length + paths.length > 500) { fileDropMessage('A playlist can contain up to 500 cues. Add fewer files.', true); return; }
+  if (playlist.cues.length + paths.length > 500) { fileDropMessage(() => t("A playlist can contain up to 500 cues. Add fewer files."), true); return; }
   if (await savePlaylist([...cueEdits(), ...paths.map(path => ({ id: '', label: '', path }))])) {
     $('media-paths').value = '';
-    fileDropMessage(`Added ${paths.length} ${paths.length === 1 ? 'file' : 'files'} to the playlist. Originals stay in place.`);
-  } else fileDropMessage('The files were not added. Check the message above and try again.', true);
+    fileDropMessage(() => t(paths.length === 1 ? 'Added {0} file to the playlist. Originals stay in place.' : 'Added {0} files to the playlist. Originals stay in place.', {0: paths.length}));
+  } else fileDropMessage(() => t("The files were not added. Check the message above and try again."), true);
 });
 function dragHasType(event, type) { return Array.from(event.dataTransfer?.types || []).includes(type); }
 if (adminPage) {
@@ -702,48 +766,48 @@ if (adminPage) {
   document.addEventListener('drop', event => {
     if (!dragHasType(event, 'Files')) return;
     event.preventDefault();
-    const message = desktopAdmin ? `Drop files directly from ${fileManagerName} onto this Smart Stage window, or use Choose Media. Originals stay in place.` : adminCapabilities.chooseFiles === true ? windowsPlatform ? 'Your browser cannot read File Explorer file paths. Use Choose Media, or drop files into the Smart Stage app window.' : 'Your browser cannot read Finder file paths. Use Choose Media, or drop files onto the Smart Stage Dock icon.' : 'Your browser cannot read original file paths from a drop. Use Add files by path in the Playlist, or drop files into the Smart Stage app on Mac or Windows.';
-    fileDropMessage(message); notify(message);
+    const message = () => desktopAdmin ? t("Drop files directly from {0} onto this Smart Stage window, or use Choose Media. Originals stay in place.", {0: t(fileManagerName)}) : adminCapabilities.chooseFiles === true ? windowsPlatform ? t("Your browser cannot read File Explorer file paths. Use Choose Media, or drop files into the Smart Stage app window.") : t("Your browser cannot read Finder file paths. Use Choose Media, or drop files onto the Smart Stage Dock icon.") : t("Your browser cannot read original file paths from a drop. Use Add files by path in the Playlist, or drop files into the Smart Stage app on Mac or Windows.");
+    fileDropMessage(() => message); notify(() => message);
   });
 }
 function renderPlaylist() {
   $('playlist').replaceChildren(); playlistRows.clear();
-  $('playlist-revision').textContent = `${playlist.cues.length} cues · saved revision ${playlist.playlistRevision}`;
-  if (!playlist.cues.length) $('playlist').append(element('p', 'Add audio, videos, or images to build your show.', 'empty'));
+  localizedText($('playlist-revision'), () => t(playlist.cues.length === 1 ? '{0} cue · saved revision {1}' : '{0} cues · saved revision {1}', {0: playlist.cues.length, 1: playlist.playlistRevision}));
+  if (!playlist.cues.length) $('playlist').append(element('p', () => t("Add audio, videos, or images to build your show."), 'empty'));
   const counts = new Map(); for (const c of playlist.cues) counts.set(c.label, (counts.get(c.label) || 0) + 1);
   playlist.cues.forEach((cue, index) => {
     const row = element('div', undefined, 'playlist-row'), info = element('div', undefined, 'playlist-info');
-    const input = element('input'); input.value = cue.label; input.maxLength = 512; input.setAttribute('aria-label', `Label for cue ${index + 1}`);
+    const input = element('input'); input.value = cue.label; input.maxLength = 512; localizedAttribute(input, 'aria-label', () => t("Label for cue {0}", {0: index + 1}));
     input.addEventListener('change', () => { const edited = cueEdits(); edited[index].label = input.value; void savePlaylist(edited); });
-    const validation = element('div', `${cue.cache.media.kind || 'Unknown type'} · ${cue.cache.status}${cue.cache.reason ? ` · ${cue.cache.reason}` : ''}`, 'validation');
+    const validation = element('div', () => `${t(cue.cache.media.kind) || t("Unknown type")} · ${t(cue.cache.status)}${cue.cache.reason ? ` · ${t(cue.cache.reason)}` : ''}`, 'validation');
     info.append(input, element('p', cue.path, 'source-path'), validation);
-    const colors = element('div', undefined, 'cue-color-controls'), colorLabel = element('label', 'Color');
+    const colors = element('div', undefined, 'cue-color-controls'), colorLabel = element('label', () => t("Color"));
     const color = element('input'); color.type = 'color'; color.value = validCueColor(cue.color) || '#1b2227';
-    color.setAttribute('aria-label', `Color for cue ${index + 1}`);
+    localizedAttribute(color, 'aria-label', () => t("Color for cue {0}", {0: index + 1}));
     color.addEventListener('change', () => { const edited = cueEdits(); edited[index].color = color.value; void savePlaylist(edited); });
     colorLabel.append(color);
-    const resetColor = button('Default', () => { const edited = cueEdits(); edited[index].color = ''; void savePlaylist(edited); });
-    resetColor.setAttribute('aria-label', `Use default color for cue ${index + 1}`);
+    const resetColor = button(() => t("Default"), () => { const edited = cueEdits(); edited[index].color = ''; void savePlaylist(edited); });
+    localizedAttribute(resetColor, 'aria-label', () => t("Use default color for cue {0}", {0: index + 1}));
     colors.append(colorLabel, resetColor); info.append(colors);
     const options = element('div', undefined, 'cue-options');
     const hiddenLabel = element('label', undefined, 'check'), hidden = element('input'); hidden.type = 'checkbox'; hidden.checked = Boolean(cue.hidden);
-    hidden.setAttribute('aria-label', `Hide remote button for cue ${index + 1}`);
+    localizedAttribute(hidden, 'aria-label', () => t("Hide remote button for cue {0}", {0: index + 1}));
     hidden.addEventListener('change', () => { const edited = cueEdits(); edited[index].hidden = hidden.checked; void savePlaylist(edited); });
-    hiddenLabel.append(hidden, document.createTextNode('Hide remote button'));
+    hiddenLabel.append(hidden, localizedNode(() => t("Hide remote button")));
     const backgroundLabel = element('label', undefined, 'check'), background = element('input'); background.type = 'checkbox'; background.checked = Boolean(cue.background);
-    background.setAttribute('aria-label', `Use cue ${index + 1} as a background button`);
+    localizedAttribute(background, 'aria-label', () => t("Use cue {0} as a background button", {0: index + 1}));
     background.addEventListener('change', () => { const edited = cueEdits(); edited[index].background = background.checked; void savePlaylist(edited); });
-    backgroundLabel.append(background, document.createTextNode('Background button'));
-    backgroundLabel.title = 'Pressing this button changes the stage background and keeps music playing.';
+    backgroundLabel.append(background, localizedNode(() => t("Background button")));
+    localizedAttribute(backgroundLabel, 'title', () => t("Pressing this button changes the stage background and keeps music playing."));
     options.append(hiddenLabel, backgroundLabel); info.append(options);
-    if (counts.get(cue.label) > 1) info.append(element('p', 'Duplicate label — use cue position to distinguish.', 'hint'));
+    if (counts.get(cue.label) > 1) info.append(element('p', () => t("Duplicate label — use cue position to distinguish."), 'hint'));
     const tools = element('div', undefined, 'cue-tools');
     const move = delta => { const edited = cueEdits(); [edited[index], edited[index + delta]] = [edited[index + delta], edited[index]]; void savePlaylist(edited); };
-    const up = button('↑ Up', () => move(-1)); up.disabled = index === 0; up.setAttribute('aria-label', `Move cue ${index + 1} up`);
-    const down = button('↓ Down', () => move(1)); down.disabled = index === playlist.cues.length - 1; down.setAttribute('aria-label', `Move cue ${index + 1} down`);
-    const remove = button('Remove', () => { const edited = cueEdits(); edited.splice(index, 1); void savePlaylist(edited); });
-    remove.disabled = state?.activeCueId === cue.id; remove.setAttribute('aria-label', `Remove cue ${index + 1} from playlist`);
-    const play = button('Play', () => trigger(cue.id));
+    const up = button(() => t("↑ Up"), () => move(-1)); up.disabled = index === 0; localizedAttribute(up, 'aria-label', () => t("Move cue {0} up", {0: index + 1}));
+    const down = button(() => t("↓ Down"), () => move(1)); down.disabled = index === playlist.cues.length - 1; localizedAttribute(down, 'aria-label', () => t("Move cue {0} down", {0: index + 1}));
+    const remove = button(() => t("Remove"), () => { const edited = cueEdits(); edited.splice(index, 1); void savePlaylist(edited); });
+    remove.disabled = state?.activeCueId === cue.id; localizedAttribute(remove, 'aria-label', () => t("Remove cue {0} from playlist", {0: index + 1}));
+    const play = button(() => t("Play"), () => trigger(cue.id));
     tools.append(play, up, down, remove);
     row.append(element('span', String(index + 1).padStart(2, '0'), 'position'), info, tools);
     $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, hidden, background, backgroundLabel, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
@@ -753,19 +817,19 @@ function renderPlaylist() {
 function renderBackgroundStatus() {
   if (!adminPage || !state) return;
   const current = state.cues.find(cue => cue.id === state.backgroundCueId);
-  $('current-background').textContent = `Current background: ${current?.label || 'None — black'}${state.stageEnabled ? '' : ' · stage is off'}${state.backgroundError ? ` · ${state.backgroundError}` : ''}`;
+  localizedText($('current-background'), () => t("Current background: {0}{1}{2}", {0: current?.label || t("None — black"), 1: state.stageEnabled ? '' : t(" · stage is off"), 2: state.backgroundError ? ` · ${t(state.backgroundError)}` : ''}));
 }
 function renderStageSettings() {
   if (!playlist || !adminPage) return;
   const settings = playlist.stage || {};
   const selected = stageSettingsDirty ? $('background-cue').value : settings.backgroundCueId || '';
-  const options = [option('', 'None — black')];
+  const options = [option('', () => t("None — black"))];
   for (const cue of playlist.cues) {
-    if (['image', 'video'].includes(cue.cache.media.kind) && cue.cache.status === 'ready') options.push(option(cue.id, `${cue.label} · ${cue.cache.media.kind}`));
+    if (['image', 'video'].includes(cue.cache.media.kind) && cue.cache.status === 'ready') options.push(option(cue.id, `${cue.label} · ${t(cue.cache.media.kind)}`));
   }
   if (selected && !options.some(item => item.value === selected)) {
     const cue = playlist.cues.find(item => item.id === selected);
-    options.push(option(selected, `${cue?.label || 'Previous background'} · unavailable`));
+    options.push(option(selected, () => `${cue?.label || t("Previous background")} · ${t('unavailable')}`));
   }
   $('background-cue').replaceChildren(...options); $('background-cue').value = selected;
   if (!stageSettingsDirty) {
@@ -779,7 +843,7 @@ function renderStageSettings() {
 }
 for (const id of ['background-cue', 'background-audio', 'fade-enabled', 'fade-seconds', 'toggle-audio']) $(id).addEventListener('input', () => {
   if (!stageSettingsDirty) stageSettingsRevision = playlist?.playlistRevision || 0;
-  stageSettingsDirty = true; $('stage-settings-message').textContent = 'Unsaved changes.';
+  stageSettingsDirty = true; localizedText($('stage-settings-message'), () => t("Unsaved changes."));
   $('stage-settings-message').classList.remove('error'); renderEditAvailability();
 });
 $('stage-settings-form').addEventListener('submit', async event => {
@@ -787,7 +851,7 @@ $('stage-settings-form').addEventListener('submit', async event => {
   if (!online || !playlist || playlistBusy || updatePending()) return;
   const fadeSeconds = Number($('fade-seconds').value);
   if (!Number.isFinite(fadeSeconds) || fadeSeconds < .1 || fadeSeconds > 30) {
-    $('stage-settings-message').textContent = 'Choose a transition duration from 0.1 to 30 seconds.';
+    localizedText($('stage-settings-message'), () => t("Choose a transition duration from 0.1 to 30 seconds."));
     $('stage-settings-message').classList.add('error'); return;
   }
   const settings = {
@@ -798,48 +862,48 @@ $('stage-settings-form').addEventListener('submit', async event => {
   try {
     playlist = await api('PUT', '/api/stage-settings', { expectedRevision: stageSettingsRevision || playlist.playlistRevision, settings });
     stageSettingsDirty = false; renderPlaylist();
-    $('stage-settings-message').textContent = 'Stage and sound settings saved.';
+    localizedText($('stage-settings-message'), () => t("Stage and sound settings saved."));
     $('stage-settings-message').classList.remove('error'); await refreshState();
   } catch (error) {
-    $('stage-settings-message').textContent = `${error.message} Settings were not saved. Reload the playlist before trying again.`;
+    localizedText($('stage-settings-message'), () => t("{0} Settings were not saved. Reload the playlist before trying again.", {0: errorText(error)}));
     $('stage-settings-message').classList.add('error');
   } finally { playlistBusy = false; renderEditAvailability(); }
 });
-$('reload-playlist').addEventListener('click', () => { stageSettingsDirty = false; $('stage-settings-message').textContent = ''; void loadPlaylist(); });
+$('reload-playlist').addEventListener('click', () => { stageSettingsDirty = false; localizedText($('stage-settings-message'), () => ''); void loadPlaylist(); });
 $('validate').addEventListener('click', async () => {
-  try { await api('POST', '/api/validate', {}); notify('Native validation started. STOP remains available.'); }
-  catch (error) { notify(error.message, true); }
+  try { await api('POST', '/api/validate', {}); notify(() => t("Native validation started. STOP remains available.")); }
+  catch (error) { notify(() => errorText(error), true); }
 });
 function option(value, label) { const node = element('option', label); node.value = value; return node; }
 async function loadDevices() {
   try {
     devices = await api('GET', '/api/devices');
     const audio = $('audio-output'), display = $('display-output');
-    audio.replaceChildren(option('default', 'System default (resolved for each cue)'), ...devices.audio.map(d => option(d.id, `${d.name}${d.default ? ' · current default' : ''}`)));
-    display.replaceChildren(option('', 'No stage display — audio only'), ...devices.displays.map(d => option(d.id, `${d.name} · ${d.width} × ${d.height}${d.primary ? ' · Primary' : ''}${d.mirrored ? ' · Mirrored' : ''}`)));
+    audio.replaceChildren(option('default', () => t("System default (resolved for each cue)")), ...devices.audio.map(d => option(d.id, () => `${d.name}${d.default ? t(" · current default") : ''}`)));
+    display.replaceChildren(option('', () => t("No stage display — audio only")), ...devices.displays.map(d => option(d.id, () => `${d.name} · ${d.width} × ${d.height}${d.primary ? t(" · Primary") : ''}${d.mirrored ? t(" · Mirrored") : ''}`)));
     const selected = state.outputs;
-    if (selected.audioId !== 'default' && !devices.audio.some(d => d.id === selected.audioId)) audio.append(option(selected.audioId, `Unavailable: ${selected.audioId}`));
-    if (selected.displayId && !devices.displays.some(d => d.id === selected.displayId)) display.append(option(selected.displayId, `Unavailable: ${selected.displayId}`));
+    if (selected.audioId !== 'default' && !devices.audio.some(d => d.id === selected.audioId)) audio.append(option(selected.audioId, () => t("Unavailable: {0}", {0: selected.audioId})));
+    if (selected.displayId && !devices.displays.some(d => d.id === selected.displayId)) display.append(option(selected.displayId, () => t("Unavailable: {0}", {0: selected.displayId})));
     audio.value = selected.audioId; display.value = selected.displayId; $('allow-primary').checked = selected.allowPrimary;
     displayWarning();
-  } catch (error) { notify(error.message, true); }
+  } catch (error) { notify(() => errorText(error), true); }
 }
 function displayWarning() {
   const d = devices?.displays.find(item => item.id === $('display-output').value);
-  $('display-warning').textContent = !d ? 'Choose a display to show images, videos, and backgrounds.' : d.mirrored ? 'This display is mirrored. The desktop cannot present an independent stage image.' : d.primary || devices.displays.length === 1 ? 'Warning: enabling stage output or a video cue covers the primary/only display.' : 'Images and videos fill the selected display while preserving their aspect ratio.';
+  localizedText($('display-warning'), () => !d ? t("Choose a display to show images, videos, and backgrounds.") : d.mirrored ? t("This display is mirrored. The desktop cannot present an independent stage image.") : d.primary || devices.displays.length === 1 ? t("Warning: enabling stage output or a video cue covers the primary/only display.") : t("Images and videos fill the selected display while preserving their aspect ratio."));
 }
 $('display-output').addEventListener('change', () => { $('allow-primary').checked = false; displayWarning(); });
 $('refresh-devices').addEventListener('click', () => loadDevices());
 $('save-outputs').addEventListener('click', async () => {
   try {
     await api('PUT', '/api/outputs', { audioId: $('audio-output').value, displayId: $('display-output').value, allowPrimary: $('allow-primary').checked });
-    notify('Outputs saved. Stage output is disabled until you enable it or trigger video.'); await refreshState();
-  } catch (error) { notify(error.message, true); }
+    notify(() => t("Outputs saved. Stage output is disabled until you enable it or trigger video.")); await refreshState();
+  } catch (error) { notify(() => errorText(error), true); }
 });
 async function setStageOutput(enabled) {
   if (!csrf) { showPair(); return; }
-  try { await api('POST', '/api/stage-output', { enabled }); notify(enabled ? 'Stage enable accepted. Music keeps playing.' : 'Stage disable accepted. Music keeps playing.'); await refreshState(); }
-  catch (error) { notify(`${enabled ? 'Stage enable' : 'Stage disable'} is unconfirmed. ${error.message}`, true); }
+  try { await api('POST', '/api/stage-output', { enabled }); notify(() => enabled ? t("Stage enable accepted. Music keeps playing.") : t("Stage disable accepted. Music keeps playing.")); await refreshState(); }
+  catch (error) { notify(() => t("{0} is unconfirmed. {1}", {0: enabled ? t("Stage enable") : t("Stage disable"), 1: errorText(error)}), true); }
 }
 for (const [id, enabled] of [['enable-stage', true], ['disable-stage', false]]) $(id).addEventListener('click', () => { void setStageOutput(enabled); });
 $('remote-stage').addEventListener('click', () => { void setStageOutput(!state?.stageEnabled); });
@@ -848,19 +912,19 @@ document.addEventListener('keydown', event => {
   event.preventDefault();
   const sequence = ++controlSequence;
   void api('POST', '/api/emergency-stop', { requestId: requestID() }).then(async () => {
-    if (sequence === controlSequence) notify('Emergency stop accepted. All sound stops and the stage closes.');
+    if (sequence === controlSequence) notify(() => t("Emergency stop accepted. All sound stops and the stage closes."));
     await refreshState();
-  }).catch(error => { if (sequence === controlSequence) notify(`Emergency stop is unconfirmed. ${error.message}`, true); });
+  }).catch(error => { if (sequence === controlSequence) notify(() => t("Emergency stop is unconfirmed. {0}", {0: errorText(error)}), true); });
 });
 async function initializeSession() {
   if (!await refreshState()) return false;
-  if (adminPage && role !== 'admin') { notify('Open Admin on the host computer.', true); return false; }
+  if (adminPage && role !== 'admin') { notify(() => t("Open Admin on the host computer."), true); return false; }
   $('admin-view').hidden = !adminPage; $('command-view').hidden = adminPage;
   $('logout').hidden = adminPage;
   $('transport-tools').hidden = adminPage;
   if (!adminPage) window.smartStageWakeLock?.setConnected(role === 'command');
   connectEvents();
-  if (adminPage) { await Promise.all([loadGateway(), loadRemoteControl(), loadPlaylist(), loadDevices(), loadUpdateStatus()]); }
+  if (adminPage) { await Promise.all([loadLanguage(), loadGateway(), loadRemoteControl(), loadPlaylist(), loadDevices(), loadUpdateStatus()]); }
   return true;
 }
 setInterval(() => { if (Date.now() - lastSeen > 18000) connection(false); }, 2000);
@@ -893,7 +957,17 @@ async function start() {
     pairError();
     await initializeSession();
   } catch (error) {
-    showPair(); pairError(`${error.message} Use the current link or QR code from Admin on the host computer.`);
+    showPair(); pairError(() => t("{0} Use the current link or QR code from Admin on the host computer.", {0: errorText(error)}));
   } finally { token = ''; }
 }
+window.addEventListener('smartstage-languagechange', () => {
+  // Re-render only display-only summaries with cached translated values. Form
+  // nodes and their drafts stay intact; changing language sends no commands.
+  if (state && !appClosed) { renderCues(); if (adminPage) renderStatusDetails(state); }
+  if (adminPage && !appClosed) { renderGateway(); renderUpdateStatus(); renderEditAvailability(); }
+});
 void start();
+
+if (typeof ResizeObserver === 'function') {
+  new ResizeObserver(entries => { document.documentElement.style.setProperty('--transport-height', `${entries[0].target.getBoundingClientRect().height}px`); }).observe(document.querySelector('.transport'));
+}

@@ -4,6 +4,18 @@ Detailed installation, show setup, troubleshooting and developer instructions.
 For a quick start, see the [README](../README.md).
 Known testing limits are recorded in [release verification](release-verification.md).
 
+## Language
+
+Smart Stage supports English and Italian. The desktop starts in your system's
+preferred supported language, with English as the fallback. Use the language
+selector in Admin's top bar to choose **System / Sistema**, **English** or
+**Italiano**. This preference is saved on the computer and also applies to the
+native app menus and dialogs. Changing language preserves unsaved edits and
+does not interrupt playback. Your cue labels and original filenames stay unchanged.
+
+The phone/tablet remote follows its own browser language and has its own language
+selector. Existing public gateways work with either language without upgrading.
+
 ## Install on Mac
 
 Open Terminal, paste this command, and press Return:

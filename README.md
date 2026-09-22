@@ -2,7 +2,7 @@
 
 Live show control for Mac and Windows: play music, video and image cues from your phone or tablet. Build your show in the desktop app, choose your speakers and stage display, then trigger colored cue buttons remotely. Media files stay on your computer.
 
-[Website](https://arizzi74.github.io/Smart-Stage/)
+[Website](https://arizzi74.github.io/Smart-Stage/) · App in English and Italian, selected automatically from your system language.
 
 | Desktop Admin | Phone / tablet remote |
 | --- | --- |

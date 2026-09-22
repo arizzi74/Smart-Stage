@@ -11,6 +11,7 @@ const assert = require('node:assert/strict');
   const output = path.resolve(__dirname, '../dist/browser-checks'); fs.mkdirSync(output, { recursive: true });
   const clients = new Set(), commands = [], errors = [], requests = [], sessions = new Map();
   let token = '12345678';
+  let language = {mode: 'system', effective: 'en', system: 'en'}, languageSaveFail = false;
   // Image-loading fixture only: this one-pixel PNG is deliberately not a QR code.
   const imageFixture = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
   let stateGets = 0, holdPlay = false, remoteGets = 0, links = [], sessionCounter = 0;
@@ -39,7 +40,7 @@ const assert = require('node:assert/strict');
       if (listenerRole === 'admin' && url.pathname === '/admin') adminDocumentLoads++;
       const name = url.pathname.startsWith('/assets/') ? path.basename(url.pathname) : 'index.html';
       const type = name.endsWith('.js') ? 'text/javascript' : name.endsWith('.css') ? 'text/css' : 'text/html';
-      res.writeHead(200, { 'Content-Type': type, 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'" }); res.end(fs.readFileSync(path.join(assets, name))); return;
+      res.writeHead(200, { 'Content-Type': type, 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'" }); res.end(name === 'app.js' ? fs.readFileSync(path.join(assets, 'i18n.js'), 'utf8') + '\n' + fs.readFileSync(path.join(assets, name), 'utf8') : fs.readFileSync(path.join(assets, name))); return;
     }
     let raw = ''; for await (const chunk of req) raw += chunk;
     const body = raw ? JSON.parse(raw) : {};
@@ -51,7 +52,7 @@ const assert = require('node:assert/strict');
     const pair = () => {
       const id = `fixture-${++sessionCounter}`; sessions.set(id, listenerRole);
       res.setHeader('Set-Cookie', `${cookieName}=${id}; Path=${prefix || '/'}; HttpOnly; SameSite=Strict`);
-      reply({ role: listenerRole, csrfToken: 'test-csrf', ...(listenerRole === 'admin' ? { capabilities: adminCapabilities } : {}) });
+      reply({ role: listenerRole, csrfToken: 'test-csrf', ...(listenerRole === 'admin' ? { capabilities: adminCapabilities, language } : {}) });
     };
     if (url.pathname === '/api/local-session' && listenerRole === 'admin') { pair(); return; }
     if (url.pathname === '/api/pair' && listenerRole === 'command') {
@@ -60,13 +61,24 @@ const assert = require('node:assert/strict');
     }
     if (role !== listenerRole) { reply({ error: { message: 'Connect this browser first' } }, 401); return; }
     if (url.pathname === '/api/logout') { sessions.delete(sessionID); res.setHeader('Set-Cookie', `${cookieName}=; Path=${prefix || '/'}; Max-Age=0`); reply({}); return; }
-    if (url.pathname === '/api/state') { stateGets++; reply({ role, csrfToken: 'test-csrf', state, ...(role === 'admin' ? { capabilities: adminCapabilities } : {}) }); return; }
+    if (url.pathname === '/api/language') {
+      if (role !== 'admin') { reply({error: {message: 'Admin only'}}, 403); return; }
+      if (req.method === 'PUT') {
+        assert.equal(req.headers['x-csrf-token'], 'test-csrf');
+        assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
+        assert(['system', 'en', 'it'].includes(body.mode));
+        if (languageSaveFail) { reply({error: {code: 'language_save_failed', message: 'Could not save the language preference'}}, 503); return; }
+        language = {...language, mode: body.mode, effective: body.mode === 'system' ? language.system : body.mode};
+      }
+      reply(language); return;
+    }
+    if (url.pathname === '/api/state') { stateGets++; reply({ role, csrfToken: 'test-csrf', state, ...(role === 'admin' ? { capabilities: adminCapabilities, language } : {}) }); return; }
     if (['/api/admin-presence', '/api/quit', '/api/choose-files'].includes(url.pathname)) {
       if (role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
       assert.equal(req.headers['x-csrf-token'], 'test-csrf');
       assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
       assert.deepEqual(body, {});
-      if (url.pathname === '/api/admin-presence') { reply({ present: true, capabilities: adminCapabilities }); return; }
+      if (url.pathname === '/api/admin-presence') { reply({ present: true, capabilities: adminCapabilities, language }); return; }
       if (url.pathname === '/api/choose-files') {
         assert(adminCapabilities.chooseFiles); reply({ choosing: true }, 202);
         const imported = nativeChooserImports; nativeChooserImports = [];
@@ -807,7 +819,102 @@ const assert = require('node:assert/strict');
     assert.equal(await admin.locator('#lan-firewall-guidance').isVisible(), true, 'saved LAN guidance remains visible after restart');
     assert.equal(requests.some(r => ['/api/files', '/api/inspect'].includes(r.path)), false, 'no Admin page or reconnect starts folder browsing');
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    // Locale is a display preference. The native host owns Admin persistence;
+    // remote devices use their own browser preference and never call Admin APIs.
+    language = {mode: 'system', effective: 'it', system: 'it'};
+    const localeContext = await browser.newContext({locale: 'en-US', viewport: {width: 1280, height: 900}});
+    const localeAdmin = await localeContext.newPage(); localeAdmin.on('pageerror', e => errors.push(e.message));
+    await localeAdmin.goto(adminBase + '/admin');
+    await localeAdmin.locator('.playlist-row').first().waitFor();
+    await localeAdmin.waitForFunction(() => document.documentElement.lang === 'it');
+    assert.equal(await localeAdmin.locator('#quit-app').textContent(), 'Esci da Smart Stage');
+    assert.equal(await localeAdmin.locator('#language-mode').inputValue(), 'system');
+    assert.equal(await localeAdmin.evaluate(() => navigator.language), 'en-US', 'Admin follows host system language rather than browser language');
+    const rawLabel = await localeAdmin.locator('.playlist-row input').first().inputValue();
+    const rawPath = await localeAdmin.locator('.source-path').first().textContent();
+    assert((await localeAdmin.locator('#display-output option[value=screen]').textContent()).startsWith('Stage display ·'), 'a device name matching a UI translation key stays unchanged');
+    await localeAdmin.setViewportSize({width: 640, height: 900});
+    assert(await localeAdmin.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'Italian Admin fits the native 640px minimum width');
+    await localeAdmin.setViewportSize({width: 1280, height: 900});
+    const beforeLocaleMutations = requests.filter(r => ['/api/play', '/api/stop', '/api/emergency-stop', '/api/playlist', '/api/stage-settings', '/api/outputs', '/api/gateway'].includes(r.path) && Object.keys(r.body).length).length;
+    await localeAdmin.evaluate(() => {
+      const input = document.querySelector('.playlist-row input');
+      input.value = 'Color <originale> 🟢'; input.focus(); input.setSelectionRange(3, 7); window.__localeDraft = input;
+      const details = document.getElementById('remote-connection-settings'); details.open = true;
+      const mode = document.getElementById('gateway-mode'); mode.value = 'gateway'; mode.dispatchEvent(new Event('input', {bubbles: true}));
+      for (const [id, value] of [['gateway-url', 'https://draft.example/smartstage'], ['gateway-token', 'secret-draft-not-translated'], ['fade-seconds', '2.7']]) {
+        const node = document.getElementById(id); node.value = value; node.dispatchEvent(new Event('input', {bubbles: true}));
+      }
+      document.getElementById('audio-output').selectedIndex = 1;
+    });
+    const audioDraft = await localeAdmin.locator('#audio-output').inputValue();
+    await localeAdmin.locator('#language-mode').selectOption('en');
+    await localeAdmin.waitForFunction(() => document.documentElement.lang === 'en' && !document.getElementById('language-mode').disabled);
+    assert.equal(await localeAdmin.locator('#quit-app').textContent(), 'Quit Smart Stage');
+    assert.equal(await localeAdmin.locator('.playlist-row input').first().inputValue(), 'Color <originale> 🟢');
+    assert.equal(await localeAdmin.locator('.source-path').first().textContent(), rawPath);
+    assert.equal(await localeAdmin.locator('#gateway-token').inputValue(), 'secret-draft-not-translated');
+    assert.equal(await localeAdmin.locator('#gateway-url').inputValue(), 'https://draft.example/smartstage');
+    assert.equal(await localeAdmin.locator('#fade-seconds').inputValue(), '2.7');
+    assert.equal(await localeAdmin.locator('#audio-output').inputValue(), audioDraft);
+    assert.equal(await localeAdmin.locator('#remote-connection-settings').evaluate(node => node.open), true);
+    assert.equal(await localeAdmin.evaluate(() => window.__localeDraft === document.querySelector('.playlist-row input') && document.activeElement === window.__localeDraft && window.__localeDraft.selectionStart === 3 && window.__localeDraft.selectionEnd === 7), true, 'locale change retains the focused input node and selection');
+    assert.equal(requests.filter(r => ['/api/play', '/api/stop', '/api/emergency-stop', '/api/playlist', '/api/stage-settings', '/api/outputs', '/api/gateway'].includes(r.path) && Object.keys(r.body).length).length, beforeLocaleMutations, 'changing language sends no playback or show-edit mutation');
+    assert.equal(await localeAdmin.evaluate(() => localStorage.length + sessionStorage.length), 0, 'Admin preference is persisted by the host, not WebView storage');
+    await localeAdmin.reload(); await localeAdmin.locator('.playlist-row').first().waitFor();
+    await localeAdmin.waitForFunction(() => document.documentElement.lang === 'en');
+    assert.equal(await localeAdmin.locator('#language-mode').inputValue(), 'en');
+    assert.equal(await localeAdmin.locator('.playlist-row input').first().inputValue(), rawLabel);
+    await localeAdmin.locator('#language-mode').selectOption('it');
+    await localeAdmin.waitForFunction(() => document.documentElement.lang === 'it' && !document.getElementById('language-mode').disabled);
+    languageSaveFail = true;
+    await localeAdmin.locator('#language-mode').selectOption('en');
+    await localeAdmin.waitForFunction(() => !document.getElementById('language-mode').disabled && document.getElementById('notice').textContent.includes('Impossibile salvare'));
+    assert.equal(await localeAdmin.locator('#language-mode').inputValue(), 'it', 'failed preference write restores the saved selection');
+    assert.equal(await localeAdmin.locator('html').getAttribute('lang'), 'it');
+    languageSaveFail = false;
+    const beforeAnchorSessions = requests.filter(r => r.path === '/api/local-session').length;
+    await localeAdmin.locator('a[href="#stage-section"]').click(); await localeAdmin.waitForTimeout(100);
+    assert.equal(requests.filter(r => r.path === '/api/local-session').length, beforeAnchorSessions, 'Admin section navigation cannot reconnect or reload');
+    const sectionClear = await localeAdmin.locator('#stage-section').evaluate(node => node.getBoundingClientRect().top >= document.querySelector('.transport').getBoundingClientRect().bottom);
+    assert(sectionClear, 'anchor target clears the actual translated transport height');
+    language.system = 'en';
+    await localeAdmin.locator('#language-mode').selectOption('system');
+    await localeAdmin.waitForFunction(() => document.documentElement.lang === 'en' && !document.getElementById('language-mode').disabled);
+    await localeContext.close();
+
+    const italianRemoteContext = await browser.newContext({locale: 'it-IT', viewport: {width: 390, height: 844}});
+    const italianRemote = await italianRemoteContext.newPage(); italianRemote.on('pageerror', e => errors.push(e.message));
+    await italianRemote.goto(commandBase + '/command#token=' + token); await italianRemote.locator('#connection.live').waitFor();
+    assert.equal(await italianRemote.locator('html').getAttribute('lang'), 'it');
+    assert.equal(await italianRemote.locator('#connection').textContent(), 'Collegato al computer');
+    assert.equal(await italianRemote.locator('#keep-awake-status').textContent(), await italianRemote.evaluate(() => window.isSecureContext && typeof navigator.wakeLock?.request === 'function') ? 'Disattivo' : 'Richiede HTTPS');
+    const remoteLabel = await italianRemote.locator('.cue-title').first().textContent();
+    const remoteButton = await italianRemote.locator('.cue').first().elementHandle();
+    await italianRemote.locator('#language-mode').selectOption('en');
+    assert.equal(await italianRemote.locator('#connection').textContent(), 'Connected to host');
+    assert.equal(await italianRemote.locator('.cue-title').first().textContent(), remoteLabel);
+    assert(await remoteButton.evaluate(node => node === document.querySelector('.cue')), 'language changes retain cue button nodes');
+    assert.equal(await italianRemote.evaluate(() => localStorage.getItem('smartstage.remote.language')), 'en');
+    await italianRemote.reload(); await italianRemote.locator('#connection.live').waitFor();
+    assert.equal(await italianRemote.locator('html').getAttribute('lang'), 'en');
+    await italianRemote.locator('#language-mode').selectOption('system');
+    assert.equal(await italianRemote.locator('html').getAttribute('lang'), 'it');
+    assert.equal(await italianRemote.evaluate(() => localStorage.length), 0);
+    for (const width of [320, 390, 768]) {
+      await italianRemote.setViewportSize({width, height: 844});
+      assert(await italianRemote.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Italian remote horizontal overflow at ${width}`);
+    }
+    const bindingBaseline = await italianRemote.evaluate(() => window.smartStageI18n.bindingCount);
+    for (let batch = 0; batch < 15; batch++) {
+      await italianRemote.evaluate(() => { for (let i = 0; i < 20; i++) { renderCues(); } });
+      await italianRemote.waitForTimeout(0);
+    }
+    assert(await italianRemote.evaluate(before => window.smartStageI18n.bindingCount <= before + 4, bindingBaseline), 'repeated state rendering cannot retain removed localized nodes indefinitely');
+    assert.equal(requests.some(r => r.listenerRole === 'command' && r.path === '/api/language'), false, 'Remote never accesses the privileged language API');
+    await italianRemoteContext.close();
+    assert.deepEqual(errors, []);
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }

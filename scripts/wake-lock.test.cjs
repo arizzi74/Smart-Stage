@@ -85,3 +85,19 @@ test('off/on during a pending request discards the stale lock then fulfills new 
   h.window.emit('pagehide'); await settle();
   assert.equal(current.released, true); assert.equal(h.status.textContent, 'Off');
 });
+
+// Language changes update copy only; they must not release or request a lock.
+test('switching language keeps the same active wake lock', async () => {
+  const h = setup(); h.api.setConnected(true); h.button.emit('click'); await settle();
+  let italian = true;
+  h.window.smartStageI18n = {
+    t: key => italian ? ({On: 'Attivo', 'Allow sleep': 'Consenti standby'}[key] || key) : key,
+    text: (node, read) => { node.textContent = read(); },
+    attribute: (node, name, read) => { node[name] = read(); }
+  };
+  h.window.emit('smartstage-languagechange');
+  assert.equal(h.status.textContent, 'Attivo'); assert.equal(h.button.textContent, 'Consenti standby');
+  assert.equal(h.calls.length, 1); assert.equal(h.locks[0].released, false);
+  italian = false; h.window.emit('smartstage-languagechange');
+  assert.equal(h.status.textContent, 'On'); assert.equal(h.calls.length, 1); assert.equal(h.locks[0].released, false);
+});

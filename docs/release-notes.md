@@ -1,12 +1,12 @@
-Smart Stage 1.0.0 is the first stable release for Mac and Windows, with a Linux public gateway.
+Smart Stage 1.1.0 adds Italian and English throughout the desktop app and phone/tablet remote.
 
-- Dedicated desktop Admin with Finder/Explorer drag-and-drop, media chooser, app icons and Quit controls.
-- Audio, video and image cues, configurable button colors, stage backgrounds and audio fades/crossfades.
-- Phone/tablet controls with a QR code, Stage controls and optional Keep awake over HTTPS.
-- Public gateway by default, or Local LAN with guided firewall setup. Admin remains local to the host.
-- Automatic updates on launch before playback, preserving saved shows. Preview installations can upgrade to 1.0.0; stable installations receive stable updates.
-- Includes the Windows media-format detection, close confirmation and transparent color-cursor changes from the previews.
-- Shorter README with Admin and Remote screenshots, quick setup and installation commands.
+- Admin starts in the system’s preferred supported language. Choose System, English or Italiano from the top bar; the choice survives restarts and updates.
+- Native Mac and Windows menus, media chooser, app messages and Windows quit confirmation follow the Admin language.
+- Changing language preserves playlist edits and playback. Cue labels, original file paths and device names remain unchanged.
+- The remote follows its own browser language and remembers a separate manual choice. Existing public gateways work without an upgrade.
+- The bilingual website includes three short animated tutorials for adding media, choosing outputs and connecting the remote, with stop controls and reduced-motion support.
+
+Quit Smart Stage fully and reopen it to receive this stable update automatically before playback starts. Saved shows and connection settings are preserved.
 
 Install on Mac:
 
@@ -20,14 +20,6 @@ Install on Windows from a normal PowerShell window:
 irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | iex
 ```
 
-Install the gateway on a public Linux server with systemd:
+[Download ZIPs](https://github.com/arizzi74/Smart-Stage/releases/latest) · [Website](https://arizzi74.github.io/Smart-Stage/) · [User guide](https://github.com/arizzi74/Smart-Stage/blob/main/docs/user-guide.md).
 
-```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/download/v1.0.0/install-gateway.sh | sh
-```
-
-Downloads include Mac app bundles, standalone desktop ZIPs for ARM64/AMD64, static Linux gateway binaries and checksums. The desktop installers choose the architecture automatically. [First-show setup](https://github.com/arizzi74/Smart-Stage#start-a-show) · [Gateway guide](https://github.com/arizzi74/Smart-Stage/blob/main/docs/gateway-install.md).
-
-Mac builds remain ad-hoc signed and unnotarized; the Mac installer removes quarantine only from Smart Stage. Windows binaries are not Authenticode signed. Windows uses Microsoft WebView2, supplied by the installer if missing.
-
-The stable release label does not change the recorded test scope. Physical speakers/projectors and the remaining UTM cursor observation still need confirmation on the affected equipment. [Verification and known limits](https://github.com/arizzi74/Smart-Stage/blob/main/docs/release-verification.md).
+Downloads include Mac app bundles and Windows executable ZIPs for ARM64 and AMD64, static Linux gateway binaries and checksums. Mac builds remain ad-hoc signed and unnotarized; Windows binaries are not Authenticode signed. Windows uses Microsoft WebView2, supplied by the installer if missing. Physical speakers/projectors and the previously reported UTM cursor behavior remain outside the automated test scope. [Verification and known limits](https://github.com/arizzi74/Smart-Stage/blob/main/docs/release-verification.md).

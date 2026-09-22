@@ -1,6 +1,9 @@
 /* Screen Wake Lock is optional: HTTP LAN pages cannot request it. */
 (() => {
   'use strict';
+  const t = (key, values) => window.smartStageI18n?.t(key, values) ?? key;
+  const localizedText = (node, read) => { if (window.smartStageI18n) window.smartStageI18n.text(node, read); else node.textContent = read(); };
+  const localizedAttribute = (node, name, read) => { if (window.smartStageI18n) window.smartStageI18n.attribute(node, name, read); else if (name === 'title' || name === 'placeholder') node[name] = read(); else node.setAttribute(name, read()); };
   const button = document.getElementById('keep-awake');
   const status = document.getElementById('keep-awake-status');
   if (!button || !status) return;
@@ -16,34 +19,34 @@
     const active = !!sentinel && !sentinel.released;
     button.disabled = !connected || !supported;
     button.setAttribute('aria-pressed', String(wanted));
-    button.textContent = wanted ? 'Allow sleep' : 'Keep awake';
+    localizedText(button, () => wanted ? t("Allow sleep") : t("Keep awake"));
     let label, detail;
     if (!window.isSecureContext) {
-      label = 'Needs HTTPS';
-      detail = 'Keeping the screen awake requires HTTPS. For this HTTP address, change Auto-Lock or Screen timeout in your device settings.';
+      label = t("Needs HTTPS");
+      detail = t("Keeping the screen awake requires HTTPS. For this HTTP address, change Auto-Lock or Screen timeout in your device settings.");
     } else if (!supported) {
-      label = 'Unavailable';
-      detail = 'This browser does not support keeping the screen awake. Use your device Auto-Lock or Screen timeout setting.';
+      label = t("Unavailable");
+      detail = t("This browser does not support keeping the screen awake. Use your device Auto-Lock or Screen timeout setting.");
     } else if (active) {
-      label = 'On';
-      detail = 'Keeping this screen awake while the remote is visible. Switching apps, power saving, or locking the device can release it.';
+      label = t("On");
+      detail = t("Keeping this screen awake while the remote is visible. Switching apps, power saving, or locking the device can release it.");
     } else if (pending) {
-      label = 'Requesting…';
-      detail = 'Asking the browser to keep this screen awake.';
+      label = t("Requesting…");
+      detail = t("Asking the browser to keep this screen awake.");
     } else if (failure) {
-      label = 'Not active';
-      detail = failure;
+      label = t("Not active");
+      detail = t(failure);
     } else if (wanted) {
-      label = 'Paused';
-      detail = 'The screen wake lock was released. It will be requested again when you return to this page; turn Keep awake off and on to retry now.';
+      label = t("Paused");
+      detail = t("The screen wake lock was released. It will be requested again when you return to this page; turn Keep awake off and on to retry now.");
     } else {
-      label = 'Off';
-      detail = 'Keep this screen awake while using the remote. The browser and device may still release the wake lock.';
+      label = t("Off");
+      detail = t("Keep this screen awake while using the remote. The browser and device may still release the wake lock.");
     }
-    status.textContent = label;
-    status.title = detail;
-    status.setAttribute('aria-label', detail);
-    button.title = detail;
+    localizedText(status, () => label);
+    localizedAttribute(status, 'title', () => detail);
+    localizedAttribute(status, 'aria-label', () => detail);
+    localizedAttribute(button, 'title', () => detail);
     button.setAttribute('aria-describedby', status.id);
   }
 
@@ -76,7 +79,7 @@
       });
     } catch (_) {
       if (ticket === epoch) {
-        failure = 'The browser could not keep the screen awake. Check power-saving settings, then turn Keep awake off and on to retry.';
+        failure = "The browser could not keep the screen awake. Check power-saving settings, then turn Keep awake off and on to retry.";
       }
     } finally {
       pending = false;
@@ -114,5 +117,6 @@
       render();
     }
   };
+  window.addEventListener('smartstage-languagechange', render);
   render();
 })();

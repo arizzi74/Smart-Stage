@@ -19,7 +19,7 @@ jobs:
           cache: false
       - run: go test -race ./...
       - run: go vet ./...
-      - run: node --test scripts/wake-lock.test.cjs
+      - run: node --test scripts/i18n.test.cjs scripts/wake-lock.test.cjs
   gateway:
     runs-on: ubuntu-24.04
     steps:
@@ -43,11 +43,17 @@ jobs:
           SMARTSTAGE_TEST_GATEWAY_BROWSER: '1'
           NODE_PATH: ${{ github.workspace }}/scripts/browser/node_modules
         run: go test ./internal/httpapi -run TestGatewayBrowser -count=1 -v
+      - name: Verify bilingual Admin, preserved edits and independent remote language
+        env:
+          NODE_PATH: ${{ github.workspace }}/scripts/browser/node_modules
+        run: node scripts/browser-smoke.cjs
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
           name: gateway-browser-checks
-          path: dist/gateway-browser-checks/
+          path: |
+            dist/gateway-browser-checks/
+            dist/browser-checks/
           if-no-files-found: warn
       - name: Build and inspect static Linux binaries
         env:

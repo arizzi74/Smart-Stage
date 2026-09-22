@@ -41,6 +41,16 @@ func Handler() http.Handler {
 			http.Error(w, "Embedded asset unavailable", 500)
 			return
 		}
+		// Keep the existing public asset URLs so already-installed gateways can
+		// relay translations without widening their strict route allowlist.
+		if name == "app.js" {
+			catalog, readErr := assets.ReadFile("assets/i18n.js")
+			if readErr != nil {
+				http.Error(w, "Embedded translations unavailable", 500)
+				return
+			}
+			data = append(append(catalog, '\n'), data...)
+		}
 		w.Header().Set("Content-Type", contentType)
 		if r.Method != http.MethodHead {
 			_, _ = w.Write(data)

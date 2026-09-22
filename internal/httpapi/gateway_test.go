@@ -109,9 +109,12 @@ func TestPublicGatewayActualCommandAPI(t *testing.T) {
 		t.Fatalf("page: %d", response.StatusCode)
 	}
 	for _, asset := range []string{"app.js", "style.css", "wake-lock.js"} {
-		response, _ = call("GET", prefix+"assets/"+asset, "", "", nil)
+		response, data = call("GET", prefix+"assets/"+asset, "", "", nil)
 		if response.StatusCode != 200 {
 			t.Fatalf("asset %s %d", asset, response.StatusCode)
+		}
+		if asset == "app.js" && !strings.Contains(string(data), "window.smartStageI18n") {
+			t.Fatal("translations must be bundled through the existing gateway asset allowlist")
 		}
 	}
 	response, _ = call("POST", prefix+"api/pair", `{"key":"`+registrationToken+`"}`, "", nil)
