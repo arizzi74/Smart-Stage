@@ -12,6 +12,12 @@ The bootstrap downloads the matching architecture, checks its published SHA-256 
 
 ## Existing nginx HTTPS host
 
+Use a dedicated HTTPS hostname for the gateway, without unrelated applications
+or a shared website document root. Remote HTML/JavaScript is supplied by registered
+Smart Stage computers; mounting it under a path on an authenticated website does
+not give it a separate browser origin. A gateway-only host can use
+`location / { return 404; }` outside the managed `/smartstage` locations.
+
 The installer reads the effective configuration with `nginx -T` and lists suitable HTTPS virtual hosts with their source files. Choose the number corresponding to the domain you want. It adds only the managed `/smartstage` locations inside that existing server block; other locations and the current TLS certificate remain in place.
 
 Eligible hosts have an explicit DNS name and a TLS listener on port 443. Wildcards, regex names, duplicate host definitions, loopback listeners, server-wide redirects, conflicting `/smartstage` locations, and ambiguous includes are excluded. Includes, comments, quoted values, and multiple server blocks in one file are parsed before choosing the insertion point. A managed location is recognized on repeated installation.
@@ -50,6 +56,13 @@ The gateway operator is trusted: HTTPS terminates on that server, which can see
 control traffic. No media is uploaded. The registration token is stored in a
 separate private `gateway.json` on the desktop, outside the saved playlist.
 
+Registered computers on one gateway hostname also share a browser origin. Only
+give its registration token to mutually trusted hosts; a dedicated hostname does
+not isolate those hosts from one another. For a sibling subdomain, unrelated
+applications should keep authentication cookies host-only and enforce CSRF and
+CORS restrictions: sibling subdomains remain the same site even though their
+origins differ.
+
 Each gateway permits 16 connected Smart Stage hosts. Per host it permits 32
 ordinary requests, 32 live status streams and four reserved STOP requests.
 Request bodies are limited to 1 MiB; ordinary commands time out after 30 seconds.
@@ -85,6 +98,16 @@ sudo systemctl stop smartstage-gateway
 ```
 
 Rerun the release installer to update the server binary. The existing token is preserved; changing its public URL requires an explicit manual migration. The gateway does not install server updates by itself. Caddy/nginx and operating-system updates remain managed through your server's normal package maintenance.
+
+For an origin migration, move the managed proxy locations to the dedicated TLS
+virtual host, remove the old relay locations, and update only `publicURL` in the
+private gateway configuration. Preserve `token` and `listen`, validate nginx
+before reload, then restart the gateway. Old relay URLs should stop serving
+Smart Stage; forwarding registration credentials through an HTTP redirect is
+deliberately unsupported. Set the new URL in each desktop's **Remote control →
+Connection settings**, retain the existing token, save, and scan the new phone QR.
+See the [dedicated-host migration verification](verification/gateway-origin-migration/README.md)
+for the recorded deployment and remaining trust boundaries.
 
 The 1.1.2 security fixes require updating both the desktop app and the gateway.
 Desktop apps update on full quit and relaunch. Run the gateway installation

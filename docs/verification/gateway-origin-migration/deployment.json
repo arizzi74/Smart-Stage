@@ -1,0 +1,27 @@
+{
+  "oldGatewayURL": "https://previous-website.example.invalid/smartstage",
+  "newGatewayURL": "https://dedicated-gateway.example.invalid/smartstage",
+  "sharedDocumentRootRemovedFromNewHost": true,
+  "paths": [
+    "/etc/nginx/sites-available/default",
+    "/etc/nginx/sites-available/dedicated-gateway.example.invalid",
+    "/etc/smartstage-gateway/config.json"
+  ],
+  "checkedAt": "2026-09-22T10:32:25.695399+00:00",
+  "gatewayVersion": "v1.1.2 (6c93a24d4b7c)",
+  "registrationTokenPreserved": true,
+  "gatewayListenerPreserved": true,
+  "nginxConfigurationValid": true,
+  "gatewayAndNginxActive": true,
+  "newHTTPSHealth200": true,
+  "oldGatewayRoutes410": true,
+  "unrelatedNewHostPaths404": true,
+  "oldWebsiteRoot200": true,
+  "oldProtectedWebsiteStill401": true,
+  "newGatewayConfigMode": "0o640",
+  "nginxConfigSHA256": {
+    "/etc/nginx/sites-available/default": "952ee78840ab986c351469fb54b455ec15c7074dc018419526282170c83d4ad7",
+    "/etc/nginx/sites-available/dedicated-gateway.example.invalid": "be00587ab8be3cdade44ea9e1e7287bd92c112359463f2f24f571110235efccf"
+  },
+  "redaction": "Operational hostnames are replaced with role-based example.invalid names; private backup paths are omitted. No registration or session secrets were recorded."
+}

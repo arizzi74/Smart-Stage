@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "mode": "production",
+  "runtime": "go1.26.8",
+  "source": "6c93a24d4b7c3c1eac96bf400fd8cec8520f5425",
+  "syntheticEndpointOnly": true,
+  "httpRequests": 21,
+  "invalidPairingRequests": 11,
+  "checks": [
+    "outbound_tls_registration",
+    "anonymous_stop_and_emergency_rejected_before_forwarding",
+    "forged_session_rejected_before_forwarding",
+    "eleven_invalid_pairing_attempts_rate_limited",
+    "valid_public_pairing_survives_guess_limit",
+    "secure_httponly_strict_endpoint_cookie",
+    "csrf_protection_retained",
+    "paired_stop_and_emergency_reach_synthetic_host",
+    "logout_revokes_gateway_admission",
+    "disposable_endpoint_removed"
+  ],
+  "redaction": "Operational hostnames are replaced with role-based example.invalid names; private backup paths are omitted. No registration or session secrets were recorded."
+}

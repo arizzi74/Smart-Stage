@@ -132,6 +132,16 @@ not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
 
+### Dedicated gateway origin migration (22 September 2026)
+
+The running v1.1.2 gateway was subsequently moved to its own HTTPS hostname.
+The previous virtual host no longer relays `/smartstage`, and the new host does
+not serve the unrelated website's document root. Its registration token,
+loopback listener and service binary were preserved. This addresses the
+demonstrated co-hosted-website exposure from finding 1 on this deployment;
+mutually untrusted gateway endpoints still require a separate isolation design.
+See [migration evidence and scope](verification/gateway-origin-migration/README.md).
+
 ### Version 1.1.2: security maintenance
 
 Version 1.1.2 is source `6c93a24d4b7c3c1eac96bf400fd8cec8520f5425`, published

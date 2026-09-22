@@ -13,7 +13,9 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.1.2
   separate bounded body-reading capacity, public pairing that remains available
   to correct high-entropy keys after invalid guesses, and Go 1.26.8 builds.
   Source and all six executable vulnerability scans now gate publication.
-  The origin-isolation finding remains open pending a separate-domain design.
+  The deployed gateway now uses a dedicated HTTPS hostname, removing its
+  same-origin access to the co-hosted website. Isolation between mutually
+  untrusted gateway endpoints remains outside the current design.
 - English and Italian Admin, native Mac/Windows menus and dialogs, and remote
   controls. Admin defaults to the system language and saves an optional manual
   choice separately from show data; the remote follows its own browser language.
@@ -117,7 +119,9 @@ passed using a disposable endpoint. Four published download/browser checks
 passed. Automatic replacement passed on both Windows targets and Intel Mac;
 Apple Silicon's updater check was limited by GitHub's API quota before discovery.
 See [release verification](docs/release-verification.md) for exact evidence,
-remaining installer checks and the deliberately deferred origin-isolation issue.
+remaining installer checks and origin-isolation scope. The subsequent
+[dedicated-host migration](docs/verification/gateway-origin-migration/README.md)
+removes the deployed gateway's shared origin with the unrelated website.
 
 Version 1.1.1 is source `ecac9128c1ea575dd7adb4c9a94de03aa0af0e24`.
 Its language checks cover the actual Mac and Windows native interfaces on both

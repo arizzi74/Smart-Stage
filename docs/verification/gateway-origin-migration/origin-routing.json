@@ -1,0 +1,26 @@
+{
+  "checks": [
+    {
+      "check": "old_host_header_rejected",
+      "status": 403,
+      "passed": true
+    },
+    {
+      "check": "old_origin_command_rejected",
+      "status": 403,
+      "passed": true
+    },
+    {
+      "check": "new_origin_reaches_gateway",
+      "status": 410,
+      "passed": true
+    },
+    {
+      "check": "admin_not_exposed",
+      "status": 404,
+      "passed": true
+    }
+  ],
+  "scope": "Actual production gateway Host/Origin rejection and remote-only routes after dedicated-host migration; uses nonexistent synthetic endpoint IDs, no user show commands.",
+  "redaction": "Operational hostnames are replaced with role-based example.invalid names; private backup paths are omitted. No registration or session secrets were recorded."
+}

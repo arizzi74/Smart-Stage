@@ -1,0 +1,46 @@
+{
+  "status": "passed",
+  "observedAt": "2026-09-22T10:34:28.950Z",
+  "newOrigin": "https://dedicated-gateway.example.invalid",
+  "oldOrigin": "https://previous-website.example.invalid",
+  "browser": "153.0.8010.12",
+  "freshBrowserContext": true,
+  "realAccountCredentialsUsed": false,
+  "cspBypassedForOriginTest": true,
+  "certificateErrorsIgnored": false,
+  "apiReadRequests": 8,
+  "browserRequests": 2,
+  "checks": {
+    "oldPublicRootAvailable": true,
+    "oldGatewayRoutes": {
+      "/smartstage": 410,
+      "/smartstage/": 410,
+      "/smartstage/health": 410,
+      "/smartstage/api/connect": 410,
+      "/smartstage/e/00000000000000000000000000000000/command": 410
+    },
+    "newHostnameUnrelatedPaths404": true,
+    "newBrowserDocumentOrigin": "https://dedicated-gateway.example.invalid",
+    "cookiesBeforeCrossOriginFetch": 0,
+    "crossOriginReadDeniedByBrowser": true
+  },
+  "scope": "Cross-origin response-reading protection for the tested public resource only.",
+  "limits": [
+    "No real account or private account data was used or tested.",
+    "Same-site requests, cross-origin writes/CSRF, and parent-domain cookie scope are not proved safe by this test.",
+    "Isolation between mutually untrusted endpoints sharing the new gateway origin is not proved."
+  ],
+  "crossOriginFetch": {
+    "readable": false,
+    "exception": "TypeError",
+    "credentialsMode": "include",
+    "cdpFailures": [
+      {
+        "errorText": "net::ERR_FAILED",
+        "blockedReason": null,
+        "corsError": "MissingAllowOriginHeader"
+      }
+    ]
+  },
+  "redaction": "Operational hostnames are replaced with role-based example.invalid names; private backup paths are omitted. No registration or session secrets were recorded."
+}
