@@ -10,8 +10,11 @@ Public gateway mode is the default and requires a configured server and internet
 
 ## Project
 
-- [Website](https://arizzi74.github.io/Smart-Stage/): product overview and installation.
+- [Website](https://arizzi74.github.io/Smart-Stage/): selects English or Italian using a saved choice or browser language.
+- [English website](https://arizzi74.github.io/Smart-Stage/en/): English product overview and installation.
+- [Sito in italiano](https://arizzi74.github.io/Smart-Stage/it/): presentazione e installazione in italiano.
 - [Website overview in Markdown](https://arizzi74.github.io/Smart-Stage/index.md): readable overview, commands, downloads and first-show setup.
+- [Panoramica in italiano in Markdown](https://arizzi74.github.io/Smart-Stage/it/index.md): comandi, download e configurazione iniziale in italiano.
 - [Repository](https://github.com/arizzi74/Smart-Stage): source, issues and project history.
 - [Latest release](https://github.com/arizzi74/Smart-Stage/releases/latest): desktop and gateway downloads with checksums.
 

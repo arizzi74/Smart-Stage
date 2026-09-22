@@ -4,6 +4,19 @@ The static website lives in `docs/site`. It reuses the real sample-show screensh
 from `docs/screenshots` and the existing application icon. The website is live at
 <https://arizzi74.github.io/Smart-Stage/>.
 
+English and Italian are published as static pages at `/Smart-Stage/en/` and
+`/Smart-Stage/it/`. The main address selects the first supported language in the
+browser's preference list, including regional variants such as `it-CH`. If none
+match, it uses English. A choice made with **EN / IT** takes precedence on later
+visits and is saved only in local browser storage. Direct language links always
+keep their language; changing language preserves the current section and query
+parameters. With JavaScript disabled, the main address offers both language links.
+
+Translate website content in `docs/site/en/index.html` and
+`docs/site/it/index.html`, and the overview in `docs/site/index.md` (English) and
+`docs/site/it/index.md` (Italian). App screenshots retain the real English app
+interface. Language routing and translated clipboard messages live in `site.js`.
+
 ## Publication and remaining account settings
 
 Pages now uses GitHub Actions. The first public deployment
@@ -60,17 +73,23 @@ To regenerate the social card with the existing browser development tools:
 npm ci --prefix scripts/browser --ignore-scripts --no-audit --no-fund
 node scripts/browser/node_modules/playwright/cli.js install chromium
 node scripts/site/render-social-preview.cjs
+node scripts/site/render-social-preview.cjs it
 ```
 
-Its HTML source is `scripts/site/social-preview.html`. The generated 1280 × 640
-PNG is committed and reused by the website's social metadata; deploying the site
-does not require Node or a browser.
+The HTML sources are `scripts/site/social-preview.html` and
+`scripts/site/social-preview-it.html`. Generated 1280 × 640 PNGs are committed and
+reused by each language's social metadata. The site itself has no runtime
+dependencies. CI uses the browser tools to verify language selection, preference
+persistence, direct links, clipboard messages and operation without JavaScript.
+Run those checks locally with `node scripts/site/check-locales.cjs` after building.
 
 ## Search and documentation
 
 The site has a descriptive title and meta description, a canonical URL, social
 preview metadata, factual `SoftwareApplication` structured data, an XML sitemap,
-and an alternate Markdown overview. Keep those aligned with visible page content.
+and alternate Markdown overviews. Both language pages have self-canonical URLs,
+reciprocal `hreflang` links, and an `x-default` link to the main address; all three
+addresses appear in the sitemap. Keep metadata aligned with visible page content.
 `llms.txt` is a small documentation index, not a promise of search ranking or AI
 recommendations. Keep the repository-root and site copies identical.
 

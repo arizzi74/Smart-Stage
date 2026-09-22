@@ -4,7 +4,7 @@ Play audio, video and image cues on your computer, controlled from a phone or ta
 
 Smart Stage is for live performance playback and stage presentation. It supports image or looping-video backgrounds, optional background sound, adjustable audio fades and crossfades, and independent Stage on/off controls.
 
-[Project website](https://arizzi74.github.io/Smart-Stage/) · [GitHub repository](https://github.com/arizzi74/Smart-Stage) · [Latest release](https://github.com/arizzi74/Smart-Stage/releases/latest)
+[English website](https://arizzi74.github.io/Smart-Stage/en/) · [Italiano](https://arizzi74.github.io/Smart-Stage/it/) · [GitHub repository](https://github.com/arizzi74/Smart-Stage) · [Latest release](https://github.com/arizzi74/Smart-Stage/releases/latest)
 
 ## Install
 

@@ -1,0 +1,397 @@
+{
+  "checkedAt": "2026-09-22T05:15:27.790423+00:00",
+  "localBrowser": {
+    "startedAt": "2026-09-22T05:14:43.710Z",
+    "checks": [
+      {
+        "name": "Root: Italian Italy",
+        "status": "passed",
+        "durationMs": 376
+      },
+      {
+        "name": "Root: Italian Switzerland",
+        "status": "passed",
+        "durationMs": 245
+      },
+      {
+        "name": "Root: English Britain",
+        "status": "passed",
+        "durationMs": 228
+      },
+      {
+        "name": "Root: Unsupported French falls back to English",
+        "status": "passed",
+        "durationMs": 227
+      },
+      {
+        "name": "Root: First supported language in ordered preferences",
+        "status": "passed",
+        "durationMs": 217
+      },
+      {
+        "name": "Root: English preferred before Italian",
+        "status": "passed",
+        "durationMs": 237
+      },
+      {
+        "name": "Root: Empty languages falls back to navigator.language",
+        "status": "passed",
+        "durationMs": 221
+      },
+      {
+        "name": "Root: Stored English overrides Italian browser",
+        "status": "passed",
+        "durationMs": 281
+      },
+      {
+        "name": "Root: Stored Italian overrides English browser",
+        "status": "passed",
+        "durationMs": 298
+      },
+      {
+        "name": "Root: Invalid stored preference is ignored",
+        "status": "passed",
+        "durationMs": 295
+      },
+      {
+        "name": "Storage denied: root fallback and manual language switch remain usable",
+        "status": "passed",
+        "durationMs": 352
+      },
+      {
+        "name": "Explicit /en/ ignores opposite browser and saved preference",
+        "status": "passed",
+        "durationMs": 275
+      },
+      {
+        "name": "Explicit /it/ ignores opposite browser and saved preference",
+        "status": "passed",
+        "durationMs": 266
+      },
+      {
+        "name": "Click and keyboard language changes preserve URL and persist across root visits",
+        "status": "passed",
+        "durationMs": 805
+      },
+      {
+        "name": "JavaScript disabled: root language links and translated commands work",
+        "status": "passed",
+        "durationMs": 489
+      },
+      {
+        "name": "Clipboard /en/: all three commands copied exactly with localized feedback",
+        "status": "passed",
+        "durationMs": 408
+      },
+      {
+        "name": "Clipboard /it/: all three commands copied exactly with localized feedback",
+        "status": "passed",
+        "durationMs": 403
+      },
+      {
+        "name": "Italian clipboard denial shows translated manual-copy feedback",
+        "status": "passed",
+        "durationMs": 284
+      }
+    ],
+    "baseURL": "http://127.0.0.1:36017/Smart-Stage/",
+    "mode": "local-built-site",
+    "browserVersion": "153.0.8010.12",
+    "status": "passed",
+    "finishedAt": "2026-09-22T05:14:49.749Z"
+  },
+  "viewports": [
+    {
+      "language": "en",
+      "width": 320,
+      "contentWidth": 320,
+      "links": [
+        {
+          "text": "EN",
+          "visible": true,
+          "current": "page"
+        },
+        {
+          "text": "IT",
+          "visible": true,
+          "current": null
+        }
+      ],
+      "alt": [
+        [
+          "en",
+          "https://arizzi74.github.io/Smart-Stage/en/"
+        ],
+        [
+          "it",
+          "https://arizzi74.github.io/Smart-Stage/it/"
+        ],
+        [
+          "x-default",
+          "https://arizzi74.github.io/Smart-Stage/"
+        ]
+      ],
+      "canonical": "https://arizzi74.github.io/Smart-Stage/en/",
+      "missingAnchors": []
+    },
+    {
+      "language": "en",
+      "width": 390,
+      "contentWidth": 390,
+      "links": [
+        {
+          "text": "EN",
+          "visible": true,
+          "current": "page"
+        },
+        {
+          "text": "IT",
+          "visible": true,
+          "current": null
+        }
+      ],
+      "alt": [
+        [
+          "en",
+          "https://arizzi74.github.io/Smart-Stage/en/"
+        ],
+        [
+          "it",
+          "https://arizzi74.github.io/Smart-Stage/it/"
+        ],
+        [
+          "x-default",
+          "https://arizzi74.github.io/Smart-Stage/"
+        ]
+      ],
+      "canonical": "https://arizzi74.github.io/Smart-Stage/en/",
+      "missingAnchors": []
+    },
+    {
+      "language": "en",
+      "width": 768,
+      "contentWidth": 768,
+      "links": [
+        {
+          "text": "EN",
+          "visible": true,
+          "current": "page"
+        },
+        {
+          "text": "IT",
+          "visible": true,
+          "current": null
+        }
+      ],
+      "alt": [
+        [
+          "en",
+          "https://arizzi74.github.io/Smart-Stage/en/"
+        ],
+        [
+          "it",
+          "https://arizzi74.github.io/Smart-Stage/it/"
+        ],
+        [
+          "x-default",
+          "https://arizzi74.github.io/Smart-Stage/"
+        ]
+      ],
+      "canonical": "https://arizzi74.github.io/Smart-Stage/en/",
+      "missingAnchors": []
+    },
+    {
+      "language": "en",
+      "width": 1440,
+      "contentWidth": 1440,
+      "links": [
+        {
+          "text": "EN",
+          "visible": true,
+          "current": "page"
+        },
+        {
+          "text": "IT",
+          "visible": true,
+          "current": null
+        }
+      ],
+      "alt": [
+        [
+          "en",
+          "https://arizzi74.github.io/Smart-Stage/en/"
+        ],
+        [
+          "it",
+          "https://arizzi74.github.io/Smart-Stage/it/"
+        ],
+        [
+          "x-default",
+          "https://arizzi74.github.io/Smart-Stage/"
+        ]
+      ],
+      "canonical": "https://arizzi74.github.io/Smart-Stage/en/",
+      "missingAnchors": []
+    },
+    {
+      "language": "it",
+      "width": 320,
+      "contentWidth": 320,
+      "links": [
+        {
+          "text": "EN",
+          "visible": true,
+          "current": null
+        },
+        {
+          "text": "IT",
+          "visible": true,
+          "current": "page"
+        }
+      ],
+      "alt": [
+        [
+          "en",
+          "https://arizzi74.github.io/Smart-Stage/en/"
+        ],
+        [
+          "it",
+          "https://arizzi74.github.io/Smart-Stage/it/"
+        ],
+        [
+          "x-default",
+          "https://arizzi74.github.io/Smart-Stage/"
+        ]
+      ],
+      "canonical": "https://arizzi74.github.io/Smart-Stage/it/",
+      "missingAnchors": []
+    },
+    {
+      "language": "it",
+      "width": 390,
+      "contentWidth": 390,
+      "links": [
+        {
+          "text": "EN",
+          "visible": true,
+          "current": null
+        },
+        {
+          "text": "IT",
+          "visible": true,
+          "current": "page"
+        }
+      ],
+      "alt": [
+        [
+          "en",
+          "https://arizzi74.github.io/Smart-Stage/en/"
+        ],
+        [
+          "it",
+          "https://arizzi74.github.io/Smart-Stage/it/"
+        ],
+        [
+          "x-default",
+          "https://arizzi74.github.io/Smart-Stage/"
+        ]
+      ],
+      "canonical": "https://arizzi74.github.io/Smart-Stage/it/",
+      "missingAnchors": []
+    },
+    {
+      "language": "it",
+      "width": 768,
+      "contentWidth": 768,
+      "links": [
+        {
+          "text": "EN",
+          "visible": true,
+          "current": null
+        },
+        {
+          "text": "IT",
+          "visible": true,
+          "current": "page"
+        }
+      ],
+      "alt": [
+        [
+          "en",
+          "https://arizzi74.github.io/Smart-Stage/en/"
+        ],
+        [
+          "it",
+          "https://arizzi74.github.io/Smart-Stage/it/"
+        ],
+        [
+          "x-default",
+          "https://arizzi74.github.io/Smart-Stage/"
+        ]
+      ],
+      "canonical": "https://arizzi74.github.io/Smart-Stage/it/",
+      "missingAnchors": []
+    },
+    {
+      "language": "it",
+      "width": 1440,
+      "contentWidth": 1440,
+      "links": [
+        {
+          "text": "EN",
+          "visible": true,
+          "current": null
+        },
+        {
+          "text": "IT",
+          "visible": true,
+          "current": "page"
+        }
+      ],
+      "alt": [
+        [
+          "en",
+          "https://arizzi74.github.io/Smart-Stage/en/"
+        ],
+        [
+          "it",
+          "https://arizzi74.github.io/Smart-Stage/it/"
+        ],
+        [
+          "x-default",
+          "https://arizzi74.github.io/Smart-Stage/"
+        ]
+      ],
+      "canonical": "https://arizzi74.github.io/Smart-Stage/it/",
+      "missingAnchors": []
+    }
+  ],
+  "staticChecks": {
+    "localLinks": "passed",
+    "reciprocalHreflang": "passed",
+    "selfCanonicals": "passed",
+    "sitemap": "three URLs, valid XML",
+    "jsonLD": "valid in both language pages",
+    "installerCommands": "identical in both pages",
+    "llmsCopies": "identical"
+  },
+  "files": {
+    ".nojekyll": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "assets/admin.png": "54607cedb76590e829e3d36b9b9b7d89f04369cdf20e44efdd949ff7f8de6c83",
+    "assets/favicon.svg": "5b2fa5bce7c8c558119ad9da130c996db2c6a2bd3948a011d6ef42339722a637",
+    "assets/icon.png": "c6b47141f0bceab05270118f0723a7a9b0150a976918742e2894245ad1597b2f",
+    "assets/remote.png": "b9bb826baed735ade06ff12094604cf4bb06ab8876d034f7f2cff07d5104069c",
+    "assets/social-preview-it.png": "4d1500f046cbe7338487a6883d64cb435aacc2997695554803aa12cd5771880f",
+    "assets/social-preview.png": "10ec7ca3a70c549d24b6031d8b15b0f63502d0e523eb0b89a48a5de9dbd1d1aa",
+    "en/index.html": "d93790b1699354961701a43605951aae4982d74f4a70d16fdfe7a9e883546856",
+    "index.html": "a59b742e34235797a285481f257e11f1ae0381e56bf59d925d1b1f5363c1a048",
+    "index.md": "7118bc6bcfe17fe42babe815668d88db6ff43fbb3030f58c03343cdd4fdc998a",
+    "it/index.html": "54debc24e987c4defbd41665716fc38865650725adf48c6dcf952167ce0458de",
+    "it/index.md": "8c72144f7f89739627b1d7fc59bd383726df8e0c7b7d11b40290a74e41ac3068",
+    "llms.txt": "1ef8080739866dba7c977e46e7b7b88e8423608423fc075dbe3b48323f0f58c2",
+    "site.js": "18b57cf47624fec2a460888f6d11a7f8fe10cba788139807946b4c5061e071be",
+    "sitemap.xml": "1068b3518a30ff75edbca61584980f7553de1679c9606ff77a76ced7f8e96a68",
+    "styles.css": "0cb1402d04e0cdcd2a4ab7f2bcfeefba2eda60224e2ba73eab883782a1401e40"
+  },
+  "publication": "awaiting deployment of the bilingual version"
+}

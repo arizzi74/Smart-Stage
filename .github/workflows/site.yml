@@ -8,6 +8,8 @@ on:
       - 'docs/screenshots/**'
       - 'assets/icon/**'
       - 'scripts/build-site.py'
+      - 'scripts/site/**'
+      - 'scripts/browser/package*.json'
       - '.github/workflows/site.yml'
   pull_request:
     paths:
@@ -15,6 +17,8 @@ on:
       - 'docs/screenshots/**'
       - 'assets/icon/**'
       - 'scripts/build-site.py'
+      - 'scripts/site/**'
+      - 'scripts/browser/package*.json'
       - '.github/workflows/site.yml'
   workflow_dispatch:
 
@@ -32,6 +36,12 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Build static website
         run: python3 scripts/build-site.py
+      - name: Install browser check tools
+        run: |
+          npm ci --prefix scripts/browser --ignore-scripts --no-audit --no-fund
+          node scripts/browser/node_modules/playwright/cli.js install --with-deps chromium
+      - name: Verify language selection and controls
+        run: node scripts/site/check-locales.cjs
       - name: Upload website
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b
         with:
