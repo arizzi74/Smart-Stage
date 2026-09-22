@@ -15,7 +15,7 @@ main() {
     command -v sha256sum >/dev/null 2>&1 || fail 'sha256sum is required.'
     # This script is published alongside this exact release. Do not fetch an
     # independently changing latest binary during an installation.
-    gateway_version=v1.1.1
+    gateway_version=v1.1.2
     gateway_asset="smartstage-gateway-linux-$gateway_arch"
     gateway_base="https://github.com/arizzi74/Smart-Stage/releases/download/$gateway_version"
     gateway_temp=$(mktemp -d) || fail 'Cannot create a temporary directory.'
