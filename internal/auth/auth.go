@@ -36,6 +36,7 @@ type Manager struct {
 	adminKey       string
 	commandKey     string
 	commandToken   string
+	publicCommand  bool
 	sessions       map[string]Session
 	attempts       map[string]attempt
 	globalAttempts attempt
@@ -59,6 +60,7 @@ func NewPublicCommand() *Manager {
 		panic("secure random source unavailable: " + err.Error())
 	}
 	m.commandToken = hex.EncodeToString(b)
+	m.publicCommand = true
 	return m
 }
 
@@ -80,13 +82,19 @@ func (m *Manager) LocalAdmin(existing string) (Session, error) {
 	return m.newSession("admin", now)
 }
 
-// PairCommand never issues Admin sessions. Both per-peer and global budgets
-// apply before checking a submitted code, including guesses from new IPs.
+// PairCommand never issues Admin sessions. The short LAN code is checked only
+// after both guess budgets. A correct public 256-bit secret can authenticate
+// independently of those budgets, so invalid guesses cannot lock out everyone
+// behind a shared gateway or NAT. Invalid public secrets remain rate-limited;
+// session count, role, expiry and cryptographic comparison remain unchanged.
 func (m *Manager) PairCommand(token, remote string) (Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	now := m.now()
 	m.expire(now)
+	if m.publicCommand && subtle.ConstantTimeCompare([]byte(token), []byte(m.commandToken)) == 1 {
+		return m.newSession("command", now)
+	}
 	if now.Sub(m.globalAttempts.since) >= time.Minute {
 		m.globalAttempts = attempt{since: now}
 	}

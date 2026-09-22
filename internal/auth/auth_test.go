@@ -132,3 +132,67 @@ func TestPairRateLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestPublicPairingSurvivesInvalidGuessBudgets(t *testing.T) {
+	m := NewPublicCommand()
+	now := time.Now()
+	m.now = func() time.Time { return now }
+	if !regexp.MustCompile(`^[a-f0-9]{64}$`).MatchString(m.CommandToken()) {
+		t.Fatal("public pairing requires a 256-bit secret")
+	}
+	for i := 0; i < AttemptsGlobal; i++ {
+		peer := fmt.Sprintf("192.0.2.%d", i/AttemptsPerIP)
+		if _, err := m.PairCommand("wrong", peer); !errors.Is(err, ErrInvalidToken) {
+			t.Fatalf("guess %d: %v", i, err)
+		}
+	}
+	for _, peer := range []string{"192.0.2.0", "new-phone"} {
+		if _, err := m.PairCommand("wrong", peer); !errors.Is(err, ErrTooManyAttempts) {
+			t.Fatalf("invalid guesses bypassed exhausted budget: %v", err)
+		}
+		paired, err := m.PairCommand(m.CommandToken(), peer)
+		if err != nil || paired.Role != "command" || paired.ID == "" || paired.CSRF == "" {
+			t.Fatalf("valid public credential denied: %+v %v", paired, err)
+		}
+		if got, ok := m.Get(paired.ID); !ok || got.Role != "command" {
+			t.Fatal("public session missing or privileged")
+		}
+	}
+	admin, legacy := m.Keys()
+	for _, token := range []string{admin, legacy, "", "12345678", m.CommandToken()[:63]} {
+		if _, err := m.PairCommand(token, "new-phone"); !errors.Is(err, ErrTooManyAttempts) {
+			t.Fatalf("different credential bypassed budget: %v", err)
+		}
+	}
+}
+
+func TestPublicPairingSessionLimitsAndExpiry(t *testing.T) {
+	m := NewPublicCommand()
+	now := time.Now()
+	m.now = func() time.Time { return now }
+	var first Session
+	for i := 0; i < MaxSessions; i++ {
+		paired, err := m.PairCommand(m.CommandToken(), "shared-gateway-peer")
+		if err != nil {
+			t.Fatalf("valid public pairing %d denied: %v", i, err)
+		}
+		if i == 0 {
+			first = paired
+		}
+	}
+	if _, err := m.PairCommand(m.CommandToken(), "shared-gateway-peer"); err == nil || errors.Is(err, ErrTooManyAttempts) {
+		t.Fatalf("expected session capacity rejection, got %v", err)
+	}
+	m.Logout(first.ID)
+	if _, err := m.PairCommand(m.CommandToken(), "shared-gateway-peer"); err != nil {
+		t.Fatalf("logout did not release public session capacity: %v", err)
+	}
+	now = now.Add(Lifetime)
+	paired, err := m.PairCommand(m.CommandToken(), "shared-gateway-peer")
+	if err != nil || paired.ID == first.ID {
+		t.Fatalf("expired public sessions did not release capacity: %v", err)
+	}
+	if _, ok := m.Get(first.ID); ok {
+		t.Fatal("expired session retained")
+	}
+}

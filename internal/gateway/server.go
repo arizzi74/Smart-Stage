@@ -37,6 +37,8 @@ type endpoint struct {
 	next     uint64
 	pending  map[uint64]*pendingRequest
 	capacity capacity
+	reading  capacity
+	admitted sessionAdmission
 }
 
 type pendingRequest struct {
@@ -171,7 +173,7 @@ func (s *Server) connect(w http.ResponseWriter, r *http.Request) {
 	conn.SetReadLimit(maxFrame)
 	ctx, cancel := context.WithCancel(s.ctx)
 	defer cancel()
-	e := &endpoint{conn: conn, ctx: ctx, cancel: cancel, prefix: s.public.Path + "/e/" + id + "/", pending: make(map[uint64]*pendingRequest), capacity: newCapacity()}
+	e := &endpoint{conn: conn, ctx: ctx, cancel: cancel, prefix: s.public.Path + "/e/" + id + "/", pending: make(map[uint64]*pendingRequest), capacity: newCapacity(), reading: newCapacity()}
 	if err := writeMessage(ctx, conn, message{Type: "hello", Prefix: e.prefix}); err != nil {
 		return
 	}
@@ -219,22 +221,28 @@ func (s *Server) connect(w http.ResponseWriter, r *http.Request) {
 }
 
 func (e *endpoint) serve(w http.ResponseWriter, r *http.Request, path string) {
-	release, ok := e.capacity.acquire(path)
-	if !ok {
-		http.Error(w, "Too many remote requests", http.StatusTooManyRequests)
+	// Unauthenticated requests must never occupy STOP lanes, even while their
+	// body is incomplete. Only the desktop's successful pairing response can
+	// admit a session; its handler still checks session, Origin and CSRF.
+	if isStop(path) && !e.admitted.known(r.Header, time.Now()) {
+		rejectUnpaired(w, r)
 		return
 	}
-	defer release()
-	r.Body = http.MaxBytesReader(w, r.Body, maxBody)
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		http.Error(w, "Request body too large or incomplete", http.StatusRequestEntityTooLarge)
+	body, ok := e.readBody(w, r, path)
+	if !ok {
 		return
 	}
 	if r.Method != http.MethodPost && len(body) != 0 {
 		http.Error(w, "Unexpected request body", http.StatusBadRequest)
 		return
 	}
+	// Reserve relay capacity only after the bounded body read has completed.
+	release, ok := e.capacity.acquire(path)
+	if !ok {
+		http.Error(w, "Too many remote requests", http.StatusTooManyRequests)
+		return
+	}
+	defer release()
 	ctx, cancel := context.WithCancel(r.Context())
 	if path != "/api/events" {
 		cancel()
@@ -287,7 +295,12 @@ func (e *endpoint) serve(w http.ResponseWriter, r *http.Request, path string) {
 				if started || m.Status < 200 || m.Status > 599 {
 					return
 				}
-				for k, values := range responseHeaders(m.Header, e.prefix) {
+				headers := responseHeaders(m.Header, e.prefix)
+				if !e.admitted.observe(path, m.Status, r.Header, headers, time.Now()) {
+					http.Error(w, "Pairing capacity reached; disconnect an existing browser and try again", http.StatusServiceUnavailable)
+					return
+				}
+				for k, values := range headers {
 					w.Header()[k] = values
 				}
 				_ = controller.SetWriteDeadline(time.Now().Add(writeTimeout))
@@ -317,4 +330,32 @@ func (e *endpoint) serve(w http.ResponseWriter, r *http.Request, path string) {
 			}
 		}
 	}
+}
+
+func (e *endpoint) readBody(w http.ResponseWriter, r *http.Request, path string) ([]byte, bool) {
+	if r.Body == nil || r.Body == http.NoBody {
+		return nil, true
+	}
+	if r.ContentLength > maxBody {
+		rejectUnread(w, r, "Request body too large", http.StatusRequestEntityTooLarge)
+		return nil, false
+	}
+	// Separate reading limits preserve the STOP reserve when anonymous pairing
+	// or other ordinary request bodies stall. Memory stays bounded per tunnel.
+	release, ok := e.reading.acquire(path)
+	if !ok {
+		rejectUnread(w, r, "Too many remote request bodies", http.StatusTooManyRequests)
+		return nil, false
+	}
+	defer release()
+	controller := http.NewResponseController(w)
+	_ = controller.SetReadDeadline(time.Now().Add(bodyReadTimeout))
+	r.Body = http.MaxBytesReader(w, r.Body, maxBody)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		rejectUnread(w, r, "Request body too large or incomplete", http.StatusRequestEntityTooLarge)
+		return nil, false
+	}
+	_ = controller.SetReadDeadline(time.Time{})
+	return body, true
 }

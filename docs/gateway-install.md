@@ -56,6 +56,13 @@ Request bodies are limited to 1 MiB; ordinary commands time out after 30 seconds
 Disconnected commands are not queued or replayed. Reconnecting rotates the public
 endpoint and pairing secret, so phones should scan the current Admin QR code.
 
+STOP and emergency-stop admission requires a session previously issued by that
+desktop, before the gateway reads the request body. The desktop still checks
+the session, Origin and CSRF token. Incomplete bodies do not occupy reserved
+command slots. Public pairing accepts the correct 256-bit access key even if
+incorrect guesses have exhausted a shared rate-limit budget; incorrect keys
+remain rate-limited, and the session count and expiry remain bounded.
+
 The service listens only on `127.0.0.1:8790`; nginx or Caddy is the public entry point. No inbound LAN connection to the Smart Stage computer is needed in gateway mode. The gateway cannot play your files itself, and the Smart Stage application must stay running and connected.
 
 ## Service and updates
@@ -78,6 +85,12 @@ sudo systemctl stop smartstage-gateway
 ```
 
 Rerun the release installer to update the server binary. The existing token is preserved; changing its public URL requires an explicit manual migration. The gateway does not install server updates by itself. Caddy/nginx and operating-system updates remain managed through your server's normal package maintenance.
+
+The 1.1.2 security fixes require updating both the desktop app and the gateway.
+Desktop apps update on full quit and relaunch. Run the gateway installation
+command above on the Linux server to update its daemon; the desktop updater
+does not replace the server binary. Existing registration settings are retained,
+but a gateway restart rotates remote links, so reconnect phones using the new QR.
 
 For custom deployments, build both static binaries with `sh scripts/build-gateway.sh`, configure the JSON fields `listen`, `publicURL`, and `token`, and run `smartstage-gateway serve --config /path/to/config.json`. The build script uses `CGO_ENABLED=0` and checks that neither ELF has a dynamic loader or linked shared libraries.
 

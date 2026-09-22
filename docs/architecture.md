@@ -224,6 +224,14 @@ source paths and raw native errors redacted. This design implements the user's
 later localhost-Admin/camera-pairing request, as recorded in
 [decisions](decisions.md#local-admin-and-camera-pairing-20-september-2026).
 
+Public gateway sessions use a separate 256-bit pairing secret. An exact match
+authenticates independently of failed-guess budgets, preventing anonymous
+guesses from locking out valid phones sharing a proxy or NAT address. Invalid
+keys still consume the bounded per-peer/global budgets. This exception never
+applies to the eight-digit LAN code; all sessions retain the same role, expiry
+and count limits. It also works with older gateways that assign every phone the
+same synthetic peer address.
+
 QR rendering uses the pinned, vendored, pure-Go `github.com/piglig/go-qr` v1.1.0
 encoder. It generates PNGs in memory with no network service or runtime package.
 Its full MIT copyright/license notice is embedded and served at `/licenses.txt`

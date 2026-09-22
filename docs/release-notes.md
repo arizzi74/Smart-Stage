@@ -1,12 +1,18 @@
-Smart Stage 1.1.1 adds Italian and English throughout the desktop app and phone/tablet remote.
+Smart Stage 1.1.2 is a security maintenance update for the desktop app and Linux gateway.
 
-- Admin starts in the system’s preferred supported language. Choose System, English or Italiano from the top bar; the choice survives restarts and updates.
-- Native Mac and Windows menus, media chooser, app messages and Windows quit confirmation follow the Admin language.
-- Changing language preserves playlist edits and playback. Cue labels, original file paths and device names remain unchanged.
-- The remote follows its own browser language and remembers a separate manual choice. Existing public gateways work without an upgrade.
-- The bilingual website includes three short animated tutorials for adding media, choosing outputs and connecting the remote, with stop controls and reduced-motion support.
+- The gateway rejects unpaired STOP and emergency-stop requests before they can occupy reserved command capacity. Slow request bodies are bounded separately from command execution.
+- Phones with the correct public access key can pair even after incorrect guesses have exhausted a shared rate limit. Invalid keys remain limited; the shorter Local LAN code retains its existing guessing protections.
+- All binaries are rebuilt with Go 1.26.8. Release publication now requires successful vulnerability scans of Go dependencies and all six desktop/gateway executables.
 
-Quit Smart Stage fully and reopen it to receive this stable update automatically before playback starts. Saved shows and connection settings are preserved.
+Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
+
+The public Linux gateway also needs an update. On its server, rerun:
+
+```sh
+curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/latest/download/install-gateway.sh | sh
+```
+
+The gateway installer preserves its registration settings. After it restarts, reconnect phones using the current QR code in Admin. The desktop updater does not update the server daemon.
 
 Install on Mac:
 
@@ -20,6 +26,6 @@ Install on Windows from a normal PowerShell window:
 irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | iex
 ```
 
-[Download ZIPs](https://github.com/arizzi74/Smart-Stage/releases/latest) · [Website](https://arizzi74.github.io/Smart-Stage/) · [User guide](https://github.com/arizzi74/Smart-Stage/blob/main/docs/user-guide.md).
+[Download ZIPs](https://github.com/arizzi74/Smart-Stage/releases/latest) · [Website](https://arizzi74.github.io/Smart-Stage/) · [Gateway guide](https://github.com/arizzi74/Smart-Stage/blob/main/docs/gateway-install.md).
 
-Downloads include Mac app bundles and Windows executable ZIPs for ARM64 and AMD64, static Linux gateway binaries and checksums. Mac builds remain ad-hoc signed and unnotarized; Windows binaries are not Authenticode signed. Windows uses Microsoft WebView2, supplied by the installer if missing. Physical speakers/projectors and the previously reported UTM cursor behavior remain outside the automated test scope. [Verification and known limits](https://github.com/arizzi74/Smart-Stage/blob/main/docs/release-verification.md).
+The gateway origin-isolation finding remains open pending the separate-domain migration. Mac builds remain ad-hoc signed and unnotarized; Windows binaries are not Authenticode signed. Windows uses Microsoft WebView2, supplied by the installer if missing. [Verification and known limits](https://github.com/arizzi74/Smart-Stage/blob/main/docs/release-verification.md).

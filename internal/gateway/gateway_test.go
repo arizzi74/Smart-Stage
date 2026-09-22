@@ -171,6 +171,11 @@ func TestIsolatedEndpointsAndNarrowForwarding(t *testing.T) {
 	csrfHeaders := make(http.Header)
 	csrfHeaders.Set("Origin", f.tls.URL)
 	csrfHeaders.Set("X-CSRF-Token", "csrf-test")
+	r = f.request(t, "POST", one+"/api/pair", strings.NewReader(`{}`), csrfHeaders)
+	if r.StatusCode != http.StatusOK {
+		t.Fatalf("pairing failed: %d", r.StatusCode)
+	}
+	csrfHeaders.Set("Cookie", r.Cookies()[0].String())
 	r = f.request(t, "POST", one+"/api/stop", strings.NewReader(`{}`), csrfHeaders)
 	if r.StatusCode != 200 {
 		t.Fatalf("CSRF header was lost across tunnel: %d", r.StatusCode)
@@ -265,8 +270,11 @@ func TestSSEStreamsCancellationAndDisconnect(t *testing.T) {
 func TestReservedStopAndRequestLimits(t *testing.T) {
 	f := newFixture(t)
 	entered := make(chan struct{}, 32)
-	endpoint, _, _ := f.host(t, func(string) http.Handler {
+	endpoint, _, _ := f.host(t, func(prefix string) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/pair" {
+				http.SetCookie(w, &http.Cookie{Name: commandCookie, Value: "paired-stop", Path: prefix, MaxAge: 3600})
+			}
 			if r.URL.Path == "/api/state" {
 				entered <- struct{}{}
 				<-r.Context().Done()
@@ -275,6 +283,11 @@ func TestReservedStopAndRequestLimits(t *testing.T) {
 			w.WriteHeader(202)
 		})
 	})
+	paired := f.request(t, "POST", endpoint+"/api/pair", strings.NewReader(`{}`), nil)
+	if paired.StatusCode != http.StatusAccepted || len(paired.Cookies()) != 1 {
+		t.Fatal("pairing failed")
+	}
+	pairedHeaders := http.Header{"Cookie": {paired.Cookies()[0].String()}}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	var wg sync.WaitGroup
@@ -300,11 +313,11 @@ func TestReservedStopAndRequestLimits(t *testing.T) {
 	if r.StatusCode != 429 {
 		t.Fatalf("ordinary capacity not enforced: %d", r.StatusCode)
 	}
-	r = f.request(t, "POST", endpoint+"/api/stop", strings.NewReader(`{"requestId":"stop"}`), nil)
+	r = f.request(t, "POST", endpoint+"/api/stop", strings.NewReader(`{"requestId":"stop"}`), pairedHeaders)
 	if r.StatusCode != 202 {
 		t.Fatalf("STOP starved: %d", r.StatusCode)
 	}
-	r = f.request(t, "POST", endpoint+"/api/emergency-stop", strings.NewReader(strings.Repeat("x", maxBody+1)), nil)
+	r = f.request(t, "POST", endpoint+"/api/emergency-stop", strings.NewReader(strings.Repeat("x", maxBody+1)), pairedHeaders)
 	if r.StatusCode != 413 {
 		t.Fatalf("body limit not enforced: %d", r.StatusCode)
 	}

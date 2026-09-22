@@ -333,7 +333,7 @@ Advanced examples, run from the folder containing the extracted executable:
 
 ## Build and test
 
-Development prerequisites: Go 1.26.5, Python 3 for audits, Xcode command-line
+Development prerequisites: Go 1.26.8 or newer, Python 3 for audits, Xcode command-line
 tools/SDK on Mac or LLVM-MinGW **20260908 UCRT** on Windows. Use Git Bash on
 Windows and put the matching compiler `bin` on PATH. Go dependencies, including
 the QR encoder, are compiled into the executable. These tools are not end-user

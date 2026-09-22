@@ -15,8 +15,12 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.26.5'
+          go-version: '1.26.8'
           cache: false
+      - name: Install pinned vulnerability scanner
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+      - name: Reject known vulnerabilities in imported Go packages
+        run: govulncheck -scan=package ./...
       - run: go test -race ./...
       - run: go vet ./...
       - run: node --test scripts/i18n.test.cjs scripts/wake-lock.test.cjs
@@ -26,7 +30,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.26.5'
+          go-version: '1.26.8'
           cache: false
       - name: Install proxy configuration validators
         run: sudo apt-get update && sudo apt-get install -y nginx caddy
@@ -93,7 +97,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.26.5'
+          go-version: '1.26.8'
           cache: false
       - name: Install pinned native Windows build toolchain
         if: matrix.os == 'windows'
@@ -200,9 +204,52 @@ jobs:
           name: native-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/
           if-no-files-found: error
+  binary-security:
+    # Scan Go dependencies in the exact executables, including platform-specific code.
+    # Run on candidates too, before a release tag is created.
+    needs: [native, gateway]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version: '1.26.8'
+          cache: false
+      - name: Install pinned vulnerability scanner
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: native-*
+          merge-multiple: true
+          path: dist
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: gateway-linux
+          path: dist/gateway
+      - name: Reject known vulnerabilities in all six shipping binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/security
+          govulncheck -version | tee dist/security/scanner.txt
+          for binary in \
+            dist/smartstage-darwin-amd64 \
+            dist/smartstage-darwin-arm64 \
+            dist/smartstage-windows-amd64.exe \
+            dist/smartstage-windows-arm64.exe \
+            dist/gateway/smartstage-gateway-linux-amd64 \
+            dist/gateway/smartstage-gateway-linux-arm64; do
+            govulncheck -mode=binary -scan=package "$binary" | tee "dist/security/$(basename "$binary").txt"
+          done
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: binary-security-checks
+          path: dist/security/
+          if-no-files-found: warn
   publish:
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [shared, native, gateway]
+    needs: [shared, native, gateway, binary-security]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
