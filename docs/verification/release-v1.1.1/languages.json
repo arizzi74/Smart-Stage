@@ -1,0 +1,186 @@
+{
+  "status": "passed",
+  "scope": "English and Italian localization in the final tagged source: shared preferences/API, browser Admin/remote, and all four native desktop targets.",
+  "verifiedAt": "2026-09-22T06:10:22Z",
+  "tag": "v1.1.1",
+  "sourceRevision": "ecac9128c1ea575dd7adb4c9a94de03aa0af0e24",
+  "runId": 35692539405,
+  "runURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405",
+  "shared": {
+    "jobId": 106632388331,
+    "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388331",
+    "conclusion": "success",
+    "completedAt": "2026-09-22T05:55:32Z",
+    "commands": [
+      {
+        "command": "go test -race ./...",
+        "conclusion": "success"
+      },
+      {
+        "command": "go vet ./...",
+        "conclusion": "success"
+      },
+      {
+        "command": "node --test scripts/i18n.test.cjs scripts/wake-lock.test.cjs",
+        "conclusion": "success"
+      }
+    ],
+    "languagePackagesPassingRaceTests": [
+      "smartstage/internal/locale",
+      "smartstage/internal/httpapi",
+      "smartstage/internal/platform"
+    ],
+    "i18nTests": [
+      "system locale resolves regional languages, empty preference lists and unsupported languages",
+      "catalog formats Italian UI text while retaining raw diagnostic details",
+      "explicit bindings prune detached nodes without waiting for a language change",
+      "catalog works on Safari-era engines without Object.hasOwn"
+    ],
+    "combinedNodeTests": {
+      "passed": 11,
+      "failed": 0,
+      "includesWakeLockTests": true
+    }
+  },
+  "gatewayBrowser": {
+    "jobId": 106632388201,
+    "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388201",
+    "conclusion": "success",
+    "completedAt": "2026-09-22T05:57:10Z",
+    "step": "Verify bilingual Admin, preserved edits and independent remote language",
+    "command": "node scripts/browser-smoke.cjs",
+    "report": {
+      "artifact": "gateway-browser-checks",
+      "artifactId": 10679487486,
+      "artifactURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/artifacts/10679487486",
+      "pathInArtifact": "browser-checks/result.json",
+      "sha256": "08cc9b4bce510c6f41a48d8ee583d0370815d7925b57d48da141e03f1a1a1965"
+    },
+    "browser": "153.0.8010.12",
+    "checks": {
+      "adminHostSystemLanguage": true,
+      "englishItalianInPlacePreference": true,
+      "localizationPreservesUnsavedDraftsAndFocus": true,
+      "localizationNeverTranslatesMediaData": true,
+      "localeSelectionSendsNoPlaybackOrShowEdits": true,
+      "adminPreferencePersistedByHost": true,
+      "remoteLocaleIndependentAndLocalOnly": true,
+      "translatedWakeLockStatus": true,
+      "localizedBindingsBoundedAcrossStateUpdates": true
+    },
+    "languageAPITestsPassing": [
+      "TestLanguagePreferencesAdminOnlyAndIndependentOfShow",
+      "TestLanguageAuthenticationAndInputValidation"
+    ],
+    "languageAPITestCommand": "go test -race -v ./internal/gateway ./internal/gatewayinstall ./internal/remote ./internal/httpapi ./cmd/smartstage-gateway"
+  },
+  "native": [
+    {
+      "target": "darwin-arm64",
+      "jobId": 106632388357,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388357",
+      "conclusion": "success",
+      "completedAt": "2026-09-22T05:59:22Z",
+      "report": {
+        "artifact": "native-darwin-arm64",
+        "artifactId": 10679701387,
+        "artifactURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/artifacts/10679701387",
+        "pathInArtifact": "smartstage-darwin-arm64.icon.json",
+        "sha256": "8868bc6f820bdfce035512518be676fc9212647307433f1e7c96243f8af74e45",
+        "section": "nativeAdminWindow"
+      },
+      "status": "passed",
+      "method": "Production Cocoa bridge with real loopback Admin assets/API/SSE; own-process WebKit observation and native NSPasteboard file URL delivery, not a physical mouse gesture",
+      "checks": {
+        "italianNativePreferenceAppliedBeforeInitialization": true,
+        "italianNativeWindowAndMenusObservedAtRuntime": true,
+        "italianNativeChooserTitleAndPromptObserved": true,
+        "englishNativeLabelsRestoredAtRuntime": true,
+        "languageChangeRetainedSameNativeWindowAndWebView": true
+      }
+    },
+    {
+      "target": "darwin-amd64",
+      "jobId": 106632388389,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388389",
+      "conclusion": "success",
+      "completedAt": "2026-09-22T06:04:23Z",
+      "report": {
+        "artifact": "native-darwin-amd64",
+        "artifactId": 10679532125,
+        "artifactURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/artifacts/10679532125",
+        "pathInArtifact": "smartstage-darwin-amd64.icon.json",
+        "sha256": "b0ee4fe00d1b21174d160668842bcb0b99ffc687a8b4d0632385f0663ba7bb7b",
+        "section": "nativeAdminWindow"
+      },
+      "status": "passed",
+      "method": "Production Cocoa bridge with real loopback Admin assets/API/SSE; own-process WebKit observation and native NSPasteboard file URL delivery, not a physical mouse gesture",
+      "checks": {
+        "italianNativePreferenceAppliedBeforeInitialization": true,
+        "italianNativeWindowAndMenusObservedAtRuntime": true,
+        "italianNativeChooserTitleAndPromptObserved": true,
+        "englishNativeLabelsRestoredAtRuntime": true,
+        "languageChangeRetainedSameNativeWindowAndWebView": true
+      }
+    },
+    {
+      "target": "windows-amd64",
+      "jobId": 106632388465,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388465",
+      "conclusion": "success",
+      "completedAt": "2026-09-22T05:58:35Z",
+      "report": {
+        "artifact": "windows-admin-checks-amd64",
+        "artifactId": 10678917992,
+        "artifactURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/artifacts/10678917992",
+        "pathInArtifact": "smartstage-windows-amd64.exe.native-admin.json",
+        "sha256": "8be875c62337cab4e75e3baccf25ece5b3f1a4b96fbb218ebfc113bcbb8ad2c7",
+        "section": "shippedExecutableClose"
+      },
+      "status": "passed",
+      "method": "Actual shipped process; native SC_CLOSE and owned MessageBox button notifications (not physical mouse input)",
+      "checks": {
+        "italianPreferenceAppliedThroughAuthenticatedAPI": true,
+        "italianNativeWindowAndMenusObserved": true,
+        "italianNativeChooserObserved": true,
+        "italianCloseConfirmationAndCancelObserved": true,
+        "nativeCloseConfirmationRelocalizedWhileOpen": true,
+        "languageChangePreservedHostState": true,
+        "italianNativePreferenceSurvivedProcessRestart": true,
+        "englishNativeLabelsRestoredAtRuntime": true
+      }
+    },
+    {
+      "target": "windows-arm64",
+      "jobId": 106632388466,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388466",
+      "conclusion": "success",
+      "completedAt": "2026-09-22T06:08:54Z",
+      "report": {
+        "artifact": "windows-admin-checks-arm64",
+        "artifactId": 10679546981,
+        "artifactURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/artifacts/10679546981",
+        "pathInArtifact": "smartstage-windows-arm64.exe.native-admin.json",
+        "sha256": "455c144e6f0247aad2ca0f8611615d58799400173e57149786a393017280dbe5",
+        "section": "shippedExecutableClose"
+      },
+      "status": "passed",
+      "method": "Actual shipped process; native SC_CLOSE and owned MessageBox button notifications (not physical mouse input)",
+      "checks": {
+        "italianPreferenceAppliedThroughAuthenticatedAPI": true,
+        "italianNativeWindowAndMenusObserved": true,
+        "italianNativeChooserObserved": true,
+        "italianCloseConfirmationAndCancelObserved": true,
+        "nativeCloseConfirmationRelocalizedWhileOpen": true,
+        "languageChangePreservedHostState": true,
+        "italianNativePreferenceSurvivedProcessRestart": true,
+        "englishNativeLabelsRestoredAtRuntime": true
+      }
+    }
+  ],
+  "limitations": [
+    "macOS language checks run the production Cocoa bridge in an own-process observer with a real host; native language changes are applied directly to that bridge, not through the separate host HTTP API. Windows language checks use the authenticated API of the actual shipped process.",
+    "CI did not change operating-system preferred UI languages. Native menu, window and chooser localization was explicitly selected; browser locale resolution and persisted host preferences have separate automated checks.",
+    "Browser smoke checks use a simulated native media backend. Native checks use programmatic UI observation and events, not physical mouse input. No physical audio, projector or visual Dock/tray acceptance is claimed."
+  ]
+}

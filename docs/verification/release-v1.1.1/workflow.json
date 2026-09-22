@@ -1,0 +1,217 @@
+{
+  "sourceCommit": "ecac9128c1ea575dd7adb4c9a94de03aa0af0e24",
+  "runID": 35692539405,
+  "runURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405",
+  "status": "in_progress",
+  "conclusion": null,
+  "checkedAt": "2026-09-22T06:11:25.252453+00:00",
+  "jobs": [
+    {
+      "id": 106632388201,
+      "name": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T05:54:18Z",
+      "completed_at": "2026-09-22T05:57:10Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388201"
+    },
+    {
+      "id": 106632388331,
+      "name": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T05:54:17Z",
+      "completed_at": "2026-09-22T05:55:32Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388331"
+    },
+    {
+      "id": 106632388357,
+      "name": "native (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T05:56:52Z",
+      "completed_at": "2026-09-22T05:59:22Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388357"
+    },
+    {
+      "id": 106632388389,
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T05:59:26Z",
+      "completed_at": "2026-09-22T06:04:23Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388389"
+    },
+    {
+      "id": 106632388465,
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T05:54:22Z",
+      "completed_at": "2026-09-22T05:58:35Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388465"
+    },
+    {
+      "id": 106632388466,
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T05:54:17Z",
+      "completed_at": "2026-09-22T06:08:54Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106632388466"
+    },
+    {
+      "id": 106635417799,
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:08:56Z",
+      "completed_at": "2026-09-22T06:09:08Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635417799"
+    },
+    {
+      "id": 106635468868,
+      "name": "verify-update / update (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:10Z",
+      "completed_at": "2026-09-22T06:09:49Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635468868"
+    },
+    {
+      "id": 106635468897,
+      "name": "verify-windows-install / install (windows-2025, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:11Z",
+      "completed_at": "2026-09-22T06:10:12Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635468897"
+    },
+    {
+      "id": 106635468914,
+      "name": "verify-update / update (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:11Z",
+      "completed_at": "2026-09-22T06:09:56Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635468914"
+    },
+    {
+      "id": 106635468950,
+      "name": "verify-browser / browser (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:15Z",
+      "completed_at": "2026-09-22T06:09:55Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635468950"
+    },
+    {
+      "id": 106635468962,
+      "name": "verify-update / update (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:45Z",
+      "completed_at": "2026-09-22T06:10:04Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635468962"
+    },
+    {
+      "id": 106635468966,
+      "name": "verify-download / download (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:12Z",
+      "completed_at": "2026-09-22T06:09:39Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635468966"
+    },
+    {
+      "id": 106635468967,
+      "name": "verify-download / download (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:11Z",
+      "completed_at": "2026-09-22T06:09:47Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635468967"
+    },
+    {
+      "id": 106635468969,
+      "name": "verify-download / download (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:44Z",
+      "completed_at": "2026-09-22T06:10:13Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635468969"
+    },
+    {
+      "id": 106635468972,
+      "name": "verify-browser / browser (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:11Z",
+      "completed_at": "2026-09-22T06:10:39Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635468972"
+    },
+    {
+      "id": 106635468982,
+      "name": "verify-windows-install / install (windows-11-arm, arm64)",
+      "status": "in_progress",
+      "conclusion": null,
+      "started_at": "2026-09-22T06:09:11Z",
+      "completed_at": null,
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635468982"
+    },
+    {
+      "id": 106635468998,
+      "name": "verify-macos-install / install (macos-15, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:15Z",
+      "completed_at": "2026-09-22T06:09:36Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635468998"
+    },
+    {
+      "id": 106635469005,
+      "name": "verify-download / download (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:14Z",
+      "completed_at": "2026-09-22T06:09:39Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635469005"
+    },
+    {
+      "id": 106635469008,
+      "name": "verify-browser / browser (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:10Z",
+      "completed_at": "2026-09-22T06:10:22Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635469008"
+    },
+    {
+      "id": 106635469018,
+      "name": "verify-browser / browser (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:11Z",
+      "completed_at": "2026-09-22T06:10:16Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635469018"
+    },
+    {
+      "id": 106635469156,
+      "name": "verify-macos-install / install (macos-15-intel, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:11Z",
+      "completed_at": "2026-09-22T06:09:50Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635469156"
+    },
+    {
+      "id": 106635469185,
+      "name": "verify-update / update (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T06:09:52Z",
+      "completed_at": "2026-09-22T06:10:17Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405/job/106635469185"
+    }
+  ]
+}

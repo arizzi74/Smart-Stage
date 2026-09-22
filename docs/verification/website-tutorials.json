@@ -173,5 +173,312 @@
     }
   ],
   "recordings": "../site/assets/demos/provenance.json",
-  "publicDeployment": null
+  "publicDeployment": {
+    "url": "https://arizzi74.github.io/Smart-Stage/",
+    "commit": "1ccfe772738aeea3e966286a4441ab7db7db63ce",
+    "workflow": "https://github.com/arizzi74/Smart-Stage/actions/runs/35692374970",
+    "verifiedAt": "2026-09-22T05:55:36.738982+00:00",
+    "browserChecks": {
+      "startedAt": "2026-09-22T05:54:12.051Z",
+      "checks": [
+        {
+          "name": "Root: Italian Italy",
+          "status": "passed",
+          "durationMs": 854
+        },
+        {
+          "name": "Root: Italian Switzerland",
+          "status": "passed",
+          "durationMs": 255
+        },
+        {
+          "name": "Root: English Britain",
+          "status": "passed",
+          "durationMs": 420
+        },
+        {
+          "name": "Root: Unsupported French falls back to English",
+          "status": "passed",
+          "durationMs": 263
+        },
+        {
+          "name": "Root: First supported language in ordered preferences",
+          "status": "passed",
+          "durationMs": 314
+        },
+        {
+          "name": "Root: English preferred before Italian",
+          "status": "passed",
+          "durationMs": 278
+        },
+        {
+          "name": "Root: Empty languages falls back to navigator.language",
+          "status": "passed",
+          "durationMs": 245
+        },
+        {
+          "name": "Root: Stored English overrides Italian browser",
+          "status": "passed",
+          "durationMs": 328
+        },
+        {
+          "name": "Root: Stored Italian overrides English browser",
+          "status": "passed",
+          "durationMs": 307
+        },
+        {
+          "name": "Root: Invalid stored preference is ignored",
+          "status": "passed",
+          "durationMs": 320
+        },
+        {
+          "name": "Storage denied: root fallback and manual language switch remain usable",
+          "status": "passed",
+          "durationMs": 423
+        },
+        {
+          "name": "Explicit /en/ ignores opposite browser and saved preference",
+          "status": "passed",
+          "durationMs": 296
+        },
+        {
+          "name": "Explicit /it/ ignores opposite browser and saved preference",
+          "status": "passed",
+          "durationMs": 295
+        },
+        {
+          "name": "Click and keyboard language changes preserve URL and persist across root visits",
+          "status": "passed",
+          "durationMs": 824
+        },
+        {
+          "name": "JavaScript disabled: root language links and translated commands work",
+          "status": "passed",
+          "durationMs": 527
+        },
+        {
+          "name": "Clipboard /en/: all three commands copied exactly with localized feedback",
+          "status": "passed",
+          "durationMs": 455
+        },
+        {
+          "name": "Clipboard /it/: all three commands copied exactly with localized feedback",
+          "status": "passed",
+          "durationMs": 431
+        },
+        {
+          "name": "Italian clipboard denial shows translated manual-copy feedback",
+          "status": "passed",
+          "durationMs": 312
+        },
+        {
+          "name": "Feature demos /en/: animation, stop, reduced motion and static fallback",
+          "status": "passed",
+          "durationMs": 1099
+        },
+        {
+          "name": "Feature demos /en/: no JavaScript poster and direct GIF links",
+          "status": "passed",
+          "durationMs": 236
+        },
+        {
+          "name": "Feature demos /it/: animation, stop, reduced motion and static fallback",
+          "status": "passed",
+          "durationMs": 1083
+        },
+        {
+          "name": "Feature demos /it/: no JavaScript poster and direct GIF links",
+          "status": "passed",
+          "durationMs": 213
+        }
+      ],
+      "baseURL": "https://arizzi74.github.io/Smart-Stage/",
+      "mode": "public-site-read-only",
+      "browserVersion": "153.0.8010.12",
+      "status": "passed",
+      "finishedAt": "2026-09-22T05:54:21.960Z"
+    },
+    "files": [
+      {
+        "path": "assets/admin.png",
+        "status": 200,
+        "bytes": 105389,
+        "sha256": "54607cedb76590e829e3d36b9b9b7d89f04369cdf20e44efdd949ff7f8de6c83"
+      },
+      {
+        "path": "assets/demos/add-media-en.gif",
+        "status": 200,
+        "bytes": 117707,
+        "sha256": "d8f73b6c1848f992e1e5fc24553215f898fd283498fcd1a9461804372a2c725c"
+      },
+      {
+        "path": "assets/demos/add-media-en.png",
+        "status": 200,
+        "bytes": 125833,
+        "sha256": "3dd240776f09b151d510ca220d84b1f9fc8bc8191d309117aa7a4f148d578b03"
+      },
+      {
+        "path": "assets/demos/add-media-it.gif",
+        "status": 200,
+        "bytes": 134391,
+        "sha256": "e14547d1a0f310c2a2e777c3cdaa00b1ddecb71c7e5b4abed9caf398aa0a6e74"
+      },
+      {
+        "path": "assets/demos/add-media-it.png",
+        "status": 200,
+        "bytes": 142686,
+        "sha256": "f21300c7990ecc7e05c119988655706ea6df3e635322e27225e18e38a52e916a"
+      },
+      {
+        "path": "assets/demos/outputs-en.gif",
+        "status": 200,
+        "bytes": 71376,
+        "sha256": "810affaa3aa027fd493b228e9f4a78eb16ac776f348b141a37c73fd91e46af16"
+      },
+      {
+        "path": "assets/demos/outputs-en.png",
+        "status": 200,
+        "bytes": 130250,
+        "sha256": "447dbd3c834578143911ac05d2a38c8062685e23901b7c9aeefc0ffb685e2102"
+      },
+      {
+        "path": "assets/demos/outputs-it.gif",
+        "status": 200,
+        "bytes": 74456,
+        "sha256": "314d7ac1e58a237e4f43fb4ed0e386501dd13fb6206c334b58419be99b346110"
+      },
+      {
+        "path": "assets/demos/outputs-it.png",
+        "status": 200,
+        "bytes": 132576,
+        "sha256": "9cc3fd335602611e4f88da65e2a5db9b62637452a56e2f26d00e1375594ff6bc"
+      },
+      {
+        "path": "assets/demos/overview-admin-it.png",
+        "status": 200,
+        "bytes": 119866,
+        "sha256": "2a82bcdca73c6dae31c704c37ce42f8ccee0a7027b3879fe277d3ccd27bc85c9"
+      },
+      {
+        "path": "assets/demos/overview-remote-it.png",
+        "status": 200,
+        "bytes": 59395,
+        "sha256": "65ae4dff6e0155a601611517b58803803e2d55e09f4bf8c5f0c9bd48d7f2a38b"
+      },
+      {
+        "path": "assets/demos/provenance.json",
+        "status": 200,
+        "bytes": 5290,
+        "sha256": "350842bd33bf4a40c412c73827fe60205bd15aa44c6a0f500254ea6e046b9619"
+      },
+      {
+        "path": "assets/demos/remote-en.gif",
+        "status": 200,
+        "bytes": 252377,
+        "sha256": "103655654f21f6bd2fb3119e09e9c21bfc25353baee1a47c4b679872cc3c5c08"
+      },
+      {
+        "path": "assets/demos/remote-en.png",
+        "status": 200,
+        "bytes": 133430,
+        "sha256": "b2867b4eb0a43d6f6ee0304bbe045ebb6169184fd92a095484c76bdd0ff471de"
+      },
+      {
+        "path": "assets/demos/remote-it.gif",
+        "status": 200,
+        "bytes": 271358,
+        "sha256": "5e5a5a9c5d6f78caff25416d5c926a1669adcefba32722f567b38a6a4ace0919"
+      },
+      {
+        "path": "assets/demos/remote-it.png",
+        "status": 200,
+        "bytes": 140003,
+        "sha256": "0f29140e8557d6a018bd55fb4f7104534d8027c2a6a68aa58a940efb2320f71d"
+      },
+      {
+        "path": "assets/favicon.svg",
+        "status": 200,
+        "bytes": 988,
+        "sha256": "5b2fa5bce7c8c558119ad9da130c996db2c6a2bd3948a011d6ef42339722a637"
+      },
+      {
+        "path": "assets/icon.png",
+        "status": 200,
+        "bytes": 59634,
+        "sha256": "c6b47141f0bceab05270118f0723a7a9b0150a976918742e2894245ad1597b2f"
+      },
+      {
+        "path": "assets/remote.png",
+        "status": 200,
+        "bytes": 55137,
+        "sha256": "b9bb826baed735ade06ff12094604cf4bb06ab8876d034f7f2cff07d5104069c"
+      },
+      {
+        "path": "assets/social-preview-it.png",
+        "status": 200,
+        "bytes": 234236,
+        "sha256": "4d1500f046cbe7338487a6883d64cb435aacc2997695554803aa12cd5771880f"
+      },
+      {
+        "path": "assets/social-preview.png",
+        "status": 200,
+        "bytes": 234807,
+        "sha256": "10ec7ca3a70c549d24b6031d8b15b0f63502d0e523eb0b89a48a5de9dbd1d1aa"
+      },
+      {
+        "path": "en/index.html",
+        "status": 200,
+        "bytes": 18938,
+        "sha256": "68b17dc8111384006c2215be6c323aff1c3ad0d590765aa65e18cc072d78643f"
+      },
+      {
+        "path": "index.html",
+        "status": 200,
+        "bytes": 3114,
+        "sha256": "a59b742e34235797a285481f257e11f1ae0381e56bf59d925d1b1f5363c1a048"
+      },
+      {
+        "path": "index.md",
+        "status": 200,
+        "bytes": 5144,
+        "sha256": "c01f3228d6cd2cd6851de2b15280835fd7297741409e58aa3efdb87e38ec2455"
+      },
+      {
+        "path": "it/index.html",
+        "status": 200,
+        "bytes": 20276,
+        "sha256": "c8cad41d6b31d669934c533b9cf64958432f03668206c8b96ad314c4579fc9bc"
+      },
+      {
+        "path": "it/index.md",
+        "status": 200,
+        "bytes": 6277,
+        "sha256": "7de64a4b578b38719a409df4e1d32fc58cc3edbe6965b12c085907dcae874045"
+      },
+      {
+        "path": "llms.txt",
+        "status": 200,
+        "bytes": 3265,
+        "sha256": "64bfe2f59e613b2d351e066ae3552e7f664c2462da9191e1155dba1cce6c8631"
+      },
+      {
+        "path": "site.js",
+        "status": 200,
+        "bytes": 4552,
+        "sha256": "34443b3839c121e6587beef5ac1d5cf09b480c10def24af2f98c18fe7abf406d"
+      },
+      {
+        "path": "sitemap.xml",
+        "status": 200,
+        "bytes": 308,
+        "sha256": "1068b3518a30ff75edbca61584980f7553de1679c9606ff77a76ced7f8e96a68"
+      },
+      {
+        "path": "styles.css",
+        "status": 200,
+        "bytes": 21652,
+        "sha256": "6bfbe4a749294f02a95bbcd346aff1c41cd45aa8ccaaf1c0b7b29c48d4273422"
+      }
+    ]
+  }
 }

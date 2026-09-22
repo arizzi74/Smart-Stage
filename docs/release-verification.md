@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.0.0 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.1.1 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,52 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.1.1: English and Italian
+
+Version 1.1.1 is source `ecac9128c1ea575dd7adb4c9a94de03aa0af0e24`, published as
+GitHub's latest stable release (`prerelease: false`) by
+[run 35692539405](https://github.com/arizzi74/Smart-Stage/actions/runs/35692539405).
+All six shared/gateway/native build gates and publication passed. Independent
+public downloads matched GitHub's SHA-256 digests for all 50 assets and all eight
+binary/archive checksum sidecars. Archive contents, icons, native architectures,
+clean tagged Go build metadata and static Linux gateway linking were checked;
+the gateway bootstrap is pinned to `v1.1.1`. See the
+[public asset audit](verification/release-v1.1.1/assets.json).
+
+All four published ZIP startup checks, all four native browser checks and all
+four actual automatic replacement/restart checks passed. Both public Mac
+installer checks and the Windows AMD64 installer check passed; the Windows
+ARM64 public installer check was still running when the
+[workflow snapshot](verification/release-v1.1.1/workflow.json) was collected.
+Its candidate installer/lifecycle gate had already passed before publication.
+The Mac, Windows and Linux installer defaults now select `v1.1.1`;
+[public bootstrap bytes](verification/release-v1.1.1/installer-defaults.json)
+match the committed scripts. Only version defaults changed; shell syntax and
+the stable/prerelease gateway bootstrap regression check passed.
+
+The native locale checks exercise the production Mac bridge and the running
+Windows application on ARM64 and AMD64: localized menus, media chooser, retained
+Admin window, Windows quit confirmation (including changing its language while
+open), and saved Windows preferences after restart. See the collected
+[language evidence](verification/release-v1.1.1/languages.json).
+
+Shared checks include Go race tests and vet plus 11 JavaScript language/wake-lock
+tests. Browser regression checks cover system versus browser language, independent
+remote preference, failed-save recovery, unchanged drafts and raw cue/device/path
+data, responsive layouts, bounded translation bindings, and the existing HTTPS
+gateway's asset routes, QR and command flow. Device playback and wake-lock grants
+in these browser fixtures are simulated; they do not establish hardware behavior.
+
+The website deployment is source `1ccfe772738aeea3e966286a4441ab7db7db63ce`,
+[run 35692374970](https://github.com/arizzi74/Smart-Stage/actions/runs/35692374970).
+All 22 browser checks passed against the public site. Thirty deployed files,
+including all six localized GIFs, matched the local build byte for byte.
+[Website evidence](verification/website-tutorials.json) records responsive checks
+and the tutorial capture provenance; native devices, media inspection and gateway
+registration in the recordings use documented fixtures.
+
+### Version 1.0.0
 
 Version 1.0.0 is source `6b4638e4c5805089da8bbae4999339247d4f0369`, published as
 GitHub's latest stable release (`prerelease: false`) in

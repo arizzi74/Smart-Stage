@@ -1,14 +1,20 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.0.0**.
-This is the first stable release. The release channel is separate from test
+The desktop application and Linux gateway are released as **Smart Stage 1.1.1**.
+The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.0.0
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.1.1
 
 ## Implemented
 
+- English and Italian Admin, native Mac/Windows menus and dialogs, and remote
+  controls. Admin defaults to the system language and saves an optional manual
+  choice separately from show data; the remote follows its own browser language.
+  Language changes preserve drafts and playback, and existing gateways remain
+  compatible. The bilingual website has localized animated tutorials in feature
+  cards 01–03, with pause controls and reduced-motion support.
 - Static Linux AMD64/ARM64 public gateway, authenticated outbound WSS relay,
   strict remote-only routes, isolated pairing sessions, bounded HTTP/SSE relay
   and automatic desktop reconnection. Public HTTPS mode is the default and
@@ -95,6 +101,13 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.0.0
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.1.1 is source `ecac9128c1ea575dd7adb4c9a94de03aa0af0e24`.
+Its language checks cover the actual Mac and Windows native interfaces on both
+architectures, saved preferences, independent remote language, preserved edits,
+and the existing HTTPS gateway. The deployed website passed 22 browser checks;
+its six GIFs and other published files match the verified local build. See
+[release verification](docs/release-verification.md) for the release evidence.
 
 Version 1.0.0 is the first stable release, built from
 `6b4638e4c5805089da8bbae4999339247d4f0369`. All native build gates, all four

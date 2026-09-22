@@ -1,0 +1,25 @@
+{
+  "sourceCommit": "ac3d5d999fa774a244121c0501926284c4c3a9a7",
+  "scope": "Public installer bytes and default version; runtime installation remains covered separately by native CI. Only the version defaults changed.",
+  "checks": [
+    {
+      "file": "install.sh",
+      "publicMatchesCheckout": true,
+      "sha256": "4123f028f0ff1673ff948709ba92e8d589224f88658ebac49eff15d2e4b5f1c7",
+      "defaultVersion": "v1.1.1"
+    },
+    {
+      "file": "install.ps1",
+      "publicMatchesCheckout": true,
+      "sha256": "03dc9ecb788ba75142bc18c910347a0b9982ab34a6e42d86c6bd9a455182467c",
+      "defaultVersion": "v1.1.1"
+    },
+    {
+      "file": "install-gateway.sh",
+      "publicMatchesCheckout": true,
+      "sha256": "3ca9a6b8a085de218590aef7baf8b772339491c6691ee407e078d21d97d706d1",
+      "defaultVersion": "v1.1.1"
+    }
+  ],
+  "checkedAt": "2026-09-22T06:10:50.846456+00:00"
+}
