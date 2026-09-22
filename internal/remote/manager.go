@@ -151,18 +151,15 @@ func (m *Manager) Configure(edit Edit) (Status, error) {
 		return m.Status(), errors.New("Smart Stage is shutting down or restarting")
 	}
 	next := Settings{Mode: edit.Mode, URL: strings.TrimSpace(edit.URL), Token: strings.TrimSpace(edit.Token)}
-	if next.URL != "" {
-		if u, e := gateway.ValidateURL(next.URL); e == nil {
-			next.URL = u.String()
-		}
-	}
-	if next.Token == "" && next.URL == old.URL {
-		next.Token = old.Token
-	}
 	// Choosing LAN preserves a previously saved gateway unless a replacement
 	// URL is explicitly supplied. Credentials are never returned to the UI.
 	if next.Mode == "lan" && next.URL == "" && next.Token == "" {
 		next.URL, next.Token = old.URL, old.Token
+	}
+	// A blank token retains the saved registration credential, including when
+	// the user explicitly saves a different gateway URL. A supplied token replaces it.
+	if next.Token == "" {
+		next.Token = old.Token
 	}
 	next, err := validate(next, false)
 	if err != nil {

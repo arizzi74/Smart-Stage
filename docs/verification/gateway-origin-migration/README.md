@@ -35,11 +35,12 @@ private rollback backups were retained outside nginx include directories.
   no actual user credentials or account data were used.
 
 Each desktop must save the new gateway URL in **Admin → Remote control →
-Connection settings** and explicitly re-enter the existing 64-character gateway
-registration token. Leaving it blank works only when the URL is unchanged;
-changing the hostname requires explicit token entry. A rejected save preserves
-the old settings and token. Phones then use the current QR code. Registered
-clients intentionally do not follow registration redirects.
+Connection settings**. On desktop version 1.1.3 or later, leave the token blank
+to use its saved value with the new URL. Version 1.1.2 requires re-entering the
+existing 64-character gateway registration token when changing the hostname;
+a rejected save preserves the old settings and token. Phones then use the
+current QR code. Registered clients intentionally do not follow registration
+redirects.
 
 ## Finding 1 scope
 

@@ -1,18 +1,12 @@
-Smart Stage 1.1.2 is a security maintenance update for the desktop app and Linux gateway.
+Smart Stage 1.1.3 lets you change the public gateway URL without re-entering its saved token.
 
-- The gateway rejects unpaired STOP and emergency-stop requests before they can occupy reserved command capacity. Slow request bodies are bounded separately from command execution.
-- Phones with the correct public access key can pair even after incorrect guesses have exhausted a shared rate limit. Invalid keys remain limited; the shorter Local LAN code retains its existing guessing protections.
-- All binaries are rebuilt with Go 1.26.8. Release publication now requires successful vulnerability scans of Go dependencies and all six desktop/gateway executables.
+- In Admin → Remote control → Connection settings, change the URL and leave the token blank to keep its saved value. Save connects to the selected HTTPS gateway using that token.
+- Enter a token when configuring a gateway for the first time, or when you want to replace the saved token. Stored secrets are never returned to the Admin page.
+- English and Italian guidance explains the behavior. Invalid settings and failed saves preserve the previous configuration.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 
-The public Linux gateway also needs an update. On its server, rerun:
-
-```sh
-curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/latest/download/install-gateway.sh | sh
-```
-
-The gateway installer preserves its registration settings. After it restarts, reconnect phones using the current QR code in Admin. The desktop updater does not update the server daemon.
+This desktop settings change works with the existing 1.1.2 gateway daemon. After changing the gateway URL, reconnect phones using the current QR code in Admin.
 
 Install on Mac:
 
@@ -28,4 +22,4 @@ irm https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1 | ie
 
 [Download ZIPs](https://github.com/arizzi74/Smart-Stage/releases/latest) · [Website](https://arizzi74.github.io/Smart-Stage/) · [Gateway guide](https://github.com/arizzi74/Smart-Stage/blob/main/docs/gateway-install.md).
 
-The gateway origin-isolation finding remains open pending the separate-domain migration. Mac builds remain ad-hoc signed and unnotarized; Windows binaries are not Authenticode signed. Windows uses Microsoft WebView2, supplied by the installer if missing. [Verification and known limits](https://github.com/arizzi74/Smart-Stage/blob/main/docs/release-verification.md).
+Use a dedicated gateway hostname and share its registration token only with mutually trusted Smart Stage hosts; endpoint paths on one gateway still share a browser origin. Mac builds remain ad-hoc signed and unnotarized; Windows binaries are not Authenticode signed. Windows uses Microsoft WebView2, supplied by the installer if missing. [Verification and known limits](https://github.com/arizzi74/Smart-Stage/blob/main/docs/release-verification.md).

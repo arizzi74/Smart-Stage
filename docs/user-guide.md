@@ -133,6 +133,9 @@ In Smart Stage Admin → **Remote control**, expand **Connection settings**, kee
 **Public gateway** selected, enter the HTTPS URL and registration token printed
 by the installer, then Save. Connection settings start collapsed; the remote
 link, QR code and connection status remain visible.
+Once a token is saved, leave its field blank to keep it while updating the URL.
+Saving connects to the chosen HTTPS gateway using that saved token. Enter a
+replacement token only when you want to change it; initial setup requires one.
 When connected, scan the public URL's QR code on a phone/tablet. The phone can use
 Wi-Fi or cellular data. Its link has a separate random control secret; it never
 contains the server's registration token. Only remote controls pass through the

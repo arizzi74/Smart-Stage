@@ -480,19 +480,16 @@ async function copyRemoteURL() {
 }
 $('copy-remote-url').addEventListener('click', () => { void copyRemoteURL(); });
 
-function sameGatewayURL(value) {
-  return value.trim().replace(/\/+$/, '') === (gateway?.url || '').replace(/\/+$/, '');
-}
 function renderGateway() {
   if (!adminPage) return;
   const publicDraft = $('gateway-mode').value === 'gateway';
-  const stored = Boolean(gateway?.hasToken && sameGatewayURL($('gateway-url').value));
+  const stored = Boolean(gateway?.hasToken);
   const unavailable = gatewayBusy || !online || role !== 'admin' || updatePending();
   $('gateway-fields').hidden = !publicDraft;
   $('gateway-url').required = publicDraft;
   $('gateway-token').required = publicDraft && !stored;
   localizedAttribute($('gateway-token'), 'placeholder', () => stored ? t("Leave blank to keep saved token") : t("Token from the gateway installer"));
-  localizedText($('gateway-token-hint'), () => stored ? t("A token is stored for this gateway. Leave blank to keep it, or enter a replacement.") : t("Enter the token printed by the gateway installer. Changing the gateway URL requires its token."));
+  localizedText($('gateway-token-hint'), () => stored ? t("Leave blank to use the saved token with this URL, or enter a replacement.") : t("Enter the token printed by the gateway installer."));
   for (const id of ['gateway-mode', 'gateway-url', 'gateway-token', 'save-gateway']) $(id).disabled = unavailable;
   $('reconnect-gateway').hidden = gateway?.mode !== 'gateway';
   $('reconnect-gateway').disabled = unavailable || gatewayDirty;
