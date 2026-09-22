@@ -1,14 +1,18 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.1.2**.
+The desktop application and Linux gateway are released as **Smart Stage 1.1.3**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.1.2
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.1.3
 
 ## Implemented
 
+- Gateway URL-only edits retain the saved registration token when its field is
+  blank, including hostname changes. First-time setup still requires a token;
+  entering a new one replaces it. English and Italian Admin guidance explains
+  this behavior. The existing deployed v1.1.2 gateway remains compatible.
 - Security maintenance for findings 2–4: authenticated gateway STOP admission,
   separate bounded body-reading capacity, public pairing that remains available
   to correct high-entropy keys after invalid guesses, and Go 1.26.8 builds.

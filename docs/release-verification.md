@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.1.2 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.1.3 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,55 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.1.3: save a gateway URL without replacing its token
+
+Version 1.1.3 is source `013999e381ac659c65d89804d5809ca4adcb26f8`, published
+as the latest stable release by
+[run 35718850975](https://github.com/arizzi74/Smart-Stage/actions/runs/35718850975).
+The [candidate workflow](verification/release-v1.1.3/candidate-workflow.json)
+passed before tagging. Both candidate and tag passed all seven shared, gateway,
+native and binary-security gates; publication also passed. The independent
+[asset audit](verification/release-v1.1.3/assets.json) verified all 50 public
+assets, eight checksum pairs, archive shapes, architectures, clean source
+metadata and Go 1.26.8 runtimes. All six public executables passed an independent
+[package-level Go vulnerability scan](verification/release-v1.1.3/security-scans.json).
+
+An empty or omitted token now retains the saved token when saving a new gateway
+URL, including another hostname. Explicit replacement and first-time token
+requirements remain. A real TLS/WebSocket regression verifies registration,
+URL-only reconnection, old endpoint removal, persistence and LAN switching.
+The [browser fixture](verification/release-v1.1.3/browser-checks.json) covers
+the optional saved-token field, URL-only request, reload and English/Italian
+guidance. Full local race tests, real nginx/Caddy checks, vet, source scans and
+all 11 JavaScript tests passed. See the
+[change and validation scope](verification/release-v1.1.3/change-scope.md).
+
+The [public installer scripts](verification/release-v1.1.3/installer-defaults.json)
+were advanced to v1.1.3 only after publication and public asset verification.
+Their downloaded bytes match the committed scripts; shell syntax and gateway
+bootstrap regression checks passed. This desktop settings fix does not require
+a gateway deployment: the existing production gateway remains v1.1.2 on its
+dedicated HTTPS hostname, without a restart or token change for this patch.
+
+All four published ZIP startup checks and native browser checks passed. Both
+Mac public installer checks and the Windows AMD64 installer check passed;
+Windows ARM64's public installer repetition was still running at collection.
+Its installer/lifecycle gate had already passed on the same tagged archive
+before publication. The [workflow snapshot](verification/release-v1.1.3/postpublication-status.json)
+records 14 successful follow-up jobs, one failed and one pending. The separate
+[default-installer checks](verification/release-v1.1.3/default-installer-workflows.json)
+also passed on both Macs and Windows AMD64, with Windows ARM64 still running.
+
+Actual automatic discovery, public-byte replacement and restart passed on
+Intel Mac and both Windows architectures. The Apple Silicon update test failed
+at discovery because GitHub limited API requests, reporting a retry time of
+11:25:46 UTC. It did not reach replacement or restart and is not recorded as a
+pass. The [updater evidence](verification/release-v1.1.3/updater-evidence.json)
+identifies all four results. These tests use the exact candidate source with
+older version metadata as their starting fixtures, not historical executables.
+Native hardware acceptance remains separate, and clean Go scans do not cover
+native OS libraries or unknown application vulnerabilities.
 
 ### Dedicated gateway origin migration (22 September 2026)
 

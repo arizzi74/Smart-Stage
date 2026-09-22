@@ -1,0 +1,260 @@
+{
+  "release": "v1.1.3",
+  "source": "013999e381ac659c65d89804d5809ca4adcb26f8",
+  "run": 35718850975,
+  "runURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35718850975",
+  "observedAt": "2026-09-22T11:15:49.510142+00:00",
+  "status": "in_progress",
+  "conclusion": null,
+  "expectedPostPublicationJobs": 16,
+  "observedPostPublicationJobs": 16,
+  "postPublicationCounts": {
+    "success": 14,
+    "failure": 1,
+    "in_progress": 1
+  },
+  "jobs": [
+    {
+      "id": 106716710369,
+      "name": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T10:58:15Z",
+      "completedAt": "2026-09-22T10:59:31Z"
+    },
+    {
+      "id": 106716710433,
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T10:58:15Z",
+      "completedAt": "2026-09-22T11:11:04Z"
+    },
+    {
+      "id": 106716710514,
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T10:58:17Z",
+      "completedAt": "2026-09-22T11:04:30Z"
+    },
+    {
+      "id": 106716710515,
+      "name": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T10:58:15Z",
+      "completedAt": "2026-09-22T11:01:04Z"
+    },
+    {
+      "id": 106716710635,
+      "name": "native (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T10:58:21Z",
+      "completedAt": "2026-09-22T11:01:05Z"
+    },
+    {
+      "id": 106716710698,
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T10:58:19Z",
+      "completedAt": "2026-09-22T11:02:19Z"
+    },
+    {
+      "id": 106720508373,
+      "name": "binary-security",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:11:06Z",
+      "completedAt": "2026-09-22T11:11:43Z"
+    },
+    {
+      "id": 106720698493,
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:11:45Z",
+      "completedAt": "2026-09-22T11:11:58Z"
+    },
+    {
+      "id": 106720773652,
+      "name": "verify-browser / browser (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:03Z",
+      "completedAt": "2026-09-22T11:14:07Z"
+    },
+    {
+      "id": 106720773666,
+      "name": "verify-browser / browser (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:00Z",
+      "completedAt": "2026-09-22T11:13:56Z"
+    },
+    {
+      "id": 106720773667,
+      "name": "verify-browser / browser (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:37Z",
+      "completedAt": "2026-09-22T11:13:27Z"
+    },
+    {
+      "id": 106720773672,
+      "name": "verify-macos-install / install (macos-15-intel, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:02Z",
+      "completedAt": "2026-09-22T11:12:30Z"
+    },
+    {
+      "id": 106720773675,
+      "name": "verify-update / update (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:01Z",
+      "completedAt": "2026-09-22T11:12:43Z"
+    },
+    {
+      "id": 106720773678,
+      "name": "verify-windows-install / install (windows-2025, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:00Z",
+      "completedAt": "2026-09-22T11:13:26Z"
+    },
+    {
+      "id": 106720773680,
+      "name": "verify-update / update (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:00Z",
+      "completedAt": "2026-09-22T11:12:39Z"
+    },
+    {
+      "id": 106720773693,
+      "name": "verify-macos-install / install (macos-15, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:06Z",
+      "completedAt": "2026-09-22T11:12:35Z"
+    },
+    {
+      "id": 106720773699,
+      "name": "verify-update / update (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "failure",
+      "activeStep": null,
+      "failedSteps": [
+        "Exercise real automatic discovery, replacement and restart"
+      ],
+      "startedAt": "2026-09-22T11:12:07Z",
+      "completedAt": "2026-09-22T11:12:21Z"
+    },
+    {
+      "id": 106720773711,
+      "name": "verify-update / update (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:24Z",
+      "completedAt": "2026-09-22T11:12:50Z"
+    },
+    {
+      "id": 106720773729,
+      "name": "verify-download / download (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:00Z",
+      "completedAt": "2026-09-22T11:12:32Z"
+    },
+    {
+      "id": 106720773735,
+      "name": "verify-windows-install / install (windows-11-arm, arm64)",
+      "status": "in_progress",
+      "conclusion": null,
+      "activeStep": "Install the published app using built-in Windows PowerShell",
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:00Z",
+      "completedAt": null
+    },
+    {
+      "id": 106720773742,
+      "name": "verify-download / download (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:00Z",
+      "completedAt": "2026-09-22T11:12:19Z"
+    },
+    {
+      "id": 106720773762,
+      "name": "verify-browser / browser (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:39Z",
+      "completedAt": "2026-09-22T11:13:49Z"
+    },
+    {
+      "id": 106720773823,
+      "name": "verify-download / download (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:07Z",
+      "completedAt": "2026-09-22T11:12:36Z"
+    },
+    {
+      "id": 106720773913,
+      "name": "verify-download / download (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-22T11:12:04Z",
+      "completedAt": "2026-09-22T11:12:55Z"
+    }
+  ]
+}
