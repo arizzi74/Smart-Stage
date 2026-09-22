@@ -150,7 +150,7 @@ namespace SmartStageInstaller {
         } finally { $process.Dispose() }
     }
 
-    $version = 'v1.0.0'
+    $version = 'v1.1.1'
     if ($env:SMARTSTAGE_VERSION) { $version = $env:SMARTSTAGE_VERSION }
     if ($version -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9.]+)?$') { throw 'SMARTSTAGE_VERSION must be a release version, for example v1.0.0.' }
     $architecture = Get-NativeArchitecture
