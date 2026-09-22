@@ -97,8 +97,9 @@
     "issueForms": "valid YAML"
   },
   "publication": {
-    "state": "awaiting GitHub Pages activation",
-    "settingsAPI": "HTTP403 with current credential",
+    "state": "live",
+    "url": "https://arizzi74.github.io/Smart-Stage/",
+    "verifiedAt": "2026-09-22T04:42:18.954395+00:00",
     "repositoryMetadata": "prepared; settings API denied write"
   },
   "files": {
@@ -153,5 +154,82 @@
       "matches": true,
       "sha256": "71296828d1700cf507a6c739db17a4e0205a9c286bec0a22f9debab8b177a7e7"
     }
-  ]
+  ],
+  "liveDeployment": {
+    "sourceCommit": "61bdb3ea8ea2129e3158caf8a6ecfd1abc4c0172",
+    "run": "https://github.com/arizzi74/Smart-Stage/actions/runs/35686056215",
+    "runStatus": "completed",
+    "conclusion": "success",
+    "deploymentID": 6583225397,
+    "deployStartedAt": "2026-09-22T04:13:30Z",
+    "deployCompletedAt": "2026-09-22T04:13:39Z",
+    "files": [
+      {
+        "path": "assets/admin.png",
+        "status": 200,
+        "sha256": "54607cedb76590e829e3d36b9b9b7d89f04369cdf20e44efdd949ff7f8de6c83",
+        "matchesBuild": true
+      },
+      {
+        "path": "assets/favicon.svg",
+        "status": 200,
+        "sha256": "5b2fa5bce7c8c558119ad9da130c996db2c6a2bd3948a011d6ef42339722a637",
+        "matchesBuild": true
+      },
+      {
+        "path": "assets/icon.png",
+        "status": 200,
+        "sha256": "c6b47141f0bceab05270118f0723a7a9b0150a976918742e2894245ad1597b2f",
+        "matchesBuild": true
+      },
+      {
+        "path": "assets/remote.png",
+        "status": 200,
+        "sha256": "b9bb826baed735ade06ff12094604cf4bb06ab8876d034f7f2cff07d5104069c",
+        "matchesBuild": true
+      },
+      {
+        "path": "assets/social-preview.png",
+        "status": 200,
+        "sha256": "10ec7ca3a70c549d24b6031d8b15b0f63502d0e523eb0b89a48a5de9dbd1d1aa",
+        "matchesBuild": true
+      },
+      {
+        "path": "index.html",
+        "status": 200,
+        "sha256": "ec10061b739244d3ad9eefd687e6580686b186c62abc55752899c8621ebc36cf",
+        "matchesBuild": true
+      },
+      {
+        "path": "index.md",
+        "status": 200,
+        "sha256": "45816a2ae0e69901855a37f4649c0a65634e903cd42a0f637430604aa194d542",
+        "matchesBuild": true
+      },
+      {
+        "path": "llms.txt",
+        "status": 200,
+        "sha256": "568e1753a7da662269c369edbff2ccebb7635c39bf52ce29e5cdb56805c0dbdd",
+        "matchesBuild": true
+      },
+      {
+        "path": "site.js",
+        "status": 200,
+        "sha256": "4367e9acd2051fa0a2bebb2ac188ccb7a06aa228f5bd773a4a2147549325196f",
+        "matchesBuild": true
+      },
+      {
+        "path": "sitemap.xml",
+        "status": 200,
+        "sha256": "af3849b5746a515990a45001032e4942af9260d190b238a51b964308cdc4763c",
+        "matchesBuild": true
+      },
+      {
+        "path": "styles.css",
+        "status": 200,
+        "sha256": "72a13cb0e278b09787efd92fbeaaf6304c4e9b0f656ec1388180b7b40cb130c5",
+        "matchesBuild": true
+      }
+    ]
+  }
 }

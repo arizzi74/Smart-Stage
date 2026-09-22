@@ -1,28 +1,30 @@
 # Public website and repository discovery
 
 The static website lives in `docs/site`. It reuses the real sample-show screenshots
-from `docs/screenshots` and the existing application icon. The public address,
-once Pages is enabled, is <https://arizzi74.github.io/Smart-Stage/>.
+from `docs/screenshots` and the existing application icon. The website is live at
+<https://arizzi74.github.io/Smart-Stage/>.
 
-## Enable publication
+## Publication and remaining account settings
 
-The current automation credential can push commits but GitHub rejected both
-repository-settings changes and Pages activation with HTTP 403. The site and
-workflow are ready; a repository administrator can finish these account settings:
+Pages now uses GitHub Actions. The first public deployment
+[completed successfully](https://github.com/arizzi74/Smart-Stage/actions/runs/35686056215)
+on September 22, 2026 at 04:13:39 UTC; its deploy job took nine seconds. The
+homepage and public assets have been verified over HTTPS.
 
-1. Open [Settings → Pages](https://github.com/arizzi74/Smart-Stage/settings/pages)
-   and set **Source → GitHub Actions**.
-2. Open [Publish Smart Stage website](https://github.com/arizzi74/Smart-Stage/actions/workflows/site.yml)
-   and select **Run workflow** on `main`.
-3. On the [repository home page](https://github.com/arizzi74/Smart-Stage), use the
+Changes to website sources, screenshots or icons publish automatically. To run
+publication manually, open [Publish Smart Stage website](https://github.com/arizzi74/Smart-Stage/actions/workflows/site.yml)
+and select **Run workflow** on `main`. If the workflow graph keeps showing an old
+running timer, refresh it and check the individual job or the public site.
+
+GitHub rejected repository metadata writes with HTTP 403 using the current
+automation credential. A repository administrator can finish these account settings
+while signed in as `arizzi74`:
+
+1. On the [repository home page](https://github.com/arizzi74/Smart-Stage), use the
    gear beside **About** to set the description, website and topics below.
-4. In [repository settings](https://github.com/arizzi74/Smart-Stage/settings),
+2. In [repository settings](https://github.com/arizzi74/Smart-Stage/settings),
    upload [`site/assets/social-preview.png`](site/assets/social-preview.png)
    as the **Social preview** image.
-
-Subsequent changes to website sources, screenshots or icons publish automatically.
-Until Pages is enabled, the workflow builds the complete website artifact and
-explicitly skips deployment. A successful build alone does not mean the site is live.
 
 ## Repository metadata
 
@@ -30,7 +32,7 @@ Description:
 
 > Live show control for macOS and Windows: play audio, video and image cues from your phone or tablet, with a dedicated stage display.
 
-Website (after publication): `https://arizzi74.github.io/Smart-Stage/`
+Website: `https://arizzi74.github.io/Smart-Stage/`
 
 Topics:
 
@@ -72,7 +74,7 @@ and an alternate Markdown overview. Keep those aligned with visible page content
 `llms.txt` is a small documentation index, not a promise of search ranking or AI
 recommendations. Keep the repository-root and site copies identical.
 
-After publication, the owner can verify the site's URL prefix in Google Search
+The owner can verify the site's URL prefix in Google Search
 Console and submit `https://arizzi74.github.io/Smart-Stage/sitemap.xml`. Verification
 requires the owner's Google account; no verification token has been invented or
 added. Search engines decide when to crawl and index the site.
