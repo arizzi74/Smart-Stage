@@ -1,0 +1,305 @@
+{
+  "recordedAt": "2026-09-22T09:05:48.215924+00:00",
+  "release": "v1.1.2",
+  "releaseRun": 35706795351,
+  "publicationGates": {
+    "passed": 8,
+    "failed": 0,
+    "pending": 0,
+    "otherCompleted": 0
+  },
+  "postpublicationCounts": {
+    "passed": 14,
+    "failed": 1,
+    "pending": 1,
+    "otherCompleted": 0
+  },
+  "postpublicationJobs": [
+    {
+      "id": 106682054757,
+      "name": "verify-download / download (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054757",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054784,
+      "name": "verify-browser / browser (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054784",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054788,
+      "name": "verify-windows-install / install (windows-2025, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054788",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054798,
+      "name": "verify-macos-install / install (macos-15, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054798",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054801,
+      "name": "verify-download / download (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054801",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054805,
+      "name": "verify-download / download (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054805",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054812,
+      "name": "verify-browser / browser (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054812",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054814,
+      "name": "verify-download / download (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054814",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054841,
+      "name": "verify-update / update (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054841",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054849,
+      "name": "verify-browser / browser (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054849",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054862,
+      "name": "verify-browser / browser (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054862",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054872,
+      "name": "verify-windows-install / install (windows-11-arm, arm64)",
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054872",
+      "activeSteps": [
+        "Install the published app using built-in Windows PowerShell"
+      ],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054972,
+      "name": "verify-update / update (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054972",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054973,
+      "name": "verify-update / update (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054973",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054975,
+      "name": "verify-update / update (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054975",
+      "activeSteps": [],
+      "failedSteps": [
+        "Exercise real automatic discovery, replacement and restart"
+      ]
+    },
+    {
+      "id": 106682055461,
+      "name": "verify-macos-install / install (macos-15-intel, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682055461",
+      "activeSteps": [],
+      "failedSteps": []
+    }
+  ],
+  "automaticUpdates": [
+    {
+      "id": 106682054841,
+      "name": "verify-update / update (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054841",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054972,
+      "name": "verify-update / update (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054972",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054973,
+      "name": "verify-update / update (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054973",
+      "activeSteps": [],
+      "failedSteps": []
+    },
+    {
+      "id": 106682054975,
+      "name": "verify-update / update (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351/job/106682054975",
+      "activeSteps": [],
+      "failedSteps": [
+        "Exercise real automatic discovery, replacement and restart"
+      ]
+    }
+  ],
+  "macARMUpdateFailure": {
+    "classification": "GitHub public API quota exceeded on hosted runner; automatic discovery could not reach install stage. Not a successful update test.",
+    "reportedMessage": "Update check failed: GitHub temporarily limited update checks; retry after 2026-09-22T09:14:05Z",
+    "log": "/tmp/smartstage-release-v1.1.2/macos-arm64-auto-update.log"
+  },
+  "defaultInstallerCommit": "9d03718f42e54ca9dfd442f0a7828da5be11aad6",
+  "defaultInstallerRuns": [
+    {
+      "id": 35708273254,
+      "name": "Verify Mac app installation and quarantine removal",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35708273254",
+      "counts": {
+        "passed": 2,
+        "failed": 0,
+        "pending": 0,
+        "otherCompleted": 0
+      },
+      "jobs": [
+        {
+          "id": 106682375495,
+          "name": "install (macos-15, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35708273254/job/106682375495",
+          "activeSteps": [],
+          "failedSteps": []
+        },
+        {
+          "id": 106682375908,
+          "name": "install (macos-15-intel, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35708273254/job/106682375908",
+          "activeSteps": [],
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "id": 35708273196,
+      "name": "Verify Windows single-command app installation",
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35708273196",
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "pending": 1,
+        "otherCompleted": 0
+      },
+      "jobs": [
+        {
+          "id": 106682370792,
+          "name": "install (windows-11-arm, arm64)",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35708273196/job/106682370792",
+          "activeSteps": [
+            "Install the published app using built-in Windows PowerShell"
+          ],
+          "failedSteps": []
+        },
+        {
+          "id": 106682371061,
+          "name": "install (windows-2025, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35708273196/job/106682371061",
+          "activeSteps": [],
+          "failedSteps": []
+        }
+      ]
+    }
+  ],
+  "automaticUpdateReports": [
+    {
+      "target": "darwin/arm64",
+      "status": "failed",
+      "report": "/tmp/smartstage-release-v1.1.2/auto-update-evidence/auto-update-darwin-arm64/darwin-arm64/result.json"
+    },
+    {
+      "target": "darwin/amd64",
+      "status": "passed",
+      "report": "/tmp/smartstage-release-v1.1.2/auto-update-evidence/auto-update-darwin-amd64/darwin-amd64/result.json"
+    },
+    {
+      "target": "windows/arm64",
+      "status": "passed",
+      "report": "/tmp/smartstage-release-v1.1.2/auto-update-evidence/auto-update-windows-arm64/windows-arm64/result.json"
+    },
+    {
+      "target": "windows/amd64",
+      "status": "passed",
+      "report": "/tmp/smartstage-release-v1.1.2/auto-update-evidence/auto-update-windows-amd64/windows-amd64/result.json"
+    }
+  ]
+}

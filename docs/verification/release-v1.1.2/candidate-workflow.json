@@ -1,0 +1,73 @@
+{
+  "sourceCommit": "6c93a24d4b7c3c1eac96bf400fd8cec8520f5425",
+  "runID": 35705444283,
+  "runURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/35705444283",
+  "status": "completed",
+  "conclusion": "success",
+  "checkedAt": "2026-09-22T08:49:27.971822+00:00",
+  "jobs": [
+    {
+      "id": 106673118465,
+      "name": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T08:33:23Z",
+      "completed_at": "2026-09-22T08:37:13Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35705444283/job/106673118465"
+    },
+    {
+      "id": 106673118647,
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T08:33:23Z",
+      "completed_at": "2026-09-22T08:46:55Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35705444283/job/106673118647"
+    },
+    {
+      "id": 106673118705,
+      "name": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T08:33:23Z",
+      "completed_at": "2026-09-22T08:34:39Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35705444283/job/106673118705"
+    },
+    {
+      "id": 106673118775,
+      "name": "native (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T08:33:28Z",
+      "completed_at": "2026-09-22T08:36:39Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35705444283/job/106673118775"
+    },
+    {
+      "id": 106673118838,
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T08:33:24Z",
+      "completed_at": "2026-09-22T08:38:39Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35705444283/job/106673118838"
+    },
+    {
+      "id": 106673118964,
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T08:33:35Z",
+      "completed_at": "2026-09-22T08:38:15Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35705444283/job/106673118964"
+    },
+    {
+      "id": 106677185897,
+      "name": "binary-security",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-09-22T08:46:58Z",
+      "completed_at": "2026-09-22T08:47:29Z",
+      "html_url": "https://github.com/arizzi74/Smart-Stage/actions/runs/35705444283/job/106677185897"
+    }
+  ]
+}

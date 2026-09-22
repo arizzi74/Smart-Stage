@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.1.1 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.1.2 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,64 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.1.2: security maintenance
+
+Version 1.1.2 is source `6c93a24d4b7c3c1eac96bf400fd8cec8520f5425`, published
+as the latest stable release by
+[run 35706795351](https://github.com/arizzi74/Smart-Stage/actions/runs/35706795351).
+The corrected [candidate run](verification/release-v1.1.2/candidate-workflow.json)
+passed before tagging. Both runs passed all seven shared, gateway, four native
+and six-executable security gates; publication also passed. All 50 public assets,
+eight checksum pairs, archive shapes, architectures, clean source metadata and
+Go 1.26.8 runtimes were independently checked in the
+[asset audit](verification/release-v1.1.2/assets.json). All six exact downloaded
+executables passed a separate package-level
+[Go vulnerability scan](verification/release-v1.1.2/security-scans.json).
+
+Findings 2 and 4 have real TLS/WebSocket regressions for anonymous slow-body STOP
+starvation and shared-peer pairing lockout. The tests also cover CSRF/session
+authority, failed re-pair retention, logout, expiry and bounded capacity. The
+real nginx/Caddy fixture now pairs before issuing protected commands. Local
+race tests, vet, JavaScript tests and HTTPS browser checks passed. See
+[remediation scope](verification/release-v1.1.2/security-remediation.md) and
+[STOP admission evidence](verification/release-v1.1.2/stop-admission-scope.md).
+
+The existing Linux gateway was upgraded from preview 15 to the audited ARM64
+release executable, retaining its configuration/token, nginx configuration and
+systemd unit. The running process matches the published SHA-256, and both
+loopback and public HTTPS health checks returned 200. A disposable endpoint on
+the actual public gateway passed registration, anonymous/forged-session
+rejection before forwarding, valid pairing after eleven invalid guesses,
+CSRF enforcement, paired STOP/emergency STOP, logout and endpoint cleanup.
+No commands targeted the user's show. Sanitized
+[deployment](verification/release-v1.1.2/gateway-deployment.json) and
+[public smoke](verification/release-v1.1.2/gateway-production-smoke.json) reports
+contain no registration or session secrets. Gateway restart rotates endpoint
+URLs; phones should use the current link/QR in Admin.
+
+All four public ZIP startup checks and all four native browser checks passed.
+Both Mac public installer checks and the Windows AMD64 installer check passed;
+the Windows ARM64 public installer check was still running at collection.
+Actual automatic replacement/restart passed on Windows ARM64, Windows AMD64 and
+Intel Mac. Apple Silicon's updater check failed before discovery because GitHub
+limited API requests, reporting a retry time of 09:14:05 UTC; this is not recorded
+as a successful update. The
+[postpublication snapshot](verification/release-v1.1.2/postpublication-status.json)
+records the exact states. Installer defaults were moved to v1.1.2 only after
+publication; the three
+[public bootstrap scripts](verification/release-v1.1.2/installer-defaults.json)
+match committed bytes. Shell syntax and gateway bootstrap regression checks passed.
+
+Finding 1 remains deliberately open pending origin isolation and a separate
+domain. Clean Go scans do not cover native OS libraries, unknown vulnerabilities
+or physical show hardware. An earlier candidate encountered intermittent Windows
+Media Foundation `MF_E_SHUTDOWN` during video reinspection; the corrected candidate
+and public browser checks passed without changing or weakening that assertion.
+The native paths are unchanged from v1.1.1, and the intermittent cause remains
+unproven. The separate optional Windows ARM pixel workflow still uses historical
+binaries and was obstructed by Windows setup; it is not current security-release
+evidence.
 
 ### Version 1.1.1: English and Italian
 

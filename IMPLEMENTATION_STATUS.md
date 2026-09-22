@@ -1,14 +1,19 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.1.1**.
+The desktop application and Linux gateway are released as **Smart Stage 1.1.2**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.1.1
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.1.2
 
 ## Implemented
 
+- Security maintenance for findings 2–4: authenticated gateway STOP admission,
+  separate bounded body-reading capacity, public pairing that remains available
+  to correct high-entropy keys after invalid guesses, and Go 1.26.8 builds.
+  Source and all six executable vulnerability scans now gate publication.
+  The origin-isolation finding remains open pending a separate-domain design.
 - English and Italian Admin, native Mac/Windows menus and dialogs, and remote
   controls. Admin defaults to the system language and saves an optional manual
   choice separately from show data; the remote follows its own browser language.
@@ -101,6 +106,18 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.1.1
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.1.2 is source `6c93a24d4b7c3c1eac96bf400fd8cec8520f5425`.
+All seven candidate and tagged build/security gates passed before publication.
+All 50 public assets and eight checksum pairs were independently verified, and
+all six public executables passed Go vulnerability scans. The deployed Linux
+gateway was upgraded with its token, URL, systemd unit and nginx configuration
+preserved; actual public HTTPS pairing, admission, CSRF, STOP and logout checks
+passed using a disposable endpoint. Four published download/browser checks
+passed. Automatic replacement passed on both Windows targets and Intel Mac;
+Apple Silicon's updater check was limited by GitHub's API quota before discovery.
+See [release verification](docs/release-verification.md) for exact evidence,
+remaining installer checks and the deliberately deferred origin-isolation issue.
 
 Version 1.1.1 is source `ecac9128c1ea575dd7adb4c9a94de03aa0af0e24`.
 Its language checks cover the actual Mac and Windows native interfaces on both
