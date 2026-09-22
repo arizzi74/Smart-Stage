@@ -5,10 +5,12 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
 	"os"
 	"os/exec"
@@ -17,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"smartstage/internal/auth"
 	"smartstage/internal/gateway"
 )
 
@@ -120,7 +123,11 @@ func testRealProxy(t *testing.T, kind string) {
 		return (&net.Dialer{}).DialContext(ctx, network, proxyAddress)
 	}}
 	defer transport.CloseIdleConnections()
-	client := &http.Client{Transport: transport, Timeout: 5 * time.Second}
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := &http.Client{Transport: transport, Jar: jar, Timeout: 5 * time.Second}
 	ready := false
 	for deadline := time.Now().Add(8 * time.Second); time.Now().Before(deadline); {
 		response, err := client.Get(origin + "/smartstage/health")
@@ -142,6 +149,7 @@ func testRealProxy(t *testing.T, kind string) {
 	connected := make(chan string, 1)
 	done := make(chan error, 1)
 	requestCanceled := make(chan struct{}, 1)
+	authn := auth.NewPublicCommand()
 	go func() {
 		done <- gateway.ServeConnection(ctx, gateway.ClientOptions{URL: origin + "/smartstage", Token: token, HTTPClient: client, OnConnect: func(endpoint string) { connected <- endpoint }, Handler: func(prefix string) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -149,9 +157,39 @@ func testRealProxy(t *testing.T, kind string) {
 					http.Error(w, "wrong origin", 400)
 					return
 				}
+				if r.URL.Path == "/api/stop" || r.URL.Path == "/api/events" {
+					cookie, err := r.Cookie("smartstage_command_session")
+					if err != nil {
+						http.Error(w, "pairing required", http.StatusUnauthorized)
+						return
+					}
+					session, ok := authn.Get(cookie.Value)
+					if !ok || session.Role != "command" {
+						http.Error(w, "invalid session", http.StatusUnauthorized)
+						return
+					}
+					if r.URL.Path == "/api/stop" && (r.Header.Get("Origin") != origin || !auth.CheckCSRF(session, r.Header.Get("X-CSRF-Token"))) {
+						http.Error(w, "invalid command origin or CSRF", http.StatusForbidden)
+						return
+					}
+				}
 				switch r.URL.Path {
 				case "/command":
 					io.WriteString(w, "proxied remote")
+				case "/api/pair":
+					var input struct{ Key string }
+					if r.Header.Get("Origin") != origin || json.NewDecoder(r.Body).Decode(&input) != nil {
+						http.Error(w, "invalid pairing request", http.StatusBadRequest)
+						return
+					}
+					session, err := authn.PairCommand(input.Key, r.RemoteAddr)
+					if err != nil {
+						http.Error(w, "invalid pairing key", http.StatusUnauthorized)
+						return
+					}
+					http.SetCookie(w, &http.Cookie{Name: "smartstage_command_session", Value: session.ID, Path: prefix, HttpOnly: true, Secure: true, SameSite: http.SameSiteStrictMode, MaxAge: int(auth.Lifetime.Seconds())})
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(map[string]string{"csrfToken": session.CSRF})
 				case "/api/stop":
 					w.Header().Set("Content-Type", "application/json")
 					io.WriteString(w, `{"accepted":true}`)
@@ -195,12 +233,33 @@ func testRealProxy(t *testing.T, kind string) {
 			t.Fatalf("private route %s escaped proxy relay: %d", path, response.StatusCode)
 		}
 	}
+	pairingBody, err := json.Marshal(map[string]string{"key": authn.CommandToken()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pairing, err := http.NewRequest(http.MethodPost, base+"/api/pair", strings.NewReader(string(pairingBody)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	pairing.Header.Set("Origin", origin)
+	pairing.Header.Set("Content-Type", "application/json")
+	response, err = client.Do(pairing)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var paired struct{ CSRFToken string }
+	decodeErr := json.NewDecoder(response.Body).Decode(&paired)
+	response.Body.Close()
+	if response.StatusCode != http.StatusOK || decodeErr != nil || paired.CSRFToken == "" || len(response.Cookies()) != 1 {
+		t.Fatalf("pairing through relay: status=%d decode=%v", response.StatusCode, decodeErr)
+	}
 	request, err := http.NewRequest(http.MethodPost, base+"/api/stop", strings.NewReader(`{}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	request.Header.Set("Origin", origin)
 	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-CSRF-Token", paired.CSRFToken)
 	response, err = client.Do(request)
 	if err != nil {
 		t.Fatal(err)
