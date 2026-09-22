@@ -105,7 +105,10 @@ private gateway configuration. Preserve `token` and `listen`, validate nginx
 before reload, then restart the gateway. Old relay URLs should stop serving
 Smart Stage; forwarding registration credentials through an HTTP redirect is
 deliberately unsupported. Set the new URL in each desktop's **Remote control →
-Connection settings**, retain the existing token, save, and scan the new phone QR.
+Connection settings**, explicitly re-enter the existing 64-character gateway
+registration token, save, and scan the new phone QR. A blank token retains the
+saved value only when the URL is unchanged; a new hostname requires explicit
+entry to prevent silently sending a stored credential to another server.
 See the [dedicated-host migration verification](verification/gateway-origin-migration/README.md)
 for the recorded deployment and remaining trust boundaries.
 
