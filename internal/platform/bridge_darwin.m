@@ -49,6 +49,78 @@ static void stopScene(void);
 static void sceneEmergency(void);
 static void sceneCheckDevices(void);
 
+// Locale selection is atomic because Go may update it from an HTTP worker.
+// AppKit objects are refreshed only on the main queue.
+static _Atomic(int) desktopLanguage = -1;
+static _Atomic(bool) desktopLanguageRefreshScheduled;
+static NSDictionary<NSString *, NSString *> *desktopTranslations(void) {
+    static NSDictionary<NSString *, NSString *> *translations;
+    static dispatch_once_t once;
+    dispatch_once(&once, ^{
+        translations = @{
+            @"Files could not be added": @"Impossibile aggiungere i file",
+            @"Choose between 1 and 500 audio, video, or image files.": @"Scegli da 1 a 500 file audio, video o immagine.",
+            @"Only files on this Mac or a mounted drive can be added.": @"Puoi aggiungere solo file presenti su questo Mac o su un’unità montata.",
+            @"The selected file does not have a usable absolute filesystem path.": @"Il file selezionato non ha un percorso assoluto utilizzabile.",
+            @"Smart Stage is still adding earlier files. Wait for that operation to finish, then try again.": @"Smart Stage sta ancora aggiungendo i file precedenti. Attendi il completamento, poi riprova.",
+            @"The selected file paths could not be read.": @"Impossibile leggere i percorsi dei file selezionati.",
+            @"Drop existing files from Finder. Mixed items and promised downloads cannot be added.": @"Trascina file esistenti dal Finder. Non puoi aggiungere elementi misti o download non ancora completati.",
+            @"Smart Stage — Admin": @"Smart Stage — Amministrazione",
+            @"Reload Admin": @"Ricarica Admin",
+            @"Admin could not connect. Check that Smart Stage has finished starting, then reload.": @"Impossibile connettere Admin. Verifica che Smart Stage abbia completato l’avvio, poi ricarica.",
+            @"The Admin page stopped responding. Reload to reconnect; the host is still running.": @"La pagina Admin non risponde. Ricarica per riconnetterti; Smart Stage è ancora in esecuzione.",
+            @"The selected file does not have an absolute filesystem path.": @"Il file selezionato non ha un percorso assoluto.",
+            @"Choose media for Smart Stage": @"Scegli i file per Smart Stage",
+            @"Add to Show": @"Aggiungi allo spettacolo",
+            @"Files stay in their original folders. Adding files does not start playback.": @"I file restano nelle cartelle originali. L’aggiunta non avvia la riproduzione.",
+            @"Open Admin": @"Apri Admin",
+            @"Choose Media…": @"Scegli file multimediali…",
+            @"View Log": @"Visualizza registro",
+            @"Quit Smart Stage": @"Esci da Smart Stage",
+            @"File": @"File",
+            @"Close Window": @"Chiudi finestra",
+            @"Edit": @"Modifica",
+            @"Undo": @"Annulla",
+            @"Redo": @"Ripristina",
+            @"Cut": @"Taglia",
+            @"Copy": @"Copia",
+            @"Paste": @"Incolla",
+            @"Select All": @"Seleziona tutto",
+            @"Smart Stage — Open Admin, view logs, or quit": @"Smart Stage — Apri Admin, visualizza il registro o esci",
+            @"Smart Stage could not start": @"Impossibile avviare Smart Stage",
+            @"%s\n\nDetails are saved in ~/Library/Logs/Smart Stage/smartstage.log.": @"%s\n\nI dettagli sono salvati in ~/Library/Logs/Smart Stage/smartstage.log.",
+        };
+    });
+    return translations;
+}
+static NSString *desktopText(NSString *english) {
+    if (atomic_load(&desktopLanguage) < 0) {
+        char *language = ss_system_language();
+        int unset = -1;
+        atomic_compare_exchange_strong(&desktopLanguage, &unset, language && strcmp(language, "it") == 0 ? 1 : 0);
+        free(language);
+    }
+    return atomic_load(&desktopLanguage) == 1 ? (desktopTranslations()[english] ?: english) : english;
+}
+static NSString *desktopRelocalize(NSString *text) {
+    if (!text) return @"";
+    for (NSString *english in desktopTranslations()) {
+        if ([text isEqualToString:english] || [text isEqualToString:desktopTranslations()[english]])
+            return desktopText(english);
+    }
+    return text;
+}
+char *ss_system_language(void) {
+    @autoreleasepool {
+        for (NSString *identifier in NSLocale.preferredLanguages) {
+            NSString *language = [[NSLocale componentsFromLocaleIdentifier:identifier][NSLocaleLanguageCode] lowercaseString];
+            if ([language isEqualToString:@"it"] || [language isEqualToString:@"en"])
+                return strdup(language.UTF8String);
+        }
+        return strdup("en");
+    }
+}
+
 // Only the Finder launcher opts into the Dock and menu bar lifecycle. CLI invocations
 // keep their ordinary stdout/stderr and Ctrl+C behavior.
 static BOOL desktopLaunch(void) {
@@ -82,7 +154,7 @@ static void desktopFileAlert(NSString *message) {
     SSFileAlert *controller = [[SSFileAlert alloc] init];
     NSAlert *alert = [[NSAlert alloc] init];
     controller.alert = alert;
-    alert.messageText = @"Files could not be added";
+    alert.messageText = desktopText(@"Files could not be added");
     alert.informativeText = message;
     NSButton *button = [alert addButtonWithTitle:@"OK"];
     button.target = controller;
@@ -101,20 +173,20 @@ static void desktopFileAlert(NSString *message) {
 // against the configured media roots before changing the saved show.
 static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
     if (!urls.count || urls.count > 500) {
-        *failure = @"Choose between 1 and 500 audio, video, or image files.";
+        *failure = desktopText(@"Choose between 1 and 500 audio, video, or image files.");
         return NO;
     }
     NSMutableArray<NSString *> *paths = [NSMutableArray arrayWithCapacity:urls.count];
     for (NSURL *input in urls) {
         if (!input.isFileURL || (input.host.length && ![input.host.lowercaseString isEqualToString:@"localhost"])) {
-            *failure = @"Only files on this Mac or a mounted drive can be added.";
+            *failure = desktopText(@"Only files on this Mac or a mounted drive can be added.");
             return NO;
         }
         // Never touch a slow/network filesystem on AppKit's event thread.
         // Go resolves symlinks, checks regular files and media roots before save.
         NSString *path = input.path;
         if (!path.isAbsolutePath || !path.length || [path lengthOfBytesUsingEncoding:NSUTF8StringEncoding] > 32768) {
-            *failure = @"The selected file does not have a usable absolute filesystem path.";
+            *failure = desktopText(@"The selected file does not have a usable absolute filesystem path.");
             return NO;
         }
         [paths addObject:path];
@@ -122,7 +194,7 @@ static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
     pthread_mutex_lock(&desktopFileMutex);
     if (desktopFileCounts.count >= 8 || desktopPendingFileCount + paths.count > 500) {
         pthread_mutex_unlock(&desktopFileMutex);
-        *failure = @"Smart Stage is still adding earlier files. Wait for that operation to finish, then try again.";
+        *failure = desktopText(@"Smart Stage is still adding earlier files. Wait for that operation to finish, then try again.");
         return NO;
     }
     uint64_t identifier = ++desktopNextFileID;
@@ -130,7 +202,7 @@ static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
     NSData *data = [NSJSONSerialization dataWithJSONObject:@{@"id": @(identifier), @"paths": paths} options:0 error:NULL];
     if (!data) {
         pthread_mutex_unlock(&desktopFileMutex);
-        *failure = @"The selected file paths could not be read.";
+        *failure = desktopText(@"The selected file paths could not be read.");
         return NO;
     }
     desktopFileCounts[@(identifier)] = @(paths.count);
@@ -178,12 +250,12 @@ static BOOL queueDesktopFiles(NSArray<NSURL *> *urls, NSString **failure) {
     if (!atomic_load(&desktopReady) || atomic_load(&shuttingDown)) return NO;
     NSPasteboard *pasteboard = sender.draggingPasteboard;
     if (!pasteboard.pasteboardItems.count || pasteboard.pasteboardItems.count > 500) {
-        desktopFileAlert(@"Choose between 1 and 500 audio, video, or image files."); return NO;
+        desktopFileAlert(desktopText(@"Choose between 1 and 500 audio, video, or image files.")); return NO;
     }
     NSArray<NSURL *> *urls = [pasteboard readObjectsForClasses:@[NSURL.class]
         options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}];
     if (urls.count != pasteboard.pasteboardItems.count) {
-        desktopFileAlert(@"Drop existing files from Finder. Mixed items and promised downloads cannot be added."); return NO;
+        desktopFileAlert(desktopText(@"Drop existing files from Finder. Mixed items and promised downloads cannot be added.")); return NO;
     }
     NSString *failure = nil;
     if (!queueDesktopFiles(urls, &failure)) { desktopFileAlert(failure); return NO; }
@@ -227,6 +299,7 @@ static BOOL sameAdminPage(NSURL *url, NSURL *expected) {
 @property(nonatomic, strong) SSAdminWebView *adminWebView;
 @property(nonatomic, strong) NSView *adminErrorView;
 @property(nonatomic, strong) NSTextField *adminErrorLabel;
+@property(nonatomic, strong) NSButton *adminRetryButton;
 @property(nonatomic) BOOL adminShowPending;
 @property(nonatomic) NSUInteger adminCrashRetries;
 @property(nonatomic) NSTimeInterval adminCrashRetryStart;
@@ -266,7 +339,7 @@ static SSApplicationDelegate *applicationDelegate;
         SSAdminWindow *window = [[SSAdminWindow alloc] initWithContentRect:bounds
             styleMask:NSWindowStyleMaskTitled | NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable | NSWindowStyleMaskResizable
             backing:NSBackingStoreBuffered defer:NO];
-        window.title = @"Smart Stage — Admin";
+        window.title = desktopText(@"Smart Stage — Admin");
         window.identifier = @"SmartStageAdminWindow";
         window.releasedWhenClosed = NO;
         window.minSize = NSMakeSize(640, 420);
@@ -299,7 +372,7 @@ static SSApplicationDelegate *applicationDelegate;
         NSTextField *message = [NSTextField wrappingLabelWithString:@""];
         message.frame = NSMakeRect(18, 14, width - 145, 48);
         message.autoresizingMask = NSViewWidthSizable;
-        NSButton *retry = [NSButton buttonWithTitle:@"Reload Admin" target:self action:@selector(reloadAdmin:)];
+        NSButton *retry = [NSButton buttonWithTitle:desktopText(@"Reload Admin") target:self action:@selector(reloadAdmin:)];
         retry.frame = NSMakeRect(width - 122, 23, 112, 30);
         retry.autoresizingMask = NSViewMinXMargin;
         [errorView addSubview:message]; [errorView addSubview:retry];
@@ -307,6 +380,7 @@ static SSApplicationDelegate *applicationDelegate;
         [content addSubview:errorView];
         self.adminErrorView = errorView;
         self.adminErrorLabel = message;
+        self.adminRetryButton = retry;
         [self reloadAdmin:nil];
         [window makeFirstResponder:webView];
         fputs("Created native Admin window\n", stderr);
@@ -366,7 +440,7 @@ static SSApplicationDelegate *applicationDelegate;
 - (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error {
     (void)navigation;
     if (webView != self.adminWebView || error.code == NSURLErrorCancelled) return;
-    [self showAdminError:@"Admin could not connect. Check that Smart Stage has finished starting, then reload."];
+    [self showAdminError:desktopText(@"Admin could not connect. Check that Smart Stage has finished starting, then reload.")];
     fprintf(stderr, "Native Admin navigation failed (%ld)\n", (long)error.code);
 }
 - (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error {
@@ -374,7 +448,7 @@ static SSApplicationDelegate *applicationDelegate;
 }
 - (void)webViewWebContentProcessDidTerminate:(WKWebView *)webView {
     if (webView != self.adminWebView || self.quitStarted || atomic_load(&shuttingDown)) return;
-    [self showAdminError:@"The Admin page stopped responding. Reload to reconnect; the host is still running."];
+    [self showAdminError:desktopText(@"The Admin page stopped responding. Reload to reconnect; the host is still running.")];
     NSTimeInterval now = NSProcessInfo.processInfo.systemUptime;
     if (now - self.adminCrashRetryStart > 60) { self.adminCrashRetryStart = now; self.adminCrashRetries = 0; }
     if (++self.adminCrashRetries > 2) return;
@@ -407,7 +481,7 @@ static SSApplicationDelegate *applicationDelegate;
     for (NSString *filename in filenames) {
         if (!filename.isAbsolutePath) {
             [application replyToOpenOrPrint:NSApplicationDelegateReplyFailure];
-            desktopFileAlert(@"The selected file does not have an absolute filesystem path.");
+            desktopFileAlert(desktopText(@"The selected file does not have an absolute filesystem path."));
             return;
         }
         [urls addObject:[NSURL fileURLWithPath:filename]];
@@ -423,9 +497,9 @@ static SSApplicationDelegate *applicationDelegate;
     if (self.filePanel) { [self.filePanel makeKeyAndOrderFront:nil]; return; }
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     self.filePanel = panel;
-    panel.title = @"Choose media for Smart Stage";
-    panel.prompt = @"Add to Show";
-    panel.message = @"Files stay in their original folders. Adding files does not start playback.";
+    panel.title = desktopText(@"Choose media for Smart Stage");
+    panel.prompt = desktopText(@"Add to Show");
+    panel.message = desktopText(@"Files stay in their original folders. Adding files does not start playback.");
     panel.canChooseFiles = YES;
     panel.canChooseDirectories = NO;
     panel.allowsMultipleSelection = YES;
@@ -476,23 +550,54 @@ static SSApplicationDelegate *applicationDelegate;
 }
 @end
 
+static void relocalizeDesktopMenu(NSMenu *menu) {
+    menu.title = desktopRelocalize(menu.title);
+    for (NSMenuItem *item in menu.itemArray) {
+        item.title = desktopRelocalize(item.title);
+        if (item.submenu) relocalizeDesktopMenu(item.submenu);
+    }
+}
+void ss_desktop_language(const char *language) {
+    atomic_store(&desktopLanguage, language && strcmp(language, "it") == 0 ? 1 : 0);
+    if (!desktopLaunch() || atomic_load(&shuttingDown) || atomic_exchange(&desktopLanguageRefreshScheduled, true)) return;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        @autoreleasepool {
+            atomic_store(&desktopLanguageRefreshScheduled, false);
+            if (atomic_load(&shuttingDown) || !applicationDelegate) return;
+            relocalizeDesktopMenu(NSApp.mainMenu);
+            relocalizeDesktopMenu(applicationDelegate.status.menu);
+            applicationDelegate.status.button.toolTip = desktopText(@"Smart Stage — Open Admin, view logs, or quit");
+            applicationDelegate.adminWindow.title = desktopText(@"Smart Stage — Admin");
+            applicationDelegate.adminRetryButton.title = desktopText(@"Reload Admin");
+            applicationDelegate.adminErrorLabel.stringValue = desktopRelocalize(applicationDelegate.adminErrorLabel.stringValue);
+            applicationDelegate.filePanel.title = desktopText(@"Choose media for Smart Stage");
+            applicationDelegate.filePanel.prompt = desktopText(@"Add to Show");
+            applicationDelegate.filePanel.message = desktopText(@"Files stay in their original folders. Adding files does not start playback.");
+            for (SSFileAlert *controller in desktopAlerts) {
+                controller.alert.messageText = desktopText(@"Files could not be added");
+                controller.alert.informativeText = desktopRelocalize(controller.alert.informativeText);
+            }
+        }
+    });
+}
+
 static NSMenu *desktopMenu(BOOL applicationMenu) {
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@"Smart Stage"];
     menu.autoenablesItems = NO;
-    NSMenuItem *open = [[NSMenuItem alloc] initWithTitle:@"Open Admin" action:@selector(openAdmin:) keyEquivalent:@""];
+    NSMenuItem *open = [[NSMenuItem alloc] initWithTitle:desktopText(@"Open Admin") action:@selector(openAdmin:) keyEquivalent:@""];
     open.target = applicationDelegate; open.enabled = NO;
     [applicationDelegate.openItems addObject:open];
     [menu addItem:open];
-    NSMenuItem *choose = [[NSMenuItem alloc] initWithTitle:@"Choose Media…" action:@selector(chooseMedia:)
+    NSMenuItem *choose = [[NSMenuItem alloc] initWithTitle:desktopText(@"Choose Media…") action:@selector(chooseMedia:)
         keyEquivalent:applicationMenu ? @"o" : @""];
     choose.target = applicationDelegate; choose.enabled = NO;
     [applicationDelegate.openItems addObject:choose];
     [menu addItem:choose];
-    NSMenuItem *log = [[NSMenuItem alloc] initWithTitle:@"View Log" action:@selector(viewLog:) keyEquivalent:@""];
+    NSMenuItem *log = [[NSMenuItem alloc] initWithTitle:desktopText(@"View Log") action:@selector(viewLog:) keyEquivalent:@""];
     log.target = applicationDelegate;
     [menu addItem:log];
     [menu addItem:NSMenuItem.separatorItem];
-    NSMenuItem *quit = [[NSMenuItem alloc] initWithTitle:@"Quit Smart Stage"
+    NSMenuItem *quit = [[NSMenuItem alloc] initWithTitle:desktopText(@"Quit Smart Stage")
         action:applicationMenu ? @selector(terminate:) : @selector(quit:)
         keyEquivalent:applicationMenu ? @"q" : @""];
     quit.target = applicationMenu ? (id)NSApp : (id)applicationDelegate;
@@ -523,21 +628,21 @@ static void setupDesktop(void) {
     NSMenuItem *applicationItem = [[NSMenuItem alloc] initWithTitle:@"Smart Stage" action:NULL keyEquivalent:@""];
     applicationItem.submenu = desktopMenu(YES);
     [mainMenu addItem:applicationItem];
-    NSMenuItem *fileItem = [[NSMenuItem alloc] initWithTitle:@"File" action:NULL keyEquivalent:@""];
-    NSMenu *fileMenu = [[NSMenu alloc] initWithTitle:@"File"];
-    [fileMenu addItemWithTitle:@"Close Window" action:@selector(performClose:) keyEquivalent:@"w"];
+    NSMenuItem *fileItem = [[NSMenuItem alloc] initWithTitle:desktopText(@"File") action:NULL keyEquivalent:@""];
+    NSMenu *fileMenu = [[NSMenu alloc] initWithTitle:desktopText(@"File")];
+    [fileMenu addItemWithTitle:desktopText(@"Close Window") action:@selector(performClose:) keyEquivalent:@"w"];
     fileItem.submenu = fileMenu;
     [mainMenu addItem:fileItem];
-    NSMenuItem *editItem = [[NSMenuItem alloc] initWithTitle:@"Edit" action:NULL keyEquivalent:@""];
-    NSMenu *editMenu = [[NSMenu alloc] initWithTitle:@"Edit"];
-    [editMenu addItemWithTitle:@"Undo" action:@selector(undo:) keyEquivalent:@"z"];
-    NSMenuItem *redo = [editMenu addItemWithTitle:@"Redo" action:@selector(redo:) keyEquivalent:@"z"];
+    NSMenuItem *editItem = [[NSMenuItem alloc] initWithTitle:desktopText(@"Edit") action:NULL keyEquivalent:@""];
+    NSMenu *editMenu = [[NSMenu alloc] initWithTitle:desktopText(@"Edit")];
+    [editMenu addItemWithTitle:desktopText(@"Undo") action:@selector(undo:) keyEquivalent:@"z"];
+    NSMenuItem *redo = [editMenu addItemWithTitle:desktopText(@"Redo") action:@selector(redo:) keyEquivalent:@"z"];
     redo.keyEquivalentModifierMask = NSEventModifierFlagCommand | NSEventModifierFlagShift;
     [editMenu addItem:NSMenuItem.separatorItem];
-    [editMenu addItemWithTitle:@"Cut" action:@selector(cut:) keyEquivalent:@"x"];
-    [editMenu addItemWithTitle:@"Copy" action:@selector(copy:) keyEquivalent:@"c"];
-    [editMenu addItemWithTitle:@"Paste" action:@selector(paste:) keyEquivalent:@"v"];
-    [editMenu addItemWithTitle:@"Select All" action:@selector(selectAll:) keyEquivalent:@"a"];
+    [editMenu addItemWithTitle:desktopText(@"Cut") action:@selector(cut:) keyEquivalent:@"x"];
+    [editMenu addItemWithTitle:desktopText(@"Copy") action:@selector(copy:) keyEquivalent:@"c"];
+    [editMenu addItemWithTitle:desktopText(@"Paste") action:@selector(paste:) keyEquivalent:@"v"];
+    [editMenu addItemWithTitle:desktopText(@"Select All") action:@selector(selectAll:) keyEquivalent:@"a"];
     editItem.submenu = editMenu;
     [mainMenu addItem:editItem];
     NSApp.mainMenu = mainMenu;
@@ -545,7 +650,7 @@ static void setupDesktop(void) {
     NSStatusItem *status = [NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
     applicationDelegate.status = status;
     status.button.title = @"Smart Stage";
-    status.button.toolTip = @"Smart Stage — Open Admin, view logs, or quit";
+    status.button.toolTip = desktopText(@"Smart Stage — Open Admin, view logs, or quit");
     status.menu = desktopMenu(NO);
     if (NSApp.activationPolicy == NSApplicationActivationPolicyRegular && icon.isValid)
         fputs("Smart Stage Dock icon and application menu ready\n", stderr);
@@ -1577,10 +1682,10 @@ void ss_desktop_error(const char *message) {
         [NSApplication sharedApplication];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
         NSAlert *alert = [[NSAlert alloc] init];
-        alert.messageText = @"Smart Stage could not start";
-        alert.informativeText = [NSString stringWithFormat:@"%s\n\nDetails are saved in ~/Library/Logs/Smart Stage/smartstage.log.", message];
+        alert.messageText = desktopText(@"Smart Stage could not start");
+        alert.informativeText = [NSString stringWithFormat:desktopText(@"%s\n\nDetails are saved in ~/Library/Logs/Smart Stage/smartstage.log."), message];
         [alert addButtonWithTitle:@"OK"];
-        [alert addButtonWithTitle:@"View Log"];
+        [alert addButtonWithTitle:desktopText(@"View Log")];
         if ([alert runModal] == NSAlertSecondButtonReturn) {
             const char *path = getenv("SMARTSTAGE_LOG_PATH");
             if (path) [NSWorkspace.sharedWorkspace openURL:[NSURL fileURLWithPath:[NSString stringWithUTF8String:path]]];

@@ -33,6 +33,10 @@ typedef struct {
  * stage/background-error events include sceneRevision. */
 void ss_scene(const ss_scene_request *request);
 #if defined(__APPLE__) || defined(_WIN32)
+/* OS UI language preference, narrowed to the first supported language (en/it).
+ * The desktop setter is safe before initialization and from worker threads. */
+char *ss_system_language(void);
+void ss_desktop_language(const char *language);
 void ss_desktop_admin(const char *url);
 void ss_desktop_error(const char *message);
 char *ss_desktop_poll_files(void);

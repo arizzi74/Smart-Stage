@@ -37,6 +37,8 @@ with (contents / "Info.plist").open("wb") as f:
         "CFBundlePackageType": "APPL",
         "CFBundleExecutable": "SmartStageLauncher",
         "CFBundleIconFile": "smartstage.icns",
+        "CFBundleDevelopmentRegion": "en",
+        "CFBundleLocalizations": ["en", "it"],
         "CFBundleShortVersionString": short_version,
         "CFBundleVersion": bundle_version,
         "SmartStageVersion": version,

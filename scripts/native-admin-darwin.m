@@ -23,6 +23,11 @@ static NSUInteger adminWindowCount(NSWindow *admin) {
             [window.identifier isEqual:admin.identifier]) count++;
     return count;
 }
+static BOOL menuHasTitle(NSMenu *menu, NSString *title) {
+    for (NSMenuItem *item in menu.itemArray)
+        if ([item.title isEqualToString:title] || (item.submenu && menuHasTitle(item.submenu, title))) return YES;
+    return NO;
+}
 
 int main(int argc, const char **argv) {
     @autoreleasepool {
@@ -36,8 +41,15 @@ int main(int argc, const char **argv) {
         if (argc != 1 || !adminAddress || !*adminAddress ||
             !firstOriginal || !*firstOriginal || !secondOriginal || !*secondOriginal) return 2;
         setenv("SMARTSTAGE_APP_LAUNCH", "1", 1);
+        // Exercise selection before AppKit initialization, then restore English
+        // for the existing host-page checks. No OS preference is changed.
+        ss_desktop_language("it");
         char *error = ss_init();
         if (error) { fprintf(stderr, "%s\n", error); ss_free(error); return 3; }
+        if (!menuHasTitle(NSApp.mainMenu, @"Apri Admin") || !menuHasTitle(NSApp.mainMenu, @"Esci da Smart Stage")) {
+            fputs("Pre-initialization Italian selection did not reach the native menus\n", stderr); return 5;
+        }
+        ss_desktop_language("en");
         NSString *address = [NSString stringWithUTF8String:adminAddress];
         NSArray<NSURL *> *originals = @[
             [NSURL fileURLWithPath:[NSString stringWithUTF8String:firstOriginal]],
@@ -52,6 +64,7 @@ int main(int argc, const char **argv) {
         __block NSNumber *originalEpoch;
         __block NSTimeInterval reopenStarted = 0;
         __block NSMutableDictionary *report = [NSMutableDictionary dictionary];
+        report[@"italianNativePreferenceAppliedBeforeInitialization"] = @YES;
         __block NSString *failure;
         void (^fail)(NSString *) = ^(NSString *message) {
             failure = message;
@@ -150,8 +163,36 @@ int main(int argc, const char **argv) {
                         report[@"unsavedUIAndLiveConnectionPreserved"] = @YES;
                         report[@"liveEventSourceRecoveredAfterReopen"] = @YES;
                         if (!ss_desktop_show_admin() || !ss_desktop_show_admin()) { fail(@"Repeated Admin show request failed"); return; }
-                        phase = 4;
+                        ss_desktop_language("it");
+                        phase = 8;
                     }];
+            } else if (phase == 8) {
+                if (![window.title isEqualToString:@"Smart Stage — Amministrazione"] ||
+                    !menuHasTitle(NSApp.mainMenu, @"Scegli file multimediali…") ||
+                    !menuHasTitle(NSApp.mainMenu, @"Esci da Smart Stage")) return;
+                report[@"italianNativeWindowAndMenusObservedAtRuntime"] = @YES;
+                if (!ss_desktop_choose_files()) { fail(@"Localized native chooser request failed"); return; }
+                phase = 9;
+            } else if (phase == 9) {
+                NSOpenPanel *panel = [(NSObject *)NSApp.delegate valueForKey:@"filePanel"];
+                if (!panel || !panel.isVisible) return;
+                if (![panel.title isEqualToString:@"Scegli i file per Smart Stage"] ||
+                    ![panel.prompt isEqualToString:@"Aggiungi allo spettacolo"]) {
+                    fail(@"Native chooser did not use the selected Italian labels"); return;
+                }
+                report[@"italianNativeChooserTitleAndPromptObserved"] = @YES;
+                [panel cancel:nil];
+                phase = 10;
+            } else if (phase == 10) {
+                if ([(NSObject *)NSApp.delegate valueForKey:@"filePanel"]) return;
+                ss_desktop_language("en");
+                phase = 11;
+            } else if (phase == 11) {
+                if (![window.title isEqualToString:@"Smart Stage — Admin"] ||
+                    !menuHasTitle(NSApp.mainMenu, @"Open Admin") || !menuHasTitle(NSApp.mainMenu, @"Quit Smart Stage")) return;
+                report[@"englishNativeLabelsRestoredAtRuntime"] = @YES;
+                report[@"languageChangeRetainedSameNativeWindowAndWebView"] = @YES;
+                phase = 4;
             } else if (phase == 4) {
                 if (ss_desktop_files_pending()) {
                     fail(@"Native file queue was not empty before the deliberate drop"); return;

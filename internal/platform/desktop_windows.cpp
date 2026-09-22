@@ -32,6 +32,124 @@
 #endif
 
 namespace desktop {
+std::atomic<int> selectedLanguage{-1};
+std::atomic<bool> languageRefreshPending{false};
+bool systemItalian() {
+    ULONG count=0,size=0;
+    if(GetUserPreferredUILanguages(MUI_LANGUAGE_NAME,&count,nullptr,&size) && size && size<=65536) {
+        std::vector<wchar_t> names(size);
+        if(GetUserPreferredUILanguages(MUI_LANGUAGE_NAME,&count,names.data(),&size)) {
+            for(const wchar_t* name=names.data(); *name; name+=wcslen(name)+1) {
+                if(_wcsnicmp(name,L"it",2)==0 && (!name[2] || name[2]==L'-' || name[2]==L'_'))return true;
+                if(_wcsnicmp(name,L"en",2)==0 && (!name[2] || name[2]==L'-' || name[2]==L'_'))return false;
+            }
+        }
+    }
+    return PRIMARYLANGID(GetUserDefaultUILanguage())==LANG_ITALIAN;
+}
+bool italian() {
+    int current=selectedLanguage.load();
+    if(current<0) {
+        int expected=-1;
+        selectedLanguage.compare_exchange_strong(expected,systemItalian()?1:0);
+        current=selectedLanguage.load();
+    }
+    return current==1;
+}
+struct Translation {const wchar_t* english;const wchar_t* italian;};
+const Translation translations[]={
+    {L"Starting Smart Stage…", L"Avvio di Smart Stage…"},
+    {L"Smart Stage — Admin", L"Smart Stage — Amministrazione"},
+    {L"Open Admin", L"Apri Admin"},
+    {L"Choose Media…\tCtrl+O", L"Scegli file multimediali…\tCtrl+O"},
+    {L"Reload Admin", L"Ricarica Admin"},
+    {L"Open Admin in Browser", L"Apri Admin nel browser"},
+    {L"Open Log", L"Apri registro"},
+    {L"Quit Smart Stage\tCtrl+Q", L"Esci da Smart Stage\tCtrl+Q"},
+    {L"Smart Stage — Open Admin / Quit", L"Smart Stage — Apri Admin / Esci"},
+    {L"Quit Smart Stage?", L"Uscire da Smart Stage?"},
+    {L"Quit Smart Stage?\n\nPlayback will stop and the stage will close.", L"Uscire da Smart Stage?\n\nLa riproduzione verrà interrotta e lo schermo di scena verrà chiuso."},
+    {L"Cancel", L"Annulla"},
+    {L"Audio, video and images", L"Audio, video e immagini"},
+    {L"All files", L"Tutti i file"},
+    {L"Choose media for Smart Stage — files stay in their original folders", L"Scegli i file per Smart Stage — resteranno nelle cartelle originali"},
+    {L"Add to Show", L"Aggiungi allo spettacolo"},
+    {L"An unexpected error occurred in the Admin window.", L"Si è verificato un errore imprevisto nella finestra Admin."},
+    {L"Add no more than 500 files at once.", L"Aggiungi al massimo 500 file alla volta."},
+    {L"Choose original files with valid absolute Windows paths.", L"Scegli file originali con percorsi assoluti Windows validi."},
+    {L"Wait for the files already being added, then try again.", L"Attendi il completamento dell’aggiunta dei file precedenti, poi riprova."},
+    {L"The selected files could not be added.", L"Impossibile aggiungere i file selezionati."},
+    {L"Admin could not connect. Check that Smart Stage has finished starting, then reload.", L"Impossibile connettere Admin. Verifica che Smart Stage abbia completato l’avvio, poi ricarica."},
+    {L"The Admin page stopped responding. Reload to reconnect; playback is still running.", L"La pagina Admin non risponde. Ricarica per riconnetterti; la riproduzione è ancora in corso."},
+    {L"Native Admin operation failed.", L"Operazione della finestra Admin non riuscita."},
+    {L"Microsoft Edge WebView2 Runtime is missing. Quit Smart Stage, run the Smart Stage Windows installer, then reopen the app. The Smart Stage menu also offers Open Admin in Browser.", L"Microsoft Edge WebView2 Runtime non è installato. Esci da Smart Stage, esegui il programma di installazione Windows di Smart Stage, poi riapri l’app. Puoi anche scegliere Apri Admin nel browser dal menu Smart Stage."},
+    {L"The embedded WebView2 loader is incomplete", L"Il componente WebView2 integrato è incompleto"},
+    {L"Embedded WebView2 loader verification failed", L"Verifica del componente WebView2 integrato non riuscita"},
+    {L"Open the Windows media chooser", L"Apri la selezione dei file di Windows"},
+    {L"Read chooser options", L"Leggi le opzioni di selezione dei file"},
+    {L"Configure the media chooser", L"Configura la selezione dei file"},
+    {L"Read selected files", L"Leggi i file selezionati"},
+    {L"Find local application data", L"Trova i dati locali dell’applicazione"},
+    {L"Read current user identity", L"Leggi l’identità dell’utente corrente"},
+    {L"Read current user SID", L"Leggi il SID dell’utente corrente"},
+    {L"Protect WebView storage", L"Proteggi i dati di WebView"},
+    {L"Generate private WebView storage name", L"Genera il nome della cartella privata di WebView"},
+    {L"Create private WebView storage", L"Crea la cartella privata di WebView"},
+    {L"Create the embedded WebView2 loader", L"Crea il componente WebView2 integrato"},
+    {L"Write the embedded WebView2 loader", L"Scrivi il componente WebView2 integrato"},
+    {L"Protect the embedded WebView2 loader", L"Proteggi il componente WebView2 integrato"},
+    {L"Load the embedded Microsoft WebView2 loader", L"Carica il componente Microsoft WebView2 integrato"},
+    {L"Get Admin controller", L"Ottieni il controller Admin"},
+    {L"Get Admin WebView", L"Ottieni WebView di Admin"},
+    {L"Read WebView settings", L"Leggi le impostazioni di WebView"},
+    {L"Configure native Admin identity", L"Configura l’identità della finestra Admin"},
+    {L"Read browser identity", L"Leggi l’identità del browser"},
+    {L"Set native Admin identity", L"Imposta l’identità della finestra Admin"},
+    {L"Protect Admin navigation", L"Proteggi la navigazione di Admin"},
+    {L"Disable Admin frames", L"Disabilita i frame di Admin"},
+    {L"Handle explicit external links", L"Gestisci i collegamenti esterni selezionati"},
+    {L"Disable device permissions", L"Disabilita le autorizzazioni dei dispositivi"},
+    {L"Restrict Admin resources", L"Limita le risorse di Admin"},
+    {L"Inspect Admin resource", L"Verifica la risorsa Admin"},
+    {L"Block external resource", L"Blocca la risorsa esterna"},
+    {L"Protect Admin resources", L"Proteggi le risorse di Admin"},
+    {L"Disable WebView downloads", L"Disabilita i download di WebView"},
+    {L"Observe Admin navigation", L"Controlla la navigazione di Admin"},
+    {L"Observe Admin process", L"Controlla il processo Admin"},
+    {L"Track Admin cursor", L"Controlla il cursore di Admin"},
+    {L"Configure Admin keyboard shortcuts", L"Configura le scorciatoie da tastiera di Admin"},
+    {L"Create Admin composition device", L"Crea il dispositivo grafico di Admin"},
+    {L"Create Admin composition target", L"Crea la destinazione grafica di Admin"},
+    {L"Create Admin visual", L"Crea la vista di Admin"},
+    {L"Attach Admin visual", L"Collega la vista di Admin"},
+    {L"Attach WebView to Admin window", L"Collega WebView alla finestra Admin"},
+    {L"Display Admin WebView", L"Visualizza WebView di Admin"},
+    {L"Show Admin WebView", L"Mostra WebView di Admin"},
+    {L"Load local Admin page", L"Carica la pagina Admin locale"},
+    {L"Create WebView2 environment", L"Crea l’ambiente WebView2"},
+    {L"Create composition-capable WebView", L"Crea WebView con composizione grafica"},
+    {L"Create native Admin WebView", L"Crea WebView per la finestra Admin"},
+    {L"Start Admin WebView controller", L"Avvia il controller WebView di Admin"},
+    {L"Start Microsoft WebView2", L"Avvia Microsoft WebView2"},
+    {L"Create native Admin window", L"Crea la finestra Admin"},
+    {L"Enable Explorer file drops", L"Abilita il trascinamento dei file da Esplora file"},
+    {L"Reload local Admin page", L"Ricarica la pagina Admin locale"},
+};
+const wchar_t* text(const wchar_t* english) {
+    if(italian())for(const auto& translation:translations)
+        if(wcscmp(english,translation.english)==0)return translation.italian;
+    return english;
+}
+std::wstring translatedMessage(const std::wstring& value) {
+    for(const auto& translation:translations) {
+        if(value==translation.english || value==translation.italian)return text(translation.english);
+        std::wstring prefix=std::wstring(translation.english)+L" (0x";
+        if(value.compare(0,prefix.size(),prefix)==0)
+            return std::wstring(text(translation.english))+value.substr(wcslen(translation.english));
+    }
+    return value;
+}
+
 template<class T> struct Ptr {
     T* p = nullptr;
     Ptr() = default;
@@ -73,13 +191,14 @@ std::string quote(const std::string& value) {
 void check(HRESULT hr, const char* action) {
     if (FAILED(hr)) { std::ostringstream s; s << action << " (0x" << std::hex << uint32_t(hr) << ")"; throw s.str(); }
 }
-constexpr UINT wakeMessage = WM_APP+81, trayMessage = WM_APP+82, shutdownMessage = WM_APP+83;
+constexpr UINT wakeMessage = WM_APP+81, trayMessage = WM_APP+82, shutdownMessage = WM_APP+83, languageMessage = WM_APP+84;
 constexpr UINT openID = 101, chooseID = 102, quitID = 103, reloadID = 104, logsID = 105, browserID = 106;
 std::atomic<HWND> control{nullptr};
 HWND window = nullptr, errorLabel = nullptr, retryButton = nullptr;
 std::wstring identity = L"SmartStageAdmin-default", adminURL, origin, logPath;
 std::wstring directory, loaderPath;
 std::wstring errorText = L"Starting Smart Stage…";
+HMENU activeTrayMenu = nullptr;
 std::atomic<bool> ready{false}, stopping{false}, showPending{false}, adminRequested{false}, quitRequested{false}, chooserScheduled{false};
 std::atomic<bool> emergencyRequested{false};
 std::thread uiThread;
@@ -114,8 +233,9 @@ DWORD trayAddError = 0;
 
 void showError(const std::string& message) {
     errorText = wide(message.c_str());
+    auto displayed=translatedMessage(errorText);
     if(controller)controller->put_IsVisible(FALSE);
-    if (errorLabel) { SetWindowTextW(errorLabel, errorText.c_str()); ShowWindow(errorLabel, SW_SHOW); ShowWindow(retryButton, SW_SHOW); }
+    if (errorLabel) { SetWindowTextW(errorLabel, displayed.c_str()); ShowWindow(errorLabel, SW_SHOW); ShowWindow(retryButton, SW_SHOW); }
     fprintf(stderr, "Native Admin: %s\n", message.c_str());
 }
 template<class Interface, class... Args> class Handler final : public Interface {
@@ -178,7 +298,7 @@ HWND closeConfirmationWindow() {
         wchar_t name[32]{}, title[64]{};
         if(GetWindow(candidate,GW_OWNER)==window &&
            GetClassNameW(candidate,name,32) && wcscmp(name,L"#32770")==0 &&
-           GetWindowTextW(candidate,title,64) && wcscmp(title,closeConfirmationTitle)==0) {
+           GetWindowTextW(candidate,title,64) && (wcscmp(title,closeConfirmationTitle)==0 || wcscmp(title,L"Uscire da Smart Stage?")==0)) {
             *reinterpret_cast<HWND*>(result)=candidate;
             return FALSE;
         }
@@ -199,8 +319,9 @@ void confirmWindowClose() {
         return;
     }
     closeConfirmationActive=true;
-    int answer=MessageBoxW(window,L"Quit Smart Stage?\n\nPlayback will stop and the stage will close.",
-        closeConfirmationTitle,MB_OKCANCEL|MB_DEFBUTTON2);
+    PostMessageW(control.load(),languageMessage,0,0);
+    int answer=MessageBoxW(window,text(L"Quit Smart Stage?\n\nPlayback will stop and the stage will close."),
+        text(closeConfirmationTitle),MB_OKCANCEL|MB_DEFBUTTON2);
     DWORD error=answer ? ERROR_SUCCESS : GetLastError();
     closeConfirmationActive=false;
     // MessageBox has its own message pump. Shutdown may arrive while it is
@@ -210,7 +331,8 @@ void confirmWindowClose() {
         closeConfirmationAccepted=true;
         if(!quitRequested.exchange(true))fprintf(stderr,"Quitting Smart Stage after window-close confirmation\n");
     } else if(!answer) {
-        showError("Could not show the quit confirmation (Windows error "+std::to_string(error)+"). Use Quit Smart Stage in the app menu.");
+        showError((italian() ? "Impossibile mostrare la conferma di uscita (errore Windows " : "Could not show the quit confirmation (Windows error ")+
+            std::to_string(error)+(italian() ? "). Usa Esci da Smart Stage nel menu dell’app." : "). Use Quit Smart Stage in the app menu."));
     }
 }
 void resize() {
@@ -276,8 +398,8 @@ void chooseMedia() {
     check(CoCreateInstance(CLSID_FileOpenDialog,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(chooser.out())),"Open the Windows media chooser");
     FILEOPENDIALOGOPTIONS flags{}; check(chooser->GetOptions(&flags),"Read chooser options");
     check(chooser->SetOptions(flags|FOS_ALLOWMULTISELECT|FOS_FORCEFILESYSTEM|FOS_FILEMUSTEXIST|FOS_PATHMUSTEXIST|FOS_NOCHANGEDIR),"Configure the media chooser");
-    COMDLG_FILTERSPEC filters[]={{L"Audio, video and images",L"*.mp3;*.wav;*.m4a;*.aac;*.flac;*.aiff;*.wma;*.mp4;*.m4v;*.mov;*.wmv;*.avi;*.mkv;*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tif;*.tiff;*.webp"},{L"All files",L"*.*"}};
-    chooser->SetFileTypes(2,filters); chooser->SetTitle(L"Choose media for Smart Stage — files stay in their original folders"); chooser->SetOkButtonLabel(L"Add to Show");
+    COMDLG_FILTERSPEC filters[]={{text(L"Audio, video and images"),L"*.mp3;*.wav;*.m4a;*.aac;*.flac;*.aiff;*.wma;*.mp4;*.m4v;*.mov;*.wmv;*.avi;*.mkv;*.jpg;*.jpeg;*.png;*.bmp;*.gif;*.tif;*.tiff;*.webp"},{text(L"All files"),L"*.*"}};
+    chooser->SetFileTypes(2,filters); chooser->SetTitle(text(L"Choose media for Smart Stage — files stay in their original folders")); chooser->SetOkButtonLabel(text(L"Add to Show"));
     if(stopping.load())return;
     fprintf(stderr,"Opened native media chooser\n");
     chooserShowing=true;
@@ -460,7 +582,7 @@ void addTray() {
     tray.uFlags=NIF_MESSAGE|NIF_ICON|NIF_TIP; tray.uCallbackMessage=trayMessage;
     tray.hIcon=LoadIconW(GetModuleHandleW(nullptr),MAKEINTRESOURCEW(1));
     if(!tray.hIcon)tray.hIcon=LoadIconW(nullptr,IDI_APPLICATION);
-    wcscpy_s(tray.szTip,L"Smart Stage — Open Admin / Quit");
+    wcscpy_s(tray.szTip,text(L"Smart Stage — Open Admin / Quit"));
     SetLastError(ERROR_SUCCESS);++trayAttempts;
     trayAdded=Shell_NotifyIconW(NIM_ADD,&tray)!=FALSE;
     trayAddError=trayAdded?ERROR_SUCCESS:GetLastError();
@@ -479,9 +601,50 @@ void addTray() {
     }
 }
 HMENU appMenu() {
-    HMENU menu=CreatePopupMenu(); AppendMenuW(menu,MF_STRING,openID,L"Open Admin"); AppendMenuW(menu,MF_STRING,chooseID,L"Choose Media…\tCtrl+O");
-    AppendMenuW(menu,MF_STRING,reloadID,L"Reload Admin"); AppendMenuW(menu,MF_STRING,browserID,L"Open Admin in Browser"); AppendMenuW(menu,MF_STRING,logsID,L"Open Log");
-    AppendMenuW(menu,MF_SEPARATOR,0,nullptr); AppendMenuW(menu,MF_STRING,quitID,L"Quit Smart Stage\tCtrl+Q"); return menu;
+    HMENU menu=CreatePopupMenu(); AppendMenuW(menu,MF_STRING,openID,text(L"Open Admin")); AppendMenuW(menu,MF_STRING,chooseID,text(L"Choose Media…\tCtrl+O"));
+    AppendMenuW(menu,MF_STRING,reloadID,text(L"Reload Admin")); AppendMenuW(menu,MF_STRING,browserID,text(L"Open Admin in Browser")); AppendMenuW(menu,MF_STRING,logsID,text(L"Open Log"));
+    AppendMenuW(menu,MF_SEPARATOR,0,nullptr); AppendMenuW(menu,MF_STRING,quitID,text(L"Quit Smart Stage\tCtrl+Q")); return menu;
+}
+void translateMenu(HMENU menu) {
+    if(!menu)return;
+    for(int index=0;index<GetMenuItemCount(menu);++index) {
+        wchar_t label[256]{};
+        MENUITEMINFOW item{};item.cbSize=sizeof(item);item.fMask=MIIM_STRING|MIIM_SUBMENU;item.dwTypeData=label;item.cch=256;
+        if(!GetMenuItemInfoW(menu,UINT(index),TRUE,&item))continue;
+        auto translated=translatedMessage(label);
+        item.fMask=MIIM_STRING;item.dwTypeData=translated.data();
+        SetMenuItemInfoW(menu,UINT(index),TRUE,&item);
+        if(item.hSubMenu)translateMenu(item.hSubMenu);
+    }
+}
+void refreshLanguage() {
+    if(stopping.load())return;
+    if(window) {
+        SetWindowTextW(window,text(L"Smart Stage — Admin"));
+        translateMenu(GetMenu(window));DrawMenuBar(window);
+    }
+    translateMenu(activeTrayMenu);
+    if(retryButton)SetWindowTextW(retryButton,text(L"Reload Admin"));
+    if(errorLabel)SetWindowTextW(errorLabel,translatedMessage(errorText).c_str());
+    if(trayAdded) {
+        wcscpy_s(tray.szTip,text(L"Smart Stage — Open Admin / Quit"));
+        Shell_NotifyIconW(NIM_MODIFY,&tray);
+    }
+    if(chooser) {
+        chooser->SetTitle(text(L"Choose media for Smart Stage — files stay in their original folders"));
+        chooser->SetOkButtonLabel(text(L"Add to Show"));
+    }
+    if(closeConfirmationActive)if(HWND dialog=closeConfirmationWindow()) {
+        SetWindowTextW(dialog,text(closeConfirmationTitle));
+        SetDlgItemTextW(dialog,IDOK,L"OK");SetDlgItemTextW(dialog,IDCANCEL,text(L"Cancel"));
+        EnumChildWindows(dialog,[](HWND child,LPARAM)->BOOL {
+            wchar_t name[32]{};
+            if(GetClassNameW(child,name,32) && wcscmp(name,L"Static")==0 &&
+                (GetWindowLongPtrW(child,GWL_STYLE)&SS_TYPEMASK)!=SS_ICON)
+                SetWindowTextW(child,text(L"Quit Smart Stage?\n\nPlayback will stop and the stage will close."));
+            return TRUE;
+        },0);
+    }
 }
 void showWindow() {
     if(stopping.load())return;
@@ -494,12 +657,12 @@ void showWindow() {
     if(!window) {
         RECT area{}; SystemParametersInfoW(SPI_GETWORKAREA,0,&area,0);
         int width=std::min(1120L,area.right-area.left-60),height=std::min(820L,area.bottom-area.top-60);
-        window=CreateWindowExW(0,L"SmartStageAdmin-View",L"Smart Stage — Admin",WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,
+        window=CreateWindowExW(0,L"SmartStageAdmin-View",text(L"Smart Stage — Admin"),WS_OVERLAPPEDWINDOW|WS_CLIPCHILDREN,
             area.left+(area.right-area.left-width)/2,area.top+(area.bottom-area.top-height)/2,width,height,nullptr,nullptr,GetModuleHandleW(nullptr),nullptr);
         if(!window)throw std::string("Create native Admin window");
         HMENU bar=CreateMenu(); AppendMenuW(bar,MF_POPUP,(UINT_PTR)appMenu(),L"Smart Stage"); SetMenu(window,bar);
-        errorLabel=CreateWindowExW(0,L"STATIC",errorText.c_str(),WS_CHILD|WS_VISIBLE,20,22,width-160,72,window,nullptr,GetModuleHandleW(nullptr),nullptr);
-        retryButton=CreateWindowExW(0,L"BUTTON",L"Reload Admin",WS_CHILD|WS_VISIBLE|WS_TABSTOP, width-130,28,112,30,window,(HMENU)(UINT_PTR)reloadID,GetModuleHandleW(nullptr),nullptr);
+        errorLabel=CreateWindowExW(0,L"STATIC",translatedMessage(errorText).c_str(),WS_CHILD|WS_VISIBLE,20,22,width-160,72,window,nullptr,GetModuleHandleW(nullptr),nullptr);
+        retryButton=CreateWindowExW(0,L"BUTTON",text(L"Reload Admin"),WS_CHILD|WS_VISIBLE|WS_TABSTOP, width-130,28,112,30,window,(HMENU)(UINT_PTR)reloadID,GetModuleHandleW(nullptr),nullptr);
         SendMessageW(errorLabel,WM_SETFONT,(WPARAM)GetStockObject(DEFAULT_GUI_FONT),TRUE);
         SendMessageW(retryButton,WM_SETFONT,(WPARAM)GetStockObject(DEFAULT_GUI_FONT),TRUE);
         dropTarget.reset(new DropTarget()); check(RegisterDragDrop(window,dropTarget.p),"Enable Explorer file drops");
@@ -554,6 +717,7 @@ void cancelChooser() {
 LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
     try {
         if(message==shutdownMessage) {shutdownUI();return 0;}
+        if(message==languageMessage) {languageRefreshPending.store(false);refreshLanguage();return 0;}
         if(message==WM_TIMER && wp==0x535) {addTray();return 0;}
         if(message==WM_TIMER && wp==0x534 && stopping.load()) {cancelChooser();cancelCloseConfirmation();return 0;}
         if(message==wakeMessage) {drainTasks();return 0;}
@@ -561,7 +725,7 @@ LRESULT CALLBACK windowProc(HWND hwnd,UINT message,WPARAM wp,LPARAM lp) {
         if(message==trayMessage) {
             UINT event=LOWORD(lp);
             if(event==NIN_SELECT || event==NIN_KEYSELECT || event==WM_LBUTTONDBLCLK)showWindow();
-            else if(event==WM_CONTEXTMENU || event==WM_RBUTTONUP) { POINT p{};GetCursorPos(&p);HMENU menu=appMenu();SetForegroundWindow(hwnd);UINT id=TrackPopupMenu(menu,TPM_RETURNCMD|TPM_RIGHTBUTTON,p.x,p.y,0,hwnd,nullptr);DestroyMenu(menu);if(id)command(id);PostMessageW(hwnd,WM_NULL,0,0); }
+            else if(event==WM_CONTEXTMENU || event==WM_RBUTTONUP) { POINT p{};GetCursorPos(&p);HMENU menu=appMenu();activeTrayMenu=menu;SetForegroundWindow(hwnd);UINT id=TrackPopupMenu(menu,TPM_RETURNCMD|TPM_RIGHTBUTTON,p.x,p.y,0,hwnd,nullptr);activeTrayMenu=nullptr;DestroyMenu(menu);if(id)command(id);PostMessageW(hwnd,WM_NULL,0,0); }
             return 0;
         }
         if(message==WM_COMMAND) { command(LOWORD(wp));return 0; }
@@ -717,6 +881,15 @@ bool post(std::function<void()> fn) {
 }
 } // namespace desktop
 
+extern "C" char* ss_system_language() {return _strdup(desktop::systemItalian()?"it":"en");}
+extern "C" void ss_desktop_language(const char* language) {
+    desktop::selectedLanguage.store(language && strcmp(language,"it")==0 ? 1 : 0);
+    // Do not start an STA merely to select a language. Construction reads the
+    // latest atomic selection; existing controls update through their UI pump.
+    HWND handle=desktop::control.load();
+    if(handle && !desktop::stopping.load() && !desktop::languageRefreshPending.exchange(true))
+        if(!PostMessageW(handle,desktop::languageMessage,0,0))desktop::languageRefreshPending.store(false);
+}
 extern "C" void ss_desktop_identity(const char* key) { desktop::identity=L"SmartStageAdmin-"+desktop::wide(key); }
 extern "C" void ss_desktop_log_path(const char* path) {
     desktop::logPath=desktop::wide(path);
@@ -751,7 +924,7 @@ extern "C" int ss_desktop_choose_files() {
     if(!desktop::post([]{desktop::chooseMedia();})) {desktop::chooserScheduled.store(false);return 0;}return 1;
 }
 extern "C" int ss_desktop_activate_browser() {return ss_desktop_show_admin();}
-extern "C" void ss_desktop_error(const char* message) {auto text=desktop::wide(message);MessageBoxW(nullptr,text.c_str(),L"Smart Stage",MB_OK|MB_ICONERROR);}
+extern "C" void ss_desktop_error(const char* message) {auto text=desktop::translatedMessage(desktop::wide(message));MessageBoxW(nullptr,text.c_str(),L"Smart Stage",MB_OK|MB_ICONERROR);}
 extern "C" char* ss_desktop_poll_files() {
     std::lock_guard<std::mutex> lock(desktop::filesMutex);if(desktop::files.empty())return nullptr;
     auto request=std::move(desktop::files.front());desktop::files.pop_front();

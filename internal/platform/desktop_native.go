@@ -16,6 +16,26 @@ import (
 var desktopFiles = make(chan DesktopFileRequest, MaxDesktopFileRequests)
 var desktopAdminRequests = make(chan struct{}, 1)
 
+// SystemLanguage returns the first supported OS UI language, or English.
+func SystemLanguage() string {
+	language := readString(C.ss_system_language())
+	if language == "it" {
+		return "it"
+	}
+	return "en"
+}
+
+// DesktopLanguage updates native desktop labels on their UI thread. Calls made
+// before desktop initialization are retained. Unsupported values use English.
+func DesktopLanguage(language string) {
+	if language != "it" {
+		language = "en"
+	}
+	p := C.CString(language)
+	defer C.free(unsafe.Pointer(p))
+	C.ss_desktop_language(p)
+}
+
 // DesktopAdminRequests coalesces native Dock/menu/file-import requests. The Go
 // application decides whether to reuse an existing Admin page or open its URL.
 func DesktopAdminRequests() <-chan struct{} { return desktopAdminRequests }

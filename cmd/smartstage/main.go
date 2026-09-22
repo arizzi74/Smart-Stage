@@ -26,6 +26,7 @@ import (
 	"smartstage/internal/httpapi"
 	"smartstage/internal/identity"
 	"smartstage/internal/lan"
+	"smartstage/internal/locale"
 	"smartstage/internal/platform"
 	"smartstage/internal/playback"
 	"smartstage/internal/remote"
@@ -143,6 +144,10 @@ func main() {
 	defer closeDesktopLog()
 	platform.DesktopConfigure(*configDir)
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
+	language, languageErr := locale.New(*configDir, platform.SystemLanguage(), platform.DesktopLanguage)
+	if languageErr != nil {
+		slog.Warn("using system language because preferences could not be read", "error", languageErr)
+	}
 	for i, root := range roots {
 		absoluteRoot, err := filepath.Abs(root)
 		if err != nil {
@@ -201,6 +206,7 @@ func main() {
 		defer service.Close()
 		authentication := auth.New()
 		adminAPI := httpapi.NewAdmin(service, authentication, web.Handler(), []string{"127.0.0.1", "localhost"}, *adminPort)
+		adminAPI.SetLanguage(language)
 		adminServer := newServer(adminAPI)
 		serveError := make(chan error, 2)
 		local := &lanControl{bind: *bind, advertise: *advertise, port: *port, addresses: addresses, auth: authentication, app: service, admin: adminAPI, errors: serveError}

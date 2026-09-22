@@ -33,8 +33,12 @@ func (a *API) addCapabilities(reply map[string]any) {
 	}
 	a.mu.RLock()
 	choose, available := a.chooseFiles, a.canChooseFiles
+	language := a.language
 	a.mu.RUnlock()
 	reply["capabilities"] = map[string]bool{"chooseFiles": choose != nil && available != nil && available()}
+	if language != nil {
+		reply["language"] = language.Snapshot()
+	}
 }
 
 // HasAdminPresence reports a live authenticated Admin page on this process.

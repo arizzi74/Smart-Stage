@@ -16,6 +16,7 @@ import (
 
 	"smartstage/internal/app"
 	"smartstage/internal/auth"
+	"smartstage/internal/locale"
 	"smartstage/internal/model"
 	"smartstage/internal/qrcode"
 )
@@ -52,6 +53,7 @@ type API struct {
 	adminEvents    int
 	chooseFiles    func() bool
 	canChooseFiles func() bool
+	language       *locale.Manager
 }
 
 // New defaults to the loopback-only Admin handler. A network controller must use
@@ -341,6 +343,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	key := r.Method + " " + path
 	switch key {
+	case "GET /api/language", "PUT /api/language":
+		a.languageRequest(w, r)
 	case "GET /api/gateway", "PUT /api/gateway", "POST /api/gateway/reconnect":
 		a.gatewayRequest(w, r)
 	case "POST /api/quit", "POST /api/admin-presence", "POST /api/choose-files":
