@@ -1,9 +1,11 @@
 // Test-only driver: dispatch an ordinary Cocoa event through the production
 // bridge's NSApplication loop, without Accessibility or production test hooks.
 #import <AppKit/AppKit.h>
+#import <CoreGraphics/CoreGraphics.h>
 #include "../internal/platform/bridge.h"
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 @protocol SSDesktopTestActions
 - (void)openAdmin:(id)sender;
@@ -65,25 +67,6 @@ static NSDictionary *takePlaylist(void) {
     return [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
 }
 
-// Save panels host their controls in an AppKit service. Walk this panel's own
-// public accessibility objects and press its real, explicitly labelled button;
-// this does not query/control another application's UI or need AX trust.
-static BOOL pressPlaylistSave(id element, NSHashTable *visited, NSUInteger depth, NSMutableArray *observed) {
-    if (!element || depth > 20 || visited.count > 500 || [visited containsObject:element]) return NO;
-    [visited addObject:element];
-    NSString *role = [element respondsToSelector:@selector(accessibilityRole)] ? [element accessibilityRole] : @"";
-    NSString *label = [element respondsToSelector:@selector(accessibilityLabel)] ? [element accessibilityLabel] : @"";
-    NSString *title = [element respondsToSelector:@selector(accessibilityTitle)] ? [element accessibilityTitle] : @"";
-    if (role.length || label.length || title.length) [observed addObject:@{ @"role": role ?: @"", @"label": label ?: @"", @"title": title ?: @"" }];
-    BOOL save = [label isEqualToString:@"Salva playlist"] || [title isEqualToString:@"Salva playlist"] ||
-        [label isEqualToString:@"Save playlist"] || [title isEqualToString:@"Save playlist"];
-    if ([role isEqualToString:NSAccessibilityButtonRole] && save && [element respondsToSelector:@selector(accessibilityPerformPress)])
-        return [element accessibilityPerformPress];
-    NSArray *children = [element respondsToSelector:@selector(accessibilityChildren)] ? [element accessibilityChildren] : nil;
-    for (id child in children) if (pressPlaylistSave(child, visited, depth + 1, observed)) return YES;
-    return NO;
-}
-
 static int playlistChecks(void) {
     setenv("SMARTSTAGE_APP_LAUNCH", "1", 1);
     char *error = ss_init();
@@ -95,11 +78,11 @@ static int playlistChecks(void) {
     __block NSUInteger phase = 0, polls = 0;
     __block BOOL passed = NO;
     __block NSSavePanel *shutdownPanel;
-    __block NSArray *saveControls;
+
     dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
     dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 100 * NSEC_PER_MSEC), 100 * NSEC_PER_MSEC, NSEC_PER_MSEC);
     dispatch_source_set_event_handler(timer, ^{
-        if (++polls > 300) { fprintf(stderr, "Playlist dialog probe timeout at phase %lu; panel controls: %s\n", (unsigned long)phase, saveControls.description.UTF8String ?: "none"); ss_quit(); return; }
+        if (++polls > 300) { fprintf(stderr, "Playlist dialog probe timeout at phase %lu\n", (unsigned long)phase); ss_quit(); return; }
         NSSavePanel *panel = [(NSObject *)NSApp.delegate valueForKey:@"playlistPanel"];
         if (phase == 0 && ss_desktop_can_choose_playlists()) {
             if (ss_desktop_choose_playlist(0, 1) || !ss_desktop_choose_playlist(1, 1) || ss_desktop_choose_playlist(2, 0)) { ss_quit(); return; }
@@ -110,11 +93,29 @@ static int playlistChecks(void) {
             panel.nameFieldStringValue = filename;
             phase = 2;
         } else if (phase == 2 && panel.isVisible) {
+            // Modern Save controls are hosted by an AppKit service. Dispatch a
+            // real WindowServer key pair, only while this process owns focus;
+            // synthetic events sent inside NSApp never reach that service.
+            [NSApp activateIgnoringOtherApps:YES];
             [panel makeKeyAndOrderFront:nil];
-            NSMutableArray *observed = [NSMutableArray array];
-            NSHashTable *visited = [NSHashTable hashTableWithOptions:NSPointerFunctionsObjectPointerPersonality];
-            if (pressPlaylistSave(panel, visited, 0, observed)) phase = 3;
-            saveControls = observed;
+            NSRunningApplication *front = NSWorkspace.sharedWorkspace.frontmostApplication;
+            BOOL allowed = CGPreflightPostEventAccess();
+            fprintf(stderr, "Native Save event access=%d ownPID=%d frontPID=%d front=%s active=%d keyWindow=%ld panelWindow=%ld panelKey=%d\n",
+                allowed, getpid(), front.processIdentifier, front.bundleIdentifier.UTF8String ?: "none", NSApp.isActive,
+                (long)NSApp.keyWindow.windowNumber, (long)panel.windowNumber, panel.isKeyWindow);
+            if (front.processIdentifier != getpid() || !panel.isKeyWindow) return;
+            CGEventRef down = CGEventCreateKeyboardEvent(NULL, 36, YES);
+            CGEventRef up = CGEventCreateKeyboardEvent(NULL, 36, NO);
+            if (!down || !up) {
+                if (down) CFRelease(down); if (up) CFRelease(up);
+                fprintf(stderr, "Could not create the native Save Return events\n"); ss_quit(); return;
+            }
+            CGEventSetFlags(down, 0); CGEventSetFlags(up, 0);
+            CGEventPost(kCGHIDEventTap, down); CFRelease(down);
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 50 * NSEC_PER_MSEC), dispatch_get_main_queue(), ^{
+                CGEventPost(kCGHIDEventTap, up); CFRelease(up);
+            });
+            phase = 3;
         } else if (phase == 3 && !panel) {
             NSDictionary *result = takePlaylist();
             if (!result) return;
