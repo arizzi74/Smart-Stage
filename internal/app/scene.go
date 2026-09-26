@@ -283,9 +283,23 @@ func (s *Service) ConfigureStage(ctx context.Context, edit StageEdit) (model.Con
 				continue
 			}
 			found = true
-			validation := s.InspectFile(ctx, cue.Path)
+			// Recheck the host path on every save, but avoid decoding an
+			// unchanged, already validated background merely to edit its fade
+			// or button settings. Foreground preparation uses the same cache
+			// policy; a missing/changed file never inherits cached readiness.
+			path, info, fileErr := s.files.File(cue.Path)
+			validation := cue.Cache
+			if fileErr != nil {
+				validation = model.Validation{Status: "error", Reason: fileErr.Error()}
+			} else if validation.Status != "ready" || info.Size() != validation.Size || info.ModTime().UnixNano() != validation.Modified {
+				validation = s.InspectFile(ctx, path)
+			}
 			if validation.Status != "ready" || validation.Media.Kind != "image" && validation.Media.Kind != "video" {
-				return model.Config{}, problem("invalid_background", "Select a readable image or video as the stage background")
+				message := "Select a readable image or video as the stage background"
+				if validation.Reason != "" {
+					message += ": " + validation.Reason
+				}
+				return model.Config{}, problem("invalid_background", message)
 			}
 		}
 		if !found {

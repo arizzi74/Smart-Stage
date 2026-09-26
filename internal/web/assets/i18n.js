@@ -427,6 +427,7 @@
   "Wait for the application update before changing stage settings": "Attendi il completamento dell’aggiornamento prima di cambiare le impostazioni della scena",
   "The show changed; reload it before saving stage settings": "Lo spettacolo è cambiato; ricaricalo prima di salvare le impostazioni della scena",
   "Select a readable image or video as the stage background": "Seleziona un’immagine o un video leggibile come sfondo della scena",
+  "Select a readable image or video as the stage background: ": "Seleziona un’immagine o un video leggibile come sfondo della scena: ",
   "The background cue no longer exists": "L’elemento di sfondo non esiste più",
   "Updates are checked automatically.": "La ricerca degli aggiornamenti è automatica.",
   "Development builds cannot update automatically. Install an official release first.": "Le versioni di sviluppo non possono aggiornarsi automaticamente. Installa prima una versione ufficiale.",
@@ -497,7 +498,7 @@
   }
   function diagnostic(value) {
     const source = resolve(value);
-    for (const prefix of ['Update check failed: ', 'Update could not be prepared: ', 'The update did not start successfully; the previous version was restored. ']) {
+    for (const prefix of ['Update check failed: ', 'Update could not be prepared: ', 'The update did not start successfully; the previous version was restored. ', 'Select a readable image or video as the stage background: ']) {
       if (source.startsWith(prefix)) return t(prefix) + source.slice(prefix.length);
     }
     const request = /^Request failed \((\d+)\)$/.exec(source);

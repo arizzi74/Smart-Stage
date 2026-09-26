@@ -382,11 +382,20 @@ function dedicatedWindowsAdmin(platform, release) {
     assert.equal(saved.cues.find(cue => cue.id === backgroundCue.id).hidden, true);
     assert.equal(await admin.locator('#fade-seconds').inputValue(), '1', 'Default fade duration must be one second');
     async function saveStageSettings() {
+      // Flag edits schedule real native validation. Finish that independent
+      // work before testing settings persistence on the validated fixtures.
+      const validated = await until(async () => {
+        const current = await snapshot();
+        return !current.validationJob.running && current.cues.every(cue => cue.validation === 'ready') && current;
+      }, 'Native cue revalidation did not finish before saving Stage settings', 90000);
+      await admin.waitForFunction(revision => state.revision >= revision && !validationRefresh &&
+        playlist.cues.every(cue => cue.cache.status === 'ready'), validated.revision);
       const response = admin.waitForResponse(item => apiPath(item) === '/api/stage-settings' && item.request().method() === 'PUT');
       await admin.locator('#save-stage-settings').click();
       const result = await response;
-      assert.equal(result.status(), 200, 'Stage settings must save through the actual Admin API');
-      saved = await result.json();
+      const body = await result.json();
+      assert.equal(result.status(), 200, 'Stage settings must save through the actual Admin API: ' + redact(JSON.stringify(body.error || {})));
+      saved = body;
       await admin.waitForFunction(revision => document.getElementById('playlist-revision').textContent.endsWith(`revision ${revision}`), saved.playlistRevision);
       await until(async () => (await snapshot()).playlistRevision === saved.playlistRevision, 'Saved scene settings did not reach live state');
     }
