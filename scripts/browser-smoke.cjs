@@ -17,6 +17,7 @@ const assert = require('node:assert/strict');
   let stateGets = 0, holdPlay = false, remoteGets = 0, links = [], sessionCounter = 0;
   let updateGets = 0, updateGetDelay = 0, failUpdateCheck = false, restarting = false;
   let nativeChooserImports = [], playlistFailSave = false;
+  let playlistReadGate = null;
   let nativePlaylistStatus = { id: 0, phase: 'idle' }, nativePlaylistResult = { phase: 'complete' }, nativePlaylistMismatch = false;
   let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: false };
   let gateway = { mode: 'lan', url: '', hasToken: false, status: 'disabled', message: '', remoteURL: '' };
@@ -175,6 +176,13 @@ const assert = require('node:assert/strict');
     }
     if (url.pathname === '/api/remote-control/qr') { res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' }); res.end(imageFixture); return; }
     if (url.pathname === '/api/playlist') {
+      if (req.method === 'GET' && playlistReadGate) {
+        const gate = playlistReadGate; playlistReadGate = null;
+        const snapshot = structuredClone(config);
+        gate.entered(); await gate.released;
+        if (gate.fail) { reply({ error: { message: 'The older validation snapshot could not be read' } }, 503); return; }
+        reply(snapshot); return;
+      }
       if (req.method === 'PUT') {
         if (playlistFailSave) { reply({ error: { message: 'The original path is unavailable on the host.' } }, 400); return; }
         assert.equal(req.headers['x-csrf-token'], 'test-csrf'); assert.equal(body.expectedRevision, config.playlistRevision);
@@ -322,6 +330,70 @@ const assert = require('node:assert/strict');
     await freshAdmin.waitForFunction(() => document.getElementById('gateway-message').textContent.includes('restarting to enable local network'));
     assert.deepEqual(requests.filter(r => r.path === '/api/gateway' && r.body.mode).at(-1).body, { mode: 'lan', url: '' });
     await freshAdmin.close(); gateway.restart = false;
+
+    // The final validation event can arrive while an earlier playlist-cache
+    // read is still in flight. No later state event is guaranteed on an idle
+    // host, so Admin must drain that pending refresh without losing drafts.
+    for (const failOlderSnapshot of [false, true]) {
+      const readyVideoCache = structuredClone(config.cues[1].cache);
+      config.cues[1].cache = { status: 'unchecked', media: { kind: '', duration: 0 } };
+      state.cues[1].kind = ''; state.cues[1].validation = 'unchecked';
+      state.revision++; broadcast();
+      const validationAdmin = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+      validationAdmin.on('pageerror', error => errors.push(error.message));
+      await validationAdmin.goto(adminBase + '/admin');
+      await validationAdmin.waitForFunction(() => playlist && !validationRefresh && !playlistRefresh);
+      await validationAdmin.locator('#fade-enabled').check();
+      await validationAdmin.locator('#fade-seconds').fill('2.7');
+      const validationDraft = validationAdmin.getByRole('textbox', { name: 'Label for cue 2', exact: true });
+      await validationDraft.fill('Unsaved label survives validation');
+      const validationInput = await validationDraft.elementHandle();
+      const writesBeforeValidation = requests.filter(request => ['/api/playlist', '/api/stage-settings'].includes(request.path) && request.body.expectedRevision).length;
+      let releaseValidationRead, validationReadEntered;
+      const validationReadStarted = new Promise(resolve => { validationReadEntered = resolve; });
+      playlistReadGate = { fail: failOlderSnapshot, entered: validationReadEntered, released: new Promise(resolve => { releaseValidationRead = resolve; }) };
+      config.cues[1].cache.status = 'checking'; state.cues[1].validation = 'checking';
+      state.validationJob = { running: true, completed: 0, total: state.cues.length };
+      state.revision++; broadcast();
+      await validationReadStarted;
+      config.cues[1].cache = readyVideoCache;
+      state.cues[1].kind = 'video'; state.cues[1].validation = 'ready';
+      state.validationJob = { running: false, completed: state.cues.length, total: state.cues.length };
+      state.revision++; broadcast();
+      await validationAdmin.waitForFunction(() => state.cues[1].kind === 'video' && validationRefresh);
+      releaseValidationRead();
+      await validationAdmin.waitForFunction(() => !validationRefresh && playlist.cues[1].cache.media.kind === 'video' &&
+        playlist.cues[1].cache.status === 'ready' && !playlistRows.get('cue-1').background.disabled, null, { timeout: 5000 });
+      assert.equal(await validationAdmin.getByRole('checkbox', { name: 'Use cue 2 as a background button', exact: true }).isVisible(), true,
+        'validation completion refreshes the background checkbox without waiting for another event');
+      assert.equal(await validationDraft.inputValue(), 'Unsaved label survives validation');
+      assert(await validationInput.evaluate(input => input === document.activeElement && input.isConnected), 'validation refresh preserves the focused label node');
+      assert.equal(await validationAdmin.locator('#fade-enabled').isChecked(), true);
+      assert.equal(await validationAdmin.locator('#fade-seconds').inputValue(), '2.7');
+      assert.equal(await validationAdmin.evaluate(() => stageSettingsDirty), true, 'validation refresh preserves unsaved Stage settings');
+      assert.equal(requests.filter(request => ['/api/playlist', '/api/stage-settings'].includes(request.path) && request.body.expectedRevision).length,
+        writesBeforeValidation, 'validation refresh never saves a draft');
+
+      if (!failOlderSnapshot) {
+        // An explicit reload may also return a captured pre-validation snapshot
+        // after the last ready state event. It must refresh its derived cache.
+        // Reload intentionally replaces forms, unlike the validation path above.
+        config.cues[1].cache = { status: 'checking', media: { kind: '', duration: 0 } };
+        let releasePlaylistLoad, playlistLoadEntered;
+        const playlistLoadStarted = new Promise(resolve => { playlistLoadEntered = resolve; });
+        playlistReadGate = { entered: playlistLoadEntered, released: new Promise(resolve => { releasePlaylistLoad = resolve; }) };
+        const heldLoad = validationAdmin.evaluate(() => loadPlaylist(false));
+        await playlistLoadStarted;
+        config.cues[1].cache = readyVideoCache;
+        state.revision++; broadcast();
+        await validationAdmin.waitForFunction(revision => state.revision === revision && !validationRefresh, state.revision);
+        releasePlaylistLoad(); await heldLoad;
+        await validationAdmin.waitForFunction(() => !validationRefresh && !playlistRefresh &&
+          playlist.cues[1].cache.media.kind === 'video' && playlist.cues[1].cache.status === 'ready' &&
+          !playlistRows.get('cue-1').background.disabled, null, { timeout: 5000 });
+      }
+      await validationAdmin.close();
+    }
 
     const admin = await browser.newPage({ viewport: { width: 1280, height: 900 }, hasTouch: false }); admin.on('pageerror', e => errors.push(e.message));
     await admin.setViewportSize({ width: 1280, height: 900 }); await admin.goto(adminBase + '/admin');
@@ -1103,7 +1175,7 @@ const assert = require('node:assert/strict');
     assert.equal(requests.some(r => r.listenerRole === 'command' && r.path === '/api/language'), false, 'Remote never accesses the privileged language API');
     await italianRemoteContext.close();
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }

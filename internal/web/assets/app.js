@@ -18,7 +18,7 @@ let playlist = null, devices = null;
 let playlistBusy = false, refreshing = false, renderedOrder = '', playlistRefresh = false;
 let stageSettingsDirty = false, stageSettingsRevision = 0;
 let controlSequence = 0;
-let validationSignature = '', validationRefresh = false;
+let validationSignature = '', validationRefresh = false, validationRefreshPending = false;
 let localSessionBusy = false, localSessionRetry = null;
 let presenceBusy = false, quitBusy = false, appClosed = false, reloadingAdmin = false;
 let adminCapabilities = {}, chooseFilesBusy = false;
@@ -305,8 +305,8 @@ function applyState(next) {
         localizedText(row.validation, () => `${t(c.kind) || t("Unknown type")} · ${c.duration ? clock(c.duration) : t("Duration unknown")} · ${t(c.validation)}${reason ? ` · ${t(reason)}` : ''}`);
       }
     }
-    const signature = next.cues.map(c => `${c.id}:${c.validation}`).join('|');
-    if (playlist && signature !== validationSignature && !validationRefresh) {
+    const signature = next.cues.map(c => `${c.id}:${c.validation}:${c.kind}:${c.duration}`).join('|');
+    if (playlist && signature !== validationSignature) {
       validationSignature = signature; void refreshValidationDetails();
     }
     renderStatusDetails(next);
@@ -695,6 +695,9 @@ async function loadPlaylist(announceAdditions = true) {
   try {
     const previous = playlist;
     playlist = await api('GET', '/api/playlist'); renderPlaylist();
+    // Validation may have finished while this full playlist snapshot loaded.
+    // Refresh derived details after committing it, without rebuilding drafts.
+    void refreshValidationDetails();
     if (announceAdditions && desktopAdmin && previous && previous.playlistRevision !== playlist.playlistRevision) {
       const previousIDs = new Set(previous.cues.map(cue => cue.id));
       const added = playlist.cues.filter(cue => !previousIDs.has(cue.id)).length;
@@ -705,19 +708,30 @@ async function loadPlaylist(announceAdditions = true) {
   finally { playlistRefresh = false; }
 }
 async function refreshValidationDetails() {
+  // Final validation can arrive while an older playlist snapshot is in flight.
+  // Remember that change and drain one current request after it, even if no
+  // further state events arrive. Never apply the already superseded snapshot.
+  if (validationRefresh) { validationRefreshPending = true; return; }
   validationRefresh = true;
   try {
-    const current = await api('GET', '/api/playlist');
-    if (playlist && current.playlistRevision === playlist.playlistRevision) {
-      for (const cue of current.cues) {
-        const existing = playlist.cues.find(c => c.id === cue.id);
-        if (existing) existing.cache = cue.cache;
-        const row = playlistRows.get(cue.id);
-        if (row) localizedText(row.validation, () => `${t(cue.cache.media.kind) || t("Unknown type")} · ${cue.cache.media.duration ? clock(cue.cache.media.duration) : t("Duration unknown")} · ${t(cue.cache.status)}${cue.cache.reason ? ` · ${t(cue.cache.reason)}` : ''}`);
+    do {
+      validationRefreshPending = false;
+      try {
+        const current = await api('GET', '/api/playlist');
+        if (!validationRefreshPending && playlist && current.playlistRevision === playlist.playlistRevision) {
+          for (const cue of current.cues) {
+            const existing = playlist.cues.find(c => c.id === cue.id);
+            if (existing) existing.cache = cue.cache;
+            const row = playlistRows.get(cue.id);
+            if (row) localizedText(row.validation, () => `${t(cue.cache.media.kind) || t("Unknown type")} · ${cue.cache.media.duration ? clock(cue.cache.media.duration) : t("Duration unknown")} · ${t(cue.cache.status)}${cue.cache.reason ? ` · ${t(cue.cache.reason)}` : ''}`);
+          }
+        }
+      } catch (error) {
+        validationSignature = '';
+        notify(() => errorText(error), true);
       }
-    }
-  } catch (error) { notify(() => errorText(error), true); }
-  finally { validationRefresh = false; renderStageSettings(); renderEditAvailability(); }
+    } while (validationRefreshPending && !quitBusy && !appClosed && !reloadingAdmin);
+  } finally { validationRefresh = false; renderStageSettings(); renderEditAvailability(); }
 }
 function cueEdits() { return playlist.cues.map(({ id, label, path, color, hidden, background }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background) })); }
 async function savePlaylist(cues) {

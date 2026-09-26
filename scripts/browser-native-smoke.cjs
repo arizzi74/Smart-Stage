@@ -187,12 +187,13 @@ function dedicatedWindowsAdmin(platform, release) {
         if (apiPath(response) !== '/api/state' || response.status() !== 200) return false;
         return (await response.json()).state.playlistRevision >= expectedRevision;
       });
-      await action();
-      const response = await changed;
+      // Attach rejection handlers to all waits before the action can block.
+      // Otherwise an unavailable control leaves an unhandled response timeout
+      // that terminates Node before the failure screenshots/state are saved.
+      const [response] = await Promise.all([changed, refreshed, Promise.resolve().then(action)]);
       assert.equal(response.status(), 200, 'UI playlist edit must save successfully');
       saved = await response.json();
       assert.equal(saved.playlistRevision, expectedRevision);
-      await refreshed;
       await admin.waitForFunction(revision => document.getElementById('playlist-revision').textContent.endsWith(`revision ${revision}`), expectedRevision);
     }
     const importMethods = new Set();
@@ -592,6 +593,19 @@ function dedicatedWindowsAdmin(platform, release) {
     console.log(`Real browser/native checks passed: ${played} playable cues; audio endpoints=${devices.audio.length}. Physical routing remains unverified.`);
   } catch (error) {
     record.error = redact(error.stack || error);
+    if (admin) try {
+      record.adminEditingState = await admin.evaluate(() => ({
+        online, playlistBusy, playlistFileBusy, validationRefresh,
+        stateRevision: state?.revision, statePlaylistRevision: state?.playlistRevision,
+        playlistRevision: playlist?.playlistRevision,
+        cues: playlist?.cues.map((cue, index) => ({
+          position: index + 1, kind: cue.cache?.media?.kind, validation: cue.cache?.status,
+          background: Boolean(cue.background),
+          backgroundDisabled: playlistRows.get(cue.id)?.background.disabled,
+          backgroundHidden: playlistRows.get(cue.id)?.backgroundLabel.hidden
+        }))
+      }));
+    } catch {}
     for (const [name, page] of [['admin', admin], ['command', command]]) {
       if (page) try { await page.screenshot({ path: path.join(output, `${name}-failure.png`), fullPage: true,
         mask: name === 'admin' ? [page.locator('#remote-url'), page.locator('#remote-code'), page.locator('#remote-qr')] : [] }); } catch {}

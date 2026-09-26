@@ -5,6 +5,7 @@ Smart Stage 1.3.0 adds video/image cue toggles and visual transitions.
 - Enable **Fade audio, video and images** in **Admin → Stage & sound**. The existing duration controls visual fades and crossfades as well as sound (default one second; configurable from 0.1 to 30 seconds). Starting from silence or black stays immediate.
 - Video/image replacements crossfade; stopping returns smoothly to the background or fades to black. Stage off and Escape remain immediate and cancel visual transitions.
 - The optional music toggle and background-selection buttons keep their existing behavior. Admin and remote controls explain repeat-press actions in English and Italian.
+- Admin refreshes completed media validation reliably, so video/image background controls become available even when validation finishes during an earlier request.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 
