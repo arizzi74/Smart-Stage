@@ -1,0 +1,273 @@
+{
+  "sourceCommit": "4692eaed3ca3e0915225895f19df0cd1cfcceffe",
+  "workflowRunID": 36253728152,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36253728152",
+  "collectedAt": "2026-09-26T16:25:45.562886+00:00",
+  "scope": "Actual native scene probes on hosted Mac/Windows runners: layers, pixel readback, source timelines, visual retirement and interruption. Physical display smoothness and speaker/projector output remain unverified.",
+  "targets": [
+    {
+      "os": "darwin",
+      "architecture": "arm64",
+      "jobID": 108436461571,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36253728152/job/108436461571",
+      "nativeJobConclusion": "success",
+      "artifactID": 10909503351,
+      "artifactName": "native-darwin-arm64",
+      "checks": {
+        "physicalPointerVisibilityVerified": false,
+        "physicalSpeakerOutputVerified": false,
+        "status": "passed",
+        "method": "Real AVPlayer timelines/volume overlap and live video/image CALayer crossfade opacity observed inside a test process compiling the production bridge",
+        "observations": [
+          {
+            "backgroundStartsImmediatelyFromSilence": true
+          },
+          {
+            "backgroundVideoLoops": true
+          },
+          {
+            "backgroundKeepsLoopingMuted": true,
+            "backgroundToCueCrossfade": true
+          },
+          {
+            "stageOffPreservesForegroundTimelineAndVolume": true
+          },
+          {
+            "imageOverlayPreservesMusic": true,
+            "transparentStageCursorTracking": true
+          },
+          {
+            "cueToCueCrossfade": true,
+            "retiredDecoderReleased": true
+          },
+          {
+            "stopCrossfadesToExistingBackground": true
+          },
+          {
+            "backgroundImageDecodedAndVisible": true
+          },
+          {
+            "foregroundStartsImmediatelyFromSilence": true
+          },
+          {
+            "stopFadesToSilenceWithoutBackgroundSoundtrack": true
+          },
+          {
+            "hardStopCancelsAllFadesAndHidesStage": true,
+            "latestSceneWinsRapidPlayThenHardStop": true
+          },
+          {
+            "naturalEndReturnsToBackgroundAudio": true
+          },
+          {
+            "lateStageSceneCannotRestartEndedForeground": true
+          },
+          {
+            "outgoingVideoKeepsMovingDuringVisualFade": true,
+            "videoToImageVisualCrossfade": true,
+            "visualTailDecoderReleased": true
+          },
+          {
+            "imageToImageCrossfadePreservesMusicTimelineAndGain": true
+          },
+          {
+            "imageToReadyVideoCrossfade": true
+          },
+          {
+            "videoToVideoCrossfadeKeepsOutgoingTimeline": true
+          },
+          {
+            "videoFadesToBlackWithStageStillEnabled": true
+          },
+          {
+            "imageReturnsToBackgroundWithoutStoppingMusic": true
+          },
+          {
+            "rapidVisualRetargetKeepsOnlyLatestScene": true
+          },
+          {
+            "stageOffImmediatelyCancelsVisualFadeAndPreservesMusic": true
+          },
+          {
+            "escapeCancelsVisualFadeAndPreventsLateReveal": true
+          },
+          {
+            "imageFadesToBlackAndReleasesRaster": true
+          },
+          {
+            "hardStopImmediatelyCancelsActiveVisualTransition": true
+          },
+          {
+            "disabledVisualFadeSwitchesImmediately": true
+          }
+        ]
+      }
+    },
+    {
+      "os": "darwin",
+      "architecture": "amd64",
+      "jobID": 108436461638,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36253728152/job/108436461638",
+      "nativeJobConclusion": "success",
+      "artifactID": 10908904547,
+      "artifactName": "native-darwin-amd64",
+      "checks": {
+        "physicalPointerVisibilityVerified": false,
+        "physicalSpeakerOutputVerified": false,
+        "status": "passed",
+        "method": "Real AVPlayer timelines/volume overlap and live video/image CALayer crossfade opacity observed inside a test process compiling the production bridge",
+        "observations": [
+          {
+            "backgroundStartsImmediatelyFromSilence": true
+          },
+          {
+            "backgroundVideoLoops": true
+          },
+          {
+            "backgroundKeepsLoopingMuted": true,
+            "backgroundToCueCrossfade": true
+          },
+          {
+            "stageOffPreservesForegroundTimelineAndVolume": true
+          },
+          {
+            "imageOverlayPreservesMusic": true,
+            "transparentStageCursorTracking": true
+          },
+          {
+            "cueToCueCrossfade": true,
+            "retiredDecoderReleased": true
+          },
+          {
+            "stopCrossfadesToExistingBackground": true
+          },
+          {
+            "backgroundImageDecodedAndVisible": true
+          },
+          {
+            "foregroundStartsImmediatelyFromSilence": true
+          },
+          {
+            "stopFadesToSilenceWithoutBackgroundSoundtrack": true
+          },
+          {
+            "hardStopCancelsAllFadesAndHidesStage": true,
+            "latestSceneWinsRapidPlayThenHardStop": true
+          },
+          {
+            "naturalEndReturnsToBackgroundAudio": true
+          },
+          {
+            "lateStageSceneCannotRestartEndedForeground": true
+          },
+          {
+            "outgoingVideoKeepsMovingDuringVisualFade": true,
+            "videoToImageVisualCrossfade": true,
+            "visualTailDecoderReleased": true
+          },
+          {
+            "imageToImageCrossfadePreservesMusicTimelineAndGain": true
+          },
+          {
+            "imageToReadyVideoCrossfade": true
+          },
+          {
+            "videoToVideoCrossfadeKeepsOutgoingTimeline": true
+          },
+          {
+            "videoFadesToBlackWithStageStillEnabled": true
+          },
+          {
+            "imageReturnsToBackgroundWithoutStoppingMusic": true
+          },
+          {
+            "rapidVisualRetargetKeepsOnlyLatestScene": true
+          },
+          {
+            "stageOffImmediatelyCancelsVisualFadeAndPreservesMusic": true
+          },
+          {
+            "escapeCancelsVisualFadeAndPreventsLateReveal": true
+          },
+          {
+            "imageFadesToBlackAndReleasesRaster": true
+          },
+          {
+            "hardStopImmediatelyCancelsActiveVisualTransition": true
+          },
+          {
+            "disabledVisualFadeSwitchesImmediately": true
+          }
+        ]
+      }
+    },
+    {
+      "os": "windows",
+      "architecture": "amd64",
+      "jobID": 108436461568,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36253728152/job/108436461568",
+      "nativeJobConclusion": "success",
+      "artifactID": 10908984044,
+      "artifactName": "native-windows-amd64",
+      "checks": {
+        "nativeStreamGainsReadBack": false,
+        "audioFadesVerified": false,
+        "backgroundLoop": true,
+        "stableForegroundAcrossSceneRevisions": true,
+        "stageOffPreservesTimeline": true,
+        "imagePreservesForeground": true,
+        "imagePixelsRendered": true,
+        "stageCursorMessageHandling": true,
+        "hardStopClearsScene": true,
+        "visualCrossfadePixelsRendered": true,
+        "imageFadeToBlackPixelsRendered": true,
+        "videoTimelinesAdvanceDuringFade": true,
+        "liveVideoFrameReadbackAdvances": true,
+        "exclusiveRendererTargetOwnership": true,
+        "zeroDurationVisualSwitchImmediate": true,
+        "firstVisualImmediate": true,
+        "rapidVisualReplacementBounded": true,
+        "stageOffEscapeHardStopCancelVisualFade": true,
+        "failedVisualReturnsToBackgroundOrBlack": true,
+        "physicalOutputsVerified": false,
+        "status": "passed",
+        "audioUnavailableReason": "No active runner audio endpoint",
+        "cursorObservationScope": "Synthetic WM_SETCURSOR and current-thread GetCursor only"
+      }
+    },
+    {
+      "os": "windows",
+      "architecture": "arm64",
+      "jobID": 108436461576,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36253728152/job/108436461576",
+      "nativeJobConclusion": "success",
+      "artifactID": 10909919841,
+      "artifactName": "native-windows-arm64",
+      "checks": {
+        "nativeStreamGainsReadBack": false,
+        "audioFadesVerified": false,
+        "backgroundLoop": true,
+        "stableForegroundAcrossSceneRevisions": true,
+        "stageOffPreservesTimeline": true,
+        "imagePreservesForeground": true,
+        "imagePixelsRendered": true,
+        "stageCursorMessageHandling": true,
+        "hardStopClearsScene": true,
+        "visualCrossfadePixelsRendered": true,
+        "imageFadeToBlackPixelsRendered": true,
+        "videoTimelinesAdvanceDuringFade": true,
+        "liveVideoFrameReadbackAdvances": true,
+        "exclusiveRendererTargetOwnership": true,
+        "zeroDurationVisualSwitchImmediate": true,
+        "firstVisualImmediate": true,
+        "rapidVisualReplacementBounded": true,
+        "stageOffEscapeHardStopCancelVisualFade": true,
+        "failedVisualReturnsToBackgroundOrBlack": true,
+        "physicalOutputsVerified": false,
+        "status": "passed",
+        "audioUnavailableReason": "No active runner audio endpoint",
+        "cursorObservationScope": "Synthetic WM_SETCURSOR and current-thread GetCursor only"
+      }
+    }
+  ]
+}

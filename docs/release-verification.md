@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.2.0 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.3.0 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,70 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.3.0: video/image toggles and visual fades
+
+Version 1.3.0 is source `4692eaed3ca3e0915225895f19df0cd1cfcceffe`, published by
+[run 36254687261](https://github.com/arizzi74/Smart-Stage/actions/runs/36254687261).
+All seven [final candidate gates](verification/release-v1.3.0/candidate-workflow.json)
+passed before tagging. The [tagged build](verification/release-v1.3.0/tag-workflow.json)
+passed those seven gates and publication. Two earlier candidates exposed Admin
+validation/save problems, which were fixed and rechecked before tagging; their
+failed runs are not represented as passes.
+
+A second intentional press of a selected foreground video or visible/preparing
+image stops it and returns the enabled stage to the current background or black.
+Stopping an image preserves independent music, but also stops a covered video.
+The existing optional fade setting applies to audio and visuals without changing
+saved settings or playlist formats. First playback from silence/black stays
+immediate; replacements crossfade, clearing returns to a background or fades to
+black, and Stage off/Escape/hard Stop immediately cancel transitions. Background
+selector buttons and optional music toggling retain their previous behavior.
+
+Local race tests, real proxy tests, vet, all 11 JavaScript tests and the
+[browser regressions](verification/release-v1.3.0/browser-checks.json) passed.
+Coordinator tests cover request idempotency, late callbacks, loading cancellation,
+independent music and Stage-off reselection. A deterministic browser regression
+reproduces the stale validation response and checks recovery without another event,
+while preserving focused edits and unsaved Stage settings. Background saving
+freshly resolves the allowed file, reuses only matching ready metadata, and
+re-inspects changed files; failure/persistence and responsive STOP cases are tested.
+See the [change scope](verification/release-v1.3.0/change-scope.md).
+
+All four architectures passed actual native scene probes in both
+[candidate](verification/release-v1.3.0/native-scene-checks.json) and
+[tagged release](verification/release-v1.3.0/native-scene-release-checks.json).
+Mac checks native layer opacity/ownership and source/audio timelines, not final
+composited pixels. Windows checks real blended pixels, advancing EVR frame
+timestamps, bounded renderer ownership, image/background failure fallback and cancellation.
+Windows runners had no audio endpoint, so their reports explicitly mark audio
+fade verification unavailable. Hosted checks do not establish physical display
+smoothness, projector output or speaker sound.
+
+The [public asset audit](verification/release-v1.3.0/assets.json) independently
+verified all 50 assets, eight checksum pairs, archive shapes/icons, architectures,
+static Linux builds and clean source/Go 1.26.8 metadata. All six exact public
+executables passed [independent Go package scans](verification/release-v1.3.0/security-scans.json).
+The [public installer defaults](verification/release-v1.3.0/installer-defaults.json)
+match commit `920a35293a24896480112712b967c0a52a7bea53` and select v1.3.0.
+Shell syntax, version-pinned gateway bootstrap and checksum-before-execution tests
+passed after the default changes.
+
+All four published-download checks and all four native browser checks passed.
+All four [actual updater checks](verification/release-v1.3.0/auto-update-evidence.json)
+passed, including public release discovery, validated replacement, restart without
+autoplay and preservation of shows/media. Fixtures use this exact release source
+with older version metadata, not historical release executables. Timestamped
+[post-publication status](verification/release-v1.3.0/postpublication-status.json)
+and [installer-default workflow status](verification/release-v1.3.0/default-installer-workflows.json)
+record all follow-up jobs. All 16 post-publication jobs passed, including the
+Windows ARM64 installation using both built-in PowerShell and PowerShell 7. All
+four default-installer architecture jobs also passed. The distinct candidate/tag
+ARM64 native app lifecycle gates passed before publication.
+
+The existing deployed v1.1.2 gateway remains compatible; this desktop feature
+required no production daemon, nginx or firewall changes. Physical/clean-machine
+acceptance below remains open.
 
 ### Version 1.2.0: save and load playlist files
 

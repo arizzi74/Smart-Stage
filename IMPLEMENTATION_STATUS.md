@@ -1,14 +1,31 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.2.0**.
+The desktop application and Linux gateway are released as **Smart Stage 1.3.0**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.2.0
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.3.0
 
 ## Implemented
 
+- Pressing a selected foreground video or visible/preparing image again stops
+  that visual and returns the enabled stage to the current background or black.
+  Image stop preserves independent music, but stops a covered foreground video
+  so it cannot reappear. Background selector buttons and the optional music
+  toggle retain their existing behavior; retried request IDs stay idempotent.
+- The existing optional fade setting now covers audio, video and images. First
+  playback from silence/black is immediate; replacements crossfade and clearing
+  a visual returns to its background or fades to black. Mac retains bounded
+  native layers; Windows blends live EVR readbacks in a bounded temporary
+  overlay, with an explicit fallback when readback is unavailable. Stage off,
+  Escape and hard Stop cancel transitions immediately. English/Italian controls
+  explain the behavior and preserve the existing saved duration and file format.
+- Admin drains validation refreshes that overlap a final ready event, preserving
+  focused edits and unsaved Stage settings. Saving an unchanged background
+  reuses ready validation only after a fresh allowed-file lookup and matching
+  size/modification time; changed files are inspected again, and failures include
+  their original diagnostic.
 - Save/load versioned `.smartstage.json` playlist files from Admin with native
   Mac/Windows Save/Open dialogs or browser download/upload. Files preserve cue
   order, labels, colors, hidden/background flags and stage/sound settings while
@@ -120,6 +137,29 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.2.0
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.3.0 is source `4692eaed3ca3e0915225895f19df0cd1cfcceffe`.
+All seven final candidate gates passed before tagging; all seven tagged
+build/security gates and publication passed. Full local Go race tests, real
+nginx/Caddy tests, vet, all 11 JavaScript tests and browser regressions passed.
+Native scene probes passed on Mac and Windows, both AMD64 and ARM64, including
+visual replacement/retirement, moving video sources and immediate cancellation.
+Mac observes layer opacity and source timelines; Windows checks actual blended
+pixels and advancing EVR readbacks. Windows hosted runners had no audio endpoint,
+so their audio fade coverage is explicitly unavailable. Physical smoothness,
+projector and speaker behavior remain open acceptance checks.
+All 50 public assets, eight checksum pairs, architectures and clean Go 1.26.8
+source metadata were independently verified. All six exact public executables
+passed independent Go package vulnerability scans. All four actual automatic
+replacement/restart checks passed using exact-source fixtures with older version
+metadata; these are not historical executable upgrade tests.
+The three public installer defaults match committed v1.3.0 bytes at
+`920a35293a24896480112712b967c0a52a7bea53`. At the recorded snapshot, all four
+published-download checks, all four browser checks and all 16 post-publication
+jobs passed. All four installer-default architecture jobs also passed. See
+[release verification](docs/release-verification.md) for timestamped evidence
+and the distinct candidate/tag native lifecycle checks.
+The production gateway, nginx configuration and firewall were not changed.
 
 Version 1.2.0 is source `2ad6960398e09ee988ecdc1c475846c1da17d18f`. Playlist file coordinator,
 HTTP/controller and filesystem tests passed, including atomic replacement,

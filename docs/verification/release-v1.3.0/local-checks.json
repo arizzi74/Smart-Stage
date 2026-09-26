@@ -1,0 +1,16 @@
+{
+  "sourceCommit": "4692eaed3ca3e0915225895f19df0cd1cfcceffe",
+  "goRaceTests": "passed",
+  "goVet": "passed",
+  "goPackageVulnerabilityScan": "Passed locally on original feature; final exact source scan passed in candidate shared gate 36253728152.",
+  "javascriptUnitTests": "11 passed",
+  "browserSmoke": "passed, including new visual controls and validation refresh regression",
+  "nativeWindowsCrossLinks": [
+    "amd64",
+    "arm64"
+  ],
+  "validationRegressionFailsBeforeFix": true,
+  "nativeRuntimeEvidence": "Recorded separately from exact candidate/tag workflow artifacts",
+  "physicalOutputsVerified": false,
+  "backgroundSettingsCacheRegression": "passed: fresh path/metadata check, strict ready-cache reuse, changed/unvalidated file reinspection, missing/out-of-root/nonregular/audio rejection, underlying error and responsive STOP"
+}
