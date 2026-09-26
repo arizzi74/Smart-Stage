@@ -307,6 +307,26 @@ func (s *Service) Play(r PlayRequest) (Ack, error) {
 	if cue == nil {
 		return Ack{}, problem("cue_not_found", "Cue does not exist")
 	}
+	// A second intentional press also cancels a cue that is still preparing.
+	// Handle this before validation errors: a file disappearing after it started
+	// must not prevent the operator from stopping its current presentation.
+	if !cue.Background {
+		if cue.ID == s.pendingImageID || cue.ID == s.state.ImageCueID && s.stageDesired {
+			s.stopImageLocked()
+			return s.rememberLocked(r.RequestID, hash), nil
+		}
+		if cue.ID == s.state.ActiveCueID {
+			kind := cue.Cache.Media.Kind
+			if s.foreground.cueID == cue.ID {
+				kind = s.foreground.kind
+			}
+			video := kind == "video" || kind == "" && videoFile(cue.Path)
+			if video || kind == "audio" && s.config.Stage.ToggleAudio {
+				s.stopForegroundLocked(video, false)
+				return s.rememberLocked(r.RequestID, hash), nil
+			}
+		}
+	}
 	if cue.Cache.Status == "missing" || cue.Cache.Status == "unsupported" || cue.Cache.Status == "error" {
 		return Ack{}, problem("cue_invalid", "Cue needs successful validation in Admin before playback")
 	}
@@ -318,10 +338,6 @@ func (s *Service) Play(r PlayRequest) (Ack, error) {
 	if cue.Cache.Media.Kind == "image" || cue.Cache.Media.Kind == "" && imageFile(cue.Path) {
 		s.selectImageLocked(*cue)
 		s.changedLocked()
-		return s.rememberLocked(r.RequestID, hash), nil
-	}
-	if s.config.Stage.ToggleAudio && cue.ID == s.state.ActiveCueID && cue.Cache.Media.Kind == "audio" {
-		s.stopForegroundLocked(false, false)
 		return s.rememberLocked(r.RequestID, hash), nil
 	}
 	s.clearImageLocked()

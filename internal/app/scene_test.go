@@ -84,7 +84,7 @@ func sceneSetup(t *testing.T, settings model.StageSettings) (*Service, *sceneNat
 	config := model.DefaultConfig()
 	config.Outputs = model.Outputs{AudioID: "default", DisplayID: "screen", AllowPrimary: true}
 	config.Stage = settings
-	for _, item := range []struct{ id, name string }{{"music", "music.wav"}, {"next", "next.wav"}, {"image", "image.png"}, {"backdrop", "backdrop.png"}, {"background-video", "background.mp4"}} {
+	for _, item := range []struct{ id, name string }{{"music", "music.wav"}, {"next", "next.wav"}, {"image", "image.png"}, {"backdrop", "backdrop.png"}, {"background-video", "background.mp4"}, {"video", "foreground.mp4"}} {
 		path := filepath.Join(dir, item.name)
 		if err := os.WriteFile(path, []byte("test-only source, interpreted by sceneNative"), 0600); err != nil {
 			t.Fatal(err)

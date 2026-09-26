@@ -1,13 +1,14 @@
-Smart Stage 1.2.0 adds playlist files you can save and load from Admin.
+Smart Stage 1.3.0 adds video/image cue toggles and visual transitions.
 
-- Choose **Save playlist…** to create a `.smartstage.json` file using the native Mac/Windows Save dialog, or a browser download when no native dialog is available.
-- Choose **Load playlist…** after stopping playback and turning Stage off. Confirm replacement, then select the file. Loading keeps playback stopped and revalidates media.
-- Files preserve cue order, labels, colors, hidden/background flags and stage/sound settings. Media stays at its original paths; it is not copied or embedded. Output devices, gateway credentials and language preferences stay local.
-- Cancelled dialogs, invalid files, missing media and conflicting edits preserve the current playlist. Controls and dialogs support English and Italian.
+- Press an already selected video or image button again to stop it. Stage stays on and returns to the current background, or black if no background is selected.
+- Stopping an image preserves independent music. If the image covers a running video, that video also stops instead of reappearing.
+- Enable **Fade audio, video and images** in **Admin → Stage & sound**. The existing duration controls visual fades and crossfades as well as sound (default one second; configurable from 0.1 to 30 seconds). Starting from silence or black stays immediate.
+- Video/image replacements crossfade; stopping returns smoothly to the background or fades to black. Stage off and Escape remain immediate and cancel visual transitions.
+- The optional music toggle and background-selection buttons keep their existing behavior. Admin and remote controls explain repeat-press actions in English and Italian.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 
-This feature works with the existing 1.1.2 gateway daemon; no gateway upgrade or restart is required. The URL-only gateway save and earlier security fixes remain included.
+This feature works with the existing 1.1.2 gateway daemon; no gateway upgrade or restart is required. Playlist files, URL-only gateway changes and earlier security fixes remain included.
 
 Install on Mac:
 

@@ -18,7 +18,7 @@ def scene_checks(audio, display):
         probe = temporary / "scene.exe"
         arch = "aarch64" if platform.machine().lower() in ("arm64", "aarch64") else "x86_64"
         command = [os.environ.get("CXX", f"{arch}-w64-mingw32-clang++"), "-std=c++17",
-                   "-D_WIN32_WINNT=0x0A00", "-DUNICODE", "-D_UNICODE", "-Wall", "-Wextra",
+                   "-O2", "-D_WIN32_WINNT=0x0A00", "-DUNICODE", "-D_UNICODE", "-Wall", "-Wextra",
                    str(root / "scripts/native-scene-windows.cpp"),
                    str(root / "internal/platform/desktop_windows.cpp"), "-o", str(probe),
                    "-static-libstdc++", "-static-libgcc", "-Wl,-Bstatic", "-lwinpthread", "-Wl,-Bdynamic"]
@@ -37,11 +37,12 @@ def scene_checks(audio, display):
                 output.writeframes(second * 30)
         def chunk(kind, data):
             return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
-        png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 64, 64, 8, 2, 0, 0, 0))
-        png += chunk(b"IDAT", zlib.compress((b"\0" + b"\xff\0\0" * 64) * 64)) + chunk(b"IEND", b"")
-        (temporary / "background.png").write_bytes(png)
+        for name, color in (("background.png", b"\xff\0\0"), ("green.png", b"\0\xff\0")):
+            png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 64, 64, 8, 2, 0, 0, 0))
+            png += chunk(b"IDAT", zlib.compress((b"\0" + color * 64) * 64)) + chunk(b"IEND", b"")
+            (temporary / name).write_bytes(png)
         result = subprocess.run([str(probe), audio["id"] if audio else "-", display["id"], str(temporary / "first.wav"),
                                  str(temporary / "second.wav"), str(root / "testdata/media/video-aac-1080p.mp4"),
-                                 str(temporary / "background.png")], capture_output=True, text=True, timeout=90)
+                                 str(temporary / "background.png"), str(temporary / "green.png")], capture_output=True, text=True, timeout=90)
         assert result.returncode == 0, f"Native scene probe failed ({result.returncode}): {result.stderr}"
         return json.loads(result.stdout)

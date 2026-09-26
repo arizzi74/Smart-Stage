@@ -311,7 +311,11 @@ function dedicatedWindowsAdmin(platform, release) {
       await button.tap(); await waitState('playing');
       assert.equal(await button.getAttribute('aria-pressed'), 'true');
       assert.equal(requests.filter(request => new URL(request.url).pathname === '/api/play').length, previous + 1);
-      await command.locator('#stop').tap(); await waitState('stopped');
+      if (cue.path.endsWith('.mp4')) {
+        assert.match(await button.locator('.cue-meta').textContent(), /Press again to stop/);
+        await button.tap();
+      } else await command.locator('#stop').tap();
+      await waitState('stopped');
       const stopped = await snapshot();
       assert.equal(stopped.activeCueId, '');
       assert.equal(stopped.stageEnabled, previouslyEnabled || cue.path.endsWith('.mp4'));
@@ -404,6 +408,14 @@ function dedicatedWindowsAdmin(platform, release) {
     await until(async () => {
       const state = await snapshot(); return state.stageEnabled && state.backgroundCueId === backgroundCue.id && !state.backgroundError;
     }, 'Stage did not enable the configured video background');
+    const videoButton = command.locator('.cue').filter({ hasText: 'Finale' });
+    await videoButton.tap(); await waitState('playing');
+    await videoButton.tap(); await waitState('stopped');
+    const videoToggledOff = await snapshot();
+    assert.equal(videoToggledOff.activeCueId, '');
+    assert.equal(videoToggledOff.stageEnabled, true);
+    assert.equal(videoToggledOff.backgroundCueId, backgroundCue.id);
+    record.checks.push('A second press stopped the selected native video with Stage still on, returning to black or the configured background without changing the background selection');
     const musicButton = command.locator(`[data-cue-id="${musicCue.id}"]`);
     const imageButton = command.locator(`[data-cue-id="${imageCue.id}"]`);
     async function assertIndependentStage(expected, source) {
@@ -426,6 +438,14 @@ function dedicatedWindowsAdmin(platform, release) {
         return state.imageCueId === imageCue.id && state.activeCueId === musicCue.id && state.generation === musicPlaying.generation && state.state === 'playing';
       }, 'Image cue did not preserve the selected music and playback generation');
       await command.waitForFunction(ids => ids.every(id => document.querySelector(`[data-cue-id="${id}"]`)?.getAttribute('aria-pressed') === 'true'), [imageCue.id, musicCue.id]);
+      await imageButton.tap();
+      await until(async () => {
+        const state = await snapshot();
+        return state.imageCueId === '' && state.stageEnabled && state.activeCueId === musicCue.id && state.generation === musicPlaying.generation && state.state === 'playing';
+      }, 'A second image press did not clear only the image while preserving music');
+      await imageButton.tap();
+      await until(async () => (await snapshot()).imageCueId === imageCue.id, 'Image did not reappear after being toggled off');
+      record.checks.push('A second image press cleared its overlay while independent native music kept its identity and generation');
       const beforeStageToggle = await snapshot();
       await assertIndependentStage(false, beforeStageToggle);
       await until(async () => (await snapshot()).elapsed > beforeStageToggle.elapsed + .2, 'Native music timeline stopped while stage was off');
@@ -448,6 +468,10 @@ function dedicatedWindowsAdmin(platform, release) {
     } else {
       await imageButton.tap();
       await until(async () => (await snapshot()).imageCueId === imageCue.id, 'Native image cue did not become active');
+      await imageButton.tap();
+      await until(async () => { const state = await snapshot(); return state.imageCueId === '' && state.stageEnabled; }, 'A second image press did not return to background with Stage on');
+      await imageButton.tap();
+      await until(async () => (await snapshot()).imageCueId === imageCue.id, 'Native image did not reappear after toggling off');
       await assertIndependentStage(false); await assertIndependentStage(true);
       assert.equal((await snapshot()).imageCueId, imageCue.id);
       await command.locator('#stop').tap(); await waitState('stopped');

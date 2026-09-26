@@ -129,8 +129,9 @@ source/identity, independent image overlay, background image/video and audio
 opt-in, output IDs, stage visibility, fade duration and hard-stop flag. Native
 code copies every string before returning. Scene revision orders a latest-only
 command mailbox; foreground identity remains stable across image, background
-and visibility changes. A repeated intentional foreground PLAY uses a new
-identity. Legacy `Start/Stop/Stage` remain for the native diagnostic harness.
+and visibility changes. A new foreground PLAY uses a new identity; repeating a
+selected visual cue toggles it off. Legacy `Start/Stop/Stage` remain for the
+native diagnostic harness.
 
 PLAY requires the current process instance and stop epoch. Accepted foreground
 changes advance a generation; replacement preparation keeps outgoing sound
@@ -144,9 +145,13 @@ or hard-stop commands prevent a stale decoder from starting or revealing.
 
 The last 4,096 accepted request IDs retain their payload hash and acknowledgement
 (FIFO eviction). Identical retries are idempotent; different payloads conflict.
-Deliberate repeated audio/video presses restart, unless optional audio-toggle
-mode makes a second press stop the current audio cue. Image cues preserve
-foreground sound; background buttons replace only the session's background.
+Deliberate repeated video presses stop the foreground and clear any image
+overlay. Repeating a visible or preparing image clears it while preserving
+independent music; an underlying foreground video is also stopped to return
+to background/black. Image removal advances the stop epoch without changing
+an independent music source's generation. A retained image with Stage off can
+be selected again to show it. Audio presses restart unless optional audio-toggle
+mode is enabled. Background buttons replace only the session's background.
 Hidden buttons remain saved cues and are omitted from the remote UI, not from
 role-appropriate state. Command responses contain no source paths or raw errors.
 
@@ -159,12 +164,24 @@ stage on restores the selected visual. Pointer hiding applies only over the
 visible native stage. It does not hide the pointer over Admin or other apps.
 
 When fading is enabled, the configured duration (initially one second; 0.1–30
-seconds) controls audio replacement and STOP. Incoming sound starts immediately
-from silence; otherwise outgoing and incoming streams overlap with volume ramps. Native code bounds active sources and retiring audio tails, and a
+seconds) controls audio and visual replacement and STOP. Incoming sound starts
+immediately from silence; otherwise outgoing and incoming streams overlap with
+volume ramps. The first visual from black is immediate; subsequent visuals
+crossfade and removing the last visual fades to black. A replacement waits for
+its first usable frame rather than briefly revealing the background. Native
+code bounds active sources, outgoing visuals and retiring audio tails, and a
 new command retargets the current gains. STOP returns an enabled stage to the
 background, crossfading back to its optional soundtrack or fading to silence.
 Natural foreground completion also returns to background. A stopped foreground
 may therefore coexist with an audible background and an enabled stage.
+
+Mac transitions blend retained native layers while both video timelines run.
+Windows composites live EVR readbacks and decoded images in a temporary overlay,
+at up to 30 frames per second and 1920×1080 pixels, then returns to direct native
+video rendering. Three bounded scratch frames and one outgoing visual prevent
+rapid cue changes from accumulating renderers. If the display driver cannot
+provide video frames, Windows reports the limitation and switches to the selected
+visual after a bounded wait; it does not leave a frozen overlay in place.
 
 Escape, authenticated emergency stop, Quit and update shutdown immediately
 silence all streams, cancel fades and hide the stage. Connected browser pages

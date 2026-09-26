@@ -352,8 +352,8 @@ function renderCues() {
     const active = foreground || image || background;
     let action = cue.background ? t("Set background ↗") : cue.kind === 'image' ? t("Show image ↗") : t("Start cue ↗");
     if (background) action = t("Background selected");
-    if (image) action = t("On stage");
-    if (foreground) action = cue.kind === 'audio' && state.stage?.toggleAudio ? t("Press again to stop") : t(state.state);
+    if (!cue.background && image) action = t("Press again to stop");
+    if (!cue.background && foreground) action = cue.kind === 'video' || cue.kind === 'audio' && state.stage?.toggleAudio ? t("Press again to stop") : t(state.state);
     if (cue.validation !== 'ready' && !active) action = t(cue.validation);
     node.lastChild.replaceChildren(element('span', () => `${String(cue.position).padStart(2, '0')} · ${cue.background ? t("background ") : ''}${t(cue.kind || 'unchecked')}`), element('span', action));
     node.classList.toggle('active', active); node.setAttribute('aria-pressed', String(active));
@@ -606,9 +606,10 @@ function renderEditAvailability() {
     row.hidden.disabled = pending || playlistBusy;
     const cue = playlist?.cues.find(c => c.id === id);
     const foreground = state.activeCueId === id && ['loading', 'playing'].includes(state.state);
-    const selected = foreground || (state.stageEnabled && state.imageCueId === id) || (cue?.background && state.backgroundCueId === id);
+    const image = state.stageEnabled && state.imageCueId === id;
+    const selected = foreground || image || (cue?.background && state.backgroundCueId === id);
     row.play.setAttribute('aria-pressed', String(Boolean(selected)));
-    localizedText(row.play, () => cue?.background ? t("Set background") : cue?.cache.media.kind === 'image' ? t("Show image") : foreground && cue?.cache.media.kind === 'audio' && state.stage?.toggleAudio ? t("Stop music") : t("Play"));
+    localizedText(row.play, () => cue?.background ? t("Set background") : cue?.cache.media.kind === 'image' ? t(image ? "Hide image" : "Show image") : foreground && cue?.cache.media.kind === 'video' ? t("Stop video") : foreground && cue?.cache.media.kind === 'audio' && state.stage?.toggleAudio ? t("Stop music") : t("Play"));
     row.background.disabled = pending || playlistBusy || !['image', 'video'].includes(cue?.cache.media.kind);
     row.backgroundLabel.hidden = !['image', 'video'].includes(cue?.cache.media.kind) && !cue?.background;
   }

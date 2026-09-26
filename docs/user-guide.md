@@ -211,23 +211,30 @@ acceptance testing.
    **Local network** and save to restart with a local listener and firewall setup.
    The link pairs the browser without a separate key entry.
 5. In **Stage and sound**, choose an optional saved image or looping video
-   background. Enable its soundtrack if wanted. Set optional audio fades and
-   crossfades (one second by default, adjustable from 0.1 to 30 seconds).
+   background. Enable its soundtrack if wanted. Enable **Fade audio, video and
+   images** for fades and crossfades (one second by default, adjustable from
+   0.1 to 30 seconds).
    Playlist images/videos can also be marked **Background**, so their buttons
    change the background for this session. **Hide button** keeps a cue in Admin
    while removing it from the remote.
 6. Tap an audio/video cue to play it. An audio cue returns the stage to its
    background; an image cue changes the picture while the music and its selected
-   button stay active. Enable **Press selected music button again to stop** to
-   stop that music without clearing an image. **Stage on/off** opens or closes
+   button stay active. Press the selected video or image button again to stop
+   it and return to the background or black, with Stage still on. Clearing an
+   image preserves independent music; if the image covers a running video,
+   that video also stops so it does not reappear. Background buttons keep
+   selecting the background. Enable **Press selected music button again to stop**
+   to stop that music without clearing an image. **Stage on/off** opens or closes
    the stage independently of foreground music/video. The pointer is hidden
    over the fullscreen stage and restored outside it.
 7. **STOP** ends the foreground cue and clears the image overlay, returning to
    the current background and its optional soundtrack. Enabled fades crossfade
-   outgoing sound to new sound, or fade it to silence; starting from silence is
-   immediate. Background video loops and its soundtrack yields to foreground
+   outgoing images/videos to the next visual or background, or fade them to
+   black. Sound crossfades to the next sound or fades to silence. Starting from
+   silence or black is immediate. Background video loops and its soundtrack yields to foreground
    audio. Stage off mutes the background soundtrack. **Escape** immediately
-   stops all sound and closes the stage. **Disconnect** is in the top bar.
+   stops all sound and closes the stage, cancelling any transition. Stage off
+   also hides the visuals immediately. **Disconnect** is in the top bar.
 
 ## Save and load playlists
 

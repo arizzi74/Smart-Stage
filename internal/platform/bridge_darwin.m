@@ -1097,12 +1097,13 @@ static void beginPlayback(uint64_t gen, NSString *path, NSString *audio, NSStrin
 }
 
 // The scene path owns its decoders separately from the legacy diagnostic API.
-// Only one foreground, one background and one retiring audio source are kept.
+// One foreground/background and one audio tail are kept. Visual transitions
+// retain at most the displayed source and one outgoing source until completion.
 // Scene revisions order commands; foreground identity survives stage changes.
 static _Atomic(uint64_t) requestedSceneRevision;
 static _Atomic(bool) sceneEmergencyPending;
 static uint64_t appliedSceneRevision, sceneGeneration, sceneEndedForegroundID;
-static BOOL sceneBackgroundAudio, sceneStoppedPending;
+static BOOL sceneBackgroundAudio, sceneStoppedPending, sceneApplying;
 static double sceneFadeSeconds, sceneFadeStarted, sceneFadeDuration;
 static dispatch_source_t sceneFadeTimer;
 static NSOperationQueue *sceneImageQueue;
@@ -1134,6 +1135,12 @@ static NSOperationQueue *sceneImageQueue;
 @end
 static SSScenePlayer *sceneForeground, *sceneBackground, *sceneRetiring;
 static SSSceneImage *sceneImage, *sceneBackgroundImage;
+// Keeping the owner (not just its layer) preserves moving AVPlayer video during
+// a dissolve. These two slots are independent of the bounded audio tail.
+static id sceneVisualCurrent, sceneVisualOutgoing;
+static dispatch_source_t sceneVisualTimer;
+static double sceneVisualStarted, sceneVisualDuration;
+static void clearSceneVisuals(void);
 static void renderScene(void);
 static void mixScene(void);
 static BOOL audibleScenePlayer(SSScenePlayer *player);
@@ -1153,6 +1160,7 @@ static void emitScene(uint64_t generation, NSString *kind, NSString *message, do
     pthread_mutex_unlock(&eventMutex);
 }
 static void hideSceneStage(void) {
+    clearSceneVisuals(); blackout();
     stageEnabled = NO; stageDisplayID = nil;
     [stageWindow orderOut:nil];
     [NSCursor.arrowCursor set];
@@ -1165,7 +1173,28 @@ static NSArray<SSScenePlayer *> *scenePlayers(void) {
     if (sceneForeground) [players addObject:sceneForeground];
     if (sceneBackground) [players addObject:sceneBackground];
     if (sceneRetiring) [players addObject:sceneRetiring];
+    for (id owner in @[sceneVisualCurrent ?: NSNull.null, sceneVisualOutgoing ?: NSNull.null])
+        if ([owner isKindOfClass:SSScenePlayer.class] && ![players containsObject:owner]) [players addObject:owner];
     return players;
+}
+static CALayer *sceneVisualLayer(id owner) {
+    if ([owner isKindOfClass:SSScenePlayer.class]) return ((SSScenePlayer *)owner).layer;
+    if ([owner isKindOfClass:SSSceneImage.class]) return ((SSSceneImage *)owner).layer;
+    return nil;
+}
+static void releaseSceneOwner(id owner) {
+    if (!owner || owner == sceneForeground || owner == sceneBackground || owner == sceneRetiring ||
+        owner == sceneImage || owner == sceneBackgroundImage || owner == sceneVisualCurrent || owner == sceneVisualOutgoing) return;
+    [owner teardown];
+}
+static void clearSceneVisuals(void) {
+    if (sceneVisualTimer) { dispatch_source_cancel(sceneVisualTimer); sceneVisualTimer = nil; }
+    id current = sceneVisualCurrent, outgoing = sceneVisualOutgoing;
+    sceneVisualCurrent = nil; sceneVisualOutgoing = nil;
+    [CATransaction begin]; [CATransaction setDisableActions:YES];
+    sceneVisualLayer(current).hidden = YES; sceneVisualLayer(outgoing).hidden = YES;
+    [CATransaction commit];
+    releaseSceneOwner(current); releaseSceneOwner(outgoing);
 }
 static void cancelSceneFade(void) {
     if (sceneFadeTimer) { dispatch_source_cancel(sceneFadeTimer); sceneFadeTimer = nil; }
@@ -1173,7 +1202,7 @@ static void cancelSceneFade(void) {
 static void completeSceneFade(void) {
     cancelSceneFade();
     if (sceneRetiring && sceneRetiring.player.volume <= 0.001f) {
-        [sceneRetiring teardown]; sceneRetiring = nil;
+        SSScenePlayer *old = sceneRetiring; sceneRetiring = nil; releaseSceneOwner(old);
     }
     if (sceneStoppedPending && !sceneForeground && !audibleScenePlayer(sceneRetiring) && currentScene()) {
         sceneStoppedPending = NO;
@@ -1186,12 +1215,11 @@ static BOOL audibleScenePlayer(SSScenePlayer *player) {
 }
 static void retireScenePlayer(SSScenePlayer *player) {
     if (!player) return;
-    player.layer.hidden = YES;
     if (audibleScenePlayer(player) && sceneFadeSeconds > 0) {
         // A burst of PLAY commands cannot accumulate decoder/audio tails.
-        if (sceneRetiring != player) [sceneRetiring teardown];
-        sceneRetiring = player;
-    } else [player teardown];
+        SSScenePlayer *old = sceneRetiring; sceneRetiring = player;
+        if (old != player) releaseSceneOwner(old);
+    } else releaseSceneOwner(player);
 }
 static void mixScene(void) {
     if (!currentScene()) return;
@@ -1233,22 +1261,76 @@ static void mixScene(void) {
     });
     dispatch_resume(sceneFadeTimer);
 }
-static void renderScene(void) {
-    if (!currentScene()) return;
+static void paintSceneVisuals(double progress) {
     [CATransaction begin]; [CATransaction setDisableActions:YES];
-    CALayer *visible = nil;
-    if (stageEnabled) {
-        if (sceneImage.layer.contents) visible = sceneImage.layer;
-        else if (sceneForeground.video && sceneForeground.layer.readyForDisplay && !sceneForeground.ended) visible = sceneForeground.layer;
-        else if (sceneBackgroundImage.layer.contents) visible = sceneBackgroundImage.layer;
-        else if (sceneBackground.layer.readyForDisplay) visible = sceneBackground.layer;
+    CALayer *incoming = sceneVisualLayer(sceneVisualCurrent), *outgoing = sceneVisualLayer(sceneVisualOutgoing);
+    for (SSScenePlayer *player in scenePlayers()) player.layer.hidden = player.layer != incoming && player.layer != outgoing;
+    sceneImage.layer.hidden = sceneImage.layer != incoming && sceneImage.layer != outgoing;
+    sceneBackgroundImage.layer.hidden = sceneBackgroundImage.layer != incoming && sceneBackgroundImage.layer != outgoing;
+    if (outgoing) {
+        outgoing.hidden = NO; outgoing.opacity = incoming ? 1 : 1 - progress;
+        [stageWindow.contentView.layer insertSublayer:outgoing below:blackOverlay];
     }
-    for (SSScenePlayer *player in scenePlayers()) player.layer.hidden = player.layer != visible;
-    sceneImage.layer.hidden = sceneImage.layer != visible;
-    sceneBackgroundImage.layer.hidden = sceneBackgroundImage.layer != visible;
-    blackOverlay.hidden = visible != nil;
+    if (incoming) {
+        incoming.hidden = NO; incoming.opacity = outgoing ? progress : 1;
+        [stageWindow.contentView.layer insertSublayer:incoming below:blackOverlay];
+    }
+    blackOverlay.hidden = incoming || outgoing;
     videoLayer.hidden = YES;
     [CATransaction commit];
+}
+static void completeSceneVisuals(void) {
+    if (sceneVisualTimer) { dispatch_source_cancel(sceneVisualTimer); sceneVisualTimer = nil; }
+    id outgoing = sceneVisualOutgoing; sceneVisualOutgoing = nil;
+    sceneVisualLayer(outgoing).hidden = YES;
+    releaseSceneOwner(outgoing);
+    paintSceneVisuals(1);
+}
+static void renderScene(void) {
+    if (!currentScene() || sceneApplying) return;
+    if (!stageEnabled) { clearSceneVisuals(); blackout(); return; }
+    id visible = nil;
+    BOOL waiting = NO;
+    if (sceneImage && !sceneImage.pendingError.length) {
+        if (sceneImage.layer.contents) visible = sceneImage; else waiting = YES;
+    } else if (sceneForeground.video && !sceneForeground.ended) {
+        if (sceneForeground.layer.readyForDisplay) visible = sceneForeground; else waiting = YES;
+    } else if (sceneBackgroundImage && !sceneBackgroundImage.pendingError.length) {
+        if (sceneBackgroundImage.layer.contents) visible = sceneBackgroundImage; else waiting = YES;
+    } else if (sceneBackground) {
+        if (sceneBackground.layer.readyForDisplay) visible = sceneBackground; else waiting = YES;
+    }
+    // Keep the currently displayed frame/video while its replacement decodes;
+    // a temporary background/black flash is not a scene transition.
+    if (waiting) return;
+    if (visible == sceneVisualCurrent) {
+        if (!sceneVisualTimer) paintSceneVisuals(1);
+        return;
+    }
+    if (sceneVisualTimer) { dispatch_source_cancel(sceneVisualTimer); sceneVisualTimer = nil; }
+    id oldCurrent = sceneVisualCurrent, oldOutgoing = sceneVisualOutgoing;
+    // A rapid command replaces the previous transition, never adds a third
+    // visible layer. Keep its dominant source to minimise a discontinuity.
+    id outgoing = oldCurrent;
+    if (oldOutgoing && (!oldCurrent || sceneVisualLayer(oldCurrent).opacity < 0.5)) outgoing = oldOutgoing;
+    if (outgoing == visible || !sceneVisualLayer(outgoing)) outgoing = nil;
+    sceneVisualCurrent = visible; sceneVisualOutgoing = outgoing;
+    releaseSceneOwner(oldCurrent); releaseSceneOwner(oldOutgoing);
+    sceneVisualDuration = sceneFadeSeconds;
+    if (!outgoing || sceneVisualDuration <= 0) { completeSceneVisuals(); return; }
+    sceneVisualStarted = NSProcessInfo.processInfo.systemUptime;
+    paintSceneVisuals(0);
+    sceneVisualTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    dispatch_source_set_timer(sceneVisualTimer, DISPATCH_TIME_NOW, 16 * NSEC_PER_MSEC, 2 * NSEC_PER_MSEC);
+    dispatch_source_set_event_handler(sceneVisualTimer, ^{
+        @autoreleasepool {
+            if (!currentScene() || !stageEnabled) return;
+            double progress = MIN(1.0, (NSProcessInfo.processInfo.systemUptime - sceneVisualStarted) / sceneVisualDuration);
+            paintSceneVisuals(progress);
+            if (progress >= 1) completeSceneVisuals();
+        }
+    });
+    dispatch_resume(sceneVisualTimer);
 }
 static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
     if (!player || player.disposed) return;
@@ -1266,7 +1348,11 @@ static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
         retireScenePlayer(sceneRetiring);
         emitScene(identifier, @"error", message, 0, 0);
         renderScene(); mixScene();
-    } else if (player == sceneRetiring) { [player teardown]; sceneRetiring = nil; mixScene(); }
+    } else if (player == sceneRetiring) {
+        [player teardown]; sceneRetiring = nil; renderScene(); mixScene();
+    } else if (player == sceneVisualCurrent || player == sceneVisualOutgoing) {
+        [player teardown]; renderScene(); mixScene();
+    }
 }
 @implementation SSScenePlayer
 - (void)teardown {
@@ -1290,7 +1376,7 @@ static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
 }
 - (void)ready {
     if (self.disposed || !currentScene()) return;
-    if (self != sceneForeground && self != sceneBackground && self != sceneRetiring) return;
+    if (![scenePlayers() containsObject:self]) return;
     if (self.pendingError.length) { scenePlayerFailed(self, self.pendingError); return; }
     if (self.item.status == AVPlayerItemStatusFailed) {
         scenePlayerFailed(self, self.item.error.localizedDescription ?: @"Native decoder could not prepare this file"); return;
@@ -1352,6 +1438,7 @@ static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
             if (player.video) {
                 player.layer = [AVPlayerLayer playerLayerWithPlayer:player.player];
                 player.layer.videoGravity = AVLayerVideoGravityResizeAspect;
+                player.layer.backgroundColor = NSColor.blackColor.CGColor;
                 player.layer.frame = stageWindow.contentView.bounds;
                 player.layer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
                 player.layer.hidden = YES;
@@ -1369,7 +1456,7 @@ static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
             player.endObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:player.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
                 (void)note; SSScenePlayer *source = weakSelf;
                 if (!source || source.disposed) return;
-                if (source.background && (source == sceneBackground || source == sceneRetiring)) {
+                if (source.background && [scenePlayers() containsObject:source]) {
                     [source.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
                         onMain(^{ SSScenePlayer *loop = weakSelf;
                             if (finished && loop && !loop.disposed && stageEnabled && currentScene()) [loop.player play];
@@ -1378,9 +1465,13 @@ static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
                 } else if (source == sceneForeground) {
                     uint64_t identifier = source.identifier;
                     source.ended = YES; sceneEndedForegroundID = identifier;
-                    [source teardown]; sceneForeground = nil;
+                    sceneForeground = nil; retireScenePlayer(source);
                     renderScene(); mixScene(); emitScene(identifier, @"ended", nil, 0, 0);
-                } else if (source == sceneRetiring) { [source teardown]; sceneRetiring = nil; mixScene(); }
+                } else {
+                    source.ended = YES;
+                    if (source == sceneRetiring) { sceneRetiring = nil; releaseSceneOwner(source); mixScene(); }
+                    else releaseSceneOwner(source);
+                }
             }];
             player.failureObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemFailedToPlayToEndTimeNotification object:player.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
                 NSError *error = note.userInfo[AVPlayerItemFailedToPlayToEndTimeErrorKey];
@@ -1433,6 +1524,7 @@ static CGImageRef copySceneImage(NSString *path, NSString **failure) {
                     if (raster) {
                         target.layer = [CALayer layer]; target.layer.contents = (__bridge id)raster;
                         target.layer.contentsGravity = kCAGravityResizeAspect;
+                        target.layer.backgroundColor = NSColor.blackColor.CGColor;
                         target.layer.frame = stageWindow.contentView.bounds;
                         target.layer.autoresizingMask = kCALayerWidthSizable | kCALayerHeightSizable;
                         target.layer.hidden = YES;
@@ -1441,6 +1533,7 @@ static CGImageRef copySceneImage(NSString *path, NSString **failure) {
                     } else {
                         target.pendingError = failure;
                         emitScene(sceneGeneration, @"background-error", failure, 0, 0);
+                        renderScene();
                     }
                     target.operation = nil;
                 }
@@ -1452,7 +1545,7 @@ static CGImageRef copySceneImage(NSString *path, NSString **failure) {
 }
 @end
 static void stopScene(void) {
-    cancelSceneFade();
+    cancelSceneFade(); clearSceneVisuals();
     [sceneForeground teardown]; sceneForeground = nil;
     [sceneBackground teardown]; sceneBackground = nil;
     [sceneRetiring teardown]; sceneRetiring = nil;
@@ -1509,6 +1602,9 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
             stopScene(); hideSceneStage(); emitScene(generation, @"error", @"Selected stage display is unavailable", 0, 0); return;
         }
     } else if (!stage) hideSceneStage();
+    // Synchronous ready callbacks must see the complete new scene, not an old
+    // image paired with its replacement foreground/background.
+    sceneApplying = YES;
     BOOL sameForeground = sceneForeground && foregroundID == sceneForeground.identifier &&
         [foregroundPath isEqual:sceneForeground.path] && (!foregroundAudio || [audio isEqual:sceneForeground.audioID]);
     if (!sameForeground) {
@@ -1534,12 +1630,12 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
         else [sceneBackground ready];
     }
     if (![sceneImage.path isEqual:imagePath]) {
-        [sceneImage teardown]; sceneImage = nil;
+        SSSceneImage *old = sceneImage; sceneImage = nil; releaseSceneOwner(old);
         if (imagePath.length) { sceneImage = [[SSSceneImage alloc] init]; sceneImage.path = imagePath; [sceneImage prepare]; }
     }
     NSString *backgroundImagePath = [backgroundKind isEqualToString:@"image"] ? backgroundPath : @"";
     if (![sceneBackgroundImage.path isEqual:backgroundImagePath]) {
-        [sceneBackgroundImage teardown]; sceneBackgroundImage = nil;
+        SSSceneImage *old = sceneBackgroundImage; sceneBackgroundImage = nil; releaseSceneOwner(old);
         if (backgroundImagePath.length) {
             sceneBackgroundImage = [[SSSceneImage alloc] init]; sceneBackgroundImage.path = backgroundImagePath;
             sceneBackgroundImage.background = YES; [sceneBackgroundImage prepare];
@@ -1555,6 +1651,7 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
             image.layer.frame = stageWindow.contentView.bounds;
             [stageWindow.contentView.layer insertSublayer:image.layer below:blackOverlay];
         }
+    sceneApplying = NO;
     renderScene();
     [sceneForeground ready]; [sceneBackground ready];
     mixScene();

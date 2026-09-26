@@ -31,6 +31,11 @@ def scene_checks(devices):
                           png_chunk(b"IHDR", struct.pack(">IIBBBBB", 16, 16, 8, 2, 0, 0, 0)) +
                           png_chunk(b"IDAT", zlib.compress((b"\0" + b"\xff\x44\x11" * 16) * 16)) +
                           png_chunk(b"IEND", b""))
+        second_image = work / "second-background.png"
+        second_image.write_bytes(b"\x89PNG\r\n\x1a\n" +
+                                png_chunk(b"IHDR", struct.pack(">IIBBBBB", 16, 16, 8, 2, 0, 0, 0)) +
+                                png_chunk(b"IDAT", zlib.compress((b"\0" + b"\x11\x44\xff" * 16) * 16)) +
+                                png_chunk(b"IEND", b""))
         binary = work / "scene-probe"
         command = ["/usr/bin/clang", "-fobjc-arc", "-fblocks", "-mmacosx-version-min=12.0", "-Wall", "-Wextra",
                    str(root / "scripts/native-scene-darwin.m"), "-o", str(binary)]
@@ -44,8 +49,9 @@ def scene_checks(devices):
                             "SMARTSTAGE_SCENE_PROBE_DISPLAY": devices["displays"][0]["id"],
                             "SMARTSTAGE_SCENE_PROBE_FIRST": str(first), "SMARTSTAGE_SCENE_PROBE_SECOND": str(second),
                             "SMARTSTAGE_SCENE_PROBE_BACKGROUND": str(root / "testdata/media/video-aac-1080p.mp4"),
-                            "SMARTSTAGE_SCENE_PROBE_IMAGE": str(image)})
-        result = subprocess.run([str(binary)], env=environment, capture_output=True, text=True, timeout=50)
+                            "SMARTSTAGE_SCENE_PROBE_IMAGE": str(image),
+                            "SMARTSTAGE_SCENE_PROBE_SECOND_IMAGE": str(second_image)})
+        result = subprocess.run([str(binary)], env=environment, capture_output=True, text=True, timeout=65)
         assert result.returncode == 0, f"Native scene probe failed: {result.stdout}\n{result.stderr}"
         reports = [json.loads(line) for line in result.stdout.splitlines() if line.startswith("{")]
         assert len(reports) == 1 and reports[0]["status"] == "passed", result.stdout

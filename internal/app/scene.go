@@ -39,6 +39,16 @@ func imageFile(path string) bool {
 	return false
 }
 
+// Only used to cancel an already selected cue before its first inspection has
+// determined its actual kind. Once known, the inspected kind always wins.
+func videoFile(path string) bool {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".mp4", ".m4v", ".mov", ".avi", ".mkv", ".webm", ".wmv", ".mpeg", ".mpg", ".mts", ".m2ts", ".ts", ".3gp", ".3g2", ".ogv":
+		return true
+	}
+	return false
+}
+
 func (s *Service) applySceneLocked(hard bool) error {
 	s.sceneRevision++
 	audio := s.foreground.audioID
@@ -98,6 +108,25 @@ func (s *Service) clearImageLocked() {
 	s.image = presentationSource{}
 	s.pendingImageID = ""
 	s.state.ImageCueID = ""
+}
+
+func (s *Service) stopImageLocked() {
+	s.clearImageLocked()
+	if s.foreground.kind == "video" {
+		// Images can cover a running video. Removing that image should return
+		// to the selected background or black, not uncover the old video.
+		s.stopForegroundLocked(false, false)
+		return
+	}
+	// Invalidate delayed PLAY requests without cancelling independent music or
+	// changing its native identity, timeline, or loading/playing state.
+	s.state.StopEpoch++
+	s.state.LastError = ""
+	if err := s.applySceneLocked(false); err != nil {
+		s.failLocked(err.Error())
+		return
+	}
+	s.changedLocked()
 }
 
 func (s *Service) selectImageLocked(cue model.Cue) {
