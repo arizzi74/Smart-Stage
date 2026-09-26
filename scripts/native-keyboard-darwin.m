@@ -93,7 +93,7 @@ static int playlistChecks(void) {
     if (ss_desktop_can_choose_playlists() || ss_desktop_choose_playlist(1, 1)) return 5;
     ss_desktop_language("it");
     ss_desktop_admin("http://127.0.0.1:8787/admin");
-    NSString *filename = [NSString stringWithFormat:@"Playlist-%@.smartstage.json", NSUUID.UUID.UUIDString];
+    NSString *filename = @"Playlist.smartstage.json";
     __block NSUInteger phase = 0, polls = 0;
     __block BOOL passed = NO;
     __block NSSavePanel *shutdownPanel;
@@ -112,8 +112,8 @@ static int playlistChecks(void) {
             phase = 1;
         } else if (phase == 1 && panel.isVisible) {
             if (![panel.title isEqualToString:@"Salva playlist"] || ![panel.nameFieldStringValue isEqualToString:@"Playlist.smartstage.json"] || ss_desktop_choose_files()) { ss_quit(); return; }
-            panel.directoryURL = [NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES];
-            panel.nameFieldStringValue = filename;
+            // Leave the production default untouched. Proxy property changes
+            // after presentation do not necessarily reach the remote controls.
             settleStarted = NSProcessInfo.processInfo.systemUptime;
             phase = 2;
         } else if (phase == 2 && panel.isVisible) {
@@ -130,6 +130,10 @@ static int playlistChecks(void) {
                 (long)NSApp.keyWindow.windowNumber, (long)panel.windowNumber, panel.isKeyWindow);
             if (front.processIdentifier != getpid() || !panel.isKeyWindow) return;
             fprintf(stderr, "Settled native Save panel for %.2fs name=%s directory=%s\n", NSProcessInfo.processInfo.systemUptime - settleStarted, panel.nameFieldStringValue.UTF8String ?: "none", panel.directoryURL.path.UTF8String ?: "none");
+            NSString *defaultTarget = [panel.directoryURL.path stringByAppendingPathComponent:filename];
+            if (defaultTarget.isAbsolutePath && [NSFileManager.defaultManager fileExistsAtPath:defaultTarget]) {
+                fprintf(stderr, "Native Save default target already exists before the probe\n"); ss_quit(); return;
+            }
             capturePlaylistPanel(panel, @"before-save.png");
             CGEventRef down = CGEventCreateKeyboardEvent(NULL, 36, YES);
             CGEventRef up = CGEventCreateKeyboardEvent(NULL, 36, NO);
@@ -146,6 +150,7 @@ static int playlistChecks(void) {
         } else if (phase == 3 && !panel) {
             NSDictionary *result = takePlaylist();
             if (!result) return;
+            fprintf(stderr, "Native Save selected result: %s\n", result.description.UTF8String);
             NSString *path = result[@"path"];
             if (![result[@"id"] isEqual:@1] || [result[@"cancelled"] boolValue] || [result[@"error"] length] || !path.isAbsolutePath || ![path.lastPathComponent isEqualToString:filename] || [NSFileManager.defaultManager fileExistsAtPath:path] || takePlaylist()) { ss_quit(); return; }
             if (!ss_desktop_choose_playlist(3, 0)) { ss_quit(); return; }
