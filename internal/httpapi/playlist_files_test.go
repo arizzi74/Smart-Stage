@@ -193,6 +193,12 @@ func TestNativePlaylistFileSnapshotCancellationAndRevisionConflict(t *testing.T)
 		t.Fatal(err)
 	}
 	loaded.Cues[0].ID = saved.Cues[0].ID
+	// macOS's temporary directory can use /var while the canonical source
+	// resolves to /private/var. Loading intentionally canonicalizes media paths.
+	saved.Cues[0].Path, err = filepath.EvalSymlinks(saved.Cues[0].Path)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !reflect.DeepEqual(loaded, saved) || service.Playlist().PlaylistRevision != 4 {
 		t.Fatal("Native load did not restore the saved playlist")
 	}
