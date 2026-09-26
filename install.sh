@@ -153,7 +153,7 @@ cleanup() {
 
 main() {
     [ "$(/usr/bin/uname -s)" = Darwin ] || fail 'This installer is for macOS. Use a Windows ZIP from the GitHub release on Windows.'
-    version=${SMARTSTAGE_VERSION:-v1.1.3}
+    version=${SMARTSTAGE_VERSION:-v1.2.0}
     case "$version" in
         v[0-9]*) ;;
         *) fail 'SMARTSTAGE_VERSION must be a release tag such as v1.0.0.' ;;
