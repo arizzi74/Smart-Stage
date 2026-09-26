@@ -87,6 +87,7 @@ window.addEventListener('storage', event => {
 if (!adminPage) { languageMode = remoteLanguageMode(); applyRemoteLanguage(); }
 renderLanguageControls();
 document.body.classList.toggle('remote-page', !adminPage);
+document.body.classList.toggle('admin-page', adminPage);
 $('page-title').hidden = !adminPage;
 if (gatewayRoute) {
   localizedText($('pair-guidance'), () => t("Scan the current QR code or open the remote control link shown in Admin on the host computer. You can also paste the access key from that link below."));
@@ -425,6 +426,7 @@ function renderRemoteLink() {
 function clearRemoteLinks() {
   remoteLinks = []; selectedRemoteURL = '';
   $('remote-ready').hidden = true; $('remote-unavailable').hidden = false;
+  $('remote-section').classList.remove('has-remote');
   $('remote-network').replaceChildren();
   $('remote-url').removeAttribute('href'); localizedText($('remote-url'), () => '');
   $('open-remote-url').removeAttribute('href'); $('remote-qr').removeAttribute('src');
@@ -443,6 +445,7 @@ async function loadRemoteControl() {
     $('remote-code-row').hidden = publicMode;
     localizedText($('remote-guidance'), () => publicMode ? t("Scan this QR code or open the link from any phone or tablet with an internet connection. Keep Smart Stage running.") : t("Connect your phone or tablet to the same network, then scan this QR code with its camera or open the link."));
     $('remote-ready').hidden = !remoteLinks.length;
+    $('remote-section').classList.toggle('has-remote', remoteLinks.length > 0);
     $('remote-unavailable').hidden = remoteLinks.length > 0;
     if (!remoteLinks.length) {
       clearRemoteLinks();
@@ -502,7 +505,11 @@ function renderGateway() {
     error: t("Public gateway is unavailable. Smart Stage will retry automatically. Local network remote access is disabled."),
     disabled: gateway?.url ? t("Public gateway is not connected. Local network remote access is disabled.") : t("Configure your gateway URL and token to connect. Local network remote access is disabled.")
   }[status] || t("Waiting for the public gateway connection…") : gateway ? t("Local network remote control is enabled.") : t("Loading connection settings…");
-  localizedText($('gateway-status'), () => description() + (gateway?.message ? ` ${t(gateway.message)}` : ''));
+  localizedText($('gateway-status'), () => {
+    const message = gateway?.message;
+    const repeatsConnectedStatus = status === 'connected' && message === 'Public gateway connected. Local LAN access is disabled.';
+    return description() + (message && !repeatsConnectedStatus ? ` ${t(message)}` : '');
+  });
   $('gateway-status').classList.toggle('error', status === 'error');
   $('lan-firewall-guidance').hidden = gateway?.mode !== 'lan';
   localizedText($('network-note-title'), () => gateway?.mode === 'gateway' ? t("Public gateway over HTTPS") : t("Trusted LAN only"));

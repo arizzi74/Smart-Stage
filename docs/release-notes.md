@@ -1,12 +1,9 @@
-Smart Stage 1.3.0 adds video/image cue toggles and visual transitions.
+Smart Stage 1.3.1 makes the Admin interface more compact so the full remote-control QR code fits in a desktop app window without scrolling.
 
-- Press an already selected video or image button again to stop it. Stage stays on and returns to the current background, or black if no background is selected.
-- Stopping an image preserves independent music. If the image covers a running video, that video also stops instead of reappearing.
-- Enable **Fade audio, video and images** in **Admin → Stage & sound**. The existing duration controls visual fades and crossfades as well as sound (default one second; configurable from 0.1 to 30 seconds). Starting from silence or black stays immediate.
-- Video/image replacements crossfade; stopping returns smoothly to the background or fades to black. Stage off and Escape remain immediate and cancel visual transitions.
-- The optional music toggle and background-selection buttons keep their existing behavior. Admin and remote controls explain repeat-press actions in English and Italian.
-- Admin refreshes completed media validation reliably, so video/image background controls become available even when validation finishes during an earlier request.
-- Saving Stage settings reuses validation for an unchanged background file. Changed files are checked again, and inspection failures include their original diagnostic.
+- The smaller header and page title leave more room for your show. Empty message areas no longer reserve space.
+- The full-size, 256 × 256 QR code sits at the top-right of the connection panel, beside its instructions, with connection settings still collapsed by default.
+- The duplicate gateway-connected message is removed; errors and connection details remain visible.
+- The layout was checked in English and Italian, including 1095 × 758 and 900 × 600 desktop viewports. Narrow Admin screens put the QR above the link; the phone remote layout is unchanged.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 

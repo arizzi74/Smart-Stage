@@ -78,3 +78,40 @@
 #playlist-file-guidance:empty,#playlist-file-message:empty{display:none}
 #playlist-load-confirm .row{justify-content:flex-end}
 #playlist-load-confirm button{width:auto}
+
+/* Keep the pairing code in view in the desktop Admin window. */
+.admin-page .transport{padding:10px max(20px,env(safe-area-inset-right)) 10px max(20px,env(safe-area-inset-left));gap:18px}
+.admin-page .transport .stop{min-height:64px;min-width:148px;padding:8px 14px;font-size:1.5rem}
+.admin-page main{padding:16px 20px 40px}
+.admin-page .page-title{gap:12px}
+.admin-page .page-title .eyebrow{display:none}
+.admin-page .page-title h1{font-size:1.4rem}
+.admin-page .app-actions button{min-height:36px;padding:7px 12px;font-size:.83rem}
+.admin-page #notice:empty,.admin-page #remote-message:empty{display:none}
+.admin-page .section-nav{gap:4px 20px;margin:8px 0 12px}
+.admin-page .section-nav a{min-height:36px;font-size:.9rem}
+.admin-page #remote-section{padding:18px}
+.admin-page #remote-section>.eyebrow{display:none}
+.admin-page #remote-heading{font-size:1.2rem;margin-bottom:8px}
+.admin-page #remote-connection-settings{padding-bottom:4px;margin-bottom:10px}
+.admin-page #remote-section>.hint{margin:8px 0}
+.admin-page .remote-grid{gap:24px;margin-top:12px}
+.admin-page .remote-url{font-size:.9rem;line-height:1.5}
+.admin-page .remote-actions{margin-top:12px}
+@media(min-width:651px){
+  .admin-page #remote-section.has-remote{display:grid;grid-template-columns:minmax(0,1fr) 256px;column-gap:24px;align-items:start}
+  .admin-page #remote-section.has-remote>*{grid-column:1}
+  .admin-page #remote-section.has-remote .remote-grid{display:contents}
+  .admin-page #remote-section.has-remote .remote-details{grid-column:1}
+  .admin-page #remote-section.has-remote .remote-qr{grid-column:2;grid-row:1/span 9}
+}
+@media(max-width:800px){
+  .admin-page .transport{padding:10px max(16px,env(safe-area-inset-right)) 10px max(16px,env(safe-area-inset-left));gap:8px 16px}
+  .admin-page main{padding:12px 16px 32px}
+  .admin-page .page-title{align-items:center;flex-wrap:nowrap}
+  .admin-page .app-actions .hint{max-width:180px}
+}
+@media(max-width:650px){
+  .admin-page .remote-qr{grid-row:1}
+  .admin-page #remote-section{padding:16px}
+}
