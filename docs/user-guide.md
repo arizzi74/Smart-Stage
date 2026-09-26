@@ -229,6 +229,30 @@ acceptance testing.
    audio. Stage off mutes the background soundtrack. **Escape** immediately
    stops all sound and closes the stage. **Disconnect** is in the top bar.
 
+## Save and load playlists
+
+In **Admin → Playlist**, choose **Save playlist…** to save a
+`Playlist.smartstage.json` file. Mac and Windows apps show a native Save dialog;
+a browser-only host downloads the file through the browser. Save or reload any
+unsaved Stage and sound changes first. Saving a file does not interrupt playback.
+
+Use **Load playlist…** to restore a saved file. Stop playback and turn Stage off,
+then confirm replacement and choose the file. Cancellation leaves the current
+playlist unchanged. Loading replaces the cue list and saved stage/sound settings
+together, remains stopped, and revalidates media before playback.
+
+The file includes cue order, labels, original media paths, button colors,
+hidden/background flags, the default background, its audio setting, fades and
+the selected-music toggle. Audio/display device choices, connection credentials
+and language preferences stay on the host. Media is not copied or embedded:
+the original files must remain accessible at their saved paths. If a file is
+missing, outside the configured media roots, or the playlist file is invalid,
+loading fails without replacing the current playlist. Files are limited to
+4 MiB and 500 cues. Back up the media separately when moving a show to another
+computer; this format does not relocate media automatically.
+
+## Closing Smart Stage
+
 **Quit Smart Stage** in Admin stops playback, closes the stage and exits the app.
 Closing the Windows Admin window asks for confirmation: **OK** quits the app,
 while **Cancel** keeps it open. Minimize it to keep playback running in the

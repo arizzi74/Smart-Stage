@@ -54,6 +54,7 @@ type API struct {
 	chooseFiles    func() bool
 	canChooseFiles func() bool
 	language       *locale.Manager
+	playlistFiles  PlaylistFiles
 }
 
 // New defaults to the loopback-only Admin handler. A network controller must use
@@ -180,12 +181,16 @@ func respondError(w http.ResponseWriter, err error) {
 	fail(w, status, e.Code, e.Message)
 }
 func decode(w http.ResponseWriter, r *http.Request, target any) bool {
+	return decodeLimit(w, r, target, 1024*1024)
+}
+
+func decodeLimit(w http.ResponseWriter, r *http.Request, target any, limit int64) bool {
 	media, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || media != "application/json" {
 		fail(w, 415, "content_type", "Use application/json")
 		return false
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	d := json.NewDecoder(r.Body)
 	d.DisallowUnknownFields()
 	if err := d.Decode(target); err != nil {
@@ -415,6 +420,8 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 202, ack)
 	case "GET /api/playlist":
 		writeJSON(w, 200, a.app.Playlist())
+	case "GET /api/playlist/export", "POST /api/playlist/import", "GET /api/playlist/file", "POST /api/playlist/file":
+		a.playlistFileRequest(w, r)
 	case "POST /api/emergency-stop":
 		var body app.StopRequest
 		if !decode(w, r, &body) {

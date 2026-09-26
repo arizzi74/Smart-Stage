@@ -15,6 +15,7 @@ import (
 
 var desktopFiles = make(chan DesktopFileRequest, MaxDesktopFileRequests)
 var desktopAdminRequests = make(chan struct{}, 1)
+var desktopPlaylistResults = make(chan DesktopPlaylistResult, 1)
 
 // SystemLanguage returns the first supported OS UI language, or English.
 func SystemLanguage() string {
@@ -48,6 +49,24 @@ func DesktopCanChooseFiles() bool { return C.ss_desktop_can_choose_files() != 0 
 // False means this process has no available native desktop picker.
 func DesktopChooseFiles() bool { return C.ss_desktop_choose_files() != 0 }
 
+// DesktopCanChoosePlaylists reports whether native playlist dialogs are ready.
+func DesktopCanChoosePlaylists() bool { return C.ss_desktop_can_choose_playlists() != 0 }
+
+// DesktopChoosePlaylist queues one Save/Open dialog. The supplied identifier is
+// returned with selection, cancellation, or error; no filesystem I/O occurs here.
+func DesktopChoosePlaylist(id uint64, save bool) bool {
+	if id == 0 {
+		return false
+	}
+	var saving C.int
+	if save {
+		saving = 1
+	}
+	return C.ss_desktop_choose_playlist(C.uint64_t(id), saving) != 0
+}
+
+func DesktopPlaylistResults() <-chan DesktopPlaylistResult { return desktopPlaylistResults }
+
 // DesktopActivateBrowser queues activation of the running default browser. It
 // never opens a URL, starts a browser process, or selects a particular tab.
 func DesktopActivateBrowser() bool { return C.ss_desktop_activate_browser() != 0 }
@@ -72,6 +91,14 @@ func DesktopFileResult(id uint64, message string) {
 
 func pollDesktop() {
 	pollDesktopQuit()
+	if len(desktopPlaylistResults) < cap(desktopPlaylistResults) {
+		if p := C.ss_desktop_take_playlist_result(); p != nil {
+			var result DesktopPlaylistResult
+			if err := json.Unmarshal([]byte(readString(p)), &result); err == nil && result.ID != 0 {
+				desktopPlaylistResults <- result
+			}
+		}
+	}
 	if len(desktopAdminRequests) < cap(desktopAdminRequests) && C.ss_desktop_poll_admin_request() != 0 {
 		desktopAdminRequests <- struct{}{}
 	}

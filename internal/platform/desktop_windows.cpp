@@ -72,6 +72,13 @@ const Translation translations[]={
     {L"Cancel", L"Annulla"},
     {L"Audio, video and images", L"Audio, video e immagini"},
     {L"All files", L"Tutti i file"},
+    {L"Save playlist", L"Salva playlist"},
+    {L"Load playlist", L"Carica playlist"},
+    {L"Smart Stage playlists", L"Playlist Smart Stage"},
+    {L"JSON files", L"File JSON"},
+    {L"Close the other file dialog before opening a playlist dialog.", L"Chiudi l’altra finestra di selezione file prima di aprire una playlist."},
+    {L"The playlist dialog could not be opened.", L"Impossibile aprire la finestra della playlist."},
+    {L"The selected playlist does not have an absolute filesystem path.", L"La playlist selezionata non ha un percorso assoluto nel file system."},
     {L"Choose media for Smart Stage — files stay in their original folders", L"Scegli i file per Smart Stage — resteranno nelle cartelle originali"},
     {L"Add to Show", L"Aggiungi allo spettacolo"},
     {L"An unexpected error occurred in the Admin window.", L"Si è verificato un errore imprevisto nella finestra Admin."},
@@ -201,6 +208,10 @@ std::wstring errorText = L"Starting Smart Stage…";
 HMENU activeTrayMenu = nullptr;
 std::atomic<bool> ready{false}, stopping{false}, showPending{false}, adminRequested{false}, quitRequested{false}, chooserScheduled{false};
 std::atomic<bool> emergencyRequested{false};
+std::atomic<uint64_t> playlistRequestID{0};
+std::mutex playlistMutex;
+std::string playlistResult;
+bool playlistSaving=false;
 std::thread uiThread;
 std::once_flag startOnce;
 std::mutex initMutex, tasksMutex, filesMutex;
@@ -223,6 +234,7 @@ Ptr<IDCompositionDevice> dcomp;
 Ptr<IDCompositionTarget> target;
 Ptr<IDCompositionVisual> visual;
 Ptr<IFileOpenDialog> chooser;
+Ptr<IFileDialog> playlistChooser;
 HMODULE loader = nullptr;
 HANDLE loaderFile = INVALID_HANDLE_VALUE;
 HANDLE browserProcess = nullptr;
@@ -384,7 +396,7 @@ Ptr<IDropTarget> dropTarget;
 
 void chooseMedia() {
     chooserScheduled.store(false);
-    if (!ready.load() || stopping.load() || chooserActive || closeConfirmationActive) return;
+    if (!ready.load() || stopping.load() || chooserActive || closeConfirmationActive || playlistRequestID.load()) return;
     showWindow();
     chooserActive=true;
     struct FinishChooser {
@@ -413,6 +425,59 @@ void chooseMedia() {
         else for(DWORD i=0;i<count;++i) { Ptr<IShellItem> item; LPWSTR path=nullptr; if(SUCCEEDED(items->GetItemAt(i,item.out())) && SUCCEEDED(item->GetDisplayName(SIGDN_FILESYSPATH,&path))) { paths.push_back(utf8(path)); CoTaskMemFree(path); } }
         queueFiles(std::move(paths));
     } else if (result==HRESULT_FROM_WIN32(ERROR_CANCELLED)) fprintf(stderr,"Cancelled native media chooser\n");
+}
+// Reserve one request through result delivery. The dialog reports a path only;
+// the authenticated Go coordinator performs all playlist reading and writing.
+void finishPlaylist(uint64_t id,const std::string& path,bool cancelled,const std::string& error) {
+    std::lock_guard<std::mutex> lock(playlistMutex);
+    if(!id || playlistRequestID.load()!=id || !playlistResult.empty())return;
+    playlistResult="{\"id\":"+std::to_string(id)+",\"path\":"+quote(path)+",\"cancelled\":"+(cancelled?"true":"false")+",\"error\":"+quote(error)+"}";
+}
+void choosePlaylist(uint64_t id,bool save) {
+    if(playlistRequestID.load()!=id)return;
+    if(stopping.load() || !ready.load()) {finishPlaylist(id,{},true,{});return;}
+    if(chooserActive || closeConfirmationActive) {
+        finishPlaylist(id,{},false,utf8(text(L"Close the other file dialog before opening a playlist dialog.")));return;
+    }
+    chooserActive=true;playlistSaving=save;
+    struct FinishPlaylist {
+        ~FinishPlaylist() {
+            chooserShowing=false;chooserActive=false;playlistChooser.reset();
+            if(stopping.load())shutdownUI();
+        }
+    } finish;
+    try {
+        showWindow();
+        check(CoCreateInstance(save?CLSID_FileSaveDialog:CLSID_FileOpenDialog,nullptr,CLSCTX_INPROC_SERVER,IID_PPV_ARGS(playlistChooser.out())),"Open playlist dialog");
+        FILEOPENDIALOGOPTIONS flags{};check(playlistChooser->GetOptions(&flags),"Read playlist dialog options");
+        flags|=FOS_FORCEFILESYSTEM|FOS_PATHMUSTEXIST|FOS_NOCHANGEDIR;
+        flags|=save?FOS_OVERWRITEPROMPT:FOS_FILEMUSTEXIST;
+        check(playlistChooser->SetOptions(flags),"Configure playlist dialog");
+        COMDLG_FILTERSPEC filters[]={{text(L"Smart Stage playlists"),L"*.smartstage.json"},{text(L"JSON files"),L"*.json"}};
+        check(playlistChooser->SetFileTypes(2,filters),"Configure playlist types");
+        check(playlistChooser->SetDefaultExtension(L"smartstage.json"),"Configure playlist extension");
+        check(playlistChooser->SetTitle(text(save?L"Save playlist":L"Load playlist")),"Set playlist dialog title");
+        check(playlistChooser->SetOkButtonLabel(text(save?L"Save playlist":L"Load playlist")),"Set playlist dialog action");
+        if(save)check(playlistChooser->SetFileName(L"Playlist.smartstage.json"),"Set playlist filename");
+        if(stopping.load()) {finishPlaylist(id,{},true,{});return;}
+        chooserShowing=true;
+        HRESULT result=playlistChooser->Show(window);
+        chooserShowing=false;
+        if(stopping.load() || result==HRESULT_FROM_WIN32(ERROR_CANCELLED)) {finishPlaylist(id,{},true,{});return;}
+        check(result,"Choose playlist file");
+        Ptr<IShellItem> item;check(playlistChooser->GetResult(item.out()),"Read playlist selection");
+        PWSTR selected=nullptr;check(item->GetDisplayName(SIGDN_FILESYSPATH,&selected),"Read playlist path");
+        std::wstring chosen=selected?selected:L"";CoTaskMemFree(selected);
+        auto path=utf8(chosen.c_str());
+        bool drive=path.size()>2 && path[1]==':' && (path[2]=='\\' || path[2]=='/');
+        bool unc=path.size()>2 && path[0]=='\\' && path[1]=='\\';
+        if((!drive && !unc) || path.size()>131072) {
+            finishPlaylist(id,{},false,utf8(text(L"The selected playlist does not have an absolute filesystem path.")));return;
+        }
+        finishPlaylist(id,path,false,{});
+    } catch(...) {
+        finishPlaylist(id,{},false,utf8(text(L"The playlist dialog could not be opened.")));
+    }
 }
 std::wstring randomDirectory() {
     PWSTR local=nullptr; check(SHGetKnownFolderPath(FOLDERID_LocalAppData,KF_FLAG_CREATE,nullptr,&local),"Find local application data");
@@ -630,6 +695,10 @@ void refreshLanguage() {
         wcscpy_s(tray.szTip,text(L"Smart Stage — Open Admin / Quit"));
         Shell_NotifyIconW(NIM_MODIFY,&tray);
     }
+    if(playlistChooser) {
+        playlistChooser->SetTitle(text(playlistSaving?L"Save playlist":L"Load playlist"));
+        playlistChooser->SetOkButtonLabel(text(playlistSaving?L"Save playlist":L"Load playlist"));
+    }
     if(chooser) {
         chooser->SetTitle(text(L"Choose media for Smart Stage — files stay in their original folders"));
         chooser->SetOkButtonLabel(text(L"Add to Show"));
@@ -705,9 +774,11 @@ void drainTasks() {
 }
 void shutdownUI();
 void cancelChooser() {
-    if(!chooserShowing || !chooser)return;
+    if(!chooserShowing)return;
+    IFileDialog* active=playlistChooser?playlistChooser.p:chooser.p;
+    if(!active)return;
     Ptr<IOleWindow> native;
-    if(FAILED(chooser->QueryInterface(IID_PPV_ARGS(native.out()))))return;
+    if(FAILED(active->QueryInterface(IID_PPV_ARGS(native.out()))))return;
     HWND dialog=nullptr;
     if(SUCCEEDED(native->GetWindow(&dialog)) && dialog && IsWindowVisible(dialog))
         // Let the dialog finish through its ordinary Cancel message. Calling
@@ -789,6 +860,7 @@ void shutdownUI() {
     if(uiQuit)return;
     if(!stopping.load())fprintf(stderr,"Closing native Admin: chooserActive=%d chooserShowing=%d closeConfirmationActive=%d\n",int(chooserActive),int(chooserShowing),int(closeConfirmationActive));
     stopping.store(true);ready.store(false);
+    finishPlaylist(playlistRequestID.load(),{},true,{});
     if(chooserActive || closeConfirmationActive) {
         SetTimer(control.load(),0x534,50,nullptr);
         cancelChooser();
@@ -919,9 +991,29 @@ extern "C" int ss_desktop_show_admin() {desktop::showPending.store(true);return 
 extern "C" int ss_desktop_poll_admin_request() {return desktop::adminRequested.exchange(false)?1:0;}
 extern "C" int ss_desktop_can_choose_files() {return desktop::ready.load() && !desktop::stopping.load();}
 extern "C" int ss_desktop_choose_files() {
-    if(!ss_desktop_can_choose_files())return 0;
+    if(!ss_desktop_can_choose_files() || desktop::playlistRequestID.load())return 0;
     if(desktop::chooserScheduled.exchange(true))return 1;
     if(!desktop::post([]{desktop::chooseMedia();})) {desktop::chooserScheduled.store(false);return 0;}return 1;
+}
+extern "C" int ss_desktop_can_choose_playlists() {return ss_desktop_can_choose_files();}
+extern "C" int ss_desktop_choose_playlist(uint64_t id,int save) {
+    if(!id || !ss_desktop_can_choose_playlists())return 0;
+    uint64_t expected=0;
+    if(!desktop::playlistRequestID.compare_exchange_strong(expected,id))return 0;
+    if(!desktop::post([id,save]{desktop::choosePlaylist(id,save!=0);})) {
+        desktop::playlistRequestID.store(0);return 0;
+    }
+    return 1;
+}
+extern "C" char* ss_desktop_take_playlist_result() {
+    std::lock_guard<std::mutex> lock(desktop::playlistMutex);
+    if(desktop::playlistResult.empty())return nullptr;
+    auto* result=(char*)malloc(desktop::playlistResult.size()+1);
+    if(result) {
+        memcpy(result,desktop::playlistResult.c_str(),desktop::playlistResult.size()+1);
+        desktop::playlistResult.clear();desktop::playlistRequestID.store(0);
+    }
+    return result;
 }
 extern "C" int ss_desktop_activate_browser() {return ss_desktop_show_admin();}
 extern "C" void ss_desktop_error(const char* message) {auto text=desktop::translatedMessage(desktop::wide(message));MessageBoxW(nullptr,text.c_str(),L"Smart Stage",MB_OK|MB_ICONERROR);}

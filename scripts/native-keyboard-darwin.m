@@ -57,10 +57,74 @@ static int desktopChecks(void) {
     return 0;
 }
 
+static NSDictionary *takePlaylist(void) {
+    char *raw = ss_desktop_take_playlist_result();
+    if (!raw) return nil;
+    NSData *data = [[NSString stringWithUTF8String:raw] dataUsingEncoding:NSUTF8StringEncoding];
+    ss_free(raw);
+    return [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
+}
+
+static int playlistChecks(void) {
+    setenv("SMARTSTAGE_APP_LAUNCH", "1", 1);
+    char *error = ss_init();
+    if (error) { fprintf(stderr, "%s\n", error); ss_free(error); return 3; }
+    if (ss_desktop_can_choose_playlists() || ss_desktop_choose_playlist(1, 1)) return 5;
+    ss_desktop_language("it");
+    ss_desktop_admin("http://127.0.0.1:8787/admin");
+    NSString *filename = [NSString stringWithFormat:@"Playlist-%@.smartstage.json", NSUUID.UUID.UUIDString];
+    __block NSUInteger phase = 0, polls = 0;
+    __block BOOL passed = NO;
+    __block NSSavePanel *shutdownPanel;
+    dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 100 * NSEC_PER_MSEC), 100 * NSEC_PER_MSEC, NSEC_PER_MSEC);
+    dispatch_source_set_event_handler(timer, ^{
+        if (++polls > 300) { fprintf(stderr, "Playlist dialog probe timeout at phase %lu\n", (unsigned long)phase); ss_quit(); return; }
+        NSSavePanel *panel = [(NSObject *)NSApp.delegate valueForKey:@"playlistPanel"];
+        if (phase == 0 && ss_desktop_can_choose_playlists()) {
+            if (ss_desktop_choose_playlist(0, 1) || !ss_desktop_choose_playlist(1, 1) || ss_desktop_choose_playlist(2, 0)) { ss_quit(); return; }
+            phase = 1;
+        } else if (phase == 1 && panel.isVisible) {
+            if (![panel.title isEqualToString:@"Salva playlist"] || ![panel.nameFieldStringValue isEqualToString:@"Playlist.smartstage.json"] || ss_desktop_choose_files()) { ss_quit(); return; }
+            panel.directoryURL = [NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES];
+            panel.nameFieldStringValue = filename;
+            phase = 2;
+        } else if (phase == 2 && panel.isVisible) {
+            [panel ok:nil]; phase = 3;
+        } else if (phase == 3 && !panel) {
+            NSDictionary *result = takePlaylist();
+            if (!result) return;
+            NSString *path = result[@"path"];
+            if (![result[@"id"] isEqual:@1] || [result[@"cancelled"] boolValue] || [result[@"error"] length] || !path.isAbsolutePath || ![path.lastPathComponent isEqualToString:filename] || [NSFileManager.defaultManager fileExistsAtPath:path] || takePlaylist()) { ss_quit(); return; }
+            if (!ss_desktop_choose_playlist(3, 0)) { ss_quit(); return; }
+            phase = 4;
+        } else if (phase == 4 && panel.isVisible) {
+            if (![panel isKindOfClass:NSOpenPanel.class] || [(NSOpenPanel *)panel allowsMultipleSelection] || ![panel.title isEqualToString:@"Carica playlist"]) { ss_quit(); return; }
+            [panel cancel:nil]; phase = 5;
+        } else if (phase == 5 && !panel) {
+            NSDictionary *result = takePlaylist();
+            if (!result) return;
+            if (![result[@"id"] isEqual:@3] || ![result[@"cancelled"] boolValue] || [result[@"path"] length] || [result[@"error"] length] || !ss_desktop_choose_playlist(4, 1)) { ss_quit(); return; }
+            phase = 6;
+        } else if (phase == 6 && panel.isVisible) {
+            shutdownPanel = panel; passed = YES; ss_quit();
+        }
+    });
+    dispatch_resume(timer); ss_run(); dispatch_source_cancel(timer);
+    NSDictionary *result = takePlaylist();
+    if (!passed || shutdownPanel.isVisible || ss_desktop_can_choose_playlists() || ss_desktop_choose_playlist(5, 0) || ![result[@"id"] isEqual:@4] || ![result[@"cancelled"] boolValue]) {
+        fprintf(stderr, "Native playlist checks failed at phase %lu; final result: %s\n", (unsigned long)phase, result.description.UTF8String ?: "none");
+        return 7;
+    }
+    puts("{\"nativePlaylistSaveReturnsPathWithoutWriting\":true,\"nativePlaylistLoadCancellationReturnsNoPath\":true,\"nativePlaylistConcurrentDialogsRejected\":true,\"nativePlaylistItalianLabels\":true,\"quitClosesOpenPlaylistChooser\":true}");
+    return 0;
+}
+
 int main(int argc, const char **argv) {
     @autoreleasepool {
         if (argc != 3) return 2;
         if (strcmp(argv[2], "desktop") == 0) return desktopChecks();
+        if (strcmp(argv[2], "playlist") == 0) return playlistChecks();
         char *error = ss_init();
         if (error) { fprintf(stderr, "%s\n", error); ss_free(error); return 3; }
         __block BOOL sent = NO, passed = NO;

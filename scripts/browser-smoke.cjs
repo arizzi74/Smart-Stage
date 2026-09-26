@@ -17,6 +17,7 @@ const assert = require('node:assert/strict');
   let stateGets = 0, holdPlay = false, remoteGets = 0, links = [], sessionCounter = 0;
   let updateGets = 0, updateGetDelay = 0, failUpdateCheck = false, restarting = false;
   let nativeChooserImports = [], playlistFailSave = false;
+  let nativePlaylistStatus = { id: 0, phase: 'idle' }, nativePlaylistResult = { phase: 'complete' }, nativePlaylistMismatch = false;
   let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: false };
   let gateway = { mode: 'lan', url: '', hasToken: false, status: 'disabled', message: '', remoteURL: '' };
   const gatewayRemoteToken = 'a1'.repeat(32), gatewayRegistrationToken = 'b2'.repeat(32);
@@ -28,6 +29,16 @@ const assert = require('node:assert/strict');
   const state = { stage: { ...stageDefaults }, backgroundCueId: '', imageCueId: '', instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
   const config = { stage: { ...stageDefaults }, schema: 1, playlistRevision: 1, outputs: state.outputs, cues: state.cues.map(c => ({ id: c.id, label: c.label, path: `/Host/Show/${c.id}.mp4`, cache: { status: 'ready', media: { kind: c.kind, duration: 3 } } })) };
   const broadcast = () => { for (const c of clients) c.write(`event: state\ndata: ${JSON.stringify(state)}\n\n`); };
+  const exportedPlaylist = () => ({ format: 'smartstage-playlist', version: 1,
+    cues: config.cues.map(({ id, label, path, color, hidden, background }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background) })), stage: { ...config.stage } });
+  const importPlaylist = document => {
+    const oldCues = config.cues, ids = new Map(document.cues.map((cue, index) => [cue.id, `loaded-${config.playlistRevision}-${index}`]));
+    config.cues = document.cues.map(cue => ({ ...cue, id: ids.get(cue.id), cache: oldCues.find(old => old.path === cue.path)?.cache || { status: 'ready', media: { kind: 'audio', duration: 3 } } }));
+    config.stage = { ...document.stage, backgroundCueId: ids.get(document.stage.backgroundCueId) || '' }; state.stage = { ...config.stage }; state.backgroundCueId = config.stage.backgroundCueId;
+    config.playlistRevision++; state.playlistRevision = config.playlistRevision;
+    state.cues = config.cues.map((cue, index) => ({ id: cue.id, label: cue.label, color: cue.color, hidden: cue.hidden, background: cue.background, position: index + 1, kind: cue.cache.media.kind, duration: 3, validation: 'ready' }));
+    state.revision++; broadcast();
+  };
   const createServer = (listenerRole, prefix = '') => http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
     const reply = (value, status = 200) => { res.writeHead(status, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(value)); };
@@ -116,7 +127,33 @@ const assert = require('node:assert/strict');
         reply(update, 202); return;
       }
     }
-    if (['/api/remote-control', '/api/remote-control/qr', '/api/playlist', '/api/stage-settings', '/api/devices', '/api/files', '/api/gateway', '/api/gateway/reconnect'].includes(url.pathname) && role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
+    if (['/api/remote-control', '/api/remote-control/qr', '/api/playlist', '/api/playlist/export', '/api/playlist/import', '/api/playlist/file', '/api/stage-settings', '/api/devices', '/api/files', '/api/gateway', '/api/gateway/reconnect'].includes(url.pathname) && role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
+    if (url.pathname === '/api/playlist/export') { assert.equal(req.method, 'GET'); reply(exportedPlaylist()); return; }
+    if (url.pathname === '/api/playlist/import') {
+      assert.equal(req.method, 'POST'); assert.equal(req.headers['x-csrf-token'], 'test-csrf');
+      assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
+      if (body.expectedRevision !== config.playlistRevision) { reply({ error: { message: 'The playlist changed; reload it before loading a playlist file' } }, 409); return; }
+      assert(['stopped', 'error'].includes(state.state)); assert.equal(state.stageEnabled, false); assert.equal(Boolean(state.updatePending), false);
+      if (body.playlist?.format !== 'smartstage-playlist' || body.playlist.version !== 1 || !Array.isArray(body.playlist.cues) || !body.playlist.stage) {
+        reply({ error: { message: 'This is not a supported Smart Stage playlist file' } }, 400); return;
+      }
+      importPlaylist(body.playlist); reply(config); return;
+    }
+    if (url.pathname === '/api/playlist/file') {
+      assert.equal(adminCapabilities.playlistFiles, true);
+      if (req.method === 'GET') { reply(nativePlaylistMismatch ? { ...nativePlaylistStatus, id: nativePlaylistStatus.id + 1 } : nativePlaylistStatus); return; }
+      assert.equal(req.method, 'POST'); assert.equal(req.headers['x-csrf-token'], 'test-csrf'); assert.equal(body.expectedRevision, config.playlistRevision);
+      assert.deepEqual(Object.keys(body).sort(), ['expectedRevision', 'operation']); assert(['save', 'load'].includes(body.operation));
+      if (body.operation === 'load') { assert(['stopped', 'error'].includes(state.state)); assert.equal(state.stageEnabled, false); }
+      nativePlaylistStatus = { id: nativePlaylistStatus.id + 1, operation: body.operation, phase: 'choosing' };
+      const result = nativePlaylistResult; nativePlaylistResult = { phase: 'complete' };
+      reply(nativePlaylistStatus, 202);
+      setTimeout(() => {
+        if (body.operation === 'load' && result.phase === 'complete') importPlaylist(result.playlist || exportedPlaylist());
+        nativePlaylistStatus = { ...nativePlaylistStatus, phase: result.phase, message: result.message || '', filename: 'Show.smartstage.json' };
+      }, 100);
+      return;
+    }
     if (url.pathname === '/api/gateway') {
       if (req.method === 'GET') { const snapshot = { ...gateway }; if (gatewayDelay) await new Promise(resolve => setTimeout(resolve, gatewayDelay)); reply(snapshot); return; }
       assert.equal(req.method, 'PUT'); assert.equal(req.headers['x-csrf-token'], 'test-csrf');
@@ -815,6 +852,110 @@ const assert = require('node:assert/strict');
     assert(publicRequests.every(url => url.startsWith(publicPrefix + '/')), 'no public asset, API, or event request escapes its endpoint');
     assert.equal(publicRequests.some(url => /local-session|admin-presence|gateway|playlist|files|quit/.test(url)), false, 'public remote does not request any local Admin API');
     await publicContext.close();
+
+    // Playlist files describe the show; media bytes, outputs and gateway
+    // credentials never belong in a browser download or import request.
+    adminCapabilities = { chooseFiles: true, playlistFiles: false };
+    await admin.evaluate(async () => { await refreshState(); await loadPlaylist(); });
+    const savedShow = exportedPlaylist(), outputsBeforeFile = JSON.stringify(config.outputs), gatewayBeforeFile = JSON.stringify(gateway);
+    const downloadEvent = admin.waitForEvent('download'); await admin.locator('#save-playlist-file').click();
+    const playlistDownload = await downloadEvent;
+    assert.equal(playlistDownload.suggestedFilename(), 'Playlist.smartstage.json');
+    const savedDocument = JSON.parse(fs.readFileSync(await playlistDownload.path(), 'utf8'));
+    assert.deepEqual(savedDocument, savedShow);
+    assert.deepEqual(Object.keys(savedDocument).sort(), ['cues', 'format', 'stage', 'version']);
+    assert(savedDocument.cues.every(cue => !('cache' in cue)), 'validation cache is absent from the downloaded playlist');
+    const importsBeforeFile = () => requests.filter(r => r.path === '/api/playlist/import').length;
+    const beginBrowserPlaylistLoad = async () => {
+      await admin.locator('#load-playlist-file').click(); await admin.locator('#playlist-load-confirm').waitFor();
+      const chooserEvent = admin.waitForEvent('filechooser'); await admin.locator('#playlist-load-continue').click(); return chooserEvent;
+    };
+    const filePayload = document => ({name: 'Show.smartstage.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(document))});
+    const beforeCancelImports = importsBeforeFile(), beforeCancelCommands = commands.length;
+    await admin.locator('#load-playlist-file').click(); await admin.locator('#playlist-load-cancel').click();
+    assert.equal(await admin.locator('#playlist-load-confirm').isVisible(), false);
+    await admin.locator('#load-playlist-file').click(); await admin.keyboard.press('Escape');
+    assert.equal(await admin.locator('#playlist-load-confirm').isVisible(), false);
+    assert.equal(importsBeforeFile(), beforeCancelImports, 'confirmation cancellation cannot start a replacement');
+    assert.equal(commands.length, beforeCancelCommands, 'Escape closes the file confirmation without a playback command');
+
+    await admin.locator('#fade-enabled').check(); await admin.locator('#fade-seconds').fill('2.7');
+    assert.equal(await admin.locator('#save-playlist-file').isDisabled(), true, 'unsaved stage drafts cannot silently be excluded from Save');
+    assert.match(await admin.locator('#playlist-file-guidance').textContent(), /Save or reload/);
+    let chooser = await beginBrowserPlaylistLoad();
+    await chooser.setFiles({name: 'Broken.smartstage.json', mimeType: 'application/json', buffer: Buffer.from('{ broken')});
+    await admin.waitForFunction(() => document.getElementById('playlist-file-message').textContent.includes('not valid playlist JSON'));
+    assert.equal(importsBeforeFile(), beforeCancelImports, 'invalid JSON is rejected without an import request');
+    assert.equal(await admin.locator('#fade-seconds').inputValue(), '2.7', 'a failed file load preserves the unsaved stage draft');
+    assert.equal(await admin.locator('#save-playlist-file').isDisabled(), true);
+    chooser = await beginBrowserPlaylistLoad(); await chooser.setFiles(filePayload({schema: 1, cues: []}));
+    await admin.waitForFunction(() => document.getElementById('playlist-file-message').textContent.includes('not a supported'));
+    assert.deepEqual(exportedPlaylist(), savedShow, 'a rejected file leaves the saved show unchanged');
+    const beforeOversize = importsBeforeFile();
+    chooser = await beginBrowserPlaylistLoad();
+    await chooser.setFiles({name: 'Large.smartstage.json', mimeType: 'application/json', buffer: Buffer.alloc(4 * 1024 * 1024 + 1, 32)});
+    await admin.waitForFunction(() => document.getElementById('playlist-file-message').textContent.includes('no larger than 4 MiB'));
+    assert.equal(importsBeforeFile(), beforeOversize, 'oversized files never enter the JSON import request');
+    chooser = await beginBrowserPlaylistLoad();
+    config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
+    await chooser.setFiles(filePayload(savedDocument));
+    await admin.waitForFunction(() => document.getElementById('playlist-file-message').textContent.includes('The playlist changed'));
+    assert.equal(await admin.locator('#fade-seconds').inputValue(), '2.7', 'a revision conflict preserves the stage draft');
+    assert.deepEqual(exportedPlaylist(), savedShow);
+    await admin.locator('#reload-playlist').click();
+    await admin.waitForFunction(() => !document.getElementById('save-playlist-file').disabled);
+    config.cues[0].label = 'Changed after saving'; config.stage.fadeSeconds = 3.5;
+    config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
+    await admin.evaluate(() => loadPlaylist());
+    chooser = await beginBrowserPlaylistLoad(); await chooser.setFiles(filePayload(savedDocument));
+    await admin.waitForFunction(() => document.getElementById('playlist-file-message').textContent.startsWith('Playlist loaded.'));
+    assert.deepEqual(config.cues.map(({id, cache, ...cue}) => cue), savedDocument.cues.map(({id, ...cue}) => cue), 'file roundtrip restores labels, original paths, order, colors, hidden flags and background buttons');
+    const savedBackgroundIndex = savedDocument.cues.findIndex(cue => cue.id === savedDocument.stage.backgroundCueId);
+    assert.deepEqual(config.stage, {...savedDocument.stage, backgroundCueId: savedBackgroundIndex >= 0 ? config.cues[savedBackgroundIndex].id : ''}, 'file roundtrip restores stage settings with fresh cue identities');
+    assert.equal(await admin.locator('#save-playlist-file').isDisabled(), false, 'a successful replacement clears discarded stage drafts');
+    assert.equal(JSON.stringify(config.outputs), outputsBeforeFile); assert.equal(JSON.stringify(gateway), gatewayBeforeFile);
+    for (const guardedState of [{state: 'playing', stageEnabled: false}, {state: 'stopped', stageEnabled: true}]) {
+      Object.assign(state, guardedState); state.revision++; broadcast(); await admin.evaluate(() => refreshState());
+      assert.equal(await admin.locator('#load-playlist-file').isDisabled(), true);
+      assert.equal(await admin.locator('#save-playlist-file').isDisabled(), false, 'a saved show can be exported without interrupting playback');
+    }
+    state.state = 'stopped'; state.stageEnabled = false; state.updatePending = true; state.revision++; broadcast(); await admin.evaluate(() => refreshState());
+    assert.equal(await admin.locator('#save-playlist-file').isDisabled(), true); assert.equal(await admin.locator('#load-playlist-file').isDisabled(), true);
+    state.updatePending = false; state.revision++; broadcast(); await admin.evaluate(() => refreshState());
+
+    state.state = 'error'; state.revision++; broadcast(); await admin.evaluate(() => refreshState());
+    assert.equal(await admin.locator('#load-playlist-file').isDisabled(), false, 'an idle playback error can recover by loading another show');
+    state.state = 'stopped'; state.revision++; broadcast(); await admin.evaluate(() => refreshState());
+
+    adminCapabilities = { chooseFiles: true, playlistFiles: true }; await admin.evaluate(() => refreshState());
+    const nativeExportsBefore = requests.filter(r => r.path === '/api/playlist/export').length;
+    await admin.locator('#save-playlist-file').click();
+    assert.equal(await admin.locator('#load-playlist-file').isDisabled(), true, 'native dialog completion keeps playlist editing reserved');
+    assert.equal(await admin.locator('#choose-files').isDisabled(), true);
+    await admin.waitForFunction(() => document.getElementById('playlist-file-message').textContent === 'Playlist file saved.');
+    assert.equal(requests.filter(r => r.path === '/api/playlist/export').length, nativeExportsBefore, 'native file saving does not start a WebView download');
+    assert.equal(requests.filter(r => r.path === '/api/playlist/file' && r.body.operation === 'save').length, 1);
+    await admin.locator('#fade-enabled').check(); await admin.locator('#fade-seconds').fill('2.2');
+    const beforeNativeCancel = JSON.stringify(config);
+    nativePlaylistResult = { phase: 'cancelled' };
+    await admin.locator('#load-playlist-file').click(); await admin.locator('#playlist-load-continue').click();
+    await admin.waitForFunction(() => document.getElementById('playlist-file-message').textContent.startsWith('Cancelled.'));
+    assert.equal(JSON.stringify(config), beforeNativeCancel); assert.equal(await admin.locator('#fade-seconds').inputValue(), '2.2');
+    nativePlaylistResult = { phase: 'error', message: 'The selected playlist file changed; choose it again' };
+    await admin.locator('#load-playlist-file').click(); await admin.locator('#playlist-load-continue').click();
+    await admin.waitForFunction(() => document.getElementById('playlist-file-message').textContent.includes('selected playlist file changed'));
+    assert.equal(JSON.stringify(config), beforeNativeCancel); assert.equal(await admin.locator('#fade-seconds').inputValue(), '2.2');
+    nativePlaylistResult = { phase: 'complete', playlist: exportedPlaylist() };
+    await admin.locator('#load-playlist-file').click(); await admin.locator('#playlist-load-continue').click();
+    await admin.waitForFunction(() => document.getElementById('playlist-file-message').textContent.startsWith('Playlist loaded.'));
+    assert.equal(await admin.locator('#save-playlist-file').isDisabled(), false);
+    assert.equal(await admin.locator('#fade-seconds').inputValue(), String(config.stage.fadeSeconds));
+    nativePlaylistMismatch = true;
+    await admin.locator('#save-playlist-file').click();
+    await admin.waitForFunction(() => document.getElementById('playlist-file-message').textContent.includes('request could not be confirmed'));
+    nativePlaylistMismatch = false;
+    assert.equal(JSON.stringify(config.outputs), outputsBeforeFile); assert.equal(JSON.stringify(gateway), gatewayBeforeFile);
+
     const beforeQuitDocuments = adminDocumentLoads;
     await admin.locator('#quit-app').click();
     await admin.locator('#app-closed').waitFor();
@@ -848,6 +989,12 @@ const assert = require('node:assert/strict');
     await localeAdmin.locator('.playlist-row').first().waitFor();
     await localeAdmin.waitForFunction(() => document.documentElement.lang === 'it');
     assert.equal(await localeAdmin.locator('#quit-app').textContent(), 'Esci da Smart Stage');
+    assert.equal(await localeAdmin.locator('#save-playlist-file').textContent(), 'Salva playlist…');
+    assert.equal(await localeAdmin.locator('#load-playlist-file').textContent(), 'Carica playlist…');
+    await localeAdmin.locator('#load-playlist-file').click();
+    assert.equal(await localeAdmin.locator('#playlist-load-heading').textContent(), 'Caricare una playlist?');
+    assert.match(await localeAdmin.locator('#playlist-load-description').textContent(), /File multimediali, uscite e impostazioni di connessione/);
+    await localeAdmin.locator('#playlist-load-cancel').click();
     assert.equal(await localeAdmin.locator('#language-mode').inputValue(), 'system');
     assert.match(await localeAdmin.locator('#gateway-token-hint').textContent(), /token salvato con questo URL/, 'stored-token guidance is translated into Italian');
     assert.equal(await localeAdmin.evaluate(() => navigator.language), 'en-US', 'Admin follows host system language rather than browser language');
@@ -872,6 +1019,7 @@ const assert = require('node:assert/strict');
     await localeAdmin.locator('#language-mode').selectOption('en');
     await localeAdmin.waitForFunction(() => document.documentElement.lang === 'en' && !document.getElementById('language-mode').disabled);
     assert.equal(await localeAdmin.locator('#quit-app').textContent(), 'Quit Smart Stage');
+    assert.equal(await localeAdmin.locator('#save-playlist-file').textContent(), 'Save playlist…');
     assert.equal(await localeAdmin.locator('.playlist-row input').first().inputValue(), 'Color <originale> 🟢');
     assert.equal(await localeAdmin.locator('.source-path').first().textContent(), rawPath);
     assert.equal(await localeAdmin.locator('#gateway-token').inputValue(), 'secret-draft-not-translated');
@@ -935,7 +1083,7 @@ const assert = require('node:assert/strict');
     assert.equal(requests.some(r => r.listenerRole === 'command' && r.path === '/api/language'), false, 'Remote never accesses the privileged language API');
     await italianRemoteContext.close();
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }

@@ -18,7 +18,8 @@ API requests/responses use JSON except the QR PNG endpoint. Session creation,
 pairing and mutation requests require `Content-Type: application/json` and the
 exact page `Origin`. Session mutations also require `X-CSRF-Token`. Host must
 match the address and port allowed by that listener. No CORS is enabled;
-forwarded-IP headers are not trusted. Bodies are limited to 1 MiB; unknown fields,
+forwarded-IP headers are not trusted. Bodies are limited to 1 MiB, except playlist
+imports (4 MiB document plus up to 1 KiB of request envelope); unknown fields,
 trailing values, excessive strings/counts and invalid request IDs are rejected.
 Cross-site/same-site fetch metadata is rejected on APIs. Public GET/HEAD
 navigation to remote `/command` or `/` remains available, so an Admin link or a
@@ -156,6 +157,10 @@ expiry/logout ends them. Commands do not travel over SSE.
 | `GET /api/remote-control/qr?index=N` | PNG of the exact selected link, encoded locally with a four-module white quiet zone and `Cache-Control: no-store`. Requires the Admin session. Unknown/stale index returns 404; invalid query shape returns 400. |
 | `GET /api/files?path=...&showHidden=false` | Canonical directory, parent, roots/volumes, breadcrumbs, at most 1,000 visible entries and truncation. Dot-prefixed names are hidden by default; `showHidden=true` includes them. Empty path chooses home or first permitted root. Explicit paths remain accessible within media roots. Entries include name/path/directory/bytes/modification nanoseconds. |
 | `GET /api/playlist` | Full configuration model, source paths and derived validation cache. |
+| `GET /api/playlist/export` | Download `Playlist.smartstage.json`: `{format:"smartstage-playlist",version:1,cues:[{id,label,path,color?,hidden?,background?}],stage:{...}}`. No outputs, validation cache, credentials or runtime state. Maximum 4 MiB; saving is permitted during playback. |
+| `POST /api/playlist/import` | `{expectedRevision:N,playlist:{...}}` restores a version-1 playlist document atomically. Requires stopped playback and Stage off; preserves local outputs, assigns new cue IDs, remaps the saved background and revalidates media. Invalid/missing/out-of-root sources or stale revisions leave the current show intact. Returns the saved configuration. |
+| `POST /api/playlist/file` | `{operation:"save"\|"load",expectedRevision:N}` opens a native Save/Open dialog when Admin capability `playlistFiles` is true. HTTP 202 returns `{id,operation,phase}`; HTTP callers cannot supply filesystem paths. Save captures the committed show at request time; Load checks the revision again after selection. |
+| `GET /api/playlist/file` | Latest native dialog operation: `{id,operation,phase,filename?,message?,code?}`. Phases: `idle`, `choosing`, `saving`, `loading`, `complete`, `cancelled`, `error`. Match the returned ID before consuming a result; one operation can be active at a time. |
 | `PUT /api/playlist` | `{expectedRevision:N,cues:[{id:"existing or empty",label:"...",path:"host file",color:"#RRGGBB",hidden:false,background:false}]}`; returns saved configuration. Omitted color/flags preserve existing values; empty color resets its default. Invalid colors and validated audio-only backgrounds are rejected. New IDs are server-generated; empty labels default only for new cues. Array order is cue order. |
 | `PUT /api/stage-settings` | `{expectedRevision:N,settings:{backgroundCueId:"cue ID or empty",backgroundAudio:false,fadeEnabled:false,fadeSeconds:1,toggleAudio:false}}`; validates/saves settings and returns the configuration with an incremented playlist revision. The background must be a readable image/video cue. Fade duration is 0.1–30 seconds, including when disabled; its initial value is 1 second. |
 | `POST /api/validate` | `{}` starts bounded background native validation; HTTP 202. |

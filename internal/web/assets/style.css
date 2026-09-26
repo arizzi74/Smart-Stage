@@ -73,3 +73,8 @@
 @media(max-width:400px){.transport .language-control>span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}.transport .language-control select{max-width:92px}}
 
 .panel{scroll-margin-top:calc(var(--transport-height,135px) + 16px)}
+
+#playlist-section .panel-heading .row{flex-wrap:wrap}
+#playlist-file-guidance:empty,#playlist-file-message:empty{display:none}
+#playlist-load-confirm .row{justify-content:flex-end}
+#playlist-load-confirm button{width:auto}

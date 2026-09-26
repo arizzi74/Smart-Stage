@@ -29,6 +29,7 @@ import (
 	"smartstage/internal/locale"
 	"smartstage/internal/platform"
 	"smartstage/internal/playback"
+	"smartstage/internal/playlistfile"
 	"smartstage/internal/remote"
 	"smartstage/internal/store"
 	"smartstage/internal/update"
@@ -221,6 +222,9 @@ func main() {
 		defer cancel()
 		adminAPI.SetQuit(cancel)
 		adminAPI.SetChooseFiles(platform.DesktopChooseFiles, platform.DesktopCanChooseFiles)
+		playlistFiles := playlistfile.New(service, platform.DesktopChoosePlaylist, platform.DesktopCanChoosePlaylists)
+		defer playlistFiles.Close()
+		adminAPI.SetPlaylistFiles(playlistFiles)
 		updateReady := make(chan *update.Prepared, 1)
 		executable, _ := os.Executable()
 		// Normalize parsed options, retaining assigned ports and absolute media
@@ -341,6 +345,8 @@ func main() {
 				cancel()
 			case <-platform.DesktopAdminRequests():
 				requestAdmin(true)
+			case result := <-platform.DesktopPlaylistResults():
+				playlistFiles.Complete(result)
 			case request := <-platform.DesktopFiles():
 				// Native desktop actions carry original host paths. Keep the
 				// save in this loop so shutdown cannot overtake an accepted append.

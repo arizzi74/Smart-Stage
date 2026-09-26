@@ -76,6 +76,29 @@ bool chooserVisible() {
         HWND dialog=nullptr;return SUCCEEDED(native->GetWindow(&dialog)) && dialog && IsWindowVisible(dialog);
     });
 }
+bool playlistChooserVisible() {
+    return ui([]{
+        if(!desktop::playlistChooser)return false;
+        desktop::Ptr<IOleWindow> native;
+        if(FAILED(desktop::playlistChooser->QueryInterface(IID_PPV_ARGS(native.out()))))return false;
+        HWND dialog=nullptr;return SUCCEEDED(native->GetWindow(&dialog)) && dialog && IsWindowVisible(dialog);
+    });
+}
+void choosePlaylistPath(const std::wstring& path,bool cancel=false) {
+    ui([&]{
+        if(!cancel)desktop::check(desktop::playlistChooser->SetFileName(path.c_str()),"Select playlist filename");
+        desktop::Ptr<IOleWindow> native;desktop::check(desktop::playlistChooser->QueryInterface(IID_PPV_ARGS(native.out())),"Observe playlist chooser");
+        HWND dialog=nullptr;desktop::check(native->GetWindow(&dialog),"Find playlist chooser");
+        require(dialog && PostMessageW(dialog,WM_COMMAND,cancel?IDCANCEL:IDOK,0),"Could not accept or cancel playlist chooser");
+    });
+}
+std::string popPlaylistResult(uint64_t id) {
+    std::string result;
+    wait([&]{char* raw=ss_desktop_take_playlist_result();if(!raw)return false;result=raw;free(raw);return true;},"Playlist dialog returned no result");
+    require(result.find("\"id\":"+std::to_string(id)+",")!=std::string::npos,"Playlist dialog returned the wrong request ID");
+    require(!ss_desktop_take_playlist_result(),"Playlist dialog returned its result twice");
+    return result;
+}
 // Failure-only independent Win32 baselines distinguish an app failure from a
 // shell that rejects every valid icon. Temporary icons/windows are removed.
 // Return true if any independent registration or production readback works.
@@ -432,6 +455,30 @@ int main(int argc,char** argv) {
         wait(chooserVisible,"Native Windows file dialog did not become visible");
         ui([&]{desktop::check(desktop::chooser->SetFileName(secondPath.c_str()),"Select original file in native chooser");desktop::Ptr<IOleWindow> native;desktop::check(desktop::chooser->QueryInterface(IID_PPV_ARGS(native.out())),"Observe native file dialog");HWND dialog=nullptr;desktop::check(native->GetWindow(&dialog),"Find native chooser HWND");require(dialog&&IsWindowVisible(dialog),"Native file dialog is not visible");PostMessageW(dialog,WM_COMMAND,IDOK,0);});
         wait([]{return ss_desktop_files_pending()!=0;},"Selecting the original in the real native chooser did not queue it");report["chooserRequest"]=popRequest(1);passed("nativeFileDialogOriginalSelectionAccepted");
+        require(ss_desktop_can_choose_playlists() && !ss_desktop_choose_playlist(0,1),"Playlist dialog capability or zero identifier rejection failed");
+        auto playlistPath=std::filesystem::path(secondPath).parent_path()/L"Native playlist – 演出.smartstage.json";
+        require(!std::filesystem::exists(playlistPath),"Playlist fixture already exists");
+        require(ss_desktop_choose_playlist(101,1),"Native Save playlist dialog was rejected");
+        require(!ss_desktop_choose_playlist(102,0),"Two playlist dialogs were accepted concurrently");
+        wait(playlistChooserVisible,"Native Save playlist dialog did not open");
+        require(!ss_desktop_choose_files(),"Media chooser was accepted during playlist selection");
+        choosePlaylistPath(playlistPath.wstring());
+        auto saved=popPlaylistResult(101);
+        require(saved.find("\"path\":"+desktop::quote(desktop::utf8(playlistPath.c_str())))!=std::string::npos && saved.find("\"cancelled\":false")!=std::string::npos && saved.find("\"error\":\"\"")!=std::string::npos,"Native Save playlist selection was lost");
+        require(!std::filesystem::exists(playlistPath),"Native Save dialog wrote the playlist before Go authorized it");
+        passed("nativePlaylistSaveReturnsPathWithoutWriting");
+        HANDLE fixture=CreateFileW(playlistPath.c_str(),GENERIC_WRITE,0,nullptr,CREATE_NEW,FILE_ATTRIBUTE_NORMAL,nullptr);
+        require(fixture!=INVALID_HANDLE_VALUE,"Could not create playlist fixture");DWORD written=0;require(WriteFile(fixture,"{}",2,&written,nullptr) && written==2,"Could not write playlist fixture");CloseHandle(fixture);
+        require(ss_desktop_choose_playlist(103,0),"Native Load playlist dialog was rejected");
+        wait(playlistChooserVisible,"Native Load playlist dialog did not open");choosePlaylistPath(playlistPath.wstring());
+        auto loaded=popPlaylistResult(103);
+        require(loaded.find("\"path\":"+desktop::quote(desktop::utf8(playlistPath.c_str())))!=std::string::npos && loaded.find("\"cancelled\":false")!=std::string::npos,"Native Load playlist selection was lost");
+        DeleteFileW(playlistPath.c_str());passed("nativePlaylistLoadReturnsOriginalPath");
+        require(ss_desktop_choose_playlist(104,0),"Native playlist cancellation dialog was rejected");
+        wait(playlistChooserVisible,"Native playlist cancellation dialog did not open");choosePlaylistPath({},true);
+        auto cancelled=popPlaylistResult(104);
+        require(cancelled.find("\"cancelled\":true")!=std::string::npos && cancelled.find("\"path\":\"\"")!=std::string::npos,"Cancelled playlist dialog returned a path");
+        passed("nativePlaylistCancellationReturnsNoPath");
         auto blocked=desktop::wide(address.c_str());blocked.resize(blocked.size()-6);blocked+=L"/command";
         ui([&]{desktop::webview->Navigate(blocked.c_str());});std::this_thread::sleep_for(std::chrono::milliseconds(400));
         require(js(L"window.__probeDraft==='preserved' && location.pathname==='/admin'")=="true","Navigation escaped Admin or lost the existing document");

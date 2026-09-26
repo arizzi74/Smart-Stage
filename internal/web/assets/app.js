@@ -22,6 +22,7 @@ let validationSignature = '', validationRefresh = false;
 let localSessionBusy = false, localSessionRetry = null;
 let presenceBusy = false, quitBusy = false, appClosed = false, reloadingAdmin = false;
 let adminCapabilities = {}, chooseFilesBusy = false;
+let playlistFileBusy = false, playlistFileRevision = 0;
 let remoteLinks = [], selectedRemoteURL = '', remoteRefresh = false;
 let gateway = null, gatewayDirty = false, gatewayBusy = false, gatewayRefresh = false, gatewaySequence = 0;
 let updateStatus = null, updateBusy = false, updatePreparing = false;
@@ -309,7 +310,7 @@ function applyState(next) {
       validationSignature = signature; void refreshValidationDetails();
     }
     renderStatusDetails(next);
-    if (playlist && playlist.playlistRevision !== next.playlistRevision && !playlistBusy && !playlistRefresh) {
+    if (playlist && playlist.playlistRevision !== next.playlistRevision && !playlistBusy && !playlistFileBusy && !playlistRefresh) {
       if ($('playlist').contains(document.activeElement)) notify(() => t("The playlist changed in another tab. Finish or discard your edit, then Reload."), true);
       else void loadPlaylist();
     }
@@ -574,12 +575,18 @@ function renderEditAvailability() {
   renderGateway();
   $('quit-app').disabled = !online || role !== 'admin' || quitBusy || appClosed || reloadingAdmin;
   $('choose-files').hidden = adminCapabilities.chooseFiles !== true;
-  $('choose-files').disabled = !online || role !== 'admin' || chooseFilesBusy || quitBusy || appClosed || updatePending() || playlistBusy;
+  $('choose-files').disabled = !online || role !== 'admin' || chooseFilesBusy || quitBusy || appClosed || updatePending() || playlistBusy || playlistFileBusy;
+  const fileUnavailable = !online || role !== 'admin' || !playlist || playlistBusy || playlistFileBusy || chooseFilesBusy || quitBusy || appClosed || reloadingAdmin || updatePending();
+  $('save-playlist-file').disabled = fileUnavailable || stageSettingsDirty;
+  $('load-playlist-file').disabled = fileUnavailable || !['stopped', 'error'].includes(state.state) || state.stageEnabled;
+  $('playlist-load-continue').disabled = $('load-playlist-file').disabled;
+  $('reload-playlist').disabled = playlistBusy || playlistFileBusy;
+  localizedText($('playlist-file-guidance'), () => stageSettingsDirty ? t("Save or reload your stage settings before saving a playlist file.") : !['stopped', 'error'].includes(state.state) || state.stageEnabled ? t("Stop playback and turn Stage off before loading a playlist.") : '');
   localizedText($('playlist-drop-title'), () => desktopAdmin ? t("Drop {0} files here", {0: t(fileManagerName)}) : adminCapabilities.chooseFiles === true ? windowsPlatform ? t("Add media from this PC") : t("Add media from this Mac") : t("Add media from this computer"));
   localizedText($('playlist-drop-hint'), () => desktopAdmin ? t("Use Choose Media, or drag files from {0} into this window. Originals stay in place; nothing is uploaded or copied.", {0: t(fileManagerName)}) : adminCapabilities.chooseFiles === true ? windowsPlatform ? t("Use Choose Media to select files on this PC. Browser drops cannot provide their original paths. You can also drag File Explorer files into the Smart Stage app window.") : t("Use Choose Media to select files on this Mac. Browser drops cannot provide their original paths. You can also drop files onto Smart Stage’s Dock icon.") : t("Browsers cannot read original file paths from a drop. Use Add files by path below, or open the Smart Stage app on Mac or Windows to choose files or drop them into its window."));
   $('media-path-settings').hidden = desktopAdmin || adminCapabilities.chooseFiles === true;
-  for (const id of ['media-paths', 'add-media-paths']) $(id).disabled = !online || role !== 'admin' || !playlist || playlistBusy || quitBusy || appClosed || updatePending();
-  const pending = updatePending();
+  for (const id of ['media-paths', 'add-media-paths']) $(id).disabled = !online || role !== 'admin' || !playlist || playlistBusy || playlistFileBusy || quitBusy || appClosed || updatePending();
+  const pending = updatePending() || playlistFileBusy;
   $('save-outputs').disabled = pending || !['stopped', 'error'].includes(state.state);
   $('enable-stage').disabled = !online || pending || state.outputFault;
   $('disable-stage').disabled = !online;
@@ -681,13 +688,13 @@ async function updateAction(install) {
 $('check-update').addEventListener('click', () => { void updateAction(false); });
 $('install-update').addEventListener('click', () => { void updateAction(true); });
 
-async function loadPlaylist() {
+async function loadPlaylist(announceAdditions = true) {
   if (playlistRefresh) return;
   playlistRefresh = true;
   try {
     const previous = playlist;
     playlist = await api('GET', '/api/playlist'); renderPlaylist();
-    if (desktopAdmin && previous && previous.playlistRevision !== playlist.playlistRevision) {
+    if (announceAdditions && desktopAdmin && previous && previous.playlistRevision !== playlist.playlistRevision) {
       const previousIDs = new Set(previous.cues.map(cue => cue.id));
       const added = playlist.cues.filter(cue => !previousIDs.has(cue.id)).length;
       if (added) fileDropMessage(() => t(added === 1 ? 'Added {0} file to the playlist. Originals stay in place.' : 'Added {0} files to the playlist. Originals stay in place.', {0: added}));
@@ -714,7 +721,7 @@ async function refreshValidationDetails() {
 function cueEdits() { return playlist.cues.map(({ id, label, path, color, hidden, background }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background) })); }
 async function savePlaylist(cues) {
   if (updatePending()) { notify(() => t("Smart Stage is preparing an update. Wait before editing the show.")); return false; }
-  if (playlistBusy) { notify(() => t("An edit is being saved. Wait before making another edit."), true); return false; }
+  if (playlistBusy || playlistFileBusy) { notify(() => t("An edit is being saved. Wait before making another edit."), true); return false; }
   playlistBusy = true; renderEditAvailability();
   try {
     playlist = await api('PUT', '/api/playlist', { expectedRevision: playlist.playlistRevision, cues });
@@ -726,6 +733,83 @@ function fileDropMessage(message, error = false) {
   localizedText($('file-drop-message'), () => message);
   $('file-drop-message').classList.toggle('error', error);
 }
+function playlistFileMessage(message, error = false) {
+  localizedText($('playlist-file-message'), () => message);
+  $('playlist-file-message').classList.toggle('error', error);
+}
+function playlistLoaded() {
+  stageSettingsDirty = false;
+  localizedText($('stage-settings-message'), () => '');
+  $('stage-settings-message').classList.remove('error');
+}
+async function nativePlaylistFile(operation, expectedRevision) {
+  playlistFileBusy = true; renderEditAvailability();
+  playlistFileMessage(() => t("Choose a playlist file in the app dialog."));
+  try {
+    let job = await api('POST', '/api/playlist/file', { operation, expectedRevision });
+    const id = job.id;
+    if (!id || job.operation !== operation) throw new Error('The playlist file request could not be confirmed.');
+    while (['choosing', 'saving', 'loading'].includes(job.phase)) {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      if (appClosed || quitBusy || reloadingAdmin) return;
+      job = await api('GET', '/api/playlist/file');
+      if (job.id !== id || job.operation !== operation) throw new Error('The playlist file request could not be confirmed.');
+    }
+    if (job.phase === 'cancelled') { playlistFileMessage(() => t("Cancelled. The current playlist is unchanged.")); return; }
+    if (job.phase !== 'complete') throw new Error(job.message || 'The playlist file request could not be confirmed.');
+    if (operation === 'load') {
+      playlistLoaded(); await loadPlaylist(false); await refreshState();
+      playlistFileMessage(() => t("Playlist loaded. Media files stay at their original paths."));
+    } else playlistFileMessage(() => t("Playlist file saved."));
+  } catch (error) {
+    playlistFileMessage(() => t(operation === 'load' ? "Could not load the playlist. {0}" : "Could not save the playlist. {0}", {0: errorText(error)}), true);
+  } finally { playlistFileBusy = false; renderEditAvailability(); }
+}
+$('save-playlist-file').addEventListener('click', async () => {
+  if (!adminPage || $('save-playlist-file').disabled) return;
+  if (adminCapabilities.playlistFiles === true) { void nativePlaylistFile('save', playlist.playlistRevision); return; }
+  playlistFileBusy = true; renderEditAvailability();
+  try {
+    const file = await api('GET', '/api/playlist/export');
+    const url = URL.createObjectURL(new Blob([JSON.stringify(file, null, 2) + '\n'], {type: 'application/json'}));
+    const link = document.createElement('a'); link.href = url; link.download = 'Playlist.smartstage.json';
+    document.body.append(link); link.click(); link.remove();
+    // Keep the Blob alive until the browser has accepted its download.
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    playlistFileMessage(() => t("Playlist download started. Check your browser’s downloads."));
+  } catch (error) { playlistFileMessage(() => t("Could not save the playlist. {0}", {0: errorText(error)}), true); }
+  finally { playlistFileBusy = false; renderEditAvailability(); }
+});
+$('load-playlist-file').addEventListener('click', () => {
+  if (adminPage && !$('load-playlist-file').disabled && !$('playlist-load-confirm').open) $('playlist-load-confirm').showModal();
+});
+$('playlist-load-cancel').addEventListener('click', () => $('playlist-load-confirm').close());
+$('playlist-load-continue').addEventListener('click', () => {
+  if (!adminPage || $('load-playlist-file').disabled) return;
+  $('playlist-load-confirm').close();
+  playlistFileRevision = playlist.playlistRevision;
+  if (adminCapabilities.playlistFiles === true) { void nativePlaylistFile('load', playlistFileRevision); return; }
+  $('playlist-file-input').value = ''; $('playlist-file-input').click();
+});
+$('playlist-file-input').addEventListener('cancel', () => playlistFileMessage(() => t("Cancelled. The current playlist is unchanged.")));
+$('playlist-file-input').addEventListener('change', async () => {
+  const file = $('playlist-file-input').files?.[0]; $('playlist-file-input').value = '';
+  if (!file) return;
+  if (!adminPage || $('load-playlist-file').disabled) {
+    playlistFileMessage(() => t("Stop playback and turn Stage off before loading a playlist."), true); return;
+  }
+  if (file.size > 4 * 1024 * 1024) { playlistFileMessage(() => t("Choose a playlist file no larger than 4 MiB."), true); return; }
+  playlistFileBusy = true; renderEditAvailability();
+  try {
+    let fileDocument;
+    try { fileDocument = JSON.parse(await file.text()); }
+    catch { throw new Error('This file is not valid playlist JSON.'); }
+    const loaded = await api('POST', '/api/playlist/import', { expectedRevision: playlistFileRevision, playlist: fileDocument });
+    playlistLoaded(); playlist = loaded; renderPlaylist(); await refreshState();
+    playlistFileMessage(() => t("Playlist loaded. Media files stay at their original paths."));
+  } catch (error) { playlistFileMessage(() => t("Could not load the playlist. {0}", {0: errorText(error)}), true); }
+  finally { playlistFileBusy = false; renderEditAvailability(); }
+});
 $('choose-files').addEventListener('click', async () => {
   if (!adminPage || adminCapabilities.chooseFiles !== true || $('choose-files').disabled) return;
   chooseFilesBusy = true; renderEditAvailability();
@@ -738,7 +822,7 @@ $('choose-files').addEventListener('click', async () => {
 });
 $('media-path-form').addEventListener('submit', async event => {
   event.preventDefault();
-  if ($('media-path-settings').hidden || !online || role !== 'admin' || !playlist || playlistBusy || updatePending()) return;
+  if ($('media-path-settings').hidden || !online || role !== 'admin' || !playlist || playlistBusy || playlistFileBusy || updatePending()) return;
   const paths = [...new Set($('media-paths').value.split(/\r?\n/).map(value => {
     const path = value.trim();
     return path.length > 1 && ['"', "'"].includes(path[0]) && path.at(-1) === path[0] ? path.slice(1, -1) : path;
@@ -845,7 +929,7 @@ for (const id of ['background-cue', 'background-audio', 'fade-enabled', 'fade-se
 });
 $('stage-settings-form').addEventListener('submit', async event => {
   event.preventDefault();
-  if (!online || !playlist || playlistBusy || updatePending()) return;
+  if (!online || !playlist || playlistBusy || playlistFileBusy || updatePending()) return;
   const fadeSeconds = Number($('fade-seconds').value);
   if (!Number.isFinite(fadeSeconds) || fadeSeconds < .1 || fadeSeconds > 30) {
     localizedText($('stage-settings-message'), () => t("Choose a transition duration from 0.1 to 30 seconds."));
@@ -905,7 +989,7 @@ async function setStageOutput(enabled) {
 for (const [id, enabled] of [['enable-stage', true], ['disable-stage', false]]) $(id).addEventListener('click', () => { void setStageOutput(enabled); });
 $('remote-stage').addEventListener('click', () => { void setStageOutput(!state?.stageEnabled); });
 document.addEventListener('keydown', event => {
-  if (event.key !== 'Escape' || event.repeat || !csrf || !online || $('pairing').open) return;
+  if (event.key !== 'Escape' || event.repeat || !csrf || !online || $('pairing').open || $('playlist-load-confirm').open) return;
   event.preventDefault();
   const sequence = ++controlSequence;
   void api('POST', '/api/emergency-stop', { requestId: requestID() }).then(async () => {

@@ -1,12 +1,13 @@
-Smart Stage 1.1.3 lets you change the public gateway URL without re-entering its saved token.
+Smart Stage 1.2.0 adds playlist files you can save and load from Admin.
 
-- In Admin → Remote control → Connection settings, change the URL and leave the token blank to keep its saved value. Save connects to the selected HTTPS gateway using that token.
-- Enter a token when configuring a gateway for the first time, or when you want to replace the saved token. Stored secrets are never returned to the Admin page.
-- English and Italian guidance explains the behavior. Invalid settings and failed saves preserve the previous configuration.
+- Choose **Save playlist…** to create a `.smartstage.json` file using the native Mac/Windows Save dialog, or a browser download when no native dialog is available.
+- Choose **Load playlist…** after stopping playback and turning Stage off. Confirm replacement, then select the file. Loading keeps playback stopped and revalidates media.
+- Files preserve cue order, labels, colors, hidden/background flags and stage/sound settings. Media stays at its original paths; it is not copied or embedded. Output devices, gateway credentials and language preferences stay local.
+- Cancelled dialogs, invalid files, missing media and conflicting edits preserve the current playlist. Controls and dialogs support English and Italian.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 
-This desktop settings change works with the existing 1.1.2 gateway daemon. After changing the gateway URL, reconnect phones using the current QR code in Admin.
+This feature works with the existing 1.1.2 gateway daemon; no gateway upgrade or restart is required. The URL-only gateway save and earlier security fixes remain included.
 
 Install on Mac:
 

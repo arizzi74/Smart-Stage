@@ -44,4 +44,8 @@ def escape_checks(display):
                                     capture_output=True, text=True, timeout=20)
             assert result.returncode == 0, f"Native desktop action probe failed ({result.returncode}): {result.stderr}"
             evidence.append({"nativeDesktopActions": json.loads(result.stdout)})
+            result = subprocess.run([str(probe), display["id"], "playlist"], env=environment,
+                                    capture_output=True, text=True, timeout=35)
+            assert result.returncode == 0, f"Native playlist dialog probe failed ({result.returncode}): {result.stderr}"
+            evidence.append({"nativePlaylistDialogs": json.loads(result.stdout)})
         return evidence

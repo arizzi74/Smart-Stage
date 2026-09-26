@@ -14,3 +14,7 @@ func DesktopActivateBrowser() bool            { return false }
 func DesktopHasAdminWindow() bool             { return false }
 func DesktopShowAdmin() bool                  { return false }
 func pollDesktop()                            {}
+
+func DesktopCanChoosePlaylists() bool                      { return false }
+func DesktopChoosePlaylist(uint64, bool) bool              { return false }
+func DesktopPlaylistResults() <-chan DesktopPlaylistResult { return nil }

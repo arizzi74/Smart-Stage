@@ -34,8 +34,12 @@ func (a *API) addCapabilities(reply map[string]any) {
 	a.mu.RLock()
 	choose, available := a.chooseFiles, a.canChooseFiles
 	language := a.language
+	playlistFiles := a.playlistFiles
 	a.mu.RUnlock()
-	reply["capabilities"] = map[string]bool{"chooseFiles": choose != nil && available != nil && available()}
+	reply["capabilities"] = map[string]bool{
+		"chooseFiles":   choose != nil && available != nil && available(),
+		"playlistFiles": playlistFiles != nil && playlistFiles.Available(),
+	}
 	if language != nil {
 		reply["language"] = language.Snapshot()
 	}

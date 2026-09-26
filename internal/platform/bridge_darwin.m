@@ -21,6 +21,9 @@ static _Atomic(bool) shuttingDown;
 static _Atomic(bool) desktopReady;
 static _Atomic(bool) desktopAdminRequested;
 static _Atomic(bool) desktopChooserScheduled;
+static _Atomic(uint64_t) desktopPlaylistRequest;
+static pthread_mutex_t desktopPlaylistMutex = PTHREAD_MUTEX_INITIALIZER;
+static NSData *desktopPlaylistResult;
 static _Atomic(bool) desktopAdminShowScheduled;
 static pthread_mutex_t eventMutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t commandMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -70,6 +73,12 @@ static NSDictionary<NSString *, NSString *> *desktopTranslations(void) {
             @"Admin could not connect. Check that Smart Stage has finished starting, then reload.": @"Impossibile connettere Admin. Verifica che Smart Stage abbia completato l’avvio, poi ricarica.",
             @"The Admin page stopped responding. Reload to reconnect; the host is still running.": @"La pagina Admin non risponde. Ricarica per riconnetterti; Smart Stage è ancora in esecuzione.",
             @"The selected file does not have an absolute filesystem path.": @"Il file selezionato non ha un percorso assoluto.",
+            @"Save playlist": @"Salva playlist",
+            @"Load playlist": @"Carica playlist",
+            @"Playlist files contain references to media in their original folders.": @"I file playlist contengono riferimenti ai file multimediali nelle cartelle originali.",
+            @"Close the other file dialog before opening a playlist dialog.": @"Chiudi l’altra finestra di selezione file prima di aprire una playlist.",
+            @"The playlist dialog could not be opened.": @"Impossibile aprire la finestra della playlist.",
+            @"The selected playlist does not have an absolute filesystem path.": @"La playlist selezionata non ha un percorso assoluto nel file system.",
             @"Choose media for Smart Stage": @"Scegli i file per Smart Stage",
             @"Add to Show": @"Aggiungi allo spettacolo",
             @"Files stay in their original folders. Adding files does not start playback.": @"I file restano nelle cartelle originali. L’aggiunta non avvia la riproduzione.",
@@ -295,6 +304,8 @@ static BOOL sameAdminPage(NSURL *url, NSURL *expected) {
 @property(nonatomic) BOOL quitStarted;
 @property(nonatomic) BOOL terminationPending;
 @property(nonatomic, strong) NSOpenPanel *filePanel;
+@property(nonatomic, strong) NSSavePanel *playlistPanel;
+@property(nonatomic) BOOL playlistSaving;
 @property(nonatomic, strong) SSAdminWindow *adminWindow;
 @property(nonatomic, strong) SSAdminWebView *adminWebView;
 @property(nonatomic, strong) NSView *adminErrorView;
@@ -309,8 +320,21 @@ static BOOL sameAdminPage(NSURL *url, NSURL *expected) {
 - (void)viewLog:(id)sender;
 - (void)quit:(id)sender;
 - (void)chooseMedia:(id)sender;
+- (void)choosePlaylist:(uint64_t)identifier save:(BOOL)save;
 @end
 static SSApplicationDelegate *applicationDelegate;
+
+// One accepted request stays reserved until Go consumes its result. No selected
+// file is read or written by WebKit or this native dialog bridge.
+static void finishDesktopPlaylist(uint64_t identifier, NSString *path, BOOL cancelled, NSString *error) {
+    pthread_mutex_lock(&desktopPlaylistMutex);
+    if (identifier && atomic_load(&desktopPlaylistRequest) == identifier && !desktopPlaylistResult) {
+        desktopPlaylistResult = [NSJSONSerialization dataWithJSONObject:@{
+            @"id": @(identifier), @"path": path ?: @"", @"cancelled": @(cancelled), @"error": error ?: @""
+        } options:0 error:NULL];
+    }
+    pthread_mutex_unlock(&desktopPlaylistMutex);
+}
 
 @implementation SSApplicationDelegate
 - (void)showAdminError:(NSString *)message {
@@ -494,6 +518,9 @@ static SSApplicationDelegate *applicationDelegate;
 - (void)chooseMedia:(id)sender {
     (void)sender;
     if (self.quitStarted || atomic_load(&shuttingDown)) return;
+    if (atomic_load(&desktopPlaylistRequest)) {
+        [self.playlistPanel makeKeyAndOrderFront:nil]; return;
+    }
     if (self.filePanel) { [self.filePanel makeKeyAndOrderFront:nil]; return; }
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     self.filePanel = panel;
@@ -513,6 +540,53 @@ static SSApplicationDelegate *applicationDelegate;
         NSString *failure = nil;
         if (!queueDesktopFiles(panel.URLs, &failure)) desktopFileAlert(failure);
     }];
+}
+- (void)choosePlaylist:(uint64_t)identifier save:(BOOL)save {
+    if (atomic_load(&desktopPlaylistRequest) != identifier) return;
+    if (self.quitStarted || atomic_load(&shuttingDown)) {
+        finishDesktopPlaylist(identifier, nil, YES, nil); return;
+    }
+    if (self.filePanel || self.playlistPanel) {
+        finishDesktopPlaylist(identifier, nil, NO, desktopText(@"Close the other file dialog before opening a playlist dialog.")); return;
+    }
+    @try {
+        NSSavePanel *panel;
+        if (save) {
+            panel = [NSSavePanel savePanel];
+            panel.nameFieldStringValue = @"Playlist.smartstage.json";
+            panel.canCreateDirectories = YES;
+        } else {
+            NSOpenPanel *open = [NSOpenPanel openPanel];
+            open.canChooseFiles = YES;
+            open.canChooseDirectories = NO;
+            open.allowsMultipleSelection = NO;
+            open.resolvesAliases = YES;
+            panel = open;
+        }
+        self.playlistPanel = panel;
+        self.playlistSaving = save;
+        panel.title = desktopText(save ? @"Save playlist" : @"Load playlist");
+        panel.prompt = panel.title;
+        panel.message = desktopText(@"Playlist files contain references to media in their original folders.");
+        panel.allowedContentTypes = @[UTTypeJSON];
+        panel.allowsOtherFileTypes = NO;
+        [NSApp activateIgnoringOtherApps:YES];
+        [panel beginWithCompletionHandler:^(NSModalResponse result) {
+            self.playlistPanel = nil;
+            if (result != NSModalResponseOK || self.quitStarted || atomic_load(&shuttingDown)) {
+                finishDesktopPlaylist(identifier, nil, YES, nil); return;
+            }
+            NSURL *url = panel.URL;
+            if (!url.isFileURL || !url.path.isAbsolutePath) {
+                finishDesktopPlaylist(identifier, nil, NO, desktopText(@"The selected playlist does not have an absolute filesystem path.")); return;
+            }
+            finishDesktopPlaylist(identifier, url.path, NO, nil);
+        }];
+    } @catch (NSException *exception) {
+        (void)exception;
+        finishDesktopPlaylist(identifier, nil, NO, desktopText(@"The playlist dialog could not be opened."));
+        [self.playlistPanel cancel:nil]; self.playlistPanel = nil;
+    }
 }
 - (void)openAdmin:(id)sender {
     (void)sender;
@@ -573,6 +647,9 @@ void ss_desktop_language(const char *language) {
             applicationDelegate.filePanel.title = desktopText(@"Choose media for Smart Stage");
             applicationDelegate.filePanel.prompt = desktopText(@"Add to Show");
             applicationDelegate.filePanel.message = desktopText(@"Files stay in their original folders. Adding files does not start playback.");
+            applicationDelegate.playlistPanel.title = desktopText(applicationDelegate.playlistSaving ? @"Save playlist" : @"Load playlist");
+            applicationDelegate.playlistPanel.prompt = applicationDelegate.playlistPanel.title;
+            applicationDelegate.playlistPanel.message = desktopText(@"Playlist files contain references to media in their original folders.");
             for (SSFileAlert *controller in desktopAlerts) {
                 controller.alert.messageText = desktopText(@"Files could not be added");
                 controller.alert.informativeText = desktopRelocalize(controller.alert.informativeText);
@@ -1552,6 +1629,8 @@ static void cleanupNative(void) {
     stopScene();
     disableStage();
     if (keyObserver) [NSEvent removeMonitor:keyObserver]; keyObserver = nil;
+    finishDesktopPlaylist(atomic_load(&desktopPlaylistRequest), nil, YES, nil);
+    [applicationDelegate.playlistPanel cancel:nil]; applicationDelegate.playlistPanel = nil;
     [applicationDelegate.filePanel cancel:nil]; applicationDelegate.filePanel = nil;
     atomic_store(&desktopChooserScheduled, false);
     [applicationDelegate.adminWebView stopLoading];
@@ -1643,7 +1722,7 @@ int ss_desktop_can_choose_files(void) {
     return atomic_load(&desktopReady) && !atomic_load(&shuttingDown) ? 1 : 0;
 }
 int ss_desktop_choose_files(void) {
-    if (!ss_desktop_can_choose_files()) return 0;
+    if (!ss_desktop_can_choose_files() || atomic_load(&desktopPlaylistRequest)) return 0;
     // Coalesce queued work, while allowing a later click to bring an existing
     // panel forward after the operator has switched back to the browser.
     if (atomic_exchange(&desktopChooserScheduled, true)) return 1;
@@ -1656,6 +1735,35 @@ int ss_desktop_choose_files(void) {
         [applicationDelegate chooseMedia:nil];
     });
     return 1;
+}
+int ss_desktop_can_choose_playlists(void) {
+    return ss_desktop_can_choose_files();
+}
+int ss_desktop_choose_playlist(uint64_t identifier, int save) {
+    if (!identifier || !ss_desktop_can_choose_playlists()) return 0;
+    uint64_t expected = 0;
+    if (!atomic_compare_exchange_strong(&desktopPlaylistRequest, &expected, identifier)) return 0;
+    onMain(^{
+        if (!applicationDelegate || applicationDelegate.quitStarted || atomic_load(&shuttingDown)) {
+            finishDesktopPlaylist(identifier, nil, YES, nil); return;
+        }
+        [applicationDelegate choosePlaylist:identifier save:save != 0];
+    });
+    return 1;
+}
+char *ss_desktop_take_playlist_result(void) {
+    @autoreleasepool {
+        pthread_mutex_lock(&desktopPlaylistMutex);
+        NSData *data = desktopPlaylistResult;
+        char *result = data ? malloc(data.length + 1) : NULL;
+        if (result) {
+            memcpy(result, data.bytes, data.length); result[data.length] = 0;
+            desktopPlaylistResult = nil;
+            atomic_store(&desktopPlaylistRequest, 0);
+        }
+        pthread_mutex_unlock(&desktopPlaylistMutex);
+        return result;
+    }
 }
 int ss_desktop_activate_browser(void) {
     if (!ss_desktop_can_choose_files()) return 0;

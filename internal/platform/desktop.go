@@ -10,3 +10,12 @@ type DesktopFileRequest struct {
 
 const MaxDesktopFiles = 500
 const MaxDesktopFileRequests = 8
+
+// DesktopPlaylistResult is returned only after an explicit native Save/Open
+// dialog. The host reads or writes this path; web content cannot provide it.
+type DesktopPlaylistResult struct {
+	ID        uint64 `json:"id"`
+	Path      string `json:"path"`
+	Cancelled bool   `json:"cancelled"`
+	Error     string `json:"error"`
+}
