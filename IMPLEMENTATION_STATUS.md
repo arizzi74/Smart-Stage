@@ -1,14 +1,22 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.1.3**.
+The desktop application and Linux gateway are released as **Smart Stage 1.2.0**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.1.3
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.2.0
 
 ## Implemented
 
+- Save/load versioned `.smartstage.json` playlist files from Admin with native
+  Mac/Windows Save/Open dialogs or browser download/upload. Files preserve cue
+  order, labels, colors, hidden/background flags and stage/sound settings while
+  keeping media at its original paths. Machine outputs, credentials, language
+  preferences and validation caches remain local. Loading confirms replacement,
+  requires stopped playback and Stage off, validates paths, retains the current
+  playlist on failure/conflict and revalidates the loaded cues without autoplay.
+  English and Italian controls, cancellation and unsaved-draft guards are covered.
 - Gateway URL-only edits retain the saved registration token when its field is
   blank, including hostname changes. First-time setup still requires a token;
   entering a new one replaces it. English and Italian Admin guidance explains
@@ -112,6 +120,35 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.1.3
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.2.0 is source `2ad6960398e09ee988ecdc1c475846c1da17d18f`. Playlist file coordinator,
+HTTP/controller and filesystem tests passed, including atomic replacement,
+stale revisions/results, media-root checks and responsive STOP during saves.
+Full local Go race tests, real nginx/Caddy tests, vet, source vulnerability scans,
+all 11 JavaScript tests and the bilingual browser suite passed.
+All seven candidate gates passed before tagging. The tagged release passed the
+same seven shared, gateway, native and binary-security gates, followed by
+successful publication.
+Both Mac architectures passed actual Save completion, Load cancellation,
+Italian labels, concurrent-dialog rejection and shutdown cancellation. Both
+Windows architectures passed actual Save/Load selections and cancellation.
+The native Mac probe does not assert successful Load selection; backend and
+browser tests separately cover the file round trip. Sanitized native evidence
+records both the candidate and tagged release.
+All 50 public assets, eight checksum pairs, archive contents, architectures and
+Go 1.26.8 source metadata were independently verified. All six exact public
+executables passed independent package-level Go vulnerability scans.
+All four published download/browser checks and all four actual automatic
+replacement/restart checks passed. Updater fixtures use the exact release
+source with older version metadata, not historical release executables.
+At the recorded snapshot, 15 of 16 post-publication jobs passed, with the
+Windows ARM64 installer follow-up still running. The installer-default commit
+`83ef94868813e542adef9f61baa1acc70b3a1326` passed three of four architecture jobs;
+its Windows ARM64 installer check also remained running. No failures were
+reported; these pending checks are not recorded as passes.
+See [release verification](docs/release-verification.md) for exact evidence and
+remaining platform limits. This desktop feature requires no gateway deployment;
+the existing production v1.1.2 gateway was not changed or restarted.
 
 Version 1.1.2 is source `6c93a24d4b7c3c1eac96bf400fd8cec8520f5425`.
 All seven candidate and tagged build/security gates passed before publication.

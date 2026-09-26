@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.1.3 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.2.0 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,71 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.2.0: save and load playlist files
+
+Version 1.2.0 is source `2ad6960398e09ee988ecdc1c475846c1da17d18f`, published by
+[run 36247167331](https://github.com/arizzi74/Smart-Stage/actions/runs/36247167331).
+All seven candidate gates passed before tagging. The tagged release passed the
+same seven shared, gateway, native and binary-security gates, followed by
+successful publication.
+The [candidate evidence](verification/release-v1.2.0/candidate-workflow.json)
+identifies the exact source checked before tagging.
+All 50 public assets, eight checksum pairs, archive contents, architectures and
+Go 1.26.8 source metadata were independently verified. All six exact public
+executables passed independent package-level Go vulnerability scans.
+See the [public asset audit](verification/release-v1.2.0/assets.json) and
+[independent public executable scans](verification/release-v1.2.0/security-scans.json).
+
+Admin saves and loads version-1 `.smartstage.json` files using native Mac/Windows
+Save/Open dialogs, with browser download/upload for hosts without native dialogs.
+Files contain cue order, labels, original paths, colors, hidden/background flags
+and saved stage/sound settings. Output devices, gateway credentials, language
+preferences and validation caches are excluded. Media is not copied or embedded.
+Loading confirms replacement and requires stopped playback (including an idle
+error state) with Stage off. Missing, out-of-root or nonregular media paths,
+invalid playlist files, persistence failures and conflicting edits retain the
+current playlist. Codec validation runs again after a successful load. Loaded
+cues receive fresh identities, remapped background references and fresh validation, without
+starting playback. Native saves capture the committed show before the dialog;
+late or duplicate native results cannot replace it again.
+
+Full local race tests, real nginx/Caddy tests, vet, source scans and all 11
+JavaScript tests passed. The [browser suite](verification/release-v1.2.0/browser-checks.json)
+covers export/import, invalid and oversized files, cancellation, revision checks,
+unsaved stage drafts, playback/update guards and English/Italian controls.
+HTTP/controller regressions cover Admin-only access, CSRF, snapshot timing,
+result IDs, one-operation admission, durable restoration and path restrictions.
+The [change scope](verification/release-v1.2.0/change-scope.md) records details.
+Both Mac architectures passed actual Save completion, Load cancellation,
+Italian labels, concurrent-dialog rejection and shutdown cancellation. Both
+Windows architectures passed actual Save/Load selections and cancellation.
+The native Mac probe does not assert successful Load selection; backend and
+browser tests separately cover the file round trip. Sanitized native evidence
+records both the [candidate](verification/release-v1.2.0/native-playlist-checks.json)
+and [tagged release](verification/release-v1.2.0/native-playlist-release-checks.json).
+Browser fixtures are not evidence of native dialog execution; hosted native
+checks do not establish physical speaker/projector behavior or clean-machine
+acceptance. Playlist files retain absolute paths and do not relocate media.
+
+All four published download/browser checks and all four actual automatic
+replacement/restart checks passed; see [updater evidence](verification/release-v1.2.0/auto-update-evidence.json).
+Updater fixtures use the exact release
+source with older version metadata, not historical release executables.
+At the recorded snapshot, 15 of 16 post-publication jobs passed, with the
+Windows ARM64 installer follow-up still running. The installer-default commit
+`83ef94868813e542adef9f61baa1acc70b3a1326` passed three of four architecture jobs;
+its Windows ARM64 installer check also remained running. No failures were
+reported; these pending checks are not recorded as passes.
+The [post-publication snapshot](verification/release-v1.2.0/postpublication-status.json)
+records each follow-up job's actual state. Installer defaults are advanced only
+after public assets have been verified, with committed/public bytes recorded in
+[installer evidence](verification/release-v1.2.0/installer-defaults.json).
+
+The existing production gateway remains v1.1.2 on its dedicated HTTPS hostname.
+This release did not change or restart that service, its credentials or proxy
+configuration, and did not configure firewall rules. Clean Go scans do not cover
+unknown application vulnerabilities or separately serviced native OS libraries.
 
 ### Version 1.1.3: save a gateway URL without replacing its token
 

@@ -1,0 +1,76 @@
+{
+  "sourceCommit": "2ad6960398e09ee988ecdc1c475846c1da17d18f",
+  "workflowRunID": 36246297321,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36246297321",
+  "scope": "Real native playlist dialogs in GitHub-hosted macOS and Windows desktops. Mac Save completes through the visible system panel; Load cancellation and shutdown are observed. Windows Save and Load selections and cancellation are observed. Selected-path results are delivered exactly once and Save dialogs do not write content themselves. Application file round-trip is covered separately by Go and browser tests.",
+  "limitations": [
+    "Successful file selection in the macOS Load dialog is not asserted by this probe.",
+    "These are automated hosted desktop checks, not physical hardware checks."
+  ],
+  "targets": [
+    {
+      "os": "darwin",
+      "architecture": "arm64",
+      "nativeJobConclusion": "success",
+      "jobID": 108416015595,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36246297321/job/108416015595",
+      "artifactID": 10908115324,
+      "artifactName": "native-darwin-arm64",
+      "artifactURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36246297321/artifacts/10908115324",
+      "checks": {
+        "nativePlaylistSaveReturnsPathWithoutWriting": true,
+        "nativePlaylistLoadCancellationReturnsNoPath": true,
+        "nativePlaylistConcurrentDialogsRejected": true,
+        "nativePlaylistItalianLabels": true,
+        "quitClosesOpenPlaylistChooser": true
+      }
+    },
+    {
+      "os": "darwin",
+      "architecture": "amd64",
+      "nativeJobConclusion": "success",
+      "jobID": 108416015620,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36246297321/job/108416015620",
+      "artifactID": 10907258621,
+      "artifactName": "native-darwin-amd64",
+      "artifactURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36246297321/artifacts/10907258621",
+      "checks": {
+        "nativePlaylistSaveReturnsPathWithoutWriting": true,
+        "nativePlaylistLoadCancellationReturnsNoPath": true,
+        "nativePlaylistConcurrentDialogsRejected": true,
+        "nativePlaylistItalianLabels": true,
+        "quitClosesOpenPlaylistChooser": true
+      }
+    },
+    {
+      "os": "windows",
+      "architecture": "amd64",
+      "nativeJobConclusion": "success",
+      "jobID": 108416015593,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36246297321/job/108416015593",
+      "artifactID": 10907313195,
+      "artifactName": "windows-admin-checks-amd64",
+      "artifactURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36246297321/artifacts/10907313195",
+      "checks": {
+        "nativePlaylistSaveReturnsPathWithoutWriting": true,
+        "nativePlaylistLoadReturnsOriginalPath": true,
+        "nativePlaylistCancellationReturnsNoPath": true
+      }
+    },
+    {
+      "os": "windows",
+      "architecture": "arm64",
+      "nativeJobConclusion": "success",
+      "jobID": 108416015525,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36246297321/job/108416015525",
+      "artifactID": 10907985888,
+      "artifactName": "windows-admin-checks-arm64",
+      "artifactURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36246297321/artifacts/10907985888",
+      "checks": {
+        "nativePlaylistSaveReturnsPathWithoutWriting": true,
+        "nativePlaylistLoadReturnsOriginalPath": true,
+        "nativePlaylistCancellationReturnsNoPath": true
+      }
+    }
+  ]
+}
