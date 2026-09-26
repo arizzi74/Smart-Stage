@@ -67,6 +67,25 @@ static NSDictionary *takePlaylist(void) {
     return [NSJSONSerialization JSONObjectWithData:data options:0 error:NULL];
 }
 
+static void capturePlaylistPanel(NSSavePanel *panel, NSString *name) {
+    const char *directory = getenv("SMARTSTAGE_PLAYLIST_PROBE_ARTIFACTS");
+    if (!directory || !panel) return;
+    BOOL permitted = CGPreflightScreenCaptureAccess();
+    // Use the same OS capture utility as the native display probe. Preflight
+    // first: this diagnostic must never ask for recording permission.
+    if (!permitted) { fprintf(stderr, "Playlist panel screenshot unavailable: %s screenAccess=0\n", name.UTF8String); return; }
+    NSString *path = [[NSString stringWithUTF8String:directory] stringByAppendingPathComponent:name];
+    NSTask *capture = [[NSTask alloc] init];
+    capture.executableURL = [NSURL fileURLWithPath:@"/usr/sbin/screencapture"];
+    capture.arguments = @[@"-x", @"-l", [NSString stringWithFormat:@"%ld", (long)panel.windowNumber], @"-t", @"png", path];
+    NSError *failure = nil;
+    if (![capture launchAndReturnError:&failure]) {
+        fprintf(stderr, "Playlist panel screenshot launch failed: %s\n", failure.localizedDescription.UTF8String); return;
+    }
+    [capture waitUntilExit];
+    fprintf(stderr, "Playlist panel screenshot %s status=%d screenAccess=1 window=%ld\n", name.UTF8String, capture.terminationStatus, (long)panel.windowNumber);
+}
+
 static int playlistChecks(void) {
     setenv("SMARTSTAGE_APP_LAUNCH", "1", 1);
     char *error = ss_init();
@@ -78,12 +97,16 @@ static int playlistChecks(void) {
     __block NSUInteger phase = 0, polls = 0;
     __block BOOL passed = NO;
     __block NSSavePanel *shutdownPanel;
+    __block NSTimeInterval settleStarted = 0;
 
     dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
     dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 100 * NSEC_PER_MSEC), 100 * NSEC_PER_MSEC, NSEC_PER_MSEC);
     dispatch_source_set_event_handler(timer, ^{
-        if (++polls > 300) { fprintf(stderr, "Playlist dialog probe timeout at phase %lu\n", (unsigned long)phase); ss_quit(); return; }
         NSSavePanel *panel = [(NSObject *)NSApp.delegate valueForKey:@"playlistPanel"];
+        if (++polls > 300) {
+            fprintf(stderr, "Playlist dialog probe timeout at phase %lu name=%s directory=%s\n", (unsigned long)phase, panel.nameFieldStringValue.UTF8String ?: "none", panel.directoryURL.path.UTF8String ?: "none");
+            capturePlaylistPanel(panel, @"timeout.png"); ss_quit(); return;
+        }
         if (phase == 0 && ss_desktop_can_choose_playlists()) {
             if (ss_desktop_choose_playlist(0, 1) || !ss_desktop_choose_playlist(1, 1) || ss_desktop_choose_playlist(2, 0)) { ss_quit(); return; }
             phase = 1;
@@ -91,8 +114,10 @@ static int playlistChecks(void) {
             if (![panel.title isEqualToString:@"Salva playlist"] || ![panel.nameFieldStringValue isEqualToString:@"Playlist.smartstage.json"] || ss_desktop_choose_files()) { ss_quit(); return; }
             panel.directoryURL = [NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES];
             panel.nameFieldStringValue = filename;
+            settleStarted = NSProcessInfo.processInfo.systemUptime;
             phase = 2;
         } else if (phase == 2 && panel.isVisible) {
+            if (NSProcessInfo.processInfo.systemUptime - settleStarted < 2) return;
             // Modern Save controls are hosted by an AppKit service. Dispatch a
             // real WindowServer key pair, only while this process owns focus;
             // synthetic events sent inside NSApp never reach that service.
@@ -104,6 +129,8 @@ static int playlistChecks(void) {
                 allowed, getpid(), front.processIdentifier, front.bundleIdentifier.UTF8String ?: "none", NSApp.isActive,
                 (long)NSApp.keyWindow.windowNumber, (long)panel.windowNumber, panel.isKeyWindow);
             if (front.processIdentifier != getpid() || !panel.isKeyWindow) return;
+            fprintf(stderr, "Settled native Save panel for %.2fs name=%s directory=%s\n", NSProcessInfo.processInfo.systemUptime - settleStarted, panel.nameFieldStringValue.UTF8String ?: "none", panel.directoryURL.path.UTF8String ?: "none");
+            capturePlaylistPanel(panel, @"before-save.png");
             CGEventRef down = CGEventCreateKeyboardEvent(NULL, 36, YES);
             CGEventRef up = CGEventCreateKeyboardEvent(NULL, 36, NO);
             if (!down || !up) {

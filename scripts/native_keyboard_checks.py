@@ -44,13 +44,19 @@ def escape_checks(display):
                                     capture_output=True, text=True, timeout=20)
             assert result.returncode == 0, f"Native desktop action probe failed ({result.returncode}): {result.stderr}"
             evidence.append({"nativeDesktopActions": json.loads(result.stdout)})
+            artifact_directory = root / "dist" / f"native-playlist-probe-darwin-{platform.machine().lower()}"
+            artifact_directory.mkdir(parents=True, exist_ok=True)
+            environment["SMARTSTAGE_PLAYLIST_PROBE_ARTIFACTS"] = str(artifact_directory)
             try:
                 result = subprocess.run([str(probe), display["id"], "playlist"], env=environment,
                                         capture_output=True, text=True, timeout=35)
             except subprocess.TimeoutExpired as error:
                 captured = error.stderr or b""
                 detail = captured.decode("utf-8", "replace") if isinstance(captured, bytes) else captured
+                (artifact_directory / "probe.log").write_text(detail, encoding="utf-8")
                 raise AssertionError(f"Native playlist dialog probe timed out; captured progress:\n{detail[-18000:]}") from error
+            (artifact_directory / "probe.log").write_text(result.stderr, encoding="utf-8")
+            (artifact_directory / "result.json").write_text(result.stdout, encoding="utf-8")
             assert result.returncode == 0, f"Native playlist dialog probe failed ({result.returncode}): {result.stderr}"
             evidence.append({"nativePlaylistDialogs": json.loads(result.stdout)})
         return evidence
