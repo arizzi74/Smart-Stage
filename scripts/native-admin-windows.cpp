@@ -456,14 +456,23 @@ int main(int argc,char** argv) {
         ui([&]{desktop::check(desktop::chooser->SetFileName(secondPath.c_str()),"Select original file in native chooser");desktop::Ptr<IOleWindow> native;desktop::check(desktop::chooser->QueryInterface(IID_PPV_ARGS(native.out())),"Observe native file dialog");HWND dialog=nullptr;desktop::check(native->GetWindow(&dialog),"Find native chooser HWND");require(dialog&&IsWindowVisible(dialog),"Native file dialog is not visible");PostMessageW(dialog,WM_COMMAND,IDOK,0);});
         wait([]{return ss_desktop_files_pending()!=0;},"Selecting the original in the real native chooser did not queue it");report["chooserRequest"]=popRequest(1);passed("nativeFileDialogOriginalSelectionAccepted");
         require(ss_desktop_can_choose_playlists() && !ss_desktop_choose_playlist(0,1),"Playlist dialog capability or zero identifier rejection failed");
-        auto playlistPath=std::filesystem::path(secondPath).parent_path()/L"Native playlist – 演出.smartstage.json";
+        // Python's TEMP path may contain RUNNER~1 while the shell dialog returns
+        // runneradmin. Expand the existing parent before adding the new file;
+        // retain exact filename/path comparison rather than accepting any path.
+        auto playlistParent=std::filesystem::path(secondPath).parent_path().wstring();
+        DWORD longLength=GetLongPathNameW(playlistParent.c_str(),nullptr,0);
+        require(longLength>0,"Could not expand the playlist fixture parent");
+        std::vector<wchar_t> longParent(longLength);
+        require(GetLongPathNameW(playlistParent.c_str(),longParent.data(),longLength)>0,"Could not read the expanded playlist fixture parent");
+        auto playlistPath=std::filesystem::path(longParent.data())/L"Native playlist – 演出.smartstage.json";
+        report["playlistExpectedPath"]=desktop::quote(desktop::utf8(playlistPath.c_str()));
         require(!std::filesystem::exists(playlistPath),"Playlist fixture already exists");
         require(ss_desktop_choose_playlist(101,1),"Native Save playlist dialog was rejected");
         require(!ss_desktop_choose_playlist(102,0),"Two playlist dialogs were accepted concurrently");
         wait(playlistChooserVisible,"Native Save playlist dialog did not open");
         require(!ss_desktop_choose_files(),"Media chooser was accepted during playlist selection");
         choosePlaylistPath(playlistPath.wstring());
-        auto saved=popPlaylistResult(101);
+        auto saved=popPlaylistResult(101);report["playlistSaveSelection"]=saved;
         require(saved.find("\"path\":"+desktop::quote(desktop::utf8(playlistPath.c_str())))!=std::string::npos && saved.find("\"cancelled\":false")!=std::string::npos && saved.find("\"error\":\"\"")!=std::string::npos,"Native Save playlist selection was lost");
         require(!std::filesystem::exists(playlistPath),"Native Save dialog wrote the playlist before Go authorized it");
         passed("nativePlaylistSaveReturnsPathWithoutWriting");
@@ -471,7 +480,7 @@ int main(int argc,char** argv) {
         require(fixture!=INVALID_HANDLE_VALUE,"Could not create playlist fixture");DWORD written=0;require(WriteFile(fixture,"{}",2,&written,nullptr) && written==2,"Could not write playlist fixture");CloseHandle(fixture);
         require(ss_desktop_choose_playlist(103,0),"Native Load playlist dialog was rejected");
         wait(playlistChooserVisible,"Native Load playlist dialog did not open");choosePlaylistPath(playlistPath.wstring());
-        auto loaded=popPlaylistResult(103);
+        auto loaded=popPlaylistResult(103);report["playlistLoadSelection"]=loaded;
         require(loaded.find("\"path\":"+desktop::quote(desktop::utf8(playlistPath.c_str())))!=std::string::npos && loaded.find("\"cancelled\":false")!=std::string::npos,"Native Load playlist selection was lost");
         DeleteFileW(playlistPath.c_str());passed("nativePlaylistLoadReturnsOriginalPath");
         require(ss_desktop_choose_playlist(104,0),"Native playlist cancellation dialog was rejected");

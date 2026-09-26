@@ -90,7 +90,15 @@ static int playlistChecks(void) {
             panel.nameFieldStringValue = filename;
             phase = 2;
         } else if (phase == 2 && panel.isVisible) {
-            [panel ok:nil]; phase = 3;
+            // Modern Save panels host their controls remotely; NSSavePanel's
+            // inherited ok: action deliberately raises an exception. Deliver
+            // an ordinary Return key to the live panel, as the operator would.
+            [panel makeKeyAndOrderFront:nil];
+            NSEvent *key = [NSEvent keyEventWithType:NSEventTypeKeyDown location:NSZeroPoint
+                modifierFlags:0 timestamp:NSProcessInfo.processInfo.systemUptime
+                windowNumber:panel.windowNumber context:nil characters:@"\r"
+                charactersIgnoringModifiers:@"\r" isARepeat:NO keyCode:36];
+            [NSApp postEvent:key atStart:NO]; phase = 3;
         } else if (phase == 3 && !panel) {
             NSDictionary *result = takePlaylist();
             if (!result) return;
