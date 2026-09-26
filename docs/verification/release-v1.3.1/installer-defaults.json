@@ -1,0 +1,28 @@
+{
+  "sourceCommit": "47fc1110f1faac7ec14aada1c3f529035c525cc2",
+  "scope": "Public installer bytes and default version compared to the explicitly selected committed installer source; runtime installation is covered separately by native CI. Public URLs were fetched with a release/commit cache-busting query.",
+  "checks": [
+    {
+      "file": "install.sh",
+      "publicMatchesCheckout": true,
+      "publicMatchesExplicitInstallerCommit": true,
+      "sha256": "1465e6886acfeccd27b22c63138f6bb9d1bc79c27eb3fef9cd69061f7d03ece3",
+      "defaultVersion": "v1.3.1"
+    },
+    {
+      "file": "install.ps1",
+      "publicMatchesCheckout": true,
+      "publicMatchesExplicitInstallerCommit": true,
+      "sha256": "290e205a80aa4d893440821674c45259170fa0271a999f9fc91101f53f72859c",
+      "defaultVersion": "v1.3.1"
+    },
+    {
+      "file": "install-gateway.sh",
+      "publicMatchesCheckout": true,
+      "publicMatchesExplicitInstallerCommit": true,
+      "sha256": "baa064ac39a05f7fb94e5f6c1b4568470e3eb7088800f7e59526e24e6a224742",
+      "defaultVersion": "v1.3.1"
+    }
+  ],
+  "checkedAt": "2026-09-26T17:56:14.929876+00:00"
+}

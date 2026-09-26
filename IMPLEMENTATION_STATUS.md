@@ -1,14 +1,20 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.3.0**.
+The desktop application and Linux gateway are released as **Smart Stage 1.3.1**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.3.0
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.3.1
 
 ## Implemented
 
+- Compact Admin header, title and navigation; empty notices reserve no space.
+  The original 256px remote QR sits beside connection instructions at the top of
+  its panel and fits without scrolling in tested desktop windows down to 900 ×
+  600 in both English and Italian. Narrow Admin uses a single column with the QR
+  before the URL; the phone remote layout stays unchanged. Known duplicate
+  connected text is suppressed while diagnostics remain visible.
 - Pressing a selected foreground video or visible/preparing image again stops
   that visual and returns the enabled stage to the current background or black.
   Image stop preserves independent music, but stops a covered foreground video
@@ -137,6 +143,23 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.3.0
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.3.1 is source `c4ecf679bac2cf94220c0df19808eaa2cc319165`. The local
+browser suite, all 11 JavaScript tests and web/HTTP tests passed. Measured
+synthetic layouts cover English/Italian and gateway/LAN at desktop, tablet and
+phone sizes; the QR/caption fit at 1095 × 758, 1024 × 700, 900 × 600 and 768 × 700.
+Small phone Admin can scroll; no tested viewport has horizontal overflow.
+Native macOS WebKit was not used for local pixel measurements. Both the main
+and tag workflows passed all seven build/test/security gates; those runs were
+parallel, without a claim that the candidate finished before tagging. Publication
+passed, all 50 public assets/eight checksum pairs were independently verified,
+and all six public executables passed Go package vulnerability scans. Installer
+defaults match the public v1.3.1 scripts at commit
+`47fc1110f1faac7ec14aada1c3f529035c525cc2`. All 16 post-publication jobs passed,
+including all four actual automatic replacement/restart checks. All four
+installer-default architecture jobs also passed. Follow-up outcomes are recorded
+in [release verification](docs/release-verification.md). No production gateway,
+nginx or firewall changes were required.
 
 Version 1.3.0 is source `4692eaed3ca3e0915225895f19df0cd1cfcceffe`.
 All seven final candidate gates passed before tagging; all seven tagged

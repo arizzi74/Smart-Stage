@@ -1,0 +1,842 @@
+{
+  "release": "v1.3.1",
+  "sourceCommit": "c4ecf679bac2cf94220c0df19808eaa2cc319165",
+  "releaseID": 397338532,
+  "candidateWorkflow": {
+    "runID": 36259856961,
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259856961",
+    "sourceCommit": "c4ecf679bac2cf94220c0df19808eaa2cc319165",
+    "gates": [
+      {
+        "name": "shared",
+        "jobID": 108453484260,
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259856961/job/108453484260"
+      },
+      {
+        "name": "gateway",
+        "jobID": 108453484329,
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259856961/job/108453484329"
+      },
+      {
+        "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+        "jobID": 108453484337,
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259856961/job/108453484337"
+      },
+      {
+        "name": "native (macos-15, darwin, arm64)",
+        "jobID": 108453484354,
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259856961/job/108453484354"
+      },
+      {
+        "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+        "jobID": 108453484362,
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259856961/job/108453484362"
+      },
+      {
+        "name": "native (macos-15-intel, darwin, amd64)",
+        "jobID": 108453484370,
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259856961/job/108453484370"
+      },
+      {
+        "name": "binary-security",
+        "jobID": 108455738600,
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259856961/job/108455738600"
+      }
+    ]
+  },
+  "releaseURL": "https://github.com/arizzi74/Smart-Stage/releases/tag/v1.3.1",
+  "prerelease": false,
+  "latestStableTag": "v1.3.1",
+  "workflowRunID": 36259863739,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259863739",
+  "workflowAttempt": 1,
+  "workflowStatusAtCollection": "queued",
+  "workflowConclusionAtCollection": null,
+  "publishedAt": "2026-09-26T17:54:22Z",
+  "collectedAt": "2026-09-26T17:55:29.124012+00:00",
+  "assetCount": 50,
+  "expectedAssetManifestVerified": true,
+  "binaryChecksumPairsVerified": 8,
+  "desktopTargets": [
+    "darwin/amd64",
+    "darwin/arm64",
+    "windows/amd64",
+    "windows/arm64"
+  ],
+  "gatewayTargets": [
+    "linux/amd64",
+    "linux/arm64"
+  ],
+  "gatewayBootstrapVersion": "v1.3.1",
+  "gatewayBootstrapSyntaxVerified": true,
+  "expectedGoRuntime": "go1.26.8",
+  "allSixGoRuntimesVerified": true,
+  "publicationGates": [
+    {
+      "name": "gateway",
+      "jobID": 108453502039,
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259863739/job/108453502039"
+    },
+    {
+      "name": "shared",
+      "jobID": 108453502178,
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259863739/job/108453502178"
+    },
+    {
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "jobID": 108453502183,
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259863739/job/108453502183"
+    },
+    {
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "jobID": 108453502218,
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259863739/job/108453502218"
+    },
+    {
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "jobID": 108453502219,
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259863739/job/108453502219"
+    },
+    {
+      "name": "native (macos-15, darwin, arm64)",
+      "jobID": 108453502229,
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259863739/job/108453502229"
+    },
+    {
+      "name": "binary-security",
+      "jobID": 108455608519,
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259863739/job/108455608519"
+    },
+    {
+      "name": "publish",
+      "jobID": 108455695387,
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36259863739/job/108455695387"
+    }
+  ],
+  "assets": [
+    {
+      "name": "gateway-daemon-amd64.json",
+      "assetID": 591151267,
+      "size": 534,
+      "sha256": "ce29e556dca217b3ff557b1d745a80e79093246a474c587684ec744d5397a58f",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/gateway-daemon-amd64.json"
+    },
+    {
+      "name": "install-gateway.sh",
+      "assetID": 591151270,
+      "size": 2206,
+      "sha256": "baa064ac39a05f7fb94e5f6c1b4568470e3eb7088800f7e59526e24e6a224742",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/install-gateway.sh"
+    },
+    {
+      "name": "native-enumeration-darwin-amd64.json",
+      "assetID": 591151250,
+      "size": 239,
+      "sha256": "9d72280e913333aee2e14c1868af1f22cb980d782d0bb339d7440752d7efaece",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/native-enumeration-darwin-amd64.json"
+    },
+    {
+      "name": "native-enumeration-darwin-arm64.json",
+      "assetID": 591151251,
+      "size": 307,
+      "sha256": "a729251684e38b218808fe8c0fe559543b9d122edaf7cf6ebede13b3ee2df722",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/native-enumeration-darwin-arm64.json"
+    },
+    {
+      "name": "native-enumeration-windows-amd64.json",
+      "assetID": 591151256,
+      "size": 229,
+      "sha256": "9c1c3076196dc6bfd764342c4d8ad2fd56976e6247af72b7d1a828d9df53f8be",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/native-enumeration-windows-amd64.json"
+    },
+    {
+      "name": "native-enumeration-windows-arm64.json",
+      "assetID": 591151258,
+      "size": 229,
+      "sha256": "9c1c3076196dc6bfd764342c4d8ad2fd56976e6247af72b7d1a828d9df53f8be",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/native-enumeration-windows-arm64.json"
+    },
+    {
+      "name": "native-harness-darwin-amd64.smoke.json",
+      "assetID": 591151261,
+      "size": 9860,
+      "sha256": "4aa4acf79acca81a673c04a6251ba5b2287f31384a79319c679e61464e112488",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/native-harness-darwin-amd64.smoke.json"
+    },
+    {
+      "name": "native-harness-darwin-arm64.smoke.json",
+      "assetID": 591151260,
+      "size": 10169,
+      "sha256": "e8a45f5be33cf131aee7fdecdaeff07fdee799b391499e630f697c33dc5e13d4",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/native-harness-darwin-arm64.smoke.json"
+    },
+    {
+      "name": "native-harness-windows-amd64.exe.smoke.json",
+      "assetID": 591151263,
+      "size": 13653,
+      "sha256": "c880df10bfc6a093af196d1c53fec8efda3ea46581d95383acb5943b89784e87",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/native-harness-windows-amd64.exe.smoke.json"
+    },
+    {
+      "name": "native-harness-windows-arm64.exe.smoke.json",
+      "assetID": 591151264,
+      "size": 13020,
+      "sha256": "fa3e7eafceb423ac624711eeffd8ed4840ea6fba700e74946f0d77d7b6470ec2",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/native-harness-windows-arm64.exe.smoke.json"
+    },
+    {
+      "name": "smartstage-darwin-amd64.app.zip",
+      "assetID": 591151131,
+      "size": 3952392,
+      "sha256": "e6f41d47fff02d568c1f32aa2afd65d8ea903f9568312f68879dac674e31f686",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-amd64.app.zip",
+      "publishedChecksumVerified": true,
+      "archive": {
+        "entries": [
+          "Smart Stage.app/",
+          "Smart Stage.app/Contents/",
+          "Smart Stage.app/Contents/_CodeSignature/",
+          "Smart Stage.app/Contents/_CodeSignature/CodeResources",
+          "Smart Stage.app/Contents/MacOS/",
+          "Smart Stage.app/Contents/MacOS/smartstage",
+          "Smart Stage.app/Contents/MacOS/SmartStageLauncher",
+          "Smart Stage.app/Contents/Resources/",
+          "Smart Stage.app/Contents/Resources/Start Smart Stage.command",
+          "Smart Stage.app/Contents/Resources/smartstage.icns",
+          "Smart Stage.app/Contents/Info.plist"
+        ],
+        "exactShapeVerified": true,
+        "coreEqualsPortableExecutable": true,
+        "coreSHA256": "59ec5f3cb936d9e76620e0f934ea67bf83b0d2791da2b986a58963ba14ed04d9",
+        "launcher": {
+          "format": "Mach-O 64",
+          "architecture": "amd64",
+          "cpuType": "0x1000007"
+        },
+        "iconFormat": "ICNS",
+        "plist": {
+          "CFBundleIdentifier": "com.github.arizzi74.smartstage",
+          "CFBundleExecutable": "SmartStageLauncher",
+          "CFBundleShortVersionString": "1.3.1",
+          "CFBundleVersion": "1.3.1",
+          "CFBundleLocalizations": [
+            "en",
+            "it"
+          ],
+          "SmartStageVersion": "v1.3.1",
+          "LSMinimumSystemVersion": "12.0",
+          "SmartStageNativeAdminWindow": true,
+          "SmartStageDockIcon": true
+        }
+      }
+    },
+    {
+      "name": "smartstage-darwin-amd64.app.zip.sha256",
+      "assetID": 591151161,
+      "size": 98,
+      "sha256": "4d4354937bdd4cdac249b5d1332486c1bdad7629306b4ffbd6c95e11dffc6b31",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-amd64.app.zip.sha256"
+    },
+    {
+      "name": "smartstage-darwin-amd64.http-smoke.json",
+      "assetID": 591151200,
+      "size": 736,
+      "sha256": "a0b2f8df5653570f3a0e246bc865db6e67ae4d7a1aa38504db91ef4b50c2cc43",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-amd64.http-smoke.json"
+    },
+    {
+      "name": "smartstage-darwin-amd64.icon.json",
+      "assetID": 591151185,
+      "size": 7837,
+      "sha256": "f0a8a5811b41bd62d6bfb4b52ae01665b2e889658d5aa467cac190a991ace32c",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-amd64.icon.json"
+    },
+    {
+      "name": "smartstage-darwin-amd64.imports.txt",
+      "assetID": 591151170,
+      "size": 2295,
+      "sha256": "dc226f6d7bf6d0d068f1a6141e5ccb46c61cc62443d66c184d9bfc895658cdc8",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-amd64.imports.txt"
+    },
+    {
+      "name": "smartstage-darwin-amd64.network-mode.json",
+      "assetID": 591151219,
+      "size": 967,
+      "sha256": "449c66f01157b97175a1ff1957822ac72dde4bd704ae98ddf7b9a80959f2df8a",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-amd64.network-mode.json"
+    },
+    {
+      "name": "smartstage-darwin-amd64.zip",
+      "assetID": 591151136,
+      "size": 3811318,
+      "sha256": "ea61be42f1c896201d59d232ab5487f727c4e333e483defed503d735a9190a93",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-amd64.zip",
+      "publishedChecksumVerified": true,
+      "archive": {
+        "entries": [
+          "smartstage"
+        ],
+        "exactShapeVerified": true,
+        "executablePermissions": "0755",
+        "executableSHA256": "59ec5f3cb936d9e76620e0f934ea67bf83b0d2791da2b986a58963ba14ed04d9"
+      },
+      "binary": {
+        "format": "Mach-O 64",
+        "architecture": "amd64",
+        "cpuType": "0x1000007"
+      },
+      "goBuild": {
+        "goVersion": "go1.26.8",
+        "path": "smartstage/cmd/smartstage",
+        "moduleVersion": "v1.3.1",
+        "settings": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "1",
+          "GOARCH": "amd64",
+          "GOOS": "darwin",
+          "GOAMD64": "v1",
+          "vcs": "git",
+          "vcs.revision": "c4ecf679bac2cf94220c0df19808eaa2cc319165",
+          "vcs.time": "2026-09-26T17:40:22Z",
+          "vcs.modified": "false"
+        }
+      }
+    },
+    {
+      "name": "smartstage-darwin-amd64.zip.sha256",
+      "assetID": 591151160,
+      "size": 94,
+      "sha256": "860c9b43ea9151ff4aeabe8c856cb8c093220e234f371126c8917dcbe1649500",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-amd64.zip.sha256"
+    },
+    {
+      "name": "smartstage-darwin-arm64.app.zip",
+      "assetID": 591151134,
+      "size": 3576450,
+      "sha256": "39d1b7b4690273d682c5465a0293e9843b8c636a41cb00851bb226c2e0d72a08",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-arm64.app.zip",
+      "publishedChecksumVerified": true,
+      "archive": {
+        "entries": [
+          "Smart Stage.app/",
+          "Smart Stage.app/Contents/",
+          "Smart Stage.app/Contents/_CodeSignature/",
+          "Smart Stage.app/Contents/_CodeSignature/CodeResources",
+          "Smart Stage.app/Contents/MacOS/",
+          "Smart Stage.app/Contents/MacOS/smartstage",
+          "Smart Stage.app/Contents/MacOS/SmartStageLauncher",
+          "Smart Stage.app/Contents/Resources/",
+          "Smart Stage.app/Contents/Resources/Start Smart Stage.command",
+          "Smart Stage.app/Contents/Resources/smartstage.icns",
+          "Smart Stage.app/Contents/Info.plist"
+        ],
+        "exactShapeVerified": true,
+        "coreEqualsPortableExecutable": true,
+        "coreSHA256": "74daec1400e7b3832a5b8a7a0092f88dbd1da626f30fc0cb4be0386c032cee9e",
+        "launcher": {
+          "format": "Mach-O 64",
+          "architecture": "arm64",
+          "cpuType": "0x100000c"
+        },
+        "iconFormat": "ICNS",
+        "plist": {
+          "CFBundleIdentifier": "com.github.arizzi74.smartstage",
+          "CFBundleExecutable": "SmartStageLauncher",
+          "CFBundleShortVersionString": "1.3.1",
+          "CFBundleVersion": "1.3.1",
+          "CFBundleLocalizations": [
+            "en",
+            "it"
+          ],
+          "SmartStageVersion": "v1.3.1",
+          "LSMinimumSystemVersion": "12.0",
+          "SmartStageNativeAdminWindow": true,
+          "SmartStageDockIcon": true
+        }
+      }
+    },
+    {
+      "name": "smartstage-darwin-arm64.app.zip.sha256",
+      "assetID": 591151159,
+      "size": 98,
+      "sha256": "c2ec04be33b59779c7f97b3abb5be9d3077ea2e30c0e02a006fde7302890bbaa",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-arm64.app.zip.sha256"
+    },
+    {
+      "name": "smartstage-darwin-arm64.http-smoke.json",
+      "assetID": 591151204,
+      "size": 737,
+      "sha256": "376b0c1787d5343c90074ad6c5cd7218735c6f3419c4f77b9f26da093e2f8f5c",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-arm64.http-smoke.json"
+    },
+    {
+      "name": "smartstage-darwin-arm64.icon.json",
+      "assetID": 591151182,
+      "size": 7834,
+      "sha256": "7e13a81f6866b8049219a4446a91808902dc1a10f1d21471fbb573ee7b34b4bf",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-arm64.icon.json"
+    },
+    {
+      "name": "smartstage-darwin-arm64.imports.txt",
+      "assetID": 591151174,
+      "size": 2295,
+      "sha256": "fc9fca0420802641873cd0d3ee8a7291cc4d95c8e0fea4e64baf8e1c9975aced",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-arm64.imports.txt"
+    },
+    {
+      "name": "smartstage-darwin-arm64.network-mode.json",
+      "assetID": 591151220,
+      "size": 967,
+      "sha256": "5c4ffb7dad721fd3fb49beca13375a060ed45ea87508eaee1396b3ce2fe0dd54",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-arm64.network-mode.json"
+    },
+    {
+      "name": "smartstage-darwin-arm64.zip",
+      "assetID": 591151133,
+      "size": 3435040,
+      "sha256": "bb55bc38c6f8511a968da069cec2e0f3cb58931420a7145405579b5b19e530b5",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-arm64.zip",
+      "publishedChecksumVerified": true,
+      "archive": {
+        "entries": [
+          "smartstage"
+        ],
+        "exactShapeVerified": true,
+        "executablePermissions": "0755",
+        "executableSHA256": "74daec1400e7b3832a5b8a7a0092f88dbd1da626f30fc0cb4be0386c032cee9e"
+      },
+      "binary": {
+        "format": "Mach-O 64",
+        "architecture": "arm64",
+        "cpuType": "0x100000c"
+      },
+      "goBuild": {
+        "goVersion": "go1.26.8",
+        "path": "smartstage/cmd/smartstage",
+        "moduleVersion": "v1.3.1",
+        "settings": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "1",
+          "GOARCH": "arm64",
+          "GOOS": "darwin",
+          "GOARM64": "v8.0",
+          "vcs": "git",
+          "vcs.revision": "c4ecf679bac2cf94220c0df19808eaa2cc319165",
+          "vcs.time": "2026-09-26T17:40:22Z",
+          "vcs.modified": "false"
+        }
+      }
+    },
+    {
+      "name": "smartstage-darwin-arm64.zip.sha256",
+      "assetID": 591151164,
+      "size": 94,
+      "sha256": "f4407ada715c12f47e3bb70af26a9b5005d1d4cf9681830cf07727a5a52815dc",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-darwin-arm64.zip.sha256"
+    },
+    {
+      "name": "smartstage-gateway-linux-amd64",
+      "assetID": 591151271,
+      "size": 7098494,
+      "sha256": "5d521838bb2631183c43aa8834ce8fc2216c7c664b4c89da1f1027534515c26c",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-gateway-linux-amd64",
+      "publishedChecksumVerified": true,
+      "binary": {
+        "format": "ELF64",
+        "architecture": "amd64",
+        "machine": 62
+      },
+      "goBuild": {
+        "goVersion": "go1.26.8",
+        "path": "smartstage/cmd/smartstage-gateway",
+        "moduleVersion": "(devel)",
+        "settings": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "0",
+          "GOARCH": "amd64",
+          "GOOS": "linux",
+          "GOAMD64": "v1"
+        }
+      },
+      "staticELFVerified": true,
+      "publishedBuildReportVersion": "v1.3.1",
+      "publishedBuildReportCommit": "c4ecf679bac2",
+      "nativeVersionCommand": null,
+      "versionScope": "Foreign architecture: published build report checked; binary not executed on this host."
+    },
+    {
+      "name": "smartstage-gateway-linux-amd64.sha256",
+      "assetID": 591151273,
+      "size": 97,
+      "sha256": "41c57008a38d5f06ec815b52e0316a5440ed0f79defaaf1dd88a5d71d68f79f9",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-gateway-linux-amd64.sha256"
+    },
+    {
+      "name": "smartstage-gateway-linux-amd64.static.txt",
+      "assetID": 591151277,
+      "size": 2608,
+      "sha256": "bee878191134f22bea602e4a6c1401016a6ea17fc77091f3a5d768f75bdf4e08",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-gateway-linux-amd64.static.txt"
+    },
+    {
+      "name": "smartstage-gateway-linux-arm64",
+      "assetID": 591151282,
+      "size": 6619262,
+      "sha256": "a51acc6fc7437a706784a1b04e69fe3c0dca570c295ae637347c62fec73390a0",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-gateway-linux-arm64",
+      "publishedChecksumVerified": true,
+      "binary": {
+        "format": "ELF64",
+        "architecture": "arm64",
+        "machine": 183
+      },
+      "goBuild": {
+        "goVersion": "go1.26.8",
+        "path": "smartstage/cmd/smartstage-gateway",
+        "moduleVersion": "(devel)",
+        "settings": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "0",
+          "GOARCH": "arm64",
+          "GOOS": "linux",
+          "GOARM64": "v8.0"
+        }
+      },
+      "staticELFVerified": true,
+      "publishedBuildReportVersion": "v1.3.1",
+      "publishedBuildReportCommit": "c4ecf679bac2",
+      "nativeVersionCommand": "v1.3.1 (c4ecf679bac2)"
+    },
+    {
+      "name": "smartstage-gateway-linux-arm64.sha256",
+      "assetID": 591151294,
+      "size": 97,
+      "sha256": "2382e40e5aaecc0d6c2227fb2c9bf3e1c07b1850f8feadca6272b58462b71c80",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-gateway-linux-arm64.sha256"
+    },
+    {
+      "name": "smartstage-gateway-linux-arm64.static.txt",
+      "assetID": 591151296,
+      "size": 2590,
+      "sha256": "2c174ff01a8b471a4bb938698c2d722b2d1df30e456700cc5f7cd7bd91fceb2f",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-gateway-linux-arm64.static.txt"
+    },
+    {
+      "name": "smartstage-windows-amd64.exe.http-smoke.json",
+      "assetID": 591151208,
+      "size": 998,
+      "sha256": "8afe38abe9825b9acf4cf3b8ddfda5f39cf575ad1ca7503a097ae4d453f757c9",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-amd64.exe.http-smoke.json"
+    },
+    {
+      "name": "smartstage-windows-amd64.exe.icon.json",
+      "assetID": 591151184,
+      "size": 426,
+      "sha256": "673492ebffcb4f459d89e507183e4109f1b95988871ce75c2920a8be375598ce",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-amd64.exe.icon.json"
+    },
+    {
+      "name": "smartstage-windows-amd64.exe.imports.txt",
+      "assetID": 591151175,
+      "size": 16469,
+      "sha256": "ee06482de4ef77c91fabd75d1b2a251e9ce406a156f9c946cef2413bfc3efd31",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-amd64.exe.imports.txt"
+    },
+    {
+      "name": "smartstage-windows-amd64.exe.native-admin.json",
+      "assetID": 591151229,
+      "size": 16429,
+      "sha256": "5f258705243c478d6a9f9821571fbe4ca384160927229edadd8ddf88af110c40",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-amd64.exe.native-admin.json"
+    },
+    {
+      "name": "smartstage-windows-amd64.exe.network-mode.json",
+      "assetID": 591151231,
+      "size": 998,
+      "sha256": "bc558071d93d5361fa77ca920ca55143985b74fbdaacf78eb7902c6aa6902a0f",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-amd64.exe.network-mode.json"
+    },
+    {
+      "name": "smartstage-windows-amd64.zip",
+      "assetID": 591151132,
+      "size": 4333441,
+      "sha256": "b240d35802a0ae574bcceaf2da14a4f43b32ba2409a6f651920ad70416f160eb",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-amd64.zip",
+      "publishedChecksumVerified": true,
+      "archive": {
+        "entries": [
+          "smartstage.exe"
+        ],
+        "exactShapeVerified": true,
+        "executablePermissions": "0755",
+        "executableSHA256": "318b62665215953e1ccf907beab6493c988b65983a92c6256344d944def78b4d"
+      },
+      "binary": {
+        "format": "PE32+",
+        "architecture": "amd64",
+        "machine": "0x8664",
+        "subsystem": "Windows GUI"
+      },
+      "goBuild": {
+        "goVersion": "go1.26.8",
+        "path": "smartstage/cmd/smartstage",
+        "moduleVersion": "v1.3.1",
+        "settings": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "1",
+          "GOARCH": "amd64",
+          "GOOS": "windows",
+          "GOAMD64": "v1",
+          "vcs": "git",
+          "vcs.revision": "c4ecf679bac2cf94220c0df19808eaa2cc319165",
+          "vcs.time": "2026-09-26T17:40:22Z",
+          "vcs.modified": "false"
+        }
+      }
+    },
+    {
+      "name": "smartstage-windows-amd64.zip.sha256",
+      "assetID": 591151167,
+      "size": 96,
+      "sha256": "9b77ac571376d8b881cc0e21c19432ecbef53e08de8a31eddb407fbf982e9979",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-amd64.zip.sha256"
+    },
+    {
+      "name": "smartstage-windows-arm64.exe.http-smoke.json",
+      "assetID": 591151206,
+      "size": 1000,
+      "sha256": "7d28fe0c9f72199337fb9c3a5bc4873879d4da96f6eba12134dfab226e1a119a",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-arm64.exe.http-smoke.json"
+    },
+    {
+      "name": "smartstage-windows-arm64.exe.icon.json",
+      "assetID": 591151198,
+      "size": 426,
+      "sha256": "00dc2da1f20efa16fdc67c74f4f6a56c8f9ab0515f1df0fa955c515199553d9a",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-arm64.exe.icon.json"
+    },
+    {
+      "name": "smartstage-windows-arm64.exe.imports.txt",
+      "assetID": 591151176,
+      "size": 16204,
+      "sha256": "c358d10d8716737333b856f3e766e2537142a144d6d4c7ad8088a3efd5b97da0",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-arm64.exe.imports.txt"
+    },
+    {
+      "name": "smartstage-windows-arm64.exe.native-admin.json",
+      "assetID": 591151235,
+      "size": 200990,
+      "sha256": "5656391814b0c5e7287dd1def0ff291e15e4af5f4e47daa15c96d3597d14317d",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-arm64.exe.native-admin.json"
+    },
+    {
+      "name": "smartstage-windows-arm64.exe.network-mode.json",
+      "assetID": 591151230,
+      "size": 998,
+      "sha256": "f5a25c5dd2aec30a30edec7d2c7d4dab19a8989e39052dd3b74d51154e232502",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-arm64.exe.network-mode.json"
+    },
+    {
+      "name": "smartstage-windows-arm64.zip",
+      "assetID": 591151158,
+      "size": 3867392,
+      "sha256": "ca690f00930d257255ec43e11dc6a88472d64f633ca81f4cba3cbe93ec40b9ef",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-arm64.zip",
+      "publishedChecksumVerified": true,
+      "archive": {
+        "entries": [
+          "smartstage.exe"
+        ],
+        "exactShapeVerified": true,
+        "executablePermissions": "0755",
+        "executableSHA256": "0884149cfa5329520fecac50451ee13e20584dc303b40fec5cc7bdba1ba1d534"
+      },
+      "binary": {
+        "format": "PE32+",
+        "architecture": "arm64",
+        "machine": "0xaa64",
+        "subsystem": "Windows GUI"
+      },
+      "goBuild": {
+        "goVersion": "go1.26.8",
+        "path": "smartstage/cmd/smartstage",
+        "moduleVersion": "v1.3.1",
+        "settings": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "1",
+          "GOARCH": "arm64",
+          "GOOS": "windows",
+          "GOARM64": "v8.0",
+          "vcs": "git",
+          "vcs.revision": "c4ecf679bac2cf94220c0df19808eaa2cc319165",
+          "vcs.time": "2026-09-26T17:40:22Z",
+          "vcs.modified": "false"
+        }
+      }
+    },
+    {
+      "name": "smartstage-windows-arm64.zip.sha256",
+      "assetID": 591151172,
+      "size": 96,
+      "sha256": "825ab9101faf6c9c45bb7578937ff9eb7333b0a9bed85fbb9728bc88137db30a",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/smartstage-windows-arm64.zip.sha256"
+    },
+    {
+      "name": "toolchain-darwin-amd64.txt",
+      "assetID": 591151236,
+      "size": 382,
+      "sha256": "4bcdc308c4b0237f242f2ffb10de20c9f83b90bddb3ec077c9137ac736b4a3eb",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/toolchain-darwin-amd64.txt"
+    },
+    {
+      "name": "toolchain-darwin-arm64.txt",
+      "assetID": 591151246,
+      "size": 381,
+      "sha256": "10d77f12133ca46cd8c01910bba00c4ae361cde657ad4b93c4cc10f6b9b040ee",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/toolchain-darwin-arm64.txt"
+    },
+    {
+      "name": "toolchain-windows-amd64.txt",
+      "assetID": 591151247,
+      "size": 386,
+      "sha256": "2e7c09ae4939592b420ff91cd53cb110cebed54e6cb535d81da82f084c948bcb",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/toolchain-windows-amd64.txt"
+    },
+    {
+      "name": "toolchain-windows-arm64.txt",
+      "assetID": 591151249,
+      "size": 390,
+      "sha256": "59d6332cd918aa047e85a7c018d30a0adbb0b36122d80a76bcd60fd6aab19897",
+      "githubDigestVerified": true,
+      "downloadAttempts": 1,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.3.1/toolchain-windows-arm64.txt"
+    }
+  ],
+  "provenanceMethod": "Public release assets downloaded without authentication and verified against GitHub SHA256 asset digests; all eight desktop/gateway binaries or archives also match their published SHA256 sidecars. GitHub API verifies tag source, tag-workflow head revision, all eight successful build/security/publication jobs, non-prerelease publication, and latest stable release. Raw metadata and downloads retained outside the repository.",
+  "scope": "Publication, archive shape, embedded Go build metadata and binary architecture/static-link integrity. Matching-host Linux gateway --version is executed without starting a daemon; foreign-architecture gateway version is checked from its published build report. This record does not claim desktop app execution, physical playback, display, mouse, or firewall testing."
+}

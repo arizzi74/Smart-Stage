@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.3.0 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.3.1 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,55 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.3.1: compact Admin and visible QR
+
+Version 1.3.1 is source `c4ecf679bac2cf94220c0df19808eaa2cc319165`, published by
+[run 36259863739](https://github.com/arizzi74/Smart-Stage/actions/runs/36259863739).
+All seven [main build gates](verification/release-v1.3.1/candidate-workflow.json)
+and all seven [tagged gates plus publication](verification/release-v1.3.1/tag-workflow.json)
+passed. These workflows ran in parallel for this UI-only patch; the evidence does
+not claim the candidate completed before tagging or publication.
+
+The compact header/title/navigation and removed empty notice spacing leave more
+room for the remote panel. Its unchanged 256px QR now occupies the top-right
+beside the connection instructions; narrow Admin puts it before the URL. Known
+duplicate gateway-connected text is suppressed, while unknown diagnostics and
+errors remain. Settings still start collapsed. Playback and gateway protocols
+are unchanged. See the [change scope](verification/release-v1.3.1/change-scope.md).
+
+The [measured layouts](verification/release-v1.3.1/layout-checks.json) show the QR
+and caption fully visible without scrolling at 1095 × 758, 1024 × 700, 900 × 600
+and 768 × 700, in English and Italian with gateway or LAN. Narrow phone Admin can
+scroll normally; no tested viewport overflows horizontally. The
+[Italian screenshot](verification/release-v1.3.1/admin-compact-it.png) uses a
+synthetic example.com connection. These are local Chromium measurements, not a
+native macOS WebKit pixel test. Remote header/cue geometry is unchanged at 320,
+390 and 768px. Expanded connection settings, disconnection and retained unknown
+diagnostics were also checked. The existing [browser suite](verification/release-v1.3.1/browser-checks.json),
+all 11 JavaScript tests and Go web/HTTP tests passed.
+
+The [independent asset audit](verification/release-v1.3.1/assets.json) verified
+all 50 public assets, eight checksum pairs, archive contents, architectures and
+clean tagged-source/Go 1.26.8 metadata. All six exact public executables passed
+[Go package scans](verification/release-v1.3.1/security-scans.json).
+The [installer defaults](verification/release-v1.3.1/installer-defaults.json)
+match committed public bytes at `47fc1110f1faac7ec14aada1c3f529035c525cc2` and
+select v1.3.1. Shell syntax, pinned gateway bootstrap and downloaded-checksum
+validation tests passed after that update.
+
+Timestamped [post-publication results](verification/release-v1.3.1/postpublication-status.json),
+[actual update reports](verification/release-v1.3.1/auto-update-evidence.json) and
+[installer-default jobs](verification/release-v1.3.1/default-installer-workflows.json)
+record follow-up execution separately. All 16 post-publication jobs passed,
+including four published download checks, four browser checks, four actual
+automatic updates and four installer checks. Every updater installed the exact
+public executable checksum verified by the independent asset audit and preserved
+the saved show/media, restarting without autoplay. Updater fixtures use the exact
+release source with older version metadata; they are not historical release
+executables. All four installer-default architecture jobs also passed at the
+recorded commit. No production daemon, proxy or firewall change was required. Physical acceptance
+remains separate from hosted CI.
 
 ### Version 1.3.0: video/image toggles and visual fades
 

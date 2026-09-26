@@ -1,0 +1,386 @@
+{
+  "sourceCommit": "c4ecf679bac2cf94220c0df19808eaa2cc319165",
+  "scope": "Local Chromium using real embedded UI and synthetic connection/media fixtures, with a fixture QR rendered by the project QR library. No live gateway/session details. Desktop QR geometry is measured at initial scroll position with connection settings collapsed; native macOS WebKit was not exercised locally. Small mobile Admin viewports may still scroll.",
+  "checks": [
+    {
+      "mode": "gateway",
+      "language": "en",
+      "viewport": {
+        "width": 1095,
+        "height": 758
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 800,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 533.421875,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "gateway",
+      "language": "en",
+      "viewport": {
+        "width": 1024,
+        "height": 700
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 729,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 533.421875,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "gateway",
+      "language": "en",
+      "viewport": {
+        "width": 900,
+        "height": 600
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 605,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 533.421875,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "gateway",
+      "language": "en",
+      "viewport": {
+        "width": 768,
+        "height": 700
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 477,
+        "y": 325.375,
+        "width": 256,
+        "height": 256,
+        "bottom": 581.375
+      },
+      "captionBottom": 609.609375,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "gateway",
+      "language": "en",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 67,
+        "y": 591.625,
+        "width": 256,
+        "height": 256,
+        "bottom": 847.625
+      },
+      "captionBottom": 875.859375,
+      "qrFullyInViewport": false,
+      "captionFullyInViewport": false
+    },
+    {
+      "mode": "gateway",
+      "language": "it",
+      "viewport": {
+        "width": 1095,
+        "height": 758
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 800,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 551.65625,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "gateway",
+      "language": "it",
+      "viewport": {
+        "width": 1024,
+        "height": 700
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 729,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 551.65625,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "gateway",
+      "language": "it",
+      "viewport": {
+        "width": 900,
+        "height": 600
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 605,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 551.65625,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "gateway",
+      "language": "it",
+      "viewport": {
+        "width": 768,
+        "height": 700
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 477,
+        "y": 325.375,
+        "width": 256,
+        "height": 256,
+        "bottom": 581.375
+      },
+      "captionBottom": 627.84375,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "gateway",
+      "language": "it",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 67,
+        "y": 581.625,
+        "width": 256,
+        "height": 256,
+        "bottom": 837.625
+      },
+      "captionBottom": 884.09375,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": false
+    },
+    {
+      "mode": "lan",
+      "language": "en",
+      "viewport": {
+        "width": 1095,
+        "height": 758
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 800,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 533.421875,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "lan",
+      "language": "en",
+      "viewport": {
+        "width": 1024,
+        "height": 700
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 729,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 533.421875,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "lan",
+      "language": "en",
+      "viewport": {
+        "width": 900,
+        "height": 600
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 605,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 533.421875,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "lan",
+      "language": "en",
+      "viewport": {
+        "width": 768,
+        "height": 700
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 477,
+        "y": 325.375,
+        "width": 256,
+        "height": 256,
+        "bottom": 581.375
+      },
+      "captionBottom": 609.609375,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "lan",
+      "language": "en",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 67,
+        "y": 705.875,
+        "width": 256,
+        "height": 256,
+        "bottom": 961.875
+      },
+      "captionBottom": 990.109375,
+      "qrFullyInViewport": false,
+      "captionFullyInViewport": false
+    },
+    {
+      "mode": "lan",
+      "language": "it",
+      "viewport": {
+        "width": 1095,
+        "height": 758
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 800,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 551.65625,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "lan",
+      "language": "it",
+      "viewport": {
+        "width": 1024,
+        "height": 700
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 729,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 551.65625,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "lan",
+      "language": "it",
+      "viewport": {
+        "width": 900,
+        "height": 600
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 605,
+        "y": 249.1875,
+        "width": 256,
+        "height": 256,
+        "bottom": 505.1875
+      },
+      "captionBottom": 551.65625,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "lan",
+      "language": "it",
+      "viewport": {
+        "width": 768,
+        "height": 700
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 477,
+        "y": 325.375,
+        "width": 256,
+        "height": 256,
+        "bottom": 581.375
+      },
+      "captionBottom": 627.84375,
+      "qrFullyInViewport": true,
+      "captionFullyInViewport": true
+    },
+    {
+      "mode": "lan",
+      "language": "it",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "horizontalOverflow": false,
+      "qr": {
+        "x": 67,
+        "y": 717.125,
+        "width": 256,
+        "height": 256,
+        "bottom": 973.125
+      },
+      "captionBottom": 1019.59375,
+      "qrFullyInViewport": false,
+      "captionFullyInViewport": false
+    }
+  ]
+}
