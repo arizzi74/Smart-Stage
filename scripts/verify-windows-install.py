@@ -8,6 +8,7 @@ fixtures likewise leave all validation/replacement/shortcut code intact.
 """
 import argparse
 import base64
+from collections import Counter
 import ctypes
 from ctypes import wintypes
 import hashlib
@@ -226,6 +227,20 @@ def firewall_snapshot(shell):
     return psjson(shell, "@(Get-NetFirewallRule -PolicyStore ActiveStore | Select-Object Name,Enabled,Direction,Action,Profile | Sort-Object Name)")
 
 
+def firewall_difference(before, after):
+    """Retain duplicate rules and distinguish an ordering-only mismatch."""
+    def entries(snapshot):
+        rows = [] if snapshot is None else snapshot if isinstance(snapshot, list) else [snapshot]
+        return Counter(json.dumps(row, sort_keys=True, separators=(',', ':')) for row in rows)
+
+    previous, current = entries(before), entries(after)
+    return {
+        'removed': [json.loads(row) for row in sorted((previous - current).elements())],
+        'added': [json.loads(row) for row in sorted((current - previous).elements())],
+        'sameRulesDifferentOrder': before != after and previous == current,
+    }
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--arch', choices=('amd64', 'arm64'), required=True)
@@ -283,6 +298,8 @@ def main():
                       bootstrapSHA256=digest(published), bootstrapFetchAttempts=attempt + 1,
                       publishedBootstrapMatchesCheckout=True)
     original_firewall = firewall_snapshot(args.powershell)
+    report['firewallBefore'] = original_firewall
+    args.output.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     pid = None
     with tempfile.TemporaryDirectory(prefix='smartstage-windows-installer-') as temporary:
         work = Path(temporary)
@@ -412,7 +429,12 @@ def main():
             pid = None
             assert not listening(8788)
             assert sentinel.read_bytes() == b'existing settings and media stay here\n'
-            assert firewall_snapshot(args.powershell) == original_firewall, 'Installer or default gateway app changed firewall rules'
+            final_firewall = firewall_snapshot(args.powershell)
+            report.update(firewallAfter=final_firewall,
+                          firewallDifference=firewall_difference(original_firewall, final_firewall))
+            # Keep the full strict comparison. The report's cleanup finally
+            # persists both snapshots and their deterministic diff on failure.
+            assert final_firewall == original_firewall, 'Installer or default gateway app changed firewall rules'
             report.update(status='passed', configPreserved=True, defaultGatewayHasNoLANListener=True,
                           firewallRulesUnchanged=True, noElevationRequested=True, adminQuitClosedServer=True)
         finally:
