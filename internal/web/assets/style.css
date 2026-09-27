@@ -44,7 +44,8 @@
 #stage-settings-form .check{margin:18px 0 8px}
 .fade-duration{font-size:.83rem;margin:12px 0}
 .fade-duration span{display:flex;align-items:center;gap:8px;color:var(--muted);font-weight:400}
-#fade-seconds{max-width:100px;margin:0}
+.fade-settings{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:0 24px}
+.fade-duration input{max-width:100px;margin:0}
 #current-background{padding:10px 12px;border-left:2px solid var(--accent);background:#adecd109}
 #stage-settings-message:empty{display:none}
 #remote-connection-settings{border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px}

@@ -390,7 +390,8 @@ function dedicatedWindowsAdmin(platform, release) {
     assert.equal(await admin.locator('.playlist-row').count(), saved.cues.length, 'Hidden remote cues must remain in Admin');
     assert.equal(saved.cues.find(cue => cue.id === backgroundCue.id).background, true);
     assert.equal(saved.cues.find(cue => cue.id === backgroundCue.id).hidden, true);
-    assert.equal(await admin.locator('#fade-seconds').inputValue(), '1', 'Default fade duration must be one second');
+    assert.equal(await admin.locator('#audio-fade-seconds').inputValue(), '1', 'Default fade duration must be one second');
+    assert.equal(await admin.locator('#visual-fade-seconds').inputValue(), '1', 'Visual fade defaults independently to one second');
     async function saveStageSettings() {
       // Flag edits schedule real native validation. Finish that independent
       // work before testing settings persistence on the validated fixtures.
@@ -411,17 +412,33 @@ function dedicatedWindowsAdmin(platform, release) {
     }
     await admin.locator('#background-cue').selectOption(backgroundCue.id);
     await admin.locator('#background-audio').setChecked(Boolean(audio));
-    await admin.locator('#fade-enabled').check();
-    await admin.locator('#fade-seconds').fill('1.2');
+    await admin.locator('#audio-fade-enabled').check();
+    await admin.locator('#audio-fade-seconds').fill('1.2');
+    await admin.locator('#visual-fade-enabled').check();
+    await admin.locator('#visual-fade-seconds').fill('0.6');
     assert.equal(await admin.locator('#toggle-audio').count(), 0, 'Pause is always available, without a toggle preference');
     await saveStageSettings();
-    assert.deepEqual(saved.stage, { backgroundCueId: backgroundCue.id, backgroundAudio: Boolean(audio), fadeEnabled: true, fadeSeconds: 1.2, toggleAudio: false });
+    assert.deepEqual(saved.stage, { backgroundCueId: backgroundCue.id, backgroundAudio: Boolean(audio), audioFadeEnabled: true, audioFadeSeconds: 1.2, visualFadeEnabled: true, visualFadeSeconds: 0.6, toggleAudio: false });
     await admin.reload({ waitUntil: 'domcontentloaded' });
     await admin.locator('#connection.live').waitFor();
     await admin.locator('.playlist-row').last().waitFor();
     assert.equal(await admin.locator('#background-cue').inputValue(), backgroundCue.id);
     assert.equal(await admin.locator('#background-audio').isChecked(), Boolean(audio));
-    assert.equal(await admin.locator('#fade-seconds').inputValue(), '1.2');
+    assert.equal(await admin.locator('#audio-fade-seconds').inputValue(), '1.2');
+    assert.equal(await admin.locator('#visual-fade-seconds').inputValue(), '0.6');
+    await admin.locator('#visual-fade-enabled').uncheck();
+    await saveStageSettings();
+    assert.equal(saved.stage.audioFadeEnabled, true, 'Disabling visuals preserves audio fading');
+    assert.equal(saved.stage.visualFadeEnabled, false);
+    assert.equal(saved.stage.visualFadeSeconds, 0.6);
+    await admin.locator('#audio-fade-enabled').uncheck();
+    await admin.locator('#visual-fade-enabled').check();
+    await saveStageSettings();
+    assert.equal(saved.stage.audioFadeEnabled, false, 'Visual-only fades persist through the native host');
+    assert.equal(saved.stage.visualFadeEnabled, true);
+    assert.equal(saved.stage.audioFadeSeconds, 1.2);
+    await admin.locator('#audio-fade-enabled').check();
+    await saveStageSettings();
     assert.equal(await admin.locator('#toggle-audio').count(), 0);
     assert.equal(await admin.getByRole('checkbox', { name: `Hide remote button for cue ${backgroundIndex}`, exact: true }).isChecked(), true);
     await command.locator('#remote-stage').tap();
@@ -584,7 +601,8 @@ function dedicatedWindowsAdmin(platform, release) {
     assert.equal(saved.cues.find(cue => cue.id === backgroundCue.id).hidden, true);
     assert.equal(saved.cues.find(cue => cue.id === imageCue.id).background, true);
     record.sceneIntegration = { nativeImageInspected: true, savedVideoAndImageBackgrounds: true,
-      hiddenBackgroundCueEditableInAdmin: true, persistedConfigReloaded: true, configuredFadeSeconds: 1.2,
+      hiddenBackgroundCueEditableInAdmin: true, persistedConfigReloaded: true,
+      independentFadeSettingsPersisted: true, configuredAudioFadeSeconds: 1.2, configuredVisualFadeSeconds: 0.6,
       musicImageAndIndependentStage: Boolean(audio), backgroundSoundtrackEnabled: Boolean(audio),
       selectedMusicPauseKeepsImage: Boolean(audio), nativePausedVideoSeek: true, nativePausedAndPlayingMusicSeek: Boolean(audio), nativeAudioGainsMeasuredHere: false,
       audioUnavailableReason: audio ? '' : 'No enumerated native audio endpoint' };

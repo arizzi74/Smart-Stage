@@ -126,7 +126,7 @@ func sceneStageCompletion(t *testing.T, s *Service, f *sceneNative, scene playba
 }
 
 func TestSceneImageAndStageChangesKeepForegroundIdentity(t *testing.T) {
-	s, f, _, paths := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, f, _, paths := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	music := scenePlaying(t, s, f, "music")
 	if _, err := play(s, "image", "show-image-over-music"); err != nil {
 		t.Fatal(err)
@@ -169,7 +169,7 @@ func TestSceneImageAndStageChangesKeepForegroundIdentity(t *testing.T) {
 }
 
 func TestSceneBackgroundSwitchStopToggleAndEmergency(t *testing.T) {
-	settings := model.StageSettings{BackgroundCueID: "backdrop", BackgroundAudio: true, FadeEnabled: true, FadeSeconds: 1.6, ToggleAudio: true}
+	settings := model.StageSettings{BackgroundCueID: "backdrop", BackgroundAudio: true, AudioFadeEnabled: true, VisualFadeEnabled: true, AudioFadeSeconds: 1.6, VisualFadeSeconds: 1.6, ToggleAudio: true}
 	s, f, _, paths := sceneSetup(t, settings)
 	eventually(t, func() bool { return f.latest().BackgroundPath == paths["backdrop"] })
 	if err := s.Stage(context.Background(), true); err != nil {
@@ -196,7 +196,7 @@ func TestSceneBackgroundSwitchStopToggleAndEmergency(t *testing.T) {
 		t.Fatal(err)
 	}
 	stopped := f.latest()
-	if stopped.ForegroundID != 0 || stopped.ImagePath != "" || stopped.BackgroundPath != paths["background-video"] || !stopped.StageEnabled || stopped.HardStop || stopped.FadeSeconds != settings.FadeSeconds {
+	if stopped.ForegroundID != 0 || stopped.ImagePath != "" || stopped.BackgroundPath != paths["background-video"] || !stopped.StageEnabled || stopped.HardStop || stopped.AudioFadeSeconds != settings.AudioFadeSeconds {
 		t.Fatalf("STOP did not request the configured background transition: %+v", stopped)
 	}
 	f.events <- playback.Event{Kind: "stopped", Generation: stopped.Generation, SceneRevision: stopped.Revision, TransportRevision: stopped.TransportRevision, StageEnabled: true}
@@ -217,7 +217,7 @@ func TestSceneBackgroundSwitchStopToggleAndEmergency(t *testing.T) {
 		t.Fatal(err)
 	}
 	emergency := f.latest()
-	if !emergency.HardStop || emergency.FadeSeconds != 0 || emergency.StageEnabled || emergency.ForegroundID != 0 || emergency.ImagePath != "" {
+	if !emergency.HardStop || emergency.AudioFadeSeconds != 0 || emergency.StageEnabled || emergency.ForegroundID != 0 || emergency.ImagePath != "" {
 		t.Fatalf("emergency stop was not immediate complete silence and stage off: %+v", emergency)
 	}
 	before := s.Snapshot(true)
@@ -228,7 +228,7 @@ func TestSceneBackgroundSwitchStopToggleAndEmergency(t *testing.T) {
 }
 
 func TestSceneStopCancelsLateReplacementInspection(t *testing.T) {
-	s, f, _, paths := sceneSetup(t, model.StageSettings{FadeEnabled: true, FadeSeconds: 1})
+	s, f, _, paths := sceneSetup(t, model.StageSettings{AudioFadeEnabled: true, VisualFadeEnabled: true, AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	music := scenePlaying(t, s, f, "music")
 	gate := &sceneInspectGate{path: paths["next"], entered: make(chan struct{}), release: make(chan struct{}), completed: make(chan struct{})}
 	f.sceneMu.Lock()
@@ -274,7 +274,7 @@ func TestSceneStopCancelsLateReplacementInspection(t *testing.T) {
 }
 
 func TestSceneSettingsAndCueFlagsSurviveUnrelatedEdits(t *testing.T) {
-	settings := model.StageSettings{FadeSeconds: 1}
+	settings := model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1}
 	s, _, store, _ := sceneSetup(t, settings)
 	base := s.Playlist()
 	edits := colorEdits(base)
@@ -285,7 +285,7 @@ func TestSceneSettingsAndCueFlagsSurviveUnrelatedEdits(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	settings = model.StageSettings{BackgroundCueID: "image", BackgroundAudio: true, FadeEnabled: true, FadeSeconds: 2.5, ToggleAudio: true}
+	settings = model.StageSettings{BackgroundCueID: "image", BackgroundAudio: true, AudioFadeEnabled: true, VisualFadeEnabled: true, AudioFadeSeconds: 2.5, VisualFadeSeconds: 2.5, ToggleAudio: true}
 	configured, err := s.ConfigureStage(context.Background(), StageEdit{ExpectedRevision: flagged.PlaylistRevision, Settings: settings})
 	if err != nil {
 		t.Fatal(err)
@@ -300,11 +300,11 @@ func TestSceneSettingsAndCueFlagsSurviveUnrelatedEdits(t *testing.T) {
 	if renamed.Stage != settings || !renamed.Cues[0].Background || !renamed.Cues[2].Hidden {
 		t.Fatalf("unrelated reorder/rename reset stage settings or cue flags: %+v", renamed)
 	}
-	if _, err := s.ConfigureStage(context.Background(), StageEdit{ExpectedRevision: configured.PlaylistRevision, Settings: model.StageSettings{FadeSeconds: 1}}); err == nil {
+	if _, err := s.ConfigureStage(context.Background(), StageEdit{ExpectedRevision: configured.PlaylistRevision, Settings: model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1}}); err == nil {
 		t.Fatal("stale settings revision overwrote a newer show")
 	}
 	store.fail = true
-	if _, err := s.ConfigureStage(context.Background(), StageEdit{ExpectedRevision: renamed.PlaylistRevision, Settings: model.StageSettings{FadeSeconds: 1}}); err == nil {
+	if _, err := s.ConfigureStage(context.Background(), StageEdit{ExpectedRevision: renamed.PlaylistRevision, Settings: model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1}}); err == nil {
 		t.Fatal("stage settings save failure was hidden")
 	}
 	if after := s.Playlist(); after.PlaylistRevision != renamed.PlaylistRevision || after.Stage != settings {
@@ -313,7 +313,7 @@ func TestSceneSettingsAndCueFlagsSurviveUnrelatedEdits(t *testing.T) {
 }
 
 func TestSceneDeviceLossCancelsReplacementWithNewerGeneration(t *testing.T) {
-	s, f, _, paths := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, f, _, paths := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	music := scenePlaying(t, s, f, "music")
 	gate := &sceneInspectGate{path: paths["next"], entered: make(chan struct{}), release: make(chan struct{}), completed: make(chan struct{})}
 	f.sceneMu.Lock()

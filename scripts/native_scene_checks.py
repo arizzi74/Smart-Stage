@@ -77,6 +77,12 @@ def scene_checks(devices):
             "nativeSeekClampsBothFiniteTimelineBounds",
             "stageDuringNativeSeekRetainsCompletionAndPauseWithoutRepeatingSeek",
             "pauseDuringNativeSeekPreventsEarlierPlayingIntentFromResuming",
+            "audioOnlyFadeCrossfadesGainAndCutsVideo",
+            "visualOnlyFadeCutsGainAndRetainsMovingVideoUntilOpacityCompletes",
+            "shortAudioFadeRetainsSilentMovingVideoUntilLongVisualFadeCompletes",
+            "shortVisualFadeRetainsHiddenAudioDecoderUntilLongAudioFadeCompletes",
+            "backgroundSoundtrackUsesAudioFadeWithVisualFadeDisabled",
+            "backgroundSoundtrackCutsImmediatelyWhileVisualFadeContinues",
         }
         assert required <= observations, f"Native transport checks were skipped: {sorted(required - observations)}"
         return reports[0]

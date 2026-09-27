@@ -1104,7 +1104,7 @@ static _Atomic(uint64_t) requestedSceneRevision;
 static _Atomic(bool) sceneEmergencyPending;
 static uint64_t appliedSceneRevision, sceneGeneration, sceneEndedForegroundID, sceneTransportRevision;
 static BOOL sceneBackgroundAudio, sceneStoppedPending, sceneApplying;
-static double sceneFadeSeconds, sceneFadeStarted, sceneFadeDuration;
+static double sceneAudioFadeSeconds, sceneVisualFadeSeconds, sceneFadeStarted, sceneFadeDuration;
 static dispatch_source_t sceneFadeTimer;
 static NSOperationQueue *sceneImageQueue;
 
@@ -1189,6 +1189,8 @@ static CALayer *sceneVisualLayer(id owner) {
     return nil;
 }
 static void releaseSceneOwner(id owner) {
+    // A video's audio and visual fades can finish in either order. Its decoder
+    // survives until both the retiring-audio and outgoing-visual slots release it.
     if (!owner || owner == sceneForeground || owner == sceneBackground || owner == sceneRetiring ||
         owner == sceneImage || owner == sceneBackgroundImage || owner == sceneVisualCurrent || owner == sceneVisualOutgoing) return;
     [owner teardown];
@@ -1221,7 +1223,7 @@ static BOOL audibleScenePlayer(SSScenePlayer *player) {
 }
 static void retireScenePlayer(SSScenePlayer *player) {
     if (!player) return;
-    if (audibleScenePlayer(player) && sceneFadeSeconds > 0) {
+    if (audibleScenePlayer(player) && sceneAudioFadeSeconds > 0) {
         // A burst of PLAY commands cannot accumulate decoder/audio tails.
         SSScenePlayer *old = sceneRetiring; sceneRetiring = player;
         if (old != player) releaseSceneOwner(old);
@@ -1251,7 +1253,7 @@ static void mixScene(void) {
     cancelSceneFade();
     sceneFadeStarted = NSProcessInfo.processInfo.systemUptime;
     // Starting from silence is immediate. Only replace/fade audible output.
-    sceneFadeDuration = audible ? sceneFadeSeconds : 0;
+    sceneFadeDuration = audible ? sceneAudioFadeSeconds : 0;
     for (SSScenePlayer *player in players) {
         player.fadeFrom = player.player.volume;
         player.fadeTo = player == owner ? 1.0f : 0.0f;
@@ -1326,7 +1328,7 @@ static void renderScene(void) {
     if (outgoing == visible || !sceneVisualLayer(outgoing)) outgoing = nil;
     sceneVisualCurrent = visible; sceneVisualOutgoing = outgoing;
     releaseSceneOwner(oldCurrent); releaseSceneOwner(oldOutgoing);
-    sceneVisualDuration = sceneFadeSeconds;
+    sceneVisualDuration = sceneVisualFadeSeconds;
     if (!outgoing || sceneVisualDuration <= 0) { completeSceneVisuals(); return; }
     sceneVisualStarted = NSProcessInfo.processInfo.systemUptime;
     paintSceneVisuals(0);
@@ -1696,11 +1698,13 @@ static SSScenePlayer *newScenePlayer(uint64_t identifier, NSString *path, NSStri
 static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregroundID, NSString *foregroundPath,
     NSString *foregroundKind, BOOL foregroundAudio, NSString *imagePath, NSString *backgroundPath,
     NSString *backgroundKind, BOOL backgroundAudio, NSString *audio, NSString *display, BOOL stage,
-    double fade, BOOL hardStop, BOOL paused, uint64_t transportRevision, uint64_t seekRevision, double seekSeconds) {
+    double audioFade, double visualFade, BOOL hardStop, BOOL paused, uint64_t transportRevision, uint64_t seekRevision, double seekSeconds) {
     if (revision != atomic_load(&requestedSceneRevision) || atomic_load(&shuttingDown) || atomic_load(&sceneEmergencyPending)) return;
     if (!sceneMode) { stopCurrent(); sceneMode = YES; }
     appliedSceneRevision = revision; sceneGeneration = generation; sceneTransportRevision = transportRevision;
-    sceneBackgroundAudio = backgroundAudio; sceneFadeSeconds = isfinite(fade) ? MAX(0, MIN(30, fade)) : 0;
+    sceneBackgroundAudio = backgroundAudio;
+    sceneAudioFadeSeconds = isfinite(audioFade) ? MAX(0, MIN(30, audioFade)) : 0;
+    sceneVisualFadeSeconds = isfinite(visualFade) ? MAX(0, MIN(30, visualFade)) : 0;
     sceneStoppedPending = !foregroundID || !foregroundPath.length;
     if (hardStop) {
         stopScene(); hideSceneStage(); emitScene(generation, @"stage", nil, 0, 0);
@@ -1783,13 +1787,13 @@ void ss_scene(const ss_scene_request *request) {
         BOOL paused = request->foreground_paused;
         uint64_t transportRevision = request->transport_revision, seekRevision = request->seek_revision;
         double seekSeconds = request->seek_seconds;
-        double fade = request->fade_seconds;
+        double audioFade = request->audio_fade_seconds, visualFade = request->visual_fade_seconds;
         pthread_mutex_lock(&commandMutex);
         if (revision <= atomic_load(&requestedSceneRevision)) { pthread_mutex_unlock(&commandMutex); return; }
         atomic_store(&requestedSceneRevision, revision);
         atomic_store(&sceneEmergencyPending, false);
         latestCommand = [^{ applyScene(revision, generation, foregroundID, foreground, kind, hasAudio, image,
-            background, backgroundKind, backgroundAudio, audio, display, stage, fade, hardStop,
+            background, backgroundKind, backgroundAudio, audio, display, stage, audioFade, visualFade, hardStop,
             paused, transportRevision, seekRevision, seekSeconds); } copy];
         BOOL wake = !commandScheduled; commandScheduled = YES;
         pthread_mutex_unlock(&commandMutex);

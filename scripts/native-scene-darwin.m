@@ -10,9 +10,9 @@ static void probeTransport(BOOL paused, uint64_t transport, uint64_t seek, doubl
     probePaused = paused; probeTransportRevision = transport;
     probeSeekRevision = seek; probeSeekSeconds = position;
 }
-static void probeApply(uint64_t revision, uint64_t foregroundID, NSString *foreground,
+static void probeApplyFades(uint64_t revision, uint64_t foregroundID, NSString *foreground,
     NSString *image, NSString *background, NSString *backgroundKind, BOOL backgroundAudio,
-    NSString *audio, NSString *display, BOOL stage, double fade, BOOL hard) {
+    NSString *audio, NSString *display, BOOL stage, double audioFade, double visualFade, BOOL hard) {
     ss_scene_request request = {0};
     request.revision = revision; request.generation = foregroundID ?: revision;
     request.foreground_id = foregroundID; request.foreground_path = foreground.UTF8String ?: "";
@@ -21,10 +21,18 @@ static void probeApply(uint64_t revision, uint64_t foregroundID, NSString *foreg
     request.image_path = image.UTF8String ?: ""; request.background_path = background.UTF8String ?: "";
     request.background_kind = backgroundKind.UTF8String ?: ""; request.background_audio = backgroundAudio;
     request.audio = audio.UTF8String; request.display = display.UTF8String;
-    request.stage_enabled = stage; request.fade_seconds = fade; request.hard_stop = hard;
+    request.stage_enabled = stage; request.audio_fade_seconds = audioFade;
+    request.visual_fade_seconds = visualFade; request.hard_stop = hard;
     request.foreground_paused = probePaused; request.transport_revision = probeTransportRevision;
     request.seek_revision = probeSeekRevision; request.seek_seconds = probeSeekSeconds;
     ss_scene(&request);
+}
+static void probeApply(uint64_t revision, uint64_t foregroundID, NSString *foreground,
+    NSString *image, NSString *background, NSString *backgroundKind, BOOL backgroundAudio,
+    NSString *audio, NSString *display, BOOL stage, double fade, BOOL hard) {
+    // Existing scene and transport regressions exercise the linked settings.
+    probeApplyFades(revision, foregroundID, foreground, image, background, backgroundKind,
+        backgroundAudio, audio, display, stage, fade, fade, hard);
 }
 int main(void) {
     @autoreleasepool {
@@ -603,13 +611,142 @@ int main(void) {
                         fprintf(stderr, "Pause during an in-flight seek lost to the earlier playing intent\n"); ss_quit(); return;
                     }
                     [observations addObject:@{@"pauseDuringNativeSeekPreventsEarlierPlayingIntentFromResuming":@YES}];
-                    passed = YES;
-                    dispatch_source_cancel(timer);
-                    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:@{@"status":@"passed",@"observations":observations,
-                        @"physicalSpeakerOutputVerified":@NO,@"physicalPointerVisibilityVerified":@NO,
-                        @"method":@"Real AVPlayer timelines/volume overlap and live video/image CALayer crossfade opacity observed inside a test process compiling the production bridge"} options:0 error:NULL];
-                    printf("%s\n", [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding].UTF8String);
-                    ss_quit();
+                    probeTransport(NO, 25, 0, 0);
+                    probeApplyFades(68, 0, nil, nil, nil, nil, NO, audio, display, NO, 0, 0, YES);
+                    phase = 66; phaseBegan = now;
+                } else if (phase == 66 && appliedSceneRevision == 68 && !sceneForeground && !sceneBackground) {
+                    probeTransport(NO, 26, 0, 0);
+                    probeApplyFades(69, 120, background, nil, nil, nil, NO, audio, display, YES, .8, 0, NO);
+                    phase = 67; phaseBegan = now;
+                } else if (phase == 67 && sceneForeground.started && sceneForeground.layer.readyForDisplay &&
+                           seconds(sceneForeground.player.currentTime) > .15) {
+                    if (sceneFadeTimer || sceneVisualTimer || sceneForeground.player.volume < .999 || sceneForeground.layer.opacity != 1) {
+                        fprintf(stderr, "Independent fade settings delayed first playback from silence or black\n"); ss_quit(); return;
+                    }
+                    outgoingVideo = sceneForeground; overlap = NO;
+                    probeTransport(NO, 27, 0, 0);
+                    probeApplyFades(70, 130, background, nil, nil, nil, NO, audio, display, YES, .8, 0, NO);
+                    phase = 68; phaseBegan = now;
+                } else if (phase == 68 && sceneForeground.identifier == 130) {
+                    if (sceneForeground.layer.readyForDisplay && sceneForeground.player.volume > .1 && sceneForeground.player.volume < .9) {
+                        if (!sceneFadeTimer || sceneVisualTimer || sceneVisualOutgoing || sceneVisualCurrent != sceneForeground ||
+                            sceneForeground.layer.opacity != 1 || sceneRetiring != outgoingVideo || outgoingVideo.player.volume <= .05 || outgoingVideo.disposed) {
+                            fprintf(stderr, "Audio-only fade failed to cut video immediately while retaining its audio tail\n"); ss_quit(); return;
+                        }
+                        overlap = YES;
+                    }
+                    if (sceneForeground.layer.readyForDisplay && sceneForeground.player.volume > .999 && !sceneFadeTimer && !sceneRetiring) {
+                        if (!overlap || !outgoingVideo.disposed) {
+                            fprintf(stderr, "Audio-only crossfade was absent or retained its completed decoder\n"); ss_quit(); return;
+                        }
+                        [observations addObject:@{@"audioOnlyFadeCrossfadesGainAndCutsVideo":@YES}];
+                        outgoingVideo = sceneForeground; before = seconds(outgoingVideo.player.currentTime);
+                        visualOverlap = NO; movingOutgoing = NO;
+                        probeTransport(NO, 28, 0, 0);
+                        probeApplyFades(71, 140, first, imagePath, nil, nil, NO, audio, display, YES, 0, .8, NO);
+                        phase = 69; phaseBegan = now;
+                    }
+                } else if (phase == 69) {
+                    if (sceneForeground.started && sceneVisualOutgoing == outgoingVideo && sceneImage.layer.opacity > .05 && sceneImage.layer.opacity < .95) {
+                        if (sceneFadeTimer || sceneRetiring || sceneForeground.player.volume < .999 || outgoingVideo.player.volume > .001 || outgoingVideo.disposed) {
+                            fprintf(stderr, "Visual-only fade changed gain gradually or disposed its moving outgoing video\n"); ss_quit(); return;
+                        }
+                        visualOverlap = YES;
+                        if (seconds(outgoingVideo.player.currentTime) > before + .03) movingOutgoing = YES;
+                    }
+                    if (sceneVisualCurrent == sceneImage && sceneImage.layer.contents && !sceneVisualTimer) {
+                        if (!visualOverlap || !movingOutgoing || !outgoingVideo.disposed || sceneForeground.player.volume < .999) {
+                            fprintf(stderr, "Visual-only crossfade missed its overlap, gain cut, or decoder cleanup\n"); ss_quit(); return;
+                        }
+                        [observations addObject:@{@"visualOnlyFadeCutsGainAndRetainsMovingVideoUntilOpacityCompletes":@YES}];
+                        probeTransport(NO, 29, 0, 0);
+                        probeApplyFades(72, 150, background, nil, nil, nil, NO, audio, display, YES, 0, 0, NO);
+                        phase = 70; phaseBegan = now;
+                    }
+                } else if (phase == 70 && sceneForeground.identifier == 150 && sceneForeground.started &&
+                           sceneForeground.layer.readyForDisplay && seconds(sceneForeground.player.currentTime) > .15) {
+                    outgoingVideo = sceneForeground; before = seconds(outgoingVideo.player.currentTime);
+                    overlap = NO; movingOutgoing = NO;
+                    probeTransport(NO, 30, 0, 0);
+                    probeApplyFades(73, 160, background, nil, nil, nil, NO, audio, display, YES, .25, .9, NO);
+                    phase = 71; phaseBegan = now;
+                } else if (phase == 71 && sceneForeground.identifier == 160) {
+                    if (!sceneFadeTimer && sceneVisualTimer && sceneVisualOutgoing == outgoingVideo) {
+                        if (sceneRetiring || outgoingVideo.disposed || !outgoingVideo.player || outgoingVideo.player.volume > .001 ||
+                            outgoingVideo.layer.hidden || fabs(sceneFadeDuration - .25) > .001 || fabs(sceneVisualDuration - .9) > .001) {
+                            fprintf(stderr, "Short audio fade released or audibly retained a longer visual tail\n"); ss_quit(); return;
+                        }
+                        overlap = YES;
+                        if (seconds(outgoingVideo.player.currentTime) > before + .15) movingOutgoing = YES;
+                    }
+                    if (sceneForeground.layer.readyForDisplay && !sceneFadeTimer && !sceneVisualTimer && !sceneRetiring) {
+                        if (!overlap || !movingOutgoing || !outgoingVideo.disposed) {
+                            fprintf(stderr, "Audio-before-visual completion failed independent decoder ownership\n"); ss_quit(); return;
+                        }
+                        [observations addObject:@{@"shortAudioFadeRetainsSilentMovingVideoUntilLongVisualFadeCompletes":@YES}];
+                        outgoingVideo = sceneForeground; before = seconds(outgoingVideo.player.currentTime);
+                        visualOverlap = NO; movingOutgoing = NO;
+                        probeTransport(NO, 31, 0, 0);
+                        probeApplyFades(74, 170, background, nil, nil, nil, NO, audio, display, YES, .9, .25, NO);
+                        phase = 72; phaseBegan = now;
+                    }
+                } else if (phase == 72 && sceneForeground.identifier == 170) {
+                    if (!sceneVisualTimer && sceneFadeTimer && sceneRetiring == outgoingVideo && outgoingVideo.player.volume > .05) {
+                        if (sceneVisualOutgoing || !outgoingVideo.layer.hidden || outgoingVideo.disposed ||
+                            sceneForeground.player.volume >= .999 || fabs(sceneFadeDuration - .9) > .001 || fabs(sceneVisualDuration - .25) > .001) {
+                            fprintf(stderr, "Short visual fade disposed or revealed a longer audio tail\n"); ss_quit(); return;
+                        }
+                        visualOverlap = YES;
+                        if (seconds(outgoingVideo.player.currentTime) > before + .15) movingOutgoing = YES;
+                    }
+                    if (sceneForeground.layer.readyForDisplay && !sceneFadeTimer && !sceneVisualTimer && !sceneRetiring) {
+                        if (!visualOverlap || !movingOutgoing || !outgoingVideo.disposed) {
+                            fprintf(stderr, "Visual-before-audio completion failed independent decoder ownership\n"); ss_quit(); return;
+                        }
+                        [observations addObject:@{@"shortVisualFadeRetainsHiddenAudioDecoderUntilLongAudioFadeCompletes":@YES}];
+                        outgoingVideo = sceneForeground; overlap = NO;
+                        probeTransport(NO, 32, 0, 0);
+                        probeApplyFades(75, 0, nil, nil, background, @"video", YES, audio, display, YES, .65, 0, NO);
+                        phase = 73; phaseBegan = now;
+                    }
+                } else if (phase == 73) {
+                    if (sceneBackground.started && sceneBackground.layer.readyForDisplay && sceneBackground.player.volume > .05 && sceneBackground.player.volume < .95) {
+                        if (!sceneFadeTimer || sceneVisualTimer || sceneVisualOutgoing || sceneVisualCurrent != sceneBackground ||
+                            sceneBackground.layer.opacity != 1 || sceneRetiring != outgoingVideo || outgoingVideo.player.volume <= .05) {
+                            fprintf(stderr, "Background video soundtrack did not use the independent audio fade\n"); ss_quit(); return;
+                        }
+                        overlap = YES;
+                    }
+                    if (sceneBackground.started && sceneBackground.player.volume > .999 && !sceneFadeTimer && !sceneRetiring) {
+                        if (!overlap || !outgoingVideo.disposed) {
+                            fprintf(stderr, "Background soundtrack crossfade did not complete or release the old decoder\n"); ss_quit(); return;
+                        }
+                        [observations addObject:@{@"backgroundSoundtrackUsesAudioFadeWithVisualFadeDisabled":@YES}];
+                        originalBackground = sceneBackground; visualOverlap = NO;
+                        probeTransport(NO, 33, 0, 0);
+                        probeApplyFades(76, 180, first, imagePath, background, @"video", YES, audio, display, YES, 0, .65, NO);
+                        phase = 74; phaseBegan = now;
+                    }
+                } else if (phase == 74) {
+                    if (sceneForeground.started && sceneVisualOutgoing == originalBackground && sceneImage.layer.opacity > .05 && sceneImage.layer.opacity < .95) {
+                        if (sceneFadeTimer || sceneForeground.player.volume < .999 || sceneBackground.player.volume > .001) {
+                            fprintf(stderr, "Independent visual fade delayed the background soundtrack gain cut\n"); ss_quit(); return;
+                        }
+                        visualOverlap = YES;
+                    }
+                    if (sceneForeground.started && sceneVisualCurrent == sceneImage && !sceneVisualTimer) {
+                        if (!visualOverlap || sceneBackground != originalBackground || originalBackground.disposed || originalBackground.player.rate <= 0) {
+                            fprintf(stderr, "Visual-only image transition replaced or stopped its independent background\n"); ss_quit(); return;
+                        }
+                        [observations addObject:@{@"backgroundSoundtrackCutsImmediatelyWhileVisualFadeContinues":@YES}];
+                        passed = YES;
+                        dispatch_source_cancel(timer);
+                        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:@{@"status":@"passed",@"observations":observations,
+                            @"physicalSpeakerOutputVerified":@NO,@"physicalPointerVisibilityVerified":@NO,
+                            @"method":@"Real AVPlayer timelines/volume overlap and live video/image CALayer crossfade opacity observed inside a test process compiling the production bridge"} options:0 error:NULL];
+                        printf("%s\n", [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding].UTF8String);
+                        ss_quit();
+                    }
                 }
             }
         });

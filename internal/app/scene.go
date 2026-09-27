@@ -50,9 +50,12 @@ func (s *Service) applySceneLocked(hard bool) error {
 	if audio == "" {
 		audio = s.background.audioID
 	}
-	fade := 0.0
-	if s.config.Stage.FadeEnabled && !hard {
-		fade = s.config.Stage.FadeSeconds
+	audioFade, visualFade := 0.0, 0.0
+	if s.config.Stage.AudioFadeEnabled && !hard {
+		audioFade = s.config.Stage.AudioFadeSeconds
+	}
+	if s.config.Stage.VisualFadeEnabled && !hard {
+		visualFade = s.config.Stage.VisualFadeSeconds
 	}
 	scene := playback.Scene{
 		Revision: s.sceneRevision, Generation: s.state.Generation,
@@ -64,7 +67,7 @@ func (s *Service) applySceneLocked(hard bool) error {
 		BackgroundKind:  s.background.kind,
 		BackgroundAudio: s.config.Stage.BackgroundAudio && s.background.hasAudio,
 		AudioID:         audio, DisplayID: s.config.Outputs.DisplayID,
-		StageEnabled: s.stageDesired, FadeSeconds: fade, HardStop: hard,
+		StageEnabled: s.stageDesired, AudioFadeSeconds: audioFade, VisualFadeSeconds: visualFade, HardStop: hard,
 	}
 	if scene.ForegroundID == 0 {
 		scene.TransportRevision = s.state.TransportRevision
@@ -262,7 +265,7 @@ func (s *Service) prepareVisual(job visualJob, background bool) {
 
 func (s *Service) ConfigureStage(ctx context.Context, edit StageEdit) (model.Config, error) {
 	if !edit.Settings.Valid() {
-		return model.Config{}, problem("invalid_stage", "Fade duration must be between 0.1 and 30 seconds")
+		return model.Config{}, problem("invalid_stage", "Audio and visual fade durations must each be between 0.1 and 30 seconds")
 	}
 	s.editMu.Lock()
 	defer s.editMu.Unlock()

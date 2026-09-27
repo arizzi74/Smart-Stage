@@ -13,7 +13,7 @@ import (
 func TestSceneSelectedVideoPausesAndResumesWithBackgroundIntact(t *testing.T) {
 	for _, background := range []string{"", "backdrop", "background-video"} {
 		t.Run("background-"+background, func(t *testing.T) {
-			s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: background, BackgroundAudio: true, FadeEnabled: true, FadeSeconds: 2.5})
+			s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: background, BackgroundAudio: true, AudioFadeEnabled: true, VisualFadeEnabled: true, AudioFadeSeconds: 2.5, VisualFadeSeconds: 2.5})
 			if background != "" {
 				eventually(t, func() bool { return f.latest().BackgroundPath == paths[background] })
 			}
@@ -25,7 +25,7 @@ func TestSceneSelectedVideoPausesAndResumesWithBackgroundIntact(t *testing.T) {
 				t.Fatal(err)
 			}
 			paused := f.latest()
-			if !paused.ForegroundPaused || paused.ForegroundID != video.ForegroundID || paused.BackgroundPath != paths[background] || !paused.StageEnabled || paused.HardStop || paused.FadeSeconds != 2.5 || s.Snapshot(true).StopEpoch != before.StopEpoch {
+			if !paused.ForegroundPaused || paused.ForegroundID != video.ForegroundID || paused.BackgroundPath != paths[background] || !paused.StageEnabled || paused.HardStop || paused.AudioFadeSeconds != 2.5 || s.Snapshot(true).StopEpoch != before.StopEpoch {
 				t.Fatalf("pause changed presentation: %+v", paused)
 			}
 			if retry, err := s.Play(r); err != nil || !retry.Duplicate || retry.TransportRevision != ack.TransportRevision || f.latest().Revision != paused.Revision {
@@ -59,7 +59,7 @@ func TestSceneSelectedVideoPausesAndResumesWithBackgroundIntact(t *testing.T) {
 }
 
 func TestSceneSelectedImageToggleKeepsIndependentMusic(t *testing.T) {
-	s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: "backdrop", FadeEnabled: true, FadeSeconds: 1.3})
+	s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: "backdrop", AudioFadeEnabled: true, VisualFadeEnabled: true, AudioFadeSeconds: 1.3, VisualFadeSeconds: 1.3})
 	eventually(t, func() bool { return f.latest().BackgroundPath == paths["backdrop"] })
 	music := scenePlaying(t, s, f, "music")
 	if _, err := play(s, "image", "image-first-press"); err != nil {
@@ -77,7 +77,7 @@ func TestSceneSelectedImageToggleKeepsIndependentMusic(t *testing.T) {
 	}
 	toggled := f.latest()
 	state := s.Snapshot(true)
-	if toggled.ImagePath != "" || toggled.ForegroundID != music.ForegroundID || toggled.ForegroundPath != paths["music"] || toggled.BackgroundPath != paths["backdrop"] || !toggled.StageEnabled || toggled.FadeSeconds != 1.3 || state.ImageCueID != "" || state.ActiveCueID != "music" || state.State != "playing" || state.Elapsed != 8 || state.Generation != before.Generation || state.StopEpoch != before.StopEpoch+1 {
+	if toggled.ImagePath != "" || toggled.ForegroundID != music.ForegroundID || toggled.ForegroundPath != paths["music"] || toggled.BackgroundPath != paths["backdrop"] || !toggled.StageEnabled || toggled.AudioFadeSeconds != 1.3 || state.ImageCueID != "" || state.ActiveCueID != "music" || state.State != "playing" || state.Elapsed != 8 || state.Generation != before.Generation || state.StopEpoch != before.StopEpoch+1 {
 		t.Fatalf("image toggle interrupted music or lost the backdrop: scene=%+v state=%+v", toggled, state)
 	}
 	if retry, err := s.Play(r); err != nil || !retry.Duplicate || retry.StopEpoch != ack.StopEpoch || f.latest().Revision != toggled.Revision {
@@ -95,7 +95,7 @@ func TestSceneSelectedImageToggleKeepsIndependentMusic(t *testing.T) {
 }
 
 func TestSceneSelectedImageToggleDoesNotRevealCoveredVideo(t *testing.T) {
-	s, f, _, paths := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, f, _, paths := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	scenePlaying(t, s, f, "video")
 	if _, err := play(s, "image", "cover-video-with-image"); err != nil {
 		t.Fatal(err)
@@ -104,13 +104,13 @@ func TestSceneSelectedImageToggleDoesNotRevealCoveredVideo(t *testing.T) {
 	if _, err := play(s, "image", "remove-covering-image"); err != nil {
 		t.Fatal(err)
 	}
-	if scene := f.latest(); scene.ImagePath != "" || scene.ForegroundID != 0 || scene.BackgroundPath != "" || !scene.StageEnabled || scene.HardStop || scene.FadeSeconds != 0 {
+	if scene := f.latest(); scene.ImagePath != "" || scene.ForegroundID != 0 || scene.BackgroundPath != "" || !scene.StageEnabled || scene.HardStop || scene.AudioFadeSeconds != 0 {
 		t.Fatalf("image toggle revealed the covered video instead of black: %+v", scene)
 	}
 }
 
 func TestSceneHiddenSelectedImagePressShowsItAgain(t *testing.T) {
-	s, f, _, paths := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, f, _, paths := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	music := scenePlaying(t, s, f, "music")
 	if _, err := play(s, "image", "show-before-stage-off"); err != nil {
 		t.Fatal(err)
@@ -133,7 +133,7 @@ func TestSceneHiddenSelectedImagePressShowsItAgain(t *testing.T) {
 }
 
 func TestSceneVideoPausePreservesItsImageOverlay(t *testing.T) {
-	s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: "backdrop", FadeSeconds: 1})
+	s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: "backdrop", AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	eventually(t, func() bool { return f.latest().BackgroundPath == paths["backdrop"] })
 	scenePlaying(t, s, f, "video")
 	if _, err := play(s, "image", "image-over-selected-video"); err != nil {
@@ -151,7 +151,7 @@ func TestSceneVideoPausePreservesItsImageOverlay(t *testing.T) {
 func TestSceneSecondPressCancelsPendingVisualAndLatePreparation(t *testing.T) {
 	for _, cue := range []string{"image"} {
 		t.Run(cue, func(t *testing.T) {
-			s, f, _, paths := sceneSetup(t, model.StageSettings{FadeEnabled: true, FadeSeconds: 1})
+			s, f, _, paths := sceneSetup(t, model.StageSettings{AudioFadeEnabled: true, VisualFadeEnabled: true, AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 			if err := s.Stage(context.Background(), true); err != nil {
 				t.Fatal(err)
 			}
@@ -218,7 +218,7 @@ func TestSceneSecondPressCancelsPendingVisualAndLatePreparation(t *testing.T) {
 }
 
 func TestSceneBackgroundButtonRemainsSelectedOnSecondPress(t *testing.T) {
-	s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: "background-video", FadeSeconds: 1})
+	s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: "background-video", AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	eventually(t, func() bool { return f.latest().BackgroundPath == paths["background-video"] })
 	before := s.Snapshot(true)
 	if _, err := play(s, "background-video", "reselect-background"); err != nil {
@@ -232,7 +232,7 @@ func TestSceneBackgroundButtonRemainsSelectedOnSecondPress(t *testing.T) {
 func TestSceneMusicPausesRegardlessOfLegacyToggleSetting(t *testing.T) {
 	for _, enabled := range []bool{false, true} {
 		t.Run(map[bool]string{false: "disabled", true: "enabled"}[enabled], func(t *testing.T) {
-			s, f, _, paths := sceneSetup(t, model.StageSettings{ToggleAudio: enabled, FadeSeconds: 1})
+			s, f, _, paths := sceneSetup(t, model.StageSettings{ToggleAudio: enabled, AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 			music := scenePlaying(t, s, f, "music")
 			if _, err := play(s, "music", "second-music-press"); err != nil {
 				t.Fatal(err)

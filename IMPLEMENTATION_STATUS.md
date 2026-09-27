@@ -25,13 +25,18 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.4.0
   an image stops a covered foreground video so it cannot reappear. Background
   selector buttons keep their existing behavior. The legacy music-toggle setting
   stays in saved files for compatibility but no longer changes cue behavior.
-- The existing optional fade setting now covers audio, video and images. First
+- Audio and video/image fading have independent switches and durations, each
+  initially disabled with a one-second duration (0.1–30 seconds). Audio includes
+  video soundtracks; visual fading controls only the picture. Legacy shared fade
+  settings migrate to both groups, with explicit new values taking precedence. First
   playback from silence/black is immediate; replacements crossfade and clearing
   a visual returns to its background or fades to black. Mac retains bounded
   native layers; Windows blends live EVR readbacks in a bounded temporary
-  overlay, with an explicit fallback when readback is unavailable. Stage off,
-  Escape and hard Stop cancel transitions immediately. English/Italian controls
-  explain the behavior and preserve the existing saved duration and file format.
+  overlay, with an explicit fallback when readback is unavailable. Media needed
+  by both fades stays alive until both finish. Stage off cancels visual
+  transitions immediately; Escape and hard Stop cancel both fade groups.
+  English/Italian controls retain each duration independently in saved settings
+  and version-1 playlist files.
 - Admin drains validation refreshes that overlap a final ready event, preserving
   focused edits and unsaved Stage settings. Saving an unchanged background
   reuses ready validation only after a fresh allowed-file lookup and matching

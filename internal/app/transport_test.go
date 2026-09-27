@@ -26,7 +26,7 @@ func transportEvent(s *Service, scene playback.Scene, kind string, position floa
 }
 
 func TestSeekValidatesIdentityBoundsAndIdempotencyBeforeMutation(t *testing.T) {
-	s, f, _, _ := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, f, _, _ := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	scenePlaying(t, s, f, "music")
 	r := transportRequest(s, "seek", "valid-seek-request", 12)
 	for _, test := range []struct {
@@ -85,7 +85,7 @@ func TestSeekValidatesIdentityBoundsAndIdempotencyBeforeMutation(t *testing.T) {
 }
 
 func TestPausedSeekRetainsSelectionImageStageAndPosition(t *testing.T) {
-	s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: "background-video", BackgroundAudio: true, FadeSeconds: 1})
+	s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: "background-video", BackgroundAudio: true, AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	eventually(t, func() bool { return f.latest().BackgroundPath == paths["background-video"] })
 	original := scenePlaying(t, s, f, "music")
 	if _, err := play(s, "image", "image-before-paused-seek"); err != nil {
@@ -133,7 +133,7 @@ func TestPausedSeekRetainsSelectionImageStageAndPosition(t *testing.T) {
 func TestLoadingPauseIntentDoesNotPausePreviousSourceAndStopCancelsIt(t *testing.T) {
 	for _, stop := range []bool{false, true} {
 		t.Run(fmt.Sprint(stop), func(t *testing.T) {
-			s, f, _, paths := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+			s, f, _, paths := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 			old := scenePlaying(t, s, f, "music")
 			gate := &sceneInspectGate{path: paths["video"], entered: make(chan struct{}), release: make(chan struct{}), completed: make(chan struct{})}
 			f.sceneMu.Lock()
@@ -188,7 +188,7 @@ func TestLoadingPauseIntentDoesNotPausePreviousSourceAndStopCancelsIt(t *testing
 }
 
 func TestConcurrentSeeksAcceptOneRevisionAndStopInvalidatesPendingWork(t *testing.T) {
-	s, f, _, _ := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, f, _, _ := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	scenePlaying(t, s, f, "music")
 	r := transportRequest(s, "seek", "concurrent-seek-base", 8)
 	var wg sync.WaitGroup
@@ -239,7 +239,7 @@ func TestConcurrentSeeksAcceptOneRevisionAndStopInvalidatesPendingWork(t *testin
 }
 
 func TestNewerSeekSupersedesUnacknowledgedSeek(t *testing.T) {
-	s, f, _, _ := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, f, _, _ := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	scenePlaying(t, s, f, "music")
 	if _, err := s.Play(transportRequest(s, "seek", "first-pending-seek", 8)); err != nil {
 		t.Fatal(err)
@@ -265,7 +265,7 @@ func TestNewerSeekSupersedesUnacknowledgedSeek(t *testing.T) {
 }
 
 func TestPausedCueBlocksUpdatesOutputsImportAndSourceRemoval(t *testing.T) {
-	s, f, _, _ := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, f, _, _ := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	scenePlaying(t, s, f, "music")
 	if _, err := play(s, "music", "pause-before-guards"); err != nil {
 		t.Fatal(err)
@@ -298,7 +298,7 @@ func TestPausedCueBlocksUpdatesOutputsImportAndSourceRemoval(t *testing.T) {
 }
 
 func TestImageKindCorrectedDuringInspectionKeepsPausedMusicControllable(t *testing.T) {
-	s, f, _, paths := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, f, _, paths := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	music := scenePlaying(t, s, f, "music")
 	if _, err := play(s, "music", "pause-before-corrected-image"); err != nil {
 		t.Fatal(err)
@@ -334,7 +334,7 @@ func TestImageKindCorrectedDuringInspectionKeepsPausedMusicControllable(t *testi
 }
 
 func TestResumeAtDurationCanEndBeforePlayingAcknowledgement(t *testing.T) {
-	s, f, _, _ := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, f, _, _ := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	scenePlaying(t, s, f, "music")
 	if _, err := play(s, "music", "pause-before-endpoint"); err != nil {
 		t.Fatal(err)
@@ -354,7 +354,7 @@ func TestResumeAtDurationCanEndBeforePlayingAcknowledgement(t *testing.T) {
 }
 
 func TestPauseRacingNaturalEndAcceptsCurrentTerminalAcknowledgement(t *testing.T) {
-	s, f, _, _ := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, f, _, _ := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	original := scenePlaying(t, s, f, "music")
 	if _, err := play(s, "music", "pause-racing-natural-end"); err != nil {
 		t.Fatal(err)

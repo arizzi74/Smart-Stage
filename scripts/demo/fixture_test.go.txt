@@ -135,7 +135,7 @@ func TestWebsiteTutorialFixture(t *testing.T) {
 			cfg.Cues = append(cfg.Cues, model.Cue{ID: fmt.Sprint("demo-", i+1), Label: label, Path: file, Color: colors[i], Background: i == 5})
 		}
 		cfg.Outputs = model.Outputs{AudioID: "venue", DisplayID: "projector"}
-		cfg.Stage = model.StageSettings{BackgroundCueID: "demo-6", FadeEnabled: true, FadeSeconds: 1, ToggleAudio: true}
+		cfg.Stage = model.StageSettings{BackgroundCueID: "demo-6", AudioFadeEnabled: true, AudioFadeSeconds: 1, VisualFadeEnabled: true, VisualFadeSeconds: 1, ToggleAudio: true}
 	}
 	browser, err := files.New([]string{media})
 	if err != nil {

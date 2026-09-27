@@ -144,8 +144,11 @@ type Service struct {
 
 func New(backend playback.Backend, browser *files.Browser, store Persistence, config model.Config) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
-	if config.Stage.FadeSeconds == 0 {
-		config.Stage.FadeSeconds = 1
+	if config.Stage.AudioFadeSeconds == 0 {
+		config.Stage.AudioFadeSeconds = 1
+	}
+	if config.Stage.VisualFadeSeconds == 0 {
+		config.Stage.VisualFadeSeconds = 1
 	}
 	s := &Service{backend: backend, files: browser, store: store, config: config.Clone(), ctx: ctx, cancel: cancel,
 		loads: make(chan loadJob, 1), validation: make(chan struct{}, 1), requests: map[string]cachedRequest{},

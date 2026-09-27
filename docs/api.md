@@ -181,7 +181,7 @@ expiry/logout ends them. Commands do not travel over SSE.
 | `POST /api/playlist/file` | `{operation:"save"\|"load",expectedRevision:N}` opens a native Save/Open dialog when Admin capability `playlistFiles` is true. HTTP 202 returns `{id,operation,phase}`; HTTP callers cannot supply filesystem paths. Save captures the committed show at request time; Load checks the revision again after selection. |
 | `GET /api/playlist/file` | Latest native dialog operation: `{id,operation,phase,filename?,message?,code?}`. Phases: `idle`, `choosing`, `saving`, `loading`, `complete`, `cancelled`, `error`. Match the returned ID before consuming a result; one operation can be active at a time. |
 | `PUT /api/playlist` | `{expectedRevision:N,cues:[{id:"existing or empty",label:"...",path:"host file",color:"#RRGGBB",hidden:false,background:false}]}`; returns saved configuration. Omitted color/flags preserve existing values; empty color resets its default. Invalid colors and validated audio-only backgrounds are rejected. New IDs are server-generated; empty labels default only for new cues. Array order is cue order. |
-| `PUT /api/stage-settings` | `{expectedRevision:N,settings:{backgroundCueId:"cue ID or empty",backgroundAudio:false,fadeEnabled:false,fadeSeconds:1,toggleAudio:false}}`; validates/saves settings and returns the configuration with an incremented playlist revision. The background must be a readable image/video cue. Fade duration is 0.1–30 seconds, including when disabled; its initial value is 1 second. |
+| `PUT /api/stage-settings` | `{expectedRevision:N,settings:{backgroundCueId:"cue ID or empty",backgroundAudio:false,audioFadeEnabled:false,audioFadeSeconds:1,visualFadeEnabled:false,visualFadeSeconds:1,toggleAudio:false}}`; validates/saves settings and returns the configuration with an incremented playlist revision. The background must be a readable image/video cue. Each fade duration is 0.1–30 seconds, including when its group is disabled; both groups initially use 1 second and are disabled. |
 | `POST /api/validate` | `{}` starts bounded background native validation; HTTP 202. |
 | `POST /api/inspect` | `{path:"host file"}` returns native validation/metadata without rendering. Same root restrictions apply. |
 | `GET /api/devices` | `{audio:[{id,name,default}],displays:[{id,name,x,y,width,height,primary,mirrored}]}`. |
@@ -196,10 +196,20 @@ cannot change outputs or stage settings. Escape uses `/api/emergency-stop`, not
 the visibility toggle, and remains effective across a concurrently accepted PLAY.
 
 `backgroundAudio` opts into the selected background video's soundtrack.
-`fadeEnabled` enables the configured crossfade/fade duration. `toggleAudio` is
+`audioFadeEnabled` and `audioFadeSeconds` control sound transitions independently
+of `visualFadeEnabled` and `visualFadeSeconds`, which control video/image
+transitions. Disabling a group makes its transitions immediate without changing
+its saved duration. Emergency STOP bypasses both groups. `toggleAudio` is
 retained in settings and playlist files for compatibility but no longer affects
 behavior: selected audio/video buttons always pause/resume.
 These settings can be saved during playback, subject to revision/update guards.
+Legacy `fadeEnabled`/`fadeSeconds` inputs in saved configurations, version-1
+playlist files and API settings migrate into both groups. Each explicit new
+field wins over the corresponding legacy value, including `false`; supplied
+legacy durations still must be valid. Responses and subsequent saves emit only
+the four new fade fields. Unknown fields and null settings remain invalid;
+API/playlist settings must supply both durations, either canonically or through
+the legacy shared duration.
 
 Authenticated Command access to other Admin APIs returns 403. The remote listener
 returns 404 for `/admin` and `/api/local-session`. Active/paused/loading cue removal/source
@@ -208,7 +218,7 @@ cannot be removed/replaced. Removing the selected background clears its selectio
 Files remain in place. Cache is not accepted as edit input. Schema 1 stores cue
 identities, labels, canonical paths/order, color/hidden/background flags, output
 preferences, stage settings and playlist revision. Older configurations without
-stage settings load with fading disabled and a one-second duration. Validation
+stage settings load with both fade groups disabled and one-second durations. Validation
 statuses: `unchecked`, `checking`, `ready`, `missing`, `unsupported`, `error`.
 Raw reasons/media cache metadata are available only to administrators.
 

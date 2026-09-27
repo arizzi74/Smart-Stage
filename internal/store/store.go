@@ -78,7 +78,7 @@ func validate(c model.Config) error {
 		return errors.New("invalid playlist revision or cue count")
 	}
 	if !c.Stage.Valid() {
-		return errors.New("invalid stage settings; fade duration must be between 0.1 and 30 seconds")
+		return errors.New("invalid stage settings; audio and visual fade durations must each be between 0.1 and 30 seconds")
 	}
 	ids := map[string]bool{}
 	for _, cue := range c.Cues {

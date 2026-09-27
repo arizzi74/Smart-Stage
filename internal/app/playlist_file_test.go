@@ -49,13 +49,13 @@ func playlistDocument(t *testing.T, s *Service) PlaylistFile {
 }
 
 func TestPlaylistFileRoundTripKeepsShowAndLocalOutputs(t *testing.T) {
-	s, _, _, _ := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, _, _, _ := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	file := playlistDocument(t, s)
 	file.Cues[0].Label = "Music for act two"
 	file.Cues[0].Color = "#aB1234"
 	file.Cues[1].Hidden = true
 	file.Cues[4].Background = true
-	file.Stage = model.StageSettings{BackgroundCueID: file.Cues[4].ID, BackgroundAudio: true, FadeEnabled: true, FadeSeconds: 2.5, ToggleAudio: true}
+	file.Stage = model.StageSettings{BackgroundCueID: file.Cues[4].ID, BackgroundAudio: true, AudioFadeEnabled: false, VisualFadeEnabled: true, AudioFadeSeconds: 2.5, VisualFadeSeconds: 7.25, ToggleAudio: true}
 	// Order is part of the file, even when the same source appears repeatedly.
 	file.Cues[0], file.Cues[1] = file.Cues[1], file.Cues[0]
 	file.Cues = append(file.Cues, PlaylistFileCue{ID: "repeat-music", Label: "Music again", Path: file.Cues[1].Path})
@@ -153,7 +153,8 @@ func TestDecodePlaylistRejectsUnsupportedMalformedAndOversizeFiles(t *testing.T)
 		"URL path":           func(f *PlaylistFile) { f.Cues[0].Path = "https://example.invalid/song.wav" },
 		"NUL path":           func(f *PlaylistFile) { f.Cues[0].Path += "\x00" },
 		"foreign background": func(f *PlaylistFile) { f.Stage.BackgroundCueID = "not-in-cues" },
-		"bad fade":           func(f *PlaylistFile) { f.Stage.FadeSeconds = 31 },
+		"bad fade":           func(f *PlaylistFile) { f.Stage.AudioFadeSeconds = 31 },
+		"bad visual fade":    func(f *PlaylistFile) { f.Stage.VisualFadeSeconds = 0 },
 		"too many cues":      func(f *PlaylistFile) { f.Cues = make([]PlaylistFileCue, model.MaxCues+1) },
 	} {
 		file := valid
@@ -170,6 +171,45 @@ func TestDecodePlaylistRejectsUnsupportedMalformedAndOversizeFiles(t *testing.T)
 	}
 	if _, err := DecodePlaylist(strings.NewReader(data + "\n \t")); err != nil {
 		t.Fatal("trailing whitespace rejected:", err)
+	}
+}
+
+func TestLegacyPlaylistFadeFieldsMigrateWithoutWeakeningFileValidation(t *testing.T) {
+	prefix := `{"format":"smartstage-playlist","version":1,"cues":[]`
+	legacy := prefix + `,"stage":{"fadeEnabled":true,"fadeSeconds":2.5,"audioFadeEnabled":false,"visualFadeSeconds":6}}`
+	decoded, err := DecodePlaylist(strings.NewReader(legacy))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := model.StageSettings{AudioFadeSeconds: 2.5, VisualFadeEnabled: true, VisualFadeSeconds: 6}
+	if decoded.Stage != want {
+		t.Fatalf("legacy playlist lost explicit overrides: %+v", decoded.Stage)
+	}
+	s, _, _, _ := sceneSetup(t, model.DefaultConfig().Stage)
+	loaded, err := s.LoadPlaylist(PlaylistLoad{ExpectedRevision: s.Playlist().PlaylistRevision, Playlist: decoded})
+	if err != nil || loaded.Stage != want {
+		t.Fatalf("legacy playlist could not be loaded: %+v %v", loaded.Stage, err)
+	}
+	encoded, err := json.Marshal(playlistDocument(t, s))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(encoded, []byte(`"fadeEnabled"`)) || bytes.Contains(encoded, []byte(`"fadeSeconds"`)) {
+		t.Fatalf("export retained legacy fields: %s", encoded)
+	}
+	if restored, err := DecodePlaylist(bytes.NewReader(encoded)); err != nil || restored.Stage != want {
+		t.Fatalf("migrated playlist did not round trip: %+v %v", restored, err)
+	}
+	for _, document := range []string{
+		prefix + `}`, prefix + `,"stage":null}`, prefix + `,"stage":{}}`,
+		prefix + `,"stage":{"audioFadeSeconds":1}}`,
+		strings.Replace(legacy, `"fadeSeconds":2.5`, `"fadeSeconds":null`, 1),
+		strings.Replace(legacy, `"fadeSeconds":2.5`, `"fadeSeconds":0`, 1),
+		strings.Replace(legacy, `"fadeSeconds":2.5`, `"fadeSeconds":2.5,"unexpected":false`, 1),
+	} {
+		if _, err := DecodePlaylist(strings.NewReader(document)); err == nil {
+			t.Fatalf("invalid legacy/mixed playlist accepted: %s", document)
+		}
 	}
 }
 
@@ -254,7 +294,7 @@ func TestLoadPlaylistRejectsPlaybackStageAndUpdateTransitions(t *testing.T) {
 }
 
 func TestLoadingPlaylistBlocksPlayAndStageButNeverSTOP(t *testing.T) {
-	s, _, _, _ := sceneSetup(t, model.StageSettings{FadeSeconds: 1})
+	s, _, _, _ := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
 	file := playlistDocument(t, s)
 	persistence := &playlistFileStore{entered: make(chan struct{}), release: make(chan struct{})}
 	s.store = persistence

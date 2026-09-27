@@ -211,9 +211,11 @@ acceptance testing.
    **Local network** and save to restart with a local listener and firewall setup.
    The link pairs the browser without a separate key entry.
 5. In **Stage and sound**, choose an optional saved image or looping video
-   background. Enable its soundtrack if wanted. Enable **Fade audio, video and
-   images** for fades and crossfades (one second by default, adjustable from
-   0.1 to 30 seconds).
+   background. Enable its soundtrack if wanted. **Fade audio** and **Fade video
+   and images** have independent switches and durations (one second by default,
+   adjustable from 0.1 to 30 seconds each). Audio fading includes video
+   soundtracks; video/image fading controls only the picture. Older saved shows
+   carry their previous fade switch and duration into both groups.
    Playlist images/videos can also be marked **Background**, so their buttons
    change the background for this session. **Hide button** keeps a cue in Admin
    while removing it from the remote.

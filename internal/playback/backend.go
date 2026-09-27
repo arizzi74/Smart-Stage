@@ -67,7 +67,8 @@ type Scene struct {
 	AudioID            string
 	DisplayID          string
 	StageEnabled       bool
-	FadeSeconds        float64
+	AudioFadeSeconds   float64
+	VisualFadeSeconds  float64
 	HardStop           bool
 }
 

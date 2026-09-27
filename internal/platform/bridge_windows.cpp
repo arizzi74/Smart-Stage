@@ -480,7 +480,7 @@ struct Scene {
     uint64_t revision = 0, gen = 0, foregroundID = 0, transportRevision = 0, seekRevision = 0;
     std::string foregroundPath, foregroundKind, imagePath, backgroundPath, backgroundKind, audio, display;
     bool foregroundAudio = false, backgroundAudio = false, enabled = false, hardStop = false, foregroundPaused = false;
-    double fade = 0, seekSeconds = 0;
+    double audioFade = 0, visualFade = 0, seekSeconds = 0;
 };
 std::atomic<uint64_t> sceneRevision{0};
 std::mutex sceneMutex;
@@ -520,7 +520,7 @@ Playback *visualPlayback(uint64_t token) {
     return nullptr;
 }
 bool retainedVisual(const Playback *p) {
-    return p && stageEnabled && scene.fade > 0 && (p->token == visualTransition.shown ||
+    return p && stageEnabled && ((scene.visualFade > 0 && p->token == visualTransition.shown) ||
         (visualTransition.active && !visualTransition.frozen && p->token == visualTransition.from));
 }
 void cancelVisualTransition() {
@@ -655,18 +655,33 @@ void freezeVisualTransition() {
         if (captureVisual(p, visualTransition.source)) visualTransition.frozen = true;
     }
 }
-void retireWithFade(std::unique_ptr<Playback> &p, double fade) {
+void releaseRetiringVisual(bool replaceAudioTail = false) {
+    if (!sceneVisualRetiring) return;
+    if (audible(sceneVisualRetiring.get()) && sceneVisualRetiring->rampSeconds > 0) {
+        // The picture may finish before its soundtrack. Keep that session in
+        // the one bounded hidden-audio slot until its independent gain ramp ends.
+        if (sceneVisualRetiring->target) ShowWindow(sceneVisualRetiring->target, SW_HIDE);
+        // Stage off can have just moved the newer background into that slot.
+        // Both existing renderers are already bounded; let each gain ramp end
+        // without cutting the newer soundtrack to make room for the older one.
+        if (sceneRetiring && !replaceAudioTail) return;
+        halt(sceneRetiring);
+        sceneRetiring = std::move(sceneVisualRetiring);
+    } else halt(sceneVisualRetiring);
+}
+void retireWithFade(std::unique_ptr<Playback> &p, double audioSeconds) {
     if (!p) return;
     if (retainedVisual(p.get())) {
         // At most one no-longer-selected visual survives. If interrupted,
         // continue from the displayed composite before releasing that renderer.
-        if (sceneVisualRetiring) { freezeVisualTransition(); halt(sceneVisualRetiring); }
+        if (sceneVisualRetiring) { freezeVisualTransition(); releaseRetiringVisual(true); }
+        bool wasAudible = audible(p.get());
         sceneVisualRetiring = std::move(p);
-        ramp(*sceneVisualRetiring, 0, fade);
-    } else if (audible(p.get()) && fade > 0) {
+        ramp(*sceneVisualRetiring, 0, wasAudible ? audioSeconds : 0);
+    } else if (audible(p.get()) && audioSeconds > 0) {
         if (p->target) ShowWindow(p->target, SW_HIDE);
         halt(sceneRetiring);
-        sceneRetiring = std::move(p); ramp(*sceneRetiring, 0, fade);
+        sceneRetiring = std::move(p); ramp(*sceneRetiring, 0, audioSeconds);
     } else halt(p);
 }
 Playback *requestedVisual(bool &pendingVisual) {
@@ -775,10 +790,10 @@ void sceneVisuals() {
         }
         visualTransition.from = visualTransition.frozen ? 0 : visualTransition.shown;
         visualTransition.shown = visualTransition.to = token;
-        visualTransition.seconds = scene.fade;
+        visualTransition.seconds = scene.visualFade;
         visualTransition.requested = GetTickCount64();
         visualTransition.started = visualTransition.lastFrame = 0;
-        visualTransition.active = scene.fade > 0 && hadVisual;
+        visualTransition.active = scene.visualFade > 0 && hadVisual;
         if (!visualTransition.active) finishVisualTransition();
     }
     tickVisualTransition(); displayVisualWindows();
@@ -826,7 +841,7 @@ void backgroundGain(bool transition = true) {
     if (!sceneBackground || !sceneBackground->playing) return;
     bool foregroundSound = foregroundOwnsAudio();
     float target = stageEnabled && scene.backgroundAudio && !foregroundSound ? 1.0f : 0.0f;
-    double duration = transition && (target == 0 || anySceneAudio()) ? scene.fade : 0;
+    double duration = transition && (target == 0 || anySceneAudio()) ? scene.audioFade : 0;
     ramp(*sceneBackground, target, duration);
 }
 void clearScene(bool hide) {
@@ -899,7 +914,7 @@ void processSceneCommand() {
     if (scene.foregroundID != previous.foregroundID || scene.foregroundPath != previous.foregroundPath || (scene.foregroundAudio && scene.audio != previous.audio)) {
         halt(sceneIncoming); sceneTokens[1].store(++nextSceneToken);
         if (scene.foregroundPath.empty()) {
-            retireWithFade(sceneForeground, scene.fade); stoppedGeneration = scene.gen;
+            retireWithFade(sceneForeground, scene.audioFade); stoppedGeneration = scene.gen;
         } else {
             HWND target = availableSceneWindow(sceneVideoWindows);
             if ((!target && scene.foregroundKind == "video") ||
@@ -916,7 +931,7 @@ void processSceneCommand() {
         emitScene(scene.foregroundID, "ended", "", 0, 0, scene.transportRevision);
     }
     if (scene.imagePath != previous.imagePath) {
-        retireWithFade(sceneImage, scene.fade); sceneTokens[3].store(++nextSceneToken);
+        retireWithFade(sceneImage, scene.audioFade); sceneTokens[3].store(++nextSceneToken);
         if (!scene.imagePath.empty() && !queueScene(3, scene.imagePath, true, false, true, scene.gen, nullptr)) {
             failedImageToken = sceneTokens[3].load();
             emitScene(scene.gen, "background-error", "Native image cleanup is busy; retry the image cue");
@@ -927,7 +942,7 @@ void processSceneCommand() {
           (sceneBackground && (sceneBackground->audio != scene.audio || !sceneBackground->hasAudio))));
     if (backgroundChanged || (!stageEnabled && sceneBackground)) {
         sceneTokens[2].store(++nextSceneToken);
-        if (sceneBackground) retireWithFade(sceneBackground, scene.fade);
+        if (sceneBackground) retireWithFade(sceneBackground, scene.audioFade);
     }
     if (stageEnabled && !scene.backgroundPath.empty() && (backgroundChanged || !previous.enabled)) {
         HWND target = availableSceneWindow(backgroundWindows);
@@ -963,8 +978,8 @@ void sceneReady(std::unique_ptr<Playback> p) {
         emitScene(role == 1 ? failedGen : scene.gen, role == 1 ? "error" : "background-error", error, 0, 0, role == 1 ? scene.transportRevision : 0); return;
     }
     if (p->sceneRole == 1) { halt(sceneIncoming); sceneIncoming = std::move(p); }
-    else if (p->sceneRole == 2) { retireWithFade(sceneBackground, scene.fade); p->looping = true; sceneBackground = std::move(p); }
-    else { retireWithFade(sceneImage, scene.fade); sceneImage = std::move(p); }
+    else if (p->sceneRole == 2) { retireWithFade(sceneBackground, scene.audioFade); p->looping = true; sceneBackground = std::move(p); }
+    else { retireWithFade(sceneImage, scene.audioFade); sceneImage = std::move(p); }
     sceneVisuals();
 }
 double scenePosition(const Playback &p) {
@@ -1066,14 +1081,14 @@ void activateScenePlayback(Playback &p, bool incoming) {
     p.playing = true;
     bool wasAudible = anySceneAudio();
     if (incoming) {
-        retireWithFade(sceneForeground, scene.fade);
-        ramp(p, p.hasAudio ? 1.0f : 0.0f, wasAudible ? scene.fade : 0);
-        if (sceneBackground) ramp(*sceneBackground, p.hasAudio ? 0.0f : (stageEnabled && scene.backgroundAudio ? 1.0f : 0.0f), wasAudible ? scene.fade : 0);
+        retireWithFade(sceneForeground, scene.audioFade);
+        ramp(p, p.hasAudio ? 1.0f : 0.0f, wasAudible ? scene.audioFade : 0);
+        if (sceneBackground) ramp(*sceneBackground, p.hasAudio ? 0.0f : (stageEnabled && scene.backgroundAudio ? 1.0f : 0.0f), wasAudible ? scene.audioFade : 0);
         silencePausedTails();
         emitForeground(p, p.paused ? "paused" : "playing");
     } else if (p.sceneRole == 2) {
         bool foregroundSound = foregroundOwnsAudio();
-        ramp(p, stageEnabled && scene.backgroundAudio && !foregroundSound ? 1.0f : 0.0f, wasAudible ? scene.fade : 0);
+        ramp(p, stageEnabled && scene.backgroundAudio && !foregroundSound ? 1.0f : 0.0f, wasAudible ? scene.audioFade : 0);
         sceneVisuals();
     }
 }
@@ -1155,18 +1170,18 @@ bool pumpScene(Playback &p, bool incoming) {
     }
     return false;
 }
-// A retiring background remains animated through a long fade even after its
-// role token has been replaced. Drain only its own session events; never emit
-// PLAY/ENDED or revive it once the visual transition has released it.
-void pumpRetiringVisual(Playback &p) {
-    if (!p.session || !p.video || !sceneCurrent() || !retainedVisual(&p)) return;
+// A retiring background keeps looping until both its picture and soundtrack
+// have finished. Its former role token must never emit PLAY/ENDED events.
+void pumpRetiringPlayback(Playback &p) {
+    bool retained = retainedVisual(&p) || (audible(&p) && p.rampSeconds > 0);
+    if (!p.session || !p.video || !sceneCurrent() || !retained) return;
     for (int i=0; i<8; ++i) {
         Com<IMFMediaEvent> event;
         HRESULT hr = p.session->GetEvent(MF_EVENT_FLAG_NO_WAIT, event.out());
         if (hr == MF_E_NO_EVENTS_AVAILABLE) break;
         MediaEventType type = MEUnknown; HRESULT status = S_OK;
         bool ok = SUCCEEDED(hr) && SUCCEEDED(event->GetType(&type)) && SUCCEEDED(event->GetStatus(&status)) && SUCCEEDED(status);
-        if (ok && type == MESessionEnded && p.looping && stageEnabled && retainedVisual(&p)) {
+        if (ok && type == MESessionEnded && p.looping && retained) {
             PROPVARIANT start; PropVariantInit(&start); start.vt = VT_I8; start.hVal.QuadPart = 0;
             ok = SUCCEEDED(p.session->Start(&GUID_NULL, &start));
         }
@@ -1192,15 +1207,16 @@ void tickScene() {
     }
     if (sceneForeground && pumpScene(*sceneForeground, false)) {
         completedForegroundToken = sceneForeground->token;
-        retireWithFade(sceneForeground, scene.fade);
+        retireWithFade(sceneForeground, scene.audioFade);
         if (!sceneFatalError.empty()) { clearScene(true); emitScene(sceneFatalGeneration, "error", sceneFatalError, 0, 0, scene.transportRevision); sceneFatalError.clear(); return; }
         backgroundGain(); sceneVisuals();
     }
     if (sceneBackground && pumpScene(*sceneBackground, false)) {
         failedBackgroundToken = sceneBackground->token;
-        retireWithFade(sceneBackground, scene.fade); sceneVisuals();
+        retireWithFade(sceneBackground, scene.audioFade); sceneVisuals();
     }
-    if (sceneVisualRetiring) pumpRetiringVisual(*sceneVisualRetiring);
+    if (sceneRetiring) pumpRetiringPlayback(*sceneRetiring);
+    if (sceneVisualRetiring) pumpRetiringPlayback(*sceneVisualRetiring);
     for (Playback *p : {sceneForeground.get(), sceneBackground.get(), sceneRetiring.get(), sceneVisualRetiring.get()}) {
         if (p && !advanceRamp(*p)) {
             clearScene(true); emitScene(scene.gen, "error", "Cannot update native audio fade", 0, 0, scene.transportRevision); return;
@@ -1208,8 +1224,7 @@ void tickScene() {
     }
     tickVisualTransition();
     if (sceneRetiring && sceneRetiring->rampSeconds <= 0) halt(sceneRetiring);
-    if (sceneVisualRetiring && !retainedVisual(sceneVisualRetiring.get()) && sceneVisualRetiring->rampSeconds <= 0)
-        halt(sceneVisualRetiring);
+    if (sceneVisualRetiring && !retainedVisual(sceneVisualRetiring.get())) releaseRetiringVisual();
     if (stoppedGeneration && !sceneForeground && !sceneIncoming && !sceneRetiring && !sceneVisualRetiring) {
         emitScene(stoppedGeneration, "stopped"); stoppedGeneration = 0;
     }
@@ -1587,7 +1602,8 @@ extern "C" void ss_scene(const ss_scene_request *r) {
     s->audio = text(r->audio); s->display = text(r->display);
     s->foregroundAudio = r->foreground_has_audio != 0; s->backgroundAudio = r->background_audio != 0;
     s->enabled = r->stage_enabled != 0; s->hardStop = r->hard_stop != 0;
-    s->fade = std::isfinite(r->fade_seconds) ? std::clamp(r->fade_seconds, 0.0, 30.0) : 0;
+    s->audioFade = std::isfinite(r->audio_fade_seconds) ? std::clamp(r->audio_fade_seconds, 0.0, 30.0) : 0;
+    s->visualFade = std::isfinite(r->visual_fade_seconds) ? std::clamp(r->visual_fade_seconds, 0.0, 30.0) : 0;
     bool wake = false;
     { std::lock_guard<std::mutex> lock(sceneMutex);
       if (r->revision <= sceneRevision.load()) return;

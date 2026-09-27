@@ -1,13 +1,14 @@
-Smart Stage 1.4.0 adds audio/video seeking and pause/resume controls on Mac and Windows, in both Admin and the phone/tablet remote.
+Smart Stage 1.5.0 adds independent audio and video/image fade settings on Mac and Windows.
 
-- Use the bottom slider to seek. While touching or dragging, a large centered time preview fades in; release to jump to that position and fade the preview out.
-- Press the selected audio or video button to pause, then press it again to resume. The cue stays selected, and paused video keeps its frame. Seeking while paused keeps it paused.
-- STOP ends playback and returns the stage to its background or black. Image buttons retain their existing toggle behavior, and Stage on/off remains independent.
-- The controls support touch, mouse, keyboard, English and Italian. Unknown-duration media shows an unavailable seek bar; stale or interrupted gestures are cancelled.
+- In Admin → Stage & sound, enable **Fade audio** and **Fade video and images** independently.
+- Set a separate duration for each, from 0.1 to 30 seconds. Each defaults to one second.
+- Audio fading includes music, video soundtracks and background-video sound. Visual fading controls only the picture.
+- Older saved settings and `.smartstage.json` playlist files keep their previous behavior: the original fade switch and duration migrate to both groups.
+- Video playback stays alive until both its picture and soundtrack fades have finished, even when they use different durations. Pause, seeking, STOP and emergency Escape remain available.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 
-This feature works with the existing 1.1.2 gateway daemon; no gateway upgrade or restart is required. Playlist files, URL-only gateway changes and earlier security fixes remain included.
+This feature works with the existing gateway daemon; no gateway upgrade or restart is required.
 
 Install on Mac:
 

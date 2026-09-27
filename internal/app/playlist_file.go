@@ -79,7 +79,7 @@ func validatePlaylistFile(playlist PlaylistFile) error {
 		return problem("too_many_cues", "A show may contain at most 500 cues")
 	}
 	if !playlist.Stage.Valid() {
-		return problem("invalid_stage", "Fade duration must be between 0.1 and 30 seconds")
+		return problem("invalid_stage", "Audio and visual fade durations must each be between 0.1 and 30 seconds")
 	}
 	ids := make(map[string]bool, len(playlist.Cues))
 	for _, cue := range playlist.Cues {

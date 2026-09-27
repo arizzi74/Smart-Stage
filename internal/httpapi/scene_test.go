@@ -135,8 +135,39 @@ func TestStageSettingsRequireLocalAdminAndRejectUntrustedInput(t *testing.T) {
 	r.Header.Set("X-CSRF-Token", admin.CSRF)
 	w := httptest.NewRecorder()
 	api.ServeHTTP(w, r)
-	if w.Code != 403 || service.Playlist().PlaylistRevision != 1 || service.Playlist().Stage.FadeEnabled {
+	if w.Code != 403 || service.Playlist().PlaylistRevision != 1 || service.Playlist().Stage.AudioFadeEnabled {
 		t.Fatal("untrusted settings request changed the show")
+	}
+}
+
+func TestStageSettingsHTTPLegacyMigrationAndIndependentValidation(t *testing.T) {
+	api, authentication, service, _ := setupAPI(t)
+	admin, _ := authentication.LocalAdmin("")
+	canonical := `"audioFadeEnabled":false,"audioFadeSeconds":1,"visualFadeEnabled":false,"visualFadeSeconds":2`
+	for _, settings := range []string{
+		`null`, `{}`, `{"audioFadeSeconds":1}`, `{"visualFadeSeconds":1}`,
+		`{` + canonical + `,"unknown":true}`,
+		`{` + canonical + `,"fadeSeconds":0}`, `{` + canonical + `,"fadeSeconds":null}`,
+		`{` + canonical + `,"fadeSeconds":31}`, `{` + canonical + `,"fadeSeconds":1e999}`,
+		`{"audioFadeEnabled":false,"audioFadeSeconds":0,"visualFadeSeconds":2}`,
+		`{"audioFadeSeconds":1,"visualFadeEnabled":false,"visualFadeSeconds":31}`,
+		`{"audioFadeSeconds":null,"visualFadeSeconds":1}`,
+		`{"audioFadeSeconds":1,"visualFadeSeconds":null}`,
+	} {
+		body := `{"expectedRevision":1,"settings":` + settings + `}`
+		response := request(api, "PUT", "/api/stage-settings", body, admin, "http://127.0.0.1:8787")
+		if response.Code != 400 || service.Playlist().PlaylistRevision != 1 {
+			t.Fatalf("invalid fade input mutated settings: %s %d %s", settings, response.Code, response.Body.String())
+		}
+	}
+	body := `{"expectedRevision":1,"settings":{"fadeEnabled":true,"fadeSeconds":2.5,"audioFadeEnabled":false,"visualFadeSeconds":6}}`
+	response := request(api, "PUT", "/api/stage-settings", body, admin, "http://127.0.0.1:8787")
+	want := model.StageSettings{AudioFadeSeconds: 2.5, VisualFadeEnabled: true, VisualFadeSeconds: 6}
+	if response.Code != 200 || service.Playlist().Stage != want {
+		t.Fatalf("legacy HTTP settings lost canonical overrides: %d %s", response.Code, response.Body.String())
+	}
+	if strings.Contains(response.Body.String(), `"fadeEnabled"`) || strings.Contains(response.Body.String(), `"fadeSeconds"`) {
+		t.Fatalf("HTTP reply emitted legacy settings: %s", response.Body.String())
 	}
 }
 
@@ -145,7 +176,7 @@ func TestStageSettingsHTTPRevisionPersistenceAndRemoteRedaction(t *testing.T) {
 	admin, _ := authentication.LocalAdmin("")
 	remote, _ := authentication.PairCommand(authentication.CommandToken(), "settings-observer")
 	command := NewCommand(service, authentication, web.Handler(), []string{"127.0.0.1"}, 8787)
-	settings := model.StageSettings{BackgroundCueID: "video", BackgroundAudio: true, FadeEnabled: true, FadeSeconds: 2.5, ToggleAudio: true}
+	settings := model.StageSettings{BackgroundCueID: "video", BackgroundAudio: true, AudioFadeEnabled: false, VisualFadeEnabled: true, AudioFadeSeconds: 2.5, VisualFadeSeconds: 6.75, ToggleAudio: true}
 	body, _ := json.Marshal(app.StageEdit{ExpectedRevision: 1, Settings: settings})
 	response := request(api, "PUT", "/api/stage-settings", string(body), admin, "http://127.0.0.1:8787")
 	var saved model.Config
@@ -236,7 +267,7 @@ func TestEmergencyStopSecurityPriorityAndIdempotency(t *testing.T) {
 		t.Fatalf("emergency blocked behind normal operations: %d %s", response.Code, response.Body.String())
 	}
 	waitCommandStageState(t, service, "stopped", false)
-	if scene := backend.latest(); !scene.HardStop || scene.ForegroundID != 0 || scene.StageEnabled || scene.FadeSeconds != 0 {
+	if scene := backend.latest(); !scene.HardStop || scene.ForegroundID != 0 || scene.StageEnabled || scene.AudioFadeSeconds != 0 {
 		t.Fatalf("HTTP emergency did not request immediate silence and stage off: %+v", scene)
 	}
 	response = request(command, "POST", "/api/emergency-stop", `{"requestId":"remote-priority-emergency"}`, remote, origin)
@@ -260,7 +291,7 @@ func TestStageSettingsWaitForUpdateButEmergencyRemainsAvailable(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer release()
-	body, _ := json.Marshal(app.StageEdit{ExpectedRevision: 1, Settings: model.StageSettings{FadeSeconds: 1}})
+	body, _ := json.Marshal(app.StageEdit{ExpectedRevision: 1, Settings: model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1}})
 	if response := request(api, "PUT", "/api/stage-settings", string(body), admin, "http://127.0.0.1:8787"); response.Code != 409 {
 		t.Fatalf("stage settings changed during update reservation: %d %s", response.Code, response.Body.String())
 	}

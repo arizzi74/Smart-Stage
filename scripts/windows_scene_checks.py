@@ -52,4 +52,7 @@ def scene_checks(audio, display):
                       "pausedSeekEndRetainsSelection", "terminalPauseRaceAcknowledged"):
             assert evidence.get(check) is True, f"Native transport evidence missing: {check}"
         assert evidence.get("audioPauseResumeSeekVerified") is bool(audio), "Native audio evidence does not match endpoint availability"
+        assert evidence.get("independentVisualFadeSettingsVerified") is True, "Independent visual fade evidence missing"
+        for check in ("independentAudioFadeSettingsVerified", "differentFadeDurationsVerified", "stageOffDualAudioTailVerified"):
+            assert evidence.get(check) is bool(audio), f"Independent audio fade evidence does not match endpoint availability: {check}"
         return evidence

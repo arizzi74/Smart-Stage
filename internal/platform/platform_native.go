@@ -169,7 +169,8 @@ func (n *native) ApplyScene(s playback.Scene) error {
 		revision: C.uint64_t(s.Revision), generation: C.uint64_t(s.Generation), foreground_id: C.uint64_t(s.ForegroundID),
 		transport_revision: C.uint64_t(s.TransportRevision), seek_revision: C.uint64_t(s.SeekRevision), foreground_paused: bit(s.ForegroundPaused), seek_seconds: C.double(s.SeekSeconds),
 		foreground_path: strings[0], foreground_kind: strings[1], image_path: strings[2], background_path: strings[3], background_kind: strings[4], audio: strings[5], display: strings[6],
-		foreground_has_audio: bit(s.ForegroundHasAudio), background_audio: bit(s.BackgroundAudio), stage_enabled: bit(s.StageEnabled), hard_stop: bit(s.HardStop), fade_seconds: C.double(s.FadeSeconds),
+		foreground_has_audio: bit(s.ForegroundHasAudio), background_audio: bit(s.BackgroundAudio), stage_enabled: bit(s.StageEnabled), hard_stop: bit(s.HardStop),
+		audio_fade_seconds: C.double(s.AudioFadeSeconds), visual_fade_seconds: C.double(s.VisualFadeSeconds),
 	}
 	C.ss_scene(&request)
 	return nil

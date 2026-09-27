@@ -747,8 +747,8 @@ function renderEditAvailability() {
   $('enable-stage').disabled = !online || pending || state.outputFault;
   $('disable-stage').disabled = !online;
   const editingStage = !online || pending || playlistBusy || !playlist;
-  for (const id of ['background-cue', 'background-audio', 'fade-enabled', 'save-stage-settings']) $(id).disabled = editingStage;
-  $('fade-seconds').disabled = editingStage || !$('fade-enabled').checked;
+  for (const id of ['background-cue', 'background-audio', 'audio-fade-enabled', 'visual-fade-enabled', 'save-stage-settings']) $(id).disabled = editingStage;
+  for (const kind of ['audio', 'visual']) $(`${kind}-fade-seconds`).disabled = editingStage || !$(`${kind}-fade-enabled`).checked;
   $('validate').disabled = pending || state.validationJob.running;
   for (const id of ['audio-output', 'display-output', 'allow-primary']) $(id).disabled = pending;
   for (const [id, row] of playlistRows) {
@@ -1087,12 +1087,14 @@ function renderStageSettings() {
   if (!stageSettingsDirty) {
     stageSettingsRevision = playlist.playlistRevision;
     $('background-audio').checked = Boolean(settings.backgroundAudio);
-    $('fade-enabled').checked = Boolean(settings.fadeEnabled);
-    $('fade-seconds').value = settings.fadeSeconds > 0 ? settings.fadeSeconds : 1;
+    for (const kind of ['audio', 'visual']) {
+      $(`${kind}-fade-enabled`).checked = Boolean(settings[`${kind}FadeEnabled`]);
+      $(`${kind}-fade-seconds`).value = settings[`${kind}FadeSeconds`] > 0 ? settings[`${kind}FadeSeconds`] : 1;
+    }
   }
   renderBackgroundStatus();
 }
-for (const id of ['background-cue', 'background-audio', 'fade-enabled', 'fade-seconds']) $(id).addEventListener('input', () => {
+for (const id of ['background-cue', 'background-audio', 'audio-fade-enabled', 'audio-fade-seconds', 'visual-fade-enabled', 'visual-fade-seconds']) $(id).addEventListener('input', () => {
   if (!stageSettingsDirty) stageSettingsRevision = playlist?.playlistRevision || 0;
   stageSettingsDirty = true; localizedText($('stage-settings-message'), () => t("Unsaved changes."));
   $('stage-settings-message').classList.remove('error'); renderEditAvailability();
@@ -1100,14 +1102,21 @@ for (const id of ['background-cue', 'background-audio', 'fade-enabled', 'fade-se
 $('stage-settings-form').addEventListener('submit', async event => {
   event.preventDefault();
   if (!online || !playlist || playlistBusy || playlistFileBusy || updatePending()) return;
-  const fadeSeconds = Number($('fade-seconds').value);
-  if (!Number.isFinite(fadeSeconds) || fadeSeconds < .1 || fadeSeconds > 30) {
-    localizedText($('stage-settings-message'), () => t("Choose a transition duration from 0.1 to 30 seconds."));
-    $('stage-settings-message').classList.add('error'); return;
+  const audioFadeSeconds = Number($('audio-fade-seconds').value);
+  const visualFadeSeconds = Number($('visual-fade-seconds').value);
+  for (const [kind, seconds] of [['audio', audioFadeSeconds], ['visual', visualFadeSeconds]]) {
+    if (!Number.isFinite(seconds) || seconds < .1 || seconds > 30) {
+      localizedText($('stage-settings-message'), () => kind === 'audio'
+        ? t("Choose an audio fade duration from 0.1 to 30 seconds.")
+        : t("Choose a video/image fade duration from 0.1 to 30 seconds."));
+      $('stage-settings-message').classList.add('error'); return;
+    }
   }
   const settings = {
     backgroundCueId: $('background-cue').value, backgroundAudio: $('background-audio').checked,
-    fadeEnabled: $('fade-enabled').checked, fadeSeconds, toggleAudio: Boolean(playlist.stage?.toggleAudio)
+    audioFadeEnabled: $('audio-fade-enabled').checked, audioFadeSeconds,
+    visualFadeEnabled: $('visual-fade-enabled').checked, visualFadeSeconds,
+    toggleAudio: Boolean(playlist.stage?.toggleAudio)
   };
   playlistBusy = true; renderEditAvailability();
   try {

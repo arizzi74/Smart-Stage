@@ -181,13 +181,17 @@ visuals and silences background sound while preserving the foreground timeline;
 stage on restores the selected visual. Pointer hiding applies only over the
 visible native stage. It does not hide the pointer over Admin or other apps.
 
-When fading is enabled, the configured duration (initially one second; 0.1–30
-seconds) controls audio and visual replacement and STOP. Incoming sound starts
+Audio and visual fading have separate enable switches and durations (initially
+one second each; 0.1–30 seconds). Audio settings include video soundtracks;
+visual settings control only video/image opacity. Legacy settings migrate to
+both groups. These settings control replacement and STOP. Incoming sound starts
 immediately from silence; otherwise outgoing and incoming streams overlap with
 volume ramps. The first visual from black is immediate; subsequent visuals
 crossfade and removing the last visual fades to black. A replacement waits for
 its first usable frame rather than briefly revealing the background. Native
-code bounds active sources, outgoing visuals and retiring audio tails. A
+code bounds active sources, outgoing visuals and retiring audio tails. A source
+needed by both fades is retained until both have finished, even when their
+durations differ. A
 replacement retargets the current gains; pause and seek preserve existing fade
 clocks. Pausing immediately silences retiring foreground audio. STOP returns an enabled stage to the
 background, crossfading back to its optional soundtrack or fading to silence.

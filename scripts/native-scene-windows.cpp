@@ -6,6 +6,7 @@
 namespace {
 ss_scene_request desired{};
 std::string probeAudio, probeDisplay, probeWaveA, probeWaveB, probeVideo, probeImage, probeGreen;
+std::string alternateBackground;
 unsigned phase = 0;
 ULONGLONG phaseStart = 0;
 uint64_t probeRevision = 0, retainedToken = 0;
@@ -20,6 +21,15 @@ LONGLONG visualFrameA = 0, visualFrameB = 0;
 ULONGLONG visualClockStart = 0;
 VisualFrame pausedFrame;
 bool videoTransportVerified = false, audioTransportVerified = false, sawTransportEnd = false, sawReleasedEnd = false;
+bool independentVisualFadesVerified = false, independentAudioFadesVerified = false, differentFadeDurationsVerified = false;
+struct FadeCase { double audio, visual; };
+const FadeCase fadeCases[] = {{1.2, 0}, {0, 1.2}, {3.6, .35}, {.25, 1.3}};
+unsigned fadeCase = 0;
+bool independentAudioRamp = false, independentVisualBlend = false;
+bool audioOutlastedVisual = false, visualOutlastedAudio = false, retiringAudioLooped = false;
+bool stageOffDualAudioTailVerified = false, observedDualAudioTails = false;
+uint64_t newerAudioTailToken = 0;
+ULONGLONG newerAudioTailStarted = 0;
 uint64_t stoppedTransportGeneration = 0;
 void finishProbe() { passed = true; ss_quit(); }
 void transport(bool paused) { desired.foreground_paused = paused; ++desired.transport_revision; }
@@ -102,7 +112,7 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
         case 200:
             desired.generation = 100; desired.audio = ""; desired.display = probeDisplay.c_str();
             desired.background_path = probeImage.c_str(); desired.background_kind = "image";
-            desired.stage_enabled = 1; desired.fade_seconds = 1.2; apply(); next(201); break;
+            desired.stage_enabled = 1; desired.audio_fade_seconds = desired.visual_fade_seconds = 1.2; apply(); next(201); break;
         case 201:
             if (sceneBackground && visualImage() == sceneBackground.get()) {
                 require(!visualTransition.active, "First visual from black should appear immediately");
@@ -179,7 +189,7 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
                 require(imageBlackPixels, "Did not observe image fading to black");
                 require(centerPixel(stageWindow) == RGB(0,0,0), "Fade out did not settle on black");
                 desired.background_path = probeImage.c_str(); desired.background_kind = "image";
-                desired.fade_seconds = 0; apply(); next(207);
+                desired.audio_fade_seconds = desired.visual_fade_seconds = 0; apply(); next(207);
             }
             break;
         case 207:
@@ -192,7 +202,7 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
             if (sceneImage && visualImage() == sceneImage.get()) {
                 require(!visualTransition.active && !IsWindowVisible(transitionWindow), "Disabled fade animated image replacement");
                 require(GetGValue(centerPixel(stageWindow)) > 220, "Disabled fade did not show new image immediately");
-                desired.image_path = ""; desired.fade_seconds = 2; apply(); next(209);
+                desired.image_path = ""; desired.audio_fade_seconds = desired.visual_fade_seconds = 2; apply(); next(209);
             }
             break;
         case 209:
@@ -242,7 +252,7 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
                         "A stale native callback resurrected a canceled transition");
                 desired.hard_stop = 0; desired.stage_enabled = 1;
                 desired.image_path = ""; desired.background_path = probeImage.c_str(); desired.background_kind = "image";
-                desired.fade_seconds = .6; apply(); next(217);
+                desired.audio_fade_seconds = desired.visual_fade_seconds = .6; apply(); next(217);
             }
             break;
         case 217:
@@ -270,7 +280,149 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
             if (sawBackgroundError && !visualTransition.active && !sceneVisualRetiring) {
                 require(visualImage() == sceneBackground.get() && GetRValue(centerPixel(stageWindow)) > 220,
                         "Failed image did not return to the saved background");
-                desired = {}; next(300);
+                desired = {}; next(400);
+            }
+            break;
+        case 400: {
+            // Every case starts from a still image and silence. A background
+            // video gives one native source both independently retiring tracks.
+            desired = {};
+            desired.generation = 500 + fadeCase;
+            desired.audio = soundAvailable ? probeAudio.c_str() : "";
+            desired.display = probeDisplay.c_str(); desired.stage_enabled = 1;
+            desired.background_path = probeVideo.c_str(); desired.background_kind = "video";
+            desired.background_audio = soundAvailable;
+            desired.audio_fade_seconds = fadeCases[fadeCase].audio;
+            desired.visual_fade_seconds = fadeCases[fadeCase].visual;
+            apply(); next(401); break;
+        }
+        case 401:
+            if (sceneBackground && sceneBackground->video && sceneBackground->playing && !visualTransition.active) {
+                if (soundAvailable) {
+                    checkGain(sceneBackground.get());
+                    require(sceneBackground->gain > .99f && sceneBackground->rampSeconds == 0,
+                            "Independent audio setting faded the first sound from silence");
+                }
+                retainedToken = sceneBackground->token; lastBackgroundTime = position(sceneBackground.get());
+                independentAudioRamp = independentVisualBlend = false;
+                audioOutlastedVisual = visualOutlastedAudio = retiringAudioLooped = false;
+                desired.background_path = probeGreen.c_str(); desired.background_kind = "image";
+                apply(); next(402);
+            }
+            break;
+        case 402: {
+            if (scene.revision != desired.revision) break;
+            const FadeCase &test = fadeCases[fadeCase];
+            Playback *outgoing = visualPlayback(retainedToken);
+            bool imageReady = sceneBackground && !sceneBackground->pixels.empty();
+            if (test.visual == 0 && imageReady)
+                require(!visualTransition.active && !IsWindowVisible(transitionWindow),
+                        "Audio-only fade animated the picture");
+            if (visualTransition.active && visualTransition.started && !visualTransition.mixed.empty()) {
+                require(std::abs(visualTransition.seconds-test.visual) < .001,
+                        "Picture transition used the audio fade duration");
+                double progress = (GetTickCount64()-visualTransition.started)/(test.visual*1000.0);
+                if (progress > .1 && progress < .9 && IsWindowVisible(transitionWindow)) {
+                    const VisualFrame &mixed = visualTransition.mixed;
+                    const BYTE *expected = mixed.pixels.data()+((size_t)(mixed.height/2)*mixed.width+mixed.width/2)*4;
+                    COLORREF actual = centerPixel(transitionWindow);
+                    require(std::abs((int)GetRValue(actual)-expected[2]) < 4 &&
+                            std::abs((int)GetGValue(actual)-expected[1]) < 4 &&
+                            std::abs((int)GetBValue(actual)-expected[0]) < 4,
+                            "Independent visual fade did not paint its native composite pixels");
+                    independentVisualBlend = true;
+                }
+            }
+            if (soundAvailable && outgoing) {
+                checkGain(outgoing);
+                if (test.audio == 0)
+                    require(outgoing->gain < .01f && outgoing->rampSeconds == 0,
+                            "Visual-only fade retained an audible soundtrack");
+                if (outgoing->gain > .05f && outgoing->gain < .95f) independentAudioRamp = true;
+                if (imageReady && !visualTransition.active && outgoing->gain > .05f) {
+                    require(sceneRetiring.get() == outgoing && !sceneVisualRetiring,
+                            "Completed picture fade did not release the visual retirement slot");
+                    require(!IsWindowVisible(outgoing->target), "Retiring audio kept its video window visible");
+                    audioOutlastedVisual = true;
+                }
+                if (visualTransition.active && outgoing->gain < .01f && outgoing->rampSeconds == 0)
+                    visualOutlastedAudio = true;
+                double now = position(outgoing);
+                if (now >= 0 && now+.3 < lastBackgroundTime) retiringAudioLooped = true;
+                lastBackgroundTime = now;
+            }
+            if (imageReady && !visualTransition.active && !sceneRetiring && !sceneVisualRetiring) {
+                require(GetGValue(centerPixel(stageWindow)) > 220, "Independent picture fade did not settle on green");
+                require(test.visual == 0 || independentVisualBlend, "Independent visual fade never rendered blended pixels");
+                if (soundAvailable) {
+                    require(test.audio == 0 || independentAudioRamp, "Independent audio fade never changed native stream gain");
+                    require(test.audio <= test.visual || audioOutlastedVisual,
+                            "Outgoing soundtrack stopped before its longer audio fade completed");
+                    require(test.visual <= test.audio || visualOutlastedAudio,
+                            "Outgoing picture stopped before its longer visual fade completed");
+                    require(fadeCase != 2 || retiringAudioLooped,
+                            "Hidden background soundtrack did not loop through its remaining audio fade");
+                }
+                if (++fadeCase < sizeof(fadeCases)/sizeof(fadeCases[0])) next(400);
+                else {
+                    independentVisualFadesVerified = true;
+                    independentAudioFadesVerified = differentFadeDurationsVerified = soundAvailable;
+                    desired = {}; next(soundAvailable ? 410 : 300);
+                }
+            }
+            break;
+        }
+        case 410:
+            desired.generation = 510; desired.audio = probeAudio.c_str(); desired.display = probeDisplay.c_str();
+            desired.stage_enabled = 1; desired.background_audio = 1;
+            desired.background_path = probeVideo.c_str(); desired.background_kind = "video";
+            desired.audio_fade_seconds = 3.2; desired.visual_fade_seconds = 2.4;
+            apply(); next(411); break;
+        case 411:
+            if (sceneBackground && sceneBackground->playing && sceneBackground->gain > .99f && !visualTransition.active) {
+                retainedToken = sceneBackground->token;
+                // A distinct spelling of the same fixture gives B its own
+                // renderer without modifying the source media or test files.
+                alternateBackground = probeVideo;
+                size_t separator = alternateBackground.find_last_of("/\\");
+                alternateBackground.insert(separator == std::string::npos ? 0 : separator+1, ".\\");
+                desired.background_path = alternateBackground.c_str(); apply(); next(412);
+            }
+            break;
+        case 412:
+            if (sceneBackground && sceneBackground->path == alternateBackground && sceneBackground->playing &&
+                sceneBackground->gain > .25f && sceneBackground->gain < .75f && visualTransition.active &&
+                sceneVisualRetiring && sceneVisualRetiring->token == retainedToken) {
+                checkGain(sceneBackground.get()); checkGain(sceneVisualRetiring.get());
+                newerAudioTailToken = sceneBackground->token;
+                desired.stage_enabled = 0; apply(); processSceneCommand();
+                require(sceneRetiring && sceneRetiring->token == newerAudioTailToken &&
+                        sceneVisualRetiring && sceneVisualRetiring->token == retainedToken,
+                        "Stage off did not retain both existing audio tails");
+                newerAudioTailStarted = sceneRetiring->rampStarted;
+                next(413);
+            }
+            break;
+        case 413:
+            require(!stageEnabled && !IsWindowVisible(stageWindow) && !visualTransition.active,
+                    "Stage off retained a picture during overlapping audio fades");
+            if (GetTickCount64()-newerAudioTailStarted < 3050) {
+                require(sceneRetiring && sceneRetiring->token == newerAudioTailToken,
+                        "Releasing the older picture truncated the newer background audio tail");
+                checkGain(sceneRetiring.get());
+            }
+            if (elapsed > 150 && sceneVisualRetiring && sceneRetiring) {
+                require(sceneVisualRetiring->token == retainedToken && sceneRetiring->token == newerAudioTailToken,
+                        "Overlapping Stage-off audio tails changed renderer identity");
+                require(!IsWindowVisible(sceneVisualRetiring->target) && !IsWindowVisible(sceneRetiring->target),
+                        "Overlapping audio tails revealed a hidden video window");
+                checkGain(sceneVisualRetiring.get()); checkGain(sceneRetiring.get());
+                observedDualAudioTails = true;
+            }
+            if (!sceneRetiring && !sceneVisualRetiring) {
+                require(observedDualAudioTails && GetTickCount64()-newerAudioTailStarted >= 3050,
+                        "Stage-off audio tails did not finish their independent fade durations");
+                stageOffDualAudioTailVerified = true; desired = {}; next(300);
             }
             break;
         case 300:
@@ -472,7 +624,7 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
             desired.generation = desired.foreground_id = 400; desired.transport_revision = 1;
             desired.foreground_path = probeWaveA.c_str(); desired.foreground_kind = "audio"; desired.foreground_has_audio = 1;
             desired.background_path = probeVideo.c_str(); desired.background_kind = "video"; desired.background_audio = 1;
-            desired.audio = probeAudio.c_str(); desired.display = probeDisplay.c_str(); desired.stage_enabled = 1; desired.fade_seconds = .5;
+            desired.audio = probeAudio.c_str(); desired.display = probeDisplay.c_str(); desired.stage_enabled = 1; desired.audio_fade_seconds = desired.visual_fade_seconds = .5;
             apply(); next(321); break;
         case 321:
             if (transportSettled() && sceneForeground->playing && sceneForeground->gain > .99f && sceneBackground && sceneBackground->playing) {
@@ -526,7 +678,7 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
         case 100:
             desired.generation = 1; desired.background_path = probeVideo.c_str(); desired.background_kind = "video";
             desired.audio = ""; desired.display = probeDisplay.c_str(); desired.background_audio = 0;
-            desired.stage_enabled = 1; desired.fade_seconds = 1; apply(); next(101); break;
+            desired.stage_enabled = 1; desired.audio_fade_seconds = desired.visual_fade_seconds = 1; apply(); next(101); break;
         case 101:
             if (sceneBackground && sceneBackground->playing) {
                 require(stageEnabled && IsWindowVisible(backgroundWindow), "Muted background video is not visible");
@@ -597,7 +749,7 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
         case 0:
             desired.generation = 1; desired.background_path = probeVideo.c_str(); desired.background_kind = "video";
             desired.audio = probeAudio.c_str(); desired.display = probeDisplay.c_str(); desired.background_audio = 1;
-            desired.stage_enabled = 1; desired.fade_seconds = 1;
+            desired.stage_enabled = 1; desired.audio_fade_seconds = desired.visual_fade_seconds = 1;
             apply(); next(1); break;
         case 1:
             if (sceneBackground && sceneBackground->playing && sceneBackground->gain > .99f) {
@@ -752,11 +904,15 @@ int main(int argc, char **argv) {
     soundAvailable = probeAudio != "-";
     if (!soundAvailable) phase = 100;
     phaseStart = GetTickCount64(); SetTimer(nullptr, 0, 20, probeTick); ss_run();
-    if (!passed || !videoTransportVerified || (soundAvailable && !audioTransportVerified)) { fprintf(stderr, "%s\n", probeFailure.c_str()); return 5; }
+    if (!passed || !videoTransportVerified || !independentVisualFadesVerified ||
+        (soundAvailable && (!audioTransportVerified || !independentAudioFadesVerified ||
+                            !differentFadeDurationsVerified || !stageOffDualAudioTailVerified))) {
+        fprintf(stderr, "%s\n", probeFailure.c_str()); return 5;
+    }
     if (!soundAvailable) {
-        puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":false,\"audioFadesVerified\":false,\"audioPauseResumeSeekVerified\":false,\"audioUnavailableReason\":\"No active runner audio endpoint\",\"backgroundLoop\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesForeground\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR/current-thread GetCursor plus global GetCursorInfo after paused stage off; desktop capability is checked separately\",\"hardStopClearsScene\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"videoPauseClockAndFrameFreeze\":true,\"videoResumeContinuity\":true,\"seekPlayingAndPaused\":true,\"stageAndImagePreservePausedTransport\":true,\"rapidSeeksCoalesce\":true,\"stopDuringPendingSeek\":true,\"initialPauseAndSupersededResume\":true,\"seekNaturalEnd\":true,\"pausedSeekEndRetainsSelection\":true,\"terminalPauseRaceAcknowledged\":true,\"physicalOutputsVerified\":false}");
+        puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":false,\"audioFadesVerified\":false,\"audioPauseResumeSeekVerified\":false,\"independentVisualFadeSettingsVerified\":true,\"independentAudioFadeSettingsVerified\":false,\"differentFadeDurationsVerified\":false,\"stageOffDualAudioTailVerified\":false,\"audioUnavailableReason\":\"No active runner audio endpoint\",\"backgroundLoop\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesForeground\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR/current-thread GetCursor plus global GetCursorInfo after paused stage off; desktop capability is checked separately\",\"hardStopClearsScene\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"videoPauseClockAndFrameFreeze\":true,\"videoResumeContinuity\":true,\"seekPlayingAndPaused\":true,\"stageAndImagePreservePausedTransport\":true,\"rapidSeeksCoalesce\":true,\"stopDuringPendingSeek\":true,\"initialPauseAndSupersededResume\":true,\"seekNaturalEnd\":true,\"pausedSeekEndRetainsSelection\":true,\"terminalPauseRaceAcknowledged\":true,\"physicalOutputsVerified\":false}");
         return 0;
     }
-    puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":true,\"audioPauseResumeSeekVerified\":true,\"backgroundLoop\":true,\"backgroundToCueCrossfade\":true,\"cueToCueCrossfade\":true,\"stopToBackgroundCrossfade\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesMusic\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR/current-thread GetCursor plus global GetCursorInfo after paused stage off; desktop capability is checked separately\",\"startFromSilenceImmediate\":true,\"backgroundFailurePreservesMusic\":true,\"hardStopCancelsIncoming\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"videoPauseClockAndFrameFreeze\":true,\"videoResumeContinuity\":true,\"seekPlayingAndPaused\":true,\"stageAndImagePreservePausedTransport\":true,\"rapidSeeksCoalesce\":true,\"stopDuringPendingSeek\":true,\"initialPauseAndSupersededResume\":true,\"seekNaturalEnd\":true,\"pausedSeekEndRetainsSelection\":true,\"terminalPauseRaceAcknowledged\":true,\"physicalOutputsVerified\":false}");
+    puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":true,\"audioPauseResumeSeekVerified\":true,\"independentVisualFadeSettingsVerified\":true,\"independentAudioFadeSettingsVerified\":true,\"differentFadeDurationsVerified\":true,\"stageOffDualAudioTailVerified\":true,\"backgroundLoop\":true,\"backgroundToCueCrossfade\":true,\"cueToCueCrossfade\":true,\"stopToBackgroundCrossfade\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesMusic\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR/current-thread GetCursor plus global GetCursorInfo after paused stage off; desktop capability is checked separately\",\"startFromSilenceImmediate\":true,\"backgroundFailurePreservesMusic\":true,\"hardStopCancelsIncoming\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"videoPauseClockAndFrameFreeze\":true,\"videoResumeContinuity\":true,\"seekPlayingAndPaused\":true,\"stageAndImagePreservePausedTransport\":true,\"rapidSeeksCoalesce\":true,\"stopDuringPendingSeek\":true,\"initialPauseAndSupersededResume\":true,\"seekNaturalEnd\":true,\"pausedSeekEndRetainsSelection\":true,\"terminalPauseRaceAcknowledged\":true,\"physicalOutputsVerified\":false}");
     return 0;
 }

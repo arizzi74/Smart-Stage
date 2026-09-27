@@ -90,7 +90,7 @@ func TestConfigureStageReusesUnchangedReadyBackground(t *testing.T) {
 			f.failure = errors.New("unexpected redundant native decode")
 			f.inspectMu.Unlock()
 			settings := before.Stage
-			settings.FadeEnabled, settings.FadeSeconds, settings.ToggleAudio = true, 2.5, true
+			settings.AudioFadeEnabled, settings.AudioFadeSeconds, settings.ToggleAudio = true, 2.5, true
 			updated, err := s.ConfigureStage(context.Background(), StageEdit{ExpectedRevision: before.PlaylistRevision, Settings: settings})
 			if err != nil {
 				t.Fatal(err)
@@ -130,7 +130,7 @@ func TestConfigureStageRevalidatesChangedOrUncheckedBackground(t *testing.T) {
 			f.failure = errors.New("native fixture decoder failed")
 			f.inspectMu.Unlock()
 			settings := before.Stage
-			settings.FadeEnabled = true
+			settings.AudioFadeEnabled = true
 			_, err := s.ConfigureStage(context.Background(), StageEdit{ExpectedRevision: before.PlaylistRevision, Settings: settings})
 			var problem *Error
 			if !errors.As(err, &problem) || problem.Code != "invalid_background" || !strings.Contains(problem.Message, "native fixture decoder failed") {
@@ -154,7 +154,7 @@ func TestConfigureStageAcceptsSuccessfullyRevalidatedChangedBackground(t *testin
 	}
 	calls := f.inspectionCount()
 	settings := before.Stage
-	settings.FadeEnabled, settings.FadeSeconds = true, 1.5
+	settings.AudioFadeEnabled, settings.AudioFadeSeconds = true, 1.5
 	updated, err := s.ConfigureStage(context.Background(), StageEdit{ExpectedRevision: before.PlaylistRevision, Settings: settings})
 	if err != nil {
 		t.Fatal(err)
