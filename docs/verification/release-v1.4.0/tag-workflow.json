@@ -1,0 +1,68 @@
+{
+  "sourceCommit": "e38d6155f56f7f3757363988353f0475fed26f5a",
+  "tag": "v1.4.0",
+  "workflowRunID": 36334431213,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213",
+  "status": "queued",
+  "conclusion": null,
+  "collectedAt": "2026-09-27T17:00:24.690600+00:00",
+  "allPublicationGatesPassed": true,
+  "gates": [
+    {
+      "name": "gateway",
+      "jobID": 108662450287,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213/job/108662450287"
+    },
+    {
+      "name": "shared",
+      "jobID": 108662450382,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213/job/108662450382"
+    },
+    {
+      "name": "native (macos-15, darwin, arm64)",
+      "jobID": 108662450424,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213/job/108662450424"
+    },
+    {
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "jobID": 108662450430,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213/job/108662450430"
+    },
+    {
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "jobID": 108662450433,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213/job/108662450433"
+    },
+    {
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "jobID": 108662450472,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213/job/108662450472"
+    },
+    {
+      "name": "binary-security",
+      "jobID": 108664675644,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213/job/108664675644"
+    },
+    {
+      "name": "publish",
+      "jobID": 108664765433,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213/job/108664765433"
+    }
+  ]
+}

@@ -1,11 +1,11 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.3.1**.
+The desktop application and Linux gateway are released as **Smart Stage 1.4.0**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.3.1
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.4.0
 
 ## Implemented
 
@@ -148,6 +148,24 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.3.1
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.4.0 is source `e38d6155f56f7f3757363988353f0475fed26f5a`. All seven candidate
+build/test/security gates passed before tagging; tagged build/security checks and publication
+passed. Audio/video pause/resume, paused/playing seeks, timeline/frame retention,
+STOP/stale callback priority and browser release gestures were checked on native
+Mac and Windows runners. Mac audio paths were exercised; both Windows runners
+had no audio endpoint and report audio checks unavailable. All 50 public assets,
+eight checksum pairs and six executable vulnerability scans passed. Of 16 tagged
+post-publication jobs, 15 passed and the Windows ARM64 installer job failed its
+final global firewall snapshot comparison. The snapshots were not retained, so
+the cause remains unknown. Four real automatic replacement/restart checks and
+all four separate default-installer architecture jobs passed. The independent
+Windows ARM64 job passed the same strict firewall assertion in built-in Windows
+PowerShell and PowerShell 7 against the same published binaries. The original
+failure remains recorded. Installer defaults are commit
+`e47bf366cdbc2c16ed1c1d35534b95286a38ad17`. See [release verification](docs/release-verification.md)
+for exact evidence and physical limits. The production gateway, nginx and
+firewall were not changed.
 
 Version 1.3.1 is source `c4ecf679bac2cf94220c0df19808eaa2cc319165`. The local
 browser suite, all 11 JavaScript tests and web/HTTP tests passed. Measured

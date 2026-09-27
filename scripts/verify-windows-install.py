@@ -237,7 +237,8 @@ def firewall_difference(before, after):
     return {
         'removed': [json.loads(row) for row in sorted((previous - current).elements())],
         'added': [json.loads(row) for row in sorted((current - previous).elements())],
-        'sameRulesDifferentOrder': before != after and previous == current,
+        'sameRulesDifferentOrder': (isinstance(before, list) and isinstance(after, list)
+                                   and before != after and previous == current),
     }
 
 

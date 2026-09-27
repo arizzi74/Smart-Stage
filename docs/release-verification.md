@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.3.1 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.4.0 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,67 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.4.0: seeking and pause/resume
+
+Version 1.4.0 is source `e38d6155f56f7f3757363988353f0475fed26f5a`, published by
+[release workflow 36334431213](https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213). All seven
+[final candidate gates](verification/release-v1.4.0/candidate-workflow.json)
+passed before tagging; [tagged build/security checks and publication](verification/release-v1.4.0/tag-workflow.json)
+passed. The initial Windows ARM64 candidate exposed a test observing the current
+thread's cached cursor rather than the global cursor. The corrected probe requires
+successful global observation and released cursor ownership; production cursor
+behavior and transport assertions were preserved.
+
+The [native evidence](verification/release-v1.4.0/native-transport-evidence.json)
+records pause/resume and playing/paused seeks, retained timelines and frames,
+Stage/image independence, newer-intent and STOP priority, and end-boundary races.
+Native scene probes and real browser-to-host controls passed on all four targets.
+Both Mac runners had audio endpoints and verified audio seeks. Both Windows
+runners had zero audio endpoints: their video checks passed, while native audio
+pause/seek and audible output are explicitly **unavailable**, not passed.
+Physical speakers, projectors, routing and pointer behavior still need hardware
+acceptance.
+
+[Browser regressions](verification/release-v1.4.0/browser-checks.json) cover the
+large fading time preview, mouse/touch cancellation, one seek on release, keyboard
+focus, stale gestures, pending requests, STOP and English/Italian phone/desktop
+layouts. The [real HTTPS relay test](verification/release-v1.4.0/gateway-browser-checks.json)
+exercises pause, paused seek and resume through TLS, scoped cookies, CSRF, SSE
+and the tunnel, with an explicitly simulated native boundary. Screenshots show
+the [phone time preview](verification/release-v1.4.0/command-seek-preview-phone.png)
+and [Admin slider](verification/release-v1.4.0/admin-active-seek.png). See the
+[change scope](verification/release-v1.4.0/change-scope.md).
+
+The [public asset audit](verification/release-v1.4.0/assets.json) verified all
+50 assets, eight checksum pairs, expected architectures, clean source metadata
+and Go 1.26.8. All six exact public executables passed [package vulnerability scans](verification/release-v1.4.0/security-scans.json).
+The [tagged post-publication run](verification/release-v1.4.0/postpublication-status.json)
+finished with 15 jobs passed and one failed. [Windows ARM64 installer job
+108664805622](https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213/job/108664805622) failed its final strict global firewall
+snapshot equality assertion after installation and app lifecycle checks. The
+original harness did not retain the snapshots: the changed field and cause
+remain unknown. This failure is preserved in the
+[installer review](verification/release-v1.4.0/windows-arm64-installer-failure.json);
+the tagged workflow is not reported as fully successful.
+
+All [four actual automatic updates](verification/release-v1.4.0/auto-update-evidence.json)
+passed. Public [installer defaults](verification/release-v1.4.0/installer-defaults.json)
+match `e47bf366cdbc2c16ed1c1d35534b95286a38ad17` and select v1.4.0; all
+[four default-installer architecture jobs](verification/release-v1.4.0/default-installer-workflows.json)
+passed. In this separate run, [Windows ARM64 job
+108665146549](https://github.com/arizzi74/Smart-Stage/actions/runs/36335390833/job/108665146549) passed the original strict
+installer harness, including its global firewall assertion, in both built-in
+Windows PowerShell and PowerShell 7 against the same published v1.4.0 binaries.
+This independent success does not establish the original failure's cause.
+The [sanitized confirmation](verification/release-v1.4.0/default-arm64-confirmation.json)
+records both shell reports and matches the exact public executable and installer
+hashes. Diagnostic-only harness commit
+`134d6f003709b456cef6208e7d56b5eff55c10ea` retains firewall snapshots and
+their difference while preserving the strict equality assertion. This changes
+verification diagnostics, with no change to the published v1.4.0 binaries.
+Public gateway remains the default; no production gateway, nginx or
+firewall changes were made.
 
 ### Version 1.3.1: compact Admin and visible QR
 

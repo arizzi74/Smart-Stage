@@ -1,0 +1,44 @@
+{
+  "release": "v1.4.0",
+  "sourceCommit": "e38d6155f56f7f3757363988353f0475fed26f5a",
+  "originalWorkflowRunID": 36334431213,
+  "originalJob": {
+    "id": 108664805622,
+    "name": "verify-windows-install / install (windows-11-arm, arm64)",
+    "status": "completed",
+    "conclusion": "failure",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36334431213/job/108664805622",
+    "activeStep": null,
+    "failedSteps": [
+      "Install the published app using built-in Windows PowerShell"
+    ],
+    "startedAt": "2026-09-27T16:59:49Z",
+    "completedAt": "2026-09-27T17:06:11Z"
+  },
+  "failure": "Final strict global firewall snapshot equality assertion failed after installation and app lifecycle checks.",
+  "originalFirewallSnapshotsRetained": false,
+  "cause": "Unknown: the original harness did not retain the before/after snapshots, so the changed field and cause cannot be established.",
+  "originalFailureResolved": false,
+  "independentVerification": {
+    "workflowRunID": 36335390833,
+    "sourceCommit": "e47bf366cdbc2c16ed1c1d35534b95286a38ad17",
+    "job": {
+      "id": 108665146549,
+      "name": "install (windows-11-arm, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36335390833/job/108665146549",
+      "activeStep": null,
+      "failedSteps": [],
+      "startedAt": "2026-09-27T17:01:44Z",
+      "completedAt": "2026-09-27T17:08:44Z"
+    },
+    "allFourDefaultInstallerJobsPassed": true,
+    "confirmationFile": "default-arm64-confirmation.json",
+    "scope": "The original strict installer harness passed separately on Windows ARM64 with built-in Windows PowerShell and PowerShell 7 against the same published v1.4.0 binaries. This does not establish the cause of the original failure."
+  },
+  "diagnosticHarnessChange": {
+    "sourceCommit": "134d6f003709b456cef6208e7d56b5eff55c10ea",
+    "scope": "Diagnostic-only change retains before/after firewall snapshots and their difference, preserving the strict equality assertion. Published v1.4.0 binaries are unchanged."
+  }
+}

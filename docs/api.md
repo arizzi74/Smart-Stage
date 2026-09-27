@@ -1,8 +1,10 @@
 # HTTP API
 
-Smart Stage runs two HTTP listeners in one process. Their roles are fixed and
-cannot be changed by a pairing credential, cookie, Host header or forwarded
-address header.
+Smart Stage always runs a local Admin HTTP listener. Default Public gateway
+mode keeps the inbound remote listener closed; explicitly selecting Local LAN
+mode enables the second listener. The listener addresses and LAN session rules
+below apply in that mode. Their roles are fixed and cannot be changed by a
+pairing credential, cookie, Host header or forwarded address header.
 
 | Listener | Default address | Pages and role |
 | --- | --- | --- |
@@ -106,9 +108,10 @@ Observe state for actual native transitions. A stale instance/epoch, unknown or
 invalid cue is rejected without replacing playback. An accepted foreground native
 failure stops all sound, disables the stage and remains visible in state.
 
-Audio/video cues replace the foreground media. Image cues set a visual overlay
-without restarting or stopping foreground music; audio/video PLAY clears that
-overlay. A cue with `background:true` selects the current session's background
+Starting another audio/video cue replaces the foreground media and clears its
+image overlay. Image cues set a visual overlay without restarting or stopping
+foreground music. Pausing or resuming the selected audio/video cue preserves
+that overlay. A cue with `background:true` selects the current session's background
 without replacing foreground music or enabling a disabled stage. The saved
 `stage.backgroundCueId` is the default restored on the next launch.
 
@@ -132,7 +135,9 @@ State contains `instanceId`, `revision`, `playlistRevision`, `state`
 are independent of `activeCueId`, which identifies foreground audio/video.
 State also contains `transportRevision`, `paused` (desired pause intent, even while
 loading) and `seekPending` (cleared on native playing/paused acknowledgement).
-The acknowledged `state` and timeline follow the native engine.
+The acknowledged `state` follows the native engine. An accepted seek immediately
+sets `elapsed` to the requested position with `seekPending:true`; native
+acknowledgement clears that flag and reports the actual position.
 Command state receives a generic background error rather than native details.
 
 `updatePending` reserves the host while a startup update is checked or an update

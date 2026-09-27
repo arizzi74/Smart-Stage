@@ -14,7 +14,7 @@ absolute path. The installer detects the Evergreen runtime and installs the
 Microsoft-signed bootstrapper for the current user if missing. The pinned SDK
 and redistribution notice are in `internal/platform/webview2`.
 
-After both HTTP listeners are ready, the Mac app shows its Admin window. It can
+After the required HTTP listeners are ready, the Mac app shows its Admin window. It can
 show startup-update progress while the service blocks playback and edits. Dock,
 menu and native-import actions restore the same window, independent of external
 browser presence. Closing the window hides Admin and keeps the host running;
@@ -187,13 +187,15 @@ immediately from silence; otherwise outgoing and incoming streams overlap with
 volume ramps. The first visual from black is immediate; subsequent visuals
 crossfade and removing the last visual fades to black. A replacement waits for
 its first usable frame rather than briefly revealing the background. Native
-code bounds active sources, outgoing visuals and retiring audio tails, and a
-new command retargets the current gains. STOP returns an enabled stage to the
+code bounds active sources, outgoing visuals and retiring audio tails. A
+replacement retargets the current gains; pause and seek preserve existing fade
+clocks. Pausing immediately silences retiring foreground audio. STOP returns an enabled stage to the
 background, crossfading back to its optional soundtrack or fading to silence.
 Natural foreground completion also returns to background. A stopped foreground
 may therefore coexist with an audible background and an enabled stage.
 
-Mac transitions blend retained native layers while both video timelines run.
+Mac transitions blend retained native layers while unpaused video timelines
+continue; paused video retains its frame.
 Windows composites live EVR readbacks and decoded images in a temporary overlay,
 at up to 30 frames per second and 1920×1080 pixels, then returns to direct native
 video rendering. Three bounded scratch frames and one outgoing visual prevent
@@ -235,11 +237,13 @@ filesystem mutation/download endpoint. The signed-in host user and local
 filesystem are trusted: the native path-based media APIs are not an isolation
 boundary against a hostile local process racing replacement of ancestor paths.
 
-Two listeners share the service while keeping separate HTTP roles. Admin binds
-only `127.0.0.1:8787` by default; its handler additionally checks the actual TCP
-peer is loopback and Host is exactly `127.0.0.1` with its configured port. An
-explicit same-origin `POST /api/local-session {}` creates/reuses an Admin session.
-Remote control binds `0.0.0.0:8788` by default and exposes only Command routes;
+The local Admin listener and optional Local LAN remote listener share the
+service while keeping separate HTTP roles. Admin binds only `127.0.0.1:8787` by
+default; its handler additionally checks the actual TCP peer is loopback and Host
+is exactly `127.0.0.1` with its configured port. An explicit same-origin
+`POST /api/local-session {}` creates/reuses an Admin session. Default Public
+gateway mode keeps the inbound remote listener closed. Explicit Local LAN mode
+binds remote control to `0.0.0.0:8788` by default and exposes only Command routes;
 changing `--bind` cannot make Admin listen on the network. Forwarded-IP headers
 never grant local access. The signed-in host user and local processes are
 trusted. Host/Origin and fetch-metadata checks prevent a foreign browser origin

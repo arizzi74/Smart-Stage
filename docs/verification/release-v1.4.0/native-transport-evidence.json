@@ -1,0 +1,814 @@
+{
+  "sourceCommit": "e38d6155f56f7f3757363988353f0475fed26f5a",
+  "workflowRunID": 36333487233,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36333487233",
+  "collectedAt": "2026-09-27T16:46:37.016646+00:00",
+  "allFourNativeJobsPassed": true,
+  "workflowStatusAtCollection": "completed",
+  "workflowConclusionAtCollection": "success",
+  "allFourNativeVideoPauseResumeSeekPassed": true,
+  "audioEndpointUnavailableTargets": [
+    "windows/amd64",
+    "windows/arm64"
+  ],
+  "scope": "Actual production-bridge native scene probes and real browser-to-native-host runs on four hosted OS/architecture runners. Audio assertions are unavailable where no active endpoint is enumerated. Physical speaker/projector output, stage smoothness and hardware routing are not verified.",
+  "sanitization": "Selected native probe measurements and browser test outcomes only; source JSON/archive hashes retained. No device identifiers, host paths, cookies, CSRF values, raw stdout/stderr or workflow logs copied into this summary. Raw artifacts remain in this private audit directory.",
+  "targets": [
+    {
+      "os": "darwin",
+      "architecture": "amd64",
+      "jobID": 108659791908,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36333487233/job/108659791908",
+      "jobConclusion": "success",
+      "artifact": {
+        "id": 10936217323,
+        "name": "native-darwin-amd64",
+        "size": 21290014,
+        "sha256": "40f9924eaa9cbd893ed1ab275ca6eabf7b2aa60ab4357b9a7e28cf1bd7c3f99d",
+        "githubDigestVerified": true
+      },
+      "sourceMembers": {
+        "nativeSmoke": {
+          "member": "native-harness-darwin-amd64.smoke.json",
+          "sha256": "d21d0e7e71fee9a67c70b7c2965f53b321f9f4c72c36583aee75a0bbb686e960"
+        },
+        "browserNative": {
+          "member": "browser-native/darwin-amd64/result.json",
+          "sha256": "6a6e440fd03430ecf742b7aa9653c8175a0a2f57ad1fedf5131a635ff3b1859a"
+        },
+        "deviceEnumeration": {
+          "member": "native-enumeration-darwin-amd64.json",
+          "sha256": "9d72280e913333aee2e14c1868af1f22cb980d782d0bb339d7440752d7efaece"
+        }
+      },
+      "audioEndpoints": 1,
+      "displays": 1,
+      "audioEndpointUnavailable": false,
+      "audioUnavailableReason": "",
+      "nativeAudioPauseResumeSeekVerified": true,
+      "nativeVideoPauseResumeSeekVerified": true,
+      "browserPausedVideoSeekVerified": true,
+      "browserPausedAndPlayingMusicSeekVerified": true,
+      "requiredNativeTransportChecksPassed": [
+        "audioPauseFreezesNativeClockAndRetainsDecoder",
+        "audioResumeContinuesSameNativeDecoderAndClock",
+        "escapeDuringNativeSeekPreventsLatePlaybackAndReveal",
+        "hardStopDuringNativeSeekPreventsLatePlaybackAndReveal",
+        "latestAudioSeekWinsOverInFlightCompletion",
+        "nativeSeekClampsBothFiniteTimelineBounds",
+        "pauseBeforeVideoReadyDecodesFirstFrameWithoutStartingClock",
+        "pauseDuringNativeSeekPreventsEarlierPlayingIntentFromResuming",
+        "pausePreservesFadeClocksAndSilencesRetiringForegroundAudio",
+        "pausedAudioSeekUsesRequestedNativePositionWithoutPlayback",
+        "pausedVideoSeekHoldsRequestedFrameWithSameDecoder",
+        "playingAudioSeekPreservesPlaybackAndDecoder",
+        "playingVideoSeekPreservesPlaybackAndDecoder",
+        "silentVideoPauseKeepsIndependentBackgroundAudioAndClock",
+        "stageChangesRetainPausedAudioAndImage",
+        "stageChangesRetainPausedVideoFrameAndClock",
+        "stageDuringNativeSeekRetainsCompletionAndPauseWithoutRepeatingSeek",
+        "staleEndAfterSeekCannotRetireForeground",
+        "videoPauseFreezesNativeClockAndRetainsVisibleFrame",
+        "videoResumeContinuesSameNativeDecoderAndClock"
+      ],
+      "nativeScene": {
+        "status": "passed",
+        "physicalPointerVisibilityVerified": false,
+        "physicalSpeakerOutputVerified": false,
+        "method": "Real AVPlayer timelines/volume overlap and live video/image CALayer crossfade opacity observed inside a test process compiling the production bridge",
+        "observations": [
+          {
+            "backgroundStartsImmediatelyFromSilence": true
+          },
+          {
+            "backgroundVideoLoops": true
+          },
+          {
+            "backgroundKeepsLoopingMuted": true,
+            "backgroundToCueCrossfade": true
+          },
+          {
+            "stageOffPreservesForegroundTimelineAndVolume": true
+          },
+          {
+            "imageOverlayPreservesMusic": true,
+            "transparentStageCursorTracking": true
+          },
+          {
+            "cueToCueCrossfade": true,
+            "retiredDecoderReleased": true
+          },
+          {
+            "stopCrossfadesToExistingBackground": true
+          },
+          {
+            "backgroundImageDecodedAndVisible": true
+          },
+          {
+            "foregroundStartsImmediatelyFromSilence": true
+          },
+          {
+            "stopFadesToSilenceWithoutBackgroundSoundtrack": true
+          },
+          {
+            "hardStopCancelsAllFadesAndHidesStage": true,
+            "latestSceneWinsRapidPlayThenHardStop": true
+          },
+          {
+            "naturalEndReturnsToBackgroundAudio": true
+          },
+          {
+            "lateStageSceneCannotRestartEndedForeground": true
+          },
+          {
+            "outgoingVideoKeepsMovingDuringVisualFade": true,
+            "videoToImageVisualCrossfade": true,
+            "visualTailDecoderReleased": true
+          },
+          {
+            "imageToImageCrossfadePreservesMusicTimelineAndGain": true
+          },
+          {
+            "imageToReadyVideoCrossfade": true
+          },
+          {
+            "videoToVideoCrossfadeKeepsOutgoingTimeline": true
+          },
+          {
+            "videoFadesToBlackWithStageStillEnabled": true
+          },
+          {
+            "imageReturnsToBackgroundWithoutStoppingMusic": true
+          },
+          {
+            "rapidVisualRetargetKeepsOnlyLatestScene": true
+          },
+          {
+            "stageOffImmediatelyCancelsVisualFadeAndPreservesMusic": true
+          },
+          {
+            "escapeCancelsVisualFadeAndPreventsLateReveal": true
+          },
+          {
+            "imageFadesToBlackAndReleasesRaster": true
+          },
+          {
+            "hardStopImmediatelyCancelsActiveVisualTransition": true
+          },
+          {
+            "disabledVisualFadeSwitchesImmediately": true
+          },
+          {
+            "audioPauseFreezesNativeClockAndRetainsDecoder": true,
+            "audioPausePreservesImageAndBackgroundOwnership": true
+          },
+          {
+            "stageChangesRetainPausedAudioAndImage": true
+          },
+          {
+            "pausedAudioSeekUsesRequestedNativePositionWithoutPlayback": true
+          },
+          {
+            "unchangedSeekRevisionDoesNotRepeatNativeSeek": true
+          },
+          {
+            "audioResumeContinuesSameNativeDecoderAndClock": true
+          },
+          {
+            "playingAudioSeekPreservesPlaybackAndDecoder": true
+          },
+          {
+            "latestAudioSeekWinsOverInFlightCompletion": true
+          },
+          {
+            "staleEndAfterSeekCannotRetireForeground": true
+          },
+          {
+            "pausePreservesFadeClocksAndSilencesRetiringForegroundAudio": true,
+            "videoPauseFreezesNativeClockAndRetainsVisibleFrame": true
+          },
+          {
+            "pausedVideoSeekHoldsRequestedFrameWithSameDecoder": true
+          },
+          {
+            "stageChangesRetainPausedVideoFrameAndClock": true
+          },
+          {
+            "videoResumeContinuesSameNativeDecoderAndClock": true
+          },
+          {
+            "playingVideoSeekPreservesPlaybackAndDecoder": true
+          },
+          {
+            "hardStopDuringNativeSeekPreventsLatePlaybackAndReveal": true
+          },
+          {
+            "pauseBeforeVideoReadyDecodesFirstFrameWithoutStartingClock": true
+          },
+          {
+            "escapeDuringNativeSeekPreventsLatePlaybackAndReveal": true
+          },
+          {
+            "silentVideoPauseKeepsIndependentBackgroundAudioAndClock": true
+          },
+          {
+            "nativeSeekClampsBothFiniteTimelineBounds": true
+          },
+          {
+            "stageDuringNativeSeekRetainsCompletionAndPauseWithoutRepeatingSeek": true
+          },
+          {
+            "pauseDuringNativeSeekPreventsEarlierPlayingIntentFromResuming": true
+          }
+        ]
+      },
+      "browserNative": {
+        "passed": true,
+        "application": "Smart Stage dev (e38d6155f56f), go1.26.8, darwin/amd64",
+        "platform": "darwin",
+        "architecture": "amd64",
+        "node": "v22.23.2",
+        "nodeArchitecture": "x64",
+        "physicalRoutingVerified": false,
+        "checks": [
+          "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+          "Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible",
+          "Four real media fixtures were imported without copying; Admin saved four labels and reordered stable cue IDs",
+          "Embedded screen-wake-lock control truthfully reported Needs HTTPS and stayed disabled on real non-loopback HTTP",
+          "Admin saved a cue color through the real API; playlist/command reads and remote CSSOM styling agreed under production CSP",
+          "Remote Stage off preserved native video playback while hiding the stage; Stage on reopened it and emergency Escape stopped and hid it",
+          "Video second press paused in place; seeking while paused preserved the native generation and Stage; third press resumed; STOP then returned to the selected background",
+          "A second image press cleared its overlay while independent native music kept its identity and generation",
+          "Real native music kept its generation through image selection, Stage off/on, pause, paused seek, resume and playing seek; paused position stayed frozen and resumed/playing seeks advanced natively; STOP rejected a delayed seek, cleared the image and returned to background",
+          "Admin saved/reloaded fade and background soundtrack settings without a pause preference; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available",
+          "Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap",
+          "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser",
+          "Admin Quit during real native video playback exited successfully and closed both HTTP listeners",
+          "Same Admin tab reconnected after relaunch, loaded new assets once, and suppressed automatic OS browser dispatch"
+        ],
+        "browser": "153.0.8010.12",
+        "sceneIntegration": {
+          "nativeImageInspected": true,
+          "savedVideoAndImageBackgrounds": true,
+          "hiddenBackgroundCueEditableInAdmin": true,
+          "persistedConfigReloaded": true,
+          "configuredFadeSeconds": 1.2,
+          "musicImageAndIndependentStage": true,
+          "backgroundSoundtrackEnabled": true,
+          "selectedMusicPauseKeepsImage": true,
+          "nativePausedVideoSeek": true,
+          "nativePausedAndPlayingMusicSeek": true,
+          "nativeAudioGainsMeasuredHere": false,
+          "audioUnavailableReason": ""
+        },
+        "fixtureImportMethods": [
+          "Original-path fallback UI"
+        ],
+        "nativeChooserDialogExecutionVerified": false,
+        "cuesNativelyPlayedAndStopped": 4,
+        "audioEndpoints": 1,
+        "displays": 1,
+        "audioSkipped": false,
+        "relaunchAdminMode": "Reused system-browser Admin page",
+        "existingBrowserTabReconnectedAfterRelaunch": true,
+        "externalBrowserDispatchedOnRelaunch": false
+      },
+      "physicalSpeakerOrProjectorOutputVerified": false
+    },
+    {
+      "os": "darwin",
+      "architecture": "arm64",
+      "jobID": 108659791912,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36333487233/job/108659791912",
+      "jobConclusion": "success",
+      "artifact": {
+        "id": 10936341905,
+        "name": "native-darwin-arm64",
+        "size": 19391687,
+        "sha256": "cf6e5771ac3179bb6fb5071b7a7a9049565467f1b78e2af639f41d5afbebda34",
+        "githubDigestVerified": true
+      },
+      "sourceMembers": {
+        "nativeSmoke": {
+          "member": "native-harness-darwin-arm64.smoke.json",
+          "sha256": "5ef77919a08fb439e589dd99e2153c5b5a85c76b60bd7c80b67f259803754a54"
+        },
+        "browserNative": {
+          "member": "browser-native/darwin-arm64/result.json",
+          "sha256": "a2dfa0b19c09e400cd7c5af4ade73667c578c57582bf5ade44b1d5a473b833d0"
+        },
+        "deviceEnumeration": {
+          "member": "native-enumeration-darwin-arm64.json",
+          "sha256": "a729251684e38b218808fe8c0fe559543b9d122edaf7cf6ebede13b3ee2df722"
+        }
+      },
+      "audioEndpoints": 2,
+      "displays": 1,
+      "audioEndpointUnavailable": false,
+      "audioUnavailableReason": "",
+      "nativeAudioPauseResumeSeekVerified": true,
+      "nativeVideoPauseResumeSeekVerified": true,
+      "browserPausedVideoSeekVerified": true,
+      "browserPausedAndPlayingMusicSeekVerified": true,
+      "requiredNativeTransportChecksPassed": [
+        "audioPauseFreezesNativeClockAndRetainsDecoder",
+        "audioResumeContinuesSameNativeDecoderAndClock",
+        "escapeDuringNativeSeekPreventsLatePlaybackAndReveal",
+        "hardStopDuringNativeSeekPreventsLatePlaybackAndReveal",
+        "latestAudioSeekWinsOverInFlightCompletion",
+        "nativeSeekClampsBothFiniteTimelineBounds",
+        "pauseBeforeVideoReadyDecodesFirstFrameWithoutStartingClock",
+        "pauseDuringNativeSeekPreventsEarlierPlayingIntentFromResuming",
+        "pausePreservesFadeClocksAndSilencesRetiringForegroundAudio",
+        "pausedAudioSeekUsesRequestedNativePositionWithoutPlayback",
+        "pausedVideoSeekHoldsRequestedFrameWithSameDecoder",
+        "playingAudioSeekPreservesPlaybackAndDecoder",
+        "playingVideoSeekPreservesPlaybackAndDecoder",
+        "silentVideoPauseKeepsIndependentBackgroundAudioAndClock",
+        "stageChangesRetainPausedAudioAndImage",
+        "stageChangesRetainPausedVideoFrameAndClock",
+        "stageDuringNativeSeekRetainsCompletionAndPauseWithoutRepeatingSeek",
+        "staleEndAfterSeekCannotRetireForeground",
+        "videoPauseFreezesNativeClockAndRetainsVisibleFrame",
+        "videoResumeContinuesSameNativeDecoderAndClock"
+      ],
+      "nativeScene": {
+        "status": "passed",
+        "physicalPointerVisibilityVerified": false,
+        "physicalSpeakerOutputVerified": false,
+        "method": "Real AVPlayer timelines/volume overlap and live video/image CALayer crossfade opacity observed inside a test process compiling the production bridge",
+        "observations": [
+          {
+            "backgroundStartsImmediatelyFromSilence": true
+          },
+          {
+            "backgroundVideoLoops": true
+          },
+          {
+            "backgroundKeepsLoopingMuted": true,
+            "backgroundToCueCrossfade": true
+          },
+          {
+            "stageOffPreservesForegroundTimelineAndVolume": true
+          },
+          {
+            "imageOverlayPreservesMusic": true,
+            "transparentStageCursorTracking": true
+          },
+          {
+            "cueToCueCrossfade": true,
+            "retiredDecoderReleased": true
+          },
+          {
+            "stopCrossfadesToExistingBackground": true
+          },
+          {
+            "backgroundImageDecodedAndVisible": true
+          },
+          {
+            "foregroundStartsImmediatelyFromSilence": true
+          },
+          {
+            "stopFadesToSilenceWithoutBackgroundSoundtrack": true
+          },
+          {
+            "hardStopCancelsAllFadesAndHidesStage": true,
+            "latestSceneWinsRapidPlayThenHardStop": true
+          },
+          {
+            "naturalEndReturnsToBackgroundAudio": true
+          },
+          {
+            "lateStageSceneCannotRestartEndedForeground": true
+          },
+          {
+            "outgoingVideoKeepsMovingDuringVisualFade": true,
+            "videoToImageVisualCrossfade": true,
+            "visualTailDecoderReleased": true
+          },
+          {
+            "imageToImageCrossfadePreservesMusicTimelineAndGain": true
+          },
+          {
+            "imageToReadyVideoCrossfade": true
+          },
+          {
+            "videoToVideoCrossfadeKeepsOutgoingTimeline": true
+          },
+          {
+            "videoFadesToBlackWithStageStillEnabled": true
+          },
+          {
+            "imageReturnsToBackgroundWithoutStoppingMusic": true
+          },
+          {
+            "rapidVisualRetargetKeepsOnlyLatestScene": true
+          },
+          {
+            "stageOffImmediatelyCancelsVisualFadeAndPreservesMusic": true
+          },
+          {
+            "escapeCancelsVisualFadeAndPreventsLateReveal": true
+          },
+          {
+            "imageFadesToBlackAndReleasesRaster": true
+          },
+          {
+            "hardStopImmediatelyCancelsActiveVisualTransition": true
+          },
+          {
+            "disabledVisualFadeSwitchesImmediately": true
+          },
+          {
+            "audioPauseFreezesNativeClockAndRetainsDecoder": true,
+            "audioPausePreservesImageAndBackgroundOwnership": true
+          },
+          {
+            "stageChangesRetainPausedAudioAndImage": true
+          },
+          {
+            "pausedAudioSeekUsesRequestedNativePositionWithoutPlayback": true
+          },
+          {
+            "unchangedSeekRevisionDoesNotRepeatNativeSeek": true
+          },
+          {
+            "audioResumeContinuesSameNativeDecoderAndClock": true
+          },
+          {
+            "playingAudioSeekPreservesPlaybackAndDecoder": true
+          },
+          {
+            "latestAudioSeekWinsOverInFlightCompletion": true
+          },
+          {
+            "staleEndAfterSeekCannotRetireForeground": true
+          },
+          {
+            "pausePreservesFadeClocksAndSilencesRetiringForegroundAudio": true,
+            "videoPauseFreezesNativeClockAndRetainsVisibleFrame": true
+          },
+          {
+            "pausedVideoSeekHoldsRequestedFrameWithSameDecoder": true
+          },
+          {
+            "stageChangesRetainPausedVideoFrameAndClock": true
+          },
+          {
+            "videoResumeContinuesSameNativeDecoderAndClock": true
+          },
+          {
+            "playingVideoSeekPreservesPlaybackAndDecoder": true
+          },
+          {
+            "hardStopDuringNativeSeekPreventsLatePlaybackAndReveal": true
+          },
+          {
+            "pauseBeforeVideoReadyDecodesFirstFrameWithoutStartingClock": true
+          },
+          {
+            "escapeDuringNativeSeekPreventsLatePlaybackAndReveal": true
+          },
+          {
+            "silentVideoPauseKeepsIndependentBackgroundAudioAndClock": true
+          },
+          {
+            "nativeSeekClampsBothFiniteTimelineBounds": true
+          },
+          {
+            "stageDuringNativeSeekRetainsCompletionAndPauseWithoutRepeatingSeek": true
+          },
+          {
+            "pauseDuringNativeSeekPreventsEarlierPlayingIntentFromResuming": true
+          }
+        ]
+      },
+      "browserNative": {
+        "passed": true,
+        "application": "Smart Stage dev (e38d6155f56f), go1.26.8, darwin/arm64",
+        "platform": "darwin",
+        "architecture": "arm64",
+        "node": "v22.23.2",
+        "nodeArchitecture": "arm64",
+        "physicalRoutingVerified": false,
+        "checks": [
+          "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+          "Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible",
+          "Four real media fixtures were imported without copying; Admin saved four labels and reordered stable cue IDs",
+          "Embedded screen-wake-lock control truthfully reported Needs HTTPS and stayed disabled on real non-loopback HTTP",
+          "Admin saved a cue color through the real API; playlist/command reads and remote CSSOM styling agreed under production CSP",
+          "Remote Stage off preserved native video playback while hiding the stage; Stage on reopened it and emergency Escape stopped and hid it",
+          "Video second press paused in place; seeking while paused preserved the native generation and Stage; third press resumed; STOP then returned to the selected background",
+          "A second image press cleared its overlay while independent native music kept its identity and generation",
+          "Real native music kept its generation through image selection, Stage off/on, pause, paused seek, resume and playing seek; paused position stayed frozen and resumed/playing seeks advanced natively; STOP rejected a delayed seek, cleared the image and returned to background",
+          "Admin saved/reloaded fade and background soundtrack settings without a pause preference; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available",
+          "Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap",
+          "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser",
+          "Admin Quit during real native video playback exited successfully and closed both HTTP listeners",
+          "Same Admin tab reconnected after relaunch, loaded new assets once, and suppressed automatic OS browser dispatch"
+        ],
+        "browser": "153.0.8010.12",
+        "sceneIntegration": {
+          "nativeImageInspected": true,
+          "savedVideoAndImageBackgrounds": true,
+          "hiddenBackgroundCueEditableInAdmin": true,
+          "persistedConfigReloaded": true,
+          "configuredFadeSeconds": 1.2,
+          "musicImageAndIndependentStage": true,
+          "backgroundSoundtrackEnabled": true,
+          "selectedMusicPauseKeepsImage": true,
+          "nativePausedVideoSeek": true,
+          "nativePausedAndPlayingMusicSeek": true,
+          "nativeAudioGainsMeasuredHere": false,
+          "audioUnavailableReason": ""
+        },
+        "fixtureImportMethods": [
+          "Original-path fallback UI"
+        ],
+        "nativeChooserDialogExecutionVerified": false,
+        "cuesNativelyPlayedAndStopped": 4,
+        "audioEndpoints": 2,
+        "displays": 1,
+        "audioSkipped": false,
+        "relaunchAdminMode": "Reused system-browser Admin page",
+        "existingBrowserTabReconnectedAfterRelaunch": true,
+        "externalBrowserDispatchedOnRelaunch": false
+      },
+      "physicalSpeakerOrProjectorOutputVerified": false
+    },
+    {
+      "os": "windows",
+      "architecture": "amd64",
+      "jobID": 108659791827,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36333487233/job/108659791827",
+      "jobConclusion": "success",
+      "artifact": {
+        "id": 10935982637,
+        "name": "native-windows-amd64",
+        "size": 15202109,
+        "sha256": "11ccf9a9fd01e0ef9a0705f18096566ca4ea184e3432c09fa3f9f6f9fda78f23",
+        "githubDigestVerified": true
+      },
+      "sourceMembers": {
+        "nativeSmoke": {
+          "member": "native-harness-windows-amd64.exe.smoke.json",
+          "sha256": "63ba308f0eaf47bd5b0ce45c958e6320480ba09d7c4eab43bb98ca32cc2c4c28"
+        },
+        "browserNative": {
+          "member": "browser-native/windows-amd64/result.json",
+          "sha256": "6b9c46d6f8f172f496ced506a05aad00fe0d9a9b736f40e7ea077cd1ec0b520d"
+        },
+        "deviceEnumeration": {
+          "member": "native-enumeration-windows-amd64.json",
+          "sha256": "9c1c3076196dc6bfd764342c4d8ad2fd56976e6247af72b7d1a828d9df53f8be"
+        }
+      },
+      "audioEndpoints": 0,
+      "displays": 1,
+      "audioEndpointUnavailable": true,
+      "audioUnavailableReason": "No active runner audio endpoint",
+      "nativeAudioPauseResumeSeekVerified": false,
+      "nativeVideoPauseResumeSeekVerified": true,
+      "browserPausedVideoSeekVerified": true,
+      "browserPausedAndPlayingMusicSeekVerified": false,
+      "requiredNativeTransportChecksPassed": [
+        "initialPauseAndSupersededResume",
+        "pausedSeekEndRetainsSelection",
+        "rapidSeeksCoalesce",
+        "seekNaturalEnd",
+        "seekPlayingAndPaused",
+        "stageAndImagePreservePausedTransport",
+        "stopDuringPendingSeek",
+        "terminalPauseRaceAcknowledged",
+        "videoPauseClockAndFrameFreeze",
+        "videoResumeContinuity"
+      ],
+      "nativeScene": {
+        "status": "passed",
+        "nativeStreamGainsReadBack": false,
+        "audioFadesVerified": false,
+        "audioPauseResumeSeekVerified": false,
+        "audioUnavailableReason": "No active runner audio endpoint",
+        "backgroundLoop": true,
+        "stableForegroundAcrossSceneRevisions": true,
+        "stageOffPreservesTimeline": true,
+        "imagePreservesForeground": true,
+        "imagePixelsRendered": true,
+        "stageCursorMessageHandling": true,
+        "cursorObservationScope": "Synthetic WM_SETCURSOR/current-thread GetCursor plus global GetCursorInfo after paused stage off; desktop capability is checked separately",
+        "hardStopClearsScene": true,
+        "visualCrossfadePixelsRendered": true,
+        "imageFadeToBlackPixelsRendered": true,
+        "videoTimelinesAdvanceDuringFade": true,
+        "liveVideoFrameReadbackAdvances": true,
+        "exclusiveRendererTargetOwnership": true,
+        "zeroDurationVisualSwitchImmediate": true,
+        "firstVisualImmediate": true,
+        "rapidVisualReplacementBounded": true,
+        "stageOffEscapeHardStopCancelVisualFade": true,
+        "failedVisualReturnsToBackgroundOrBlack": true,
+        "videoPauseClockAndFrameFreeze": true,
+        "videoResumeContinuity": true,
+        "seekPlayingAndPaused": true,
+        "stageAndImagePreservePausedTransport": true,
+        "rapidSeeksCoalesce": true,
+        "stopDuringPendingSeek": true,
+        "initialPauseAndSupersededResume": true,
+        "seekNaturalEnd": true,
+        "pausedSeekEndRetainsSelection": true,
+        "terminalPauseRaceAcknowledged": true,
+        "physicalOutputsVerified": false
+      },
+      "browserNative": {
+        "passed": true,
+        "application": "Smart Stage dev (e38d6155f56f), go1.26.8, windows/amd64",
+        "platform": "windows",
+        "architecture": "amd64",
+        "node": "v22.23.2",
+        "nodeArchitecture": "x64",
+        "physicalRoutingVerified": false,
+        "checks": [
+          "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+          "Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible",
+          "Four real media fixtures were imported without copying; Admin saved four labels and reordered stable cue IDs",
+          "Embedded screen-wake-lock control truthfully reported Needs HTTPS and stayed disabled on real non-loopback HTTP",
+          "Admin saved a cue color through the real API; playlist/command reads and remote CSSOM styling agreed under production CSP",
+          "Missing native audio output produced a visible recoverable error; STOP remained usable",
+          "Remote Stage off preserved native video playback while hiding the stage; Stage on reopened it and emergency Escape stopped and hid it",
+          "Video second press paused in place; seeking while paused preserved the native generation and Stage; third press resumed; STOP then returned to the selected background",
+          "Real native image selection, independent stage hiding/restoration, and image-only STOP passed; music/background soundtrack integration was unavailable because the runner has no audio endpoint",
+          "Admin saved/reloaded fade and background soundtrack settings without a pause preference; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available",
+          "Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap",
+          "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser",
+          "Admin Quit during real native video playback exited successfully and closed both HTTP listeners",
+          "Windows relaunch loaded its dedicated Admin window; the existing external Admin tab also reconnected, loaded new assets exactly once, retained its URL and stayed the only page without an OS browser dispatch"
+        ],
+        "browser": "153.0.8010.12",
+        "sceneIntegration": {
+          "nativeImageInspected": true,
+          "savedVideoAndImageBackgrounds": true,
+          "hiddenBackgroundCueEditableInAdmin": true,
+          "persistedConfigReloaded": true,
+          "configuredFadeSeconds": 1.2,
+          "musicImageAndIndependentStage": false,
+          "backgroundSoundtrackEnabled": false,
+          "selectedMusicPauseKeepsImage": false,
+          "nativePausedVideoSeek": true,
+          "nativePausedAndPlayingMusicSeek": false,
+          "nativeAudioGainsMeasuredHere": false,
+          "audioUnavailableReason": "No enumerated native audio endpoint"
+        },
+        "fixtureImportMethods": [
+          "Authenticated API fixture setup; native chooser is separate"
+        ],
+        "nativeChooserDialogExecutionVerified": false,
+        "cuesNativelyPlayedAndStopped": 1,
+        "audioEndpoints": 0,
+        "displays": 1,
+        "audioSkipped": true,
+        "relaunchAdminMode": "Dedicated Windows app window",
+        "existingBrowserTabReconnectedAfterRelaunch": true,
+        "externalBrowserDispatchedOnRelaunch": false,
+        "dedicatedAdminPageLoadedOnRelaunch": true
+      },
+      "physicalSpeakerOrProjectorOutputVerified": false
+    },
+    {
+      "os": "windows",
+      "architecture": "arm64",
+      "jobID": 108659791875,
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36333487233/job/108659791875",
+      "jobConclusion": "success",
+      "artifact": {
+        "id": 10936508620,
+        "name": "native-windows-arm64",
+        "size": 13656214,
+        "sha256": "a6ab7512a68e66038575a7864f2477f99476db601e12c243b58191df7941b6b6",
+        "githubDigestVerified": true
+      },
+      "sourceMembers": {
+        "nativeSmoke": {
+          "member": "native-harness-windows-arm64.exe.smoke.json",
+          "sha256": "61b53799afd9e5d654d3489b4edba68e4e2bb7889948c5842aa3a475e26a3e77"
+        },
+        "browserNative": {
+          "member": "browser-native/windows-arm64/result.json",
+          "sha256": "971dd009299429ab958a3fd733144700f37bcde857eecff32485d92355c018c9"
+        },
+        "deviceEnumeration": {
+          "member": "native-enumeration-windows-arm64.json",
+          "sha256": "9c1c3076196dc6bfd764342c4d8ad2fd56976e6247af72b7d1a828d9df53f8be"
+        }
+      },
+      "audioEndpoints": 0,
+      "displays": 1,
+      "audioEndpointUnavailable": true,
+      "audioUnavailableReason": "No active runner audio endpoint",
+      "nativeAudioPauseResumeSeekVerified": false,
+      "nativeVideoPauseResumeSeekVerified": true,
+      "browserPausedVideoSeekVerified": true,
+      "browserPausedAndPlayingMusicSeekVerified": false,
+      "requiredNativeTransportChecksPassed": [
+        "initialPauseAndSupersededResume",
+        "pausedSeekEndRetainsSelection",
+        "rapidSeeksCoalesce",
+        "seekNaturalEnd",
+        "seekPlayingAndPaused",
+        "stageAndImagePreservePausedTransport",
+        "stopDuringPendingSeek",
+        "terminalPauseRaceAcknowledged",
+        "videoPauseClockAndFrameFreeze",
+        "videoResumeContinuity"
+      ],
+      "nativeScene": {
+        "status": "passed",
+        "nativeStreamGainsReadBack": false,
+        "audioFadesVerified": false,
+        "audioPauseResumeSeekVerified": false,
+        "audioUnavailableReason": "No active runner audio endpoint",
+        "backgroundLoop": true,
+        "stableForegroundAcrossSceneRevisions": true,
+        "stageOffPreservesTimeline": true,
+        "imagePreservesForeground": true,
+        "imagePixelsRendered": true,
+        "stageCursorMessageHandling": true,
+        "cursorObservationScope": "Synthetic WM_SETCURSOR/current-thread GetCursor plus global GetCursorInfo after paused stage off; desktop capability is checked separately",
+        "hardStopClearsScene": true,
+        "visualCrossfadePixelsRendered": true,
+        "imageFadeToBlackPixelsRendered": true,
+        "videoTimelinesAdvanceDuringFade": true,
+        "liveVideoFrameReadbackAdvances": true,
+        "exclusiveRendererTargetOwnership": true,
+        "zeroDurationVisualSwitchImmediate": true,
+        "firstVisualImmediate": true,
+        "rapidVisualReplacementBounded": true,
+        "stageOffEscapeHardStopCancelVisualFade": true,
+        "failedVisualReturnsToBackgroundOrBlack": true,
+        "videoPauseClockAndFrameFreeze": true,
+        "videoResumeContinuity": true,
+        "seekPlayingAndPaused": true,
+        "stageAndImagePreservePausedTransport": true,
+        "rapidSeeksCoalesce": true,
+        "stopDuringPendingSeek": true,
+        "initialPauseAndSupersededResume": true,
+        "seekNaturalEnd": true,
+        "pausedSeekEndRetainsSelection": true,
+        "terminalPauseRaceAcknowledged": true,
+        "physicalOutputsVerified": false
+      },
+      "browserNative": {
+        "passed": true,
+        "application": "Smart Stage dev (e38d6155f56f), go1.26.8, windows/arm64",
+        "platform": "windows",
+        "architecture": "arm64",
+        "node": "v24.21.0",
+        "nodeArchitecture": "arm64",
+        "physicalRoutingVerified": false,
+        "checks": [
+          "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+          "Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible",
+          "Four real media fixtures were imported without copying; Admin saved four labels and reordered stable cue IDs",
+          "Embedded screen-wake-lock control truthfully reported Needs HTTPS and stayed disabled on real non-loopback HTTP",
+          "Admin saved a cue color through the real API; playlist/command reads and remote CSSOM styling agreed under production CSP",
+          "Missing native audio output produced a visible recoverable error; STOP remained usable",
+          "Remote Stage off preserved native video playback while hiding the stage; Stage on reopened it and emergency Escape stopped and hid it",
+          "Video second press paused in place; seeking while paused preserved the native generation and Stage; third press resumed; STOP then returned to the selected background",
+          "Real native image selection, independent stage hiding/restoration, and image-only STOP passed; music/background soundtrack integration was unavailable because the runner has no audio endpoint",
+          "Admin saved/reloaded fade and background soundtrack settings without a pause preference; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available",
+          "Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap",
+          "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser",
+          "Admin Quit during real native video playback exited successfully and closed both HTTP listeners",
+          "Windows relaunch loaded its dedicated Admin window; the existing external Admin tab also reconnected, loaded new assets exactly once, retained its URL and stayed the only page without an OS browser dispatch"
+        ],
+        "browser": "153.0.8010.12",
+        "sceneIntegration": {
+          "nativeImageInspected": true,
+          "savedVideoAndImageBackgrounds": true,
+          "hiddenBackgroundCueEditableInAdmin": true,
+          "persistedConfigReloaded": true,
+          "configuredFadeSeconds": 1.2,
+          "musicImageAndIndependentStage": false,
+          "backgroundSoundtrackEnabled": false,
+          "selectedMusicPauseKeepsImage": false,
+          "nativePausedVideoSeek": true,
+          "nativePausedAndPlayingMusicSeek": false,
+          "nativeAudioGainsMeasuredHere": false,
+          "audioUnavailableReason": "No enumerated native audio endpoint"
+        },
+        "fixtureImportMethods": [
+          "Authenticated API fixture setup; native chooser is separate"
+        ],
+        "nativeChooserDialogExecutionVerified": false,
+        "cuesNativelyPlayedAndStopped": 1,
+        "audioEndpoints": 0,
+        "displays": 1,
+        "audioSkipped": true,
+        "relaunchAdminMode": "Dedicated Windows app window",
+        "existingBrowserTabReconnectedAfterRelaunch": true,
+        "externalBrowserDispatchedOnRelaunch": false,
+        "dedicatedAdminPageLoadedOnRelaunch": true
+      },
+      "physicalSpeakerOrProjectorOutputVerified": false
+    }
+  ]
+}
