@@ -54,7 +54,7 @@ type StageSettings struct {
 	BackgroundAudio bool    `json:"backgroundAudio"`
 	FadeEnabled     bool    `json:"fadeEnabled"`
 	FadeSeconds     float64 `json:"fadeSeconds"`
-	ToggleAudio     bool    `json:"toggleAudio"`
+	ToggleAudio     bool    `json:"toggleAudio"` // Legacy stored preference; foreground buttons always pause/resume.
 }
 
 func (s StageSettings) Valid() bool {

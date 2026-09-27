@@ -219,14 +219,20 @@ acceptance testing.
    while removing it from the remote.
 6. Tap an audio/video cue to play it. An audio cue returns the stage to its
    background; an image cue changes the picture while the music and its selected
-   button stay active. Press the selected video or image button again to stop
-   it and return to the background or black, with Stage still on. Clearing an
-   image preserves independent music; if the image covers a running video,
-   that video also stops so it does not reappear. Background buttons keep
-   selecting the background. Enable **Press selected music button again to stop**
-   to stop that music without clearing an image. **Stage on/off** opens or closes
-   the stage independently of foreground music/video. The pointer is hidden
-   over the fullscreen stage and restored outside it.
+   button stay active. Press the selected audio/video button again to **pause**;
+   press it once more to **resume** at the same position. A paused video keeps
+   its frame and the cue stays selected. Pausing music keeps an independent
+   image visible. Use **STOP** to end playback and return to the background.
+   An image button still toggles its image off; independent music continues.
+   If the image covers a foreground video, clearing it also stops that video
+   so it does not reappear. Background buttons keep selecting the background.
+   **Stage on/off** opens or closes the stage independently of foreground media.
+   The pointer is hidden over the fullscreen stage and restored outside it.
+   During audio/video playback, the bottom position slider lets you seek. Touch
+   or drag to preview the time in large numbers at the center; release to jump
+   there. The preview fades away on release. Seeking while paused stays paused.
+   The slider is unavailable while loading or when duration is unknown. Keyboard
+   arrows move one second, Page Up/Down ten seconds, and Home/End go to either end.
 7. **STOP** ends the foreground cue and clears the image overlay, returning to
    the current background and its optional soundtrack. Enabled fades crossfade
    outgoing images/videos to the next visual or background, or fade them to
@@ -249,8 +255,9 @@ playlist unchanged. Loading replaces the cue list and saved stage/sound settings
 together, remains stopped, and revalidates media before playback.
 
 The file includes cue order, labels, original media paths, button colors,
-hidden/background flags, the default background, its audio setting, fades and
-the selected-music toggle. Audio/display device choices, connection credentials
+hidden/background flags, the default background, its audio setting and fades.
+The legacy selected-music toggle is preserved in files for compatibility but no
+longer changes button behavior. Audio/display device choices, connection credentials
 and language preferences stay on the host. Media is not copied or embedded:
 the original files must remain accessible at their saved paths. If a file is
 missing, outside the configured media roots, or the playlist file is invalid,

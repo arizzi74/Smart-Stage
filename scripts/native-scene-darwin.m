@@ -3,17 +3,27 @@
 // the shipped application contains no test endpoint or diagnostic hooks.
 #import "../internal/platform/bridge_darwin.m"
 
+static BOOL probePaused;
+static uint64_t probeTransportRevision, probeSeekRevision;
+static double probeSeekSeconds;
+static void probeTransport(BOOL paused, uint64_t transport, uint64_t seek, double position) {
+    probePaused = paused; probeTransportRevision = transport;
+    probeSeekRevision = seek; probeSeekSeconds = position;
+}
 static void probeApply(uint64_t revision, uint64_t foregroundID, NSString *foreground,
     NSString *image, NSString *background, NSString *backgroundKind, BOOL backgroundAudio,
     NSString *audio, NSString *display, BOOL stage, double fade, BOOL hard) {
     ss_scene_request request = {0};
     request.revision = revision; request.generation = foregroundID ?: revision;
     request.foreground_id = foregroundID; request.foreground_path = foreground.UTF8String ?: "";
-    request.foreground_kind = foreground.length ? ([foreground.pathExtension.lowercaseString isEqual:@"mp4"] ? "video" : "audio") : ""; request.foreground_has_audio = foreground.length != 0;
+    request.foreground_kind = foreground.length ? ([foreground.pathExtension.lowercaseString isEqual:@"mp4"] ? "video" : "audio") : "";
+    request.foreground_has_audio = foreground.length != 0 && ![foreground.lastPathComponent isEqual:@"silent-1080p.mp4"];
     request.image_path = image.UTF8String ?: ""; request.background_path = background.UTF8String ?: "";
     request.background_kind = backgroundKind.UTF8String ?: ""; request.background_audio = backgroundAudio;
     request.audio = audio.UTF8String; request.display = display.UTF8String;
     request.stage_enabled = stage; request.fade_seconds = fade; request.hard_stop = hard;
+    request.foreground_paused = probePaused; request.transport_revision = probeTransportRevision;
+    request.seek_revision = probeSeekRevision; request.seek_seconds = probeSeekSeconds;
     ss_scene(&request);
 }
 int main(void) {
@@ -29,6 +39,7 @@ int main(void) {
         NSString *secondImage = environment("SMARTSTAGE_SCENE_PROBE_SECOND_IMAGE");
         if (!audio.length || !display.length || !first.length || !second.length || !background.length || !imagePath.length || !secondImage.length) return 2;
         NSString *shortAudio = [background.stringByDeletingLastPathComponent stringByAppendingPathComponent:@"Opening – café's tone.wav"];
+        NSString *silentVideo = [background.stringByDeletingLastPathComponent stringByAppendingPathComponent:@"silent-1080p.mp4"];
         char *failure = ss_init();
         if (failure) { fprintf(stderr, "%s\n", failure); ss_free(failure); return 3; }
         __block NSUInteger phase = 0;
@@ -36,9 +47,16 @@ int main(void) {
         __block BOOL sawFirstPlaying = NO, sawSecondPlaying = NO, sawEnded = NO;
         __block double began = NSProcessInfo.processInfo.systemUptime, phaseBegan = began, before = 0, lastBackground = 0;
         __block AVPlayer *originalForeground;
+        __block AVPlayerItem *originalItem;
+        __block SSSceneImage *transportImage;
+        __block SSScenePlayer *transportTail;
         __block SSScenePlayer *originalBackground, *outgoingVideo;
         __block SSSceneImage *outgoingImage;
         __block BOOL visualOverlap = NO, movingOutgoing = NO;
+        __block BOOL seekRacePending = NO, stopSeekPending = NO, escapeSeekPending = NO, stageSeekPending = NO, pauseSeekPending = NO;
+        __block double audioFadeBeforePause = 0, visualFadeBeforePause = 0;
+        __block uint64_t observedSeekSerial = 0;
+        __block NSMutableSet<NSString *> *transportEvents = [NSMutableSet set];
         __block NSMutableArray *observations = [NSMutableArray array];
         dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
         dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 20 * NSEC_PER_MSEC), 20 * NSEC_PER_MSEC, NSEC_PER_MSEC);
@@ -48,7 +66,7 @@ int main(void) {
                 // must not repeat the final report or advance after a failure.
                 if (passed || atomic_load(&shuttingDown)) return;
                 double now = NSProcessInfo.processInfo.systemUptime;
-                if (now - began > 50) { fprintf(stderr, "Scene probe timed out at phase %lu\n", (unsigned long)phase); ss_quit(); return; }
+                if (now - began > 85) { fprintf(stderr, "Scene probe timed out at phase %lu\n", (unsigned long)phase); ss_quit(); return; }
                 char *raw;
                 while ((raw = ss_poll())) {
                     NSDictionary *event = [NSJSONSerialization JSONObjectWithData:[[NSString stringWithUTF8String:raw] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
@@ -59,6 +77,13 @@ int main(void) {
                     if ([event[@"kind"] isEqual:@"playing"] && [event[@"generation"] unsignedLongLongValue] == 10) sawFirstPlaying = YES;
                     if ([event[@"kind"] isEqual:@"playing"] && [event[@"generation"] unsignedLongLongValue] == 20) sawSecondPlaying = YES;
                     if ([event[@"kind"] isEqual:@"ended"] && [event[@"generation"] unsignedLongLongValue] == 30) sawEnded = YES;
+                    if ([event[@"generation"] unsignedLongLongValue] >= 80) {
+                        [transportEvents addObject:[NSString stringWithFormat:@"%@:%@:%@", event[@"generation"], event[@"transportRevision"], event[@"kind"]]];
+                        if (([event[@"transportRevision"] unsignedLongLongValue] == 13 || [event[@"transportRevision"] unsignedLongLongValue] == 17) &&
+                            ([event[@"kind"] isEqual:@"playing"] || [event[@"kind"] isEqual:@"ended"])) {
+                            fprintf(stderr, "Cancelled seek delivered a late foreground event\n"); ss_quit(); return;
+                        }
+                    }
                 }
                 if (phase == 0 && sceneBackground.started && sceneBackground.player.volume > .999 && sceneBackground.layer.readyForDisplay && blackOverlay.hidden) {
                     originalBackground = sceneBackground;
@@ -295,6 +320,289 @@ int main(void) {
                 } else if (phase == 36 && [sceneImage.path isEqual:secondImage] && sceneImage.layer.contents) {
                     if (sceneVisualTimer || sceneVisualOutgoing || sceneVisualCurrent != sceneImage || sceneImage.layer.opacity != 1 || !outgoingImage.disposed) { fprintf(stderr, "Disabled visual fade did not switch immediately\n"); ss_quit(); return; }
                     [observations addObject:@{@"disabledVisualFadeSwitchesImmediately":@YES}];
+                    probeTransport(NO, 1, 0, 0);
+                    probeApply(37, 80, first, imagePath, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 37; phaseBegan = now;
+                } else if (phase == 37 && sceneForeground.started && sceneForeground.player.volume > .999 &&
+                           seconds(sceneForeground.player.currentTime) > .35 && !sceneVisualTimer) {
+                    originalForeground = sceneForeground.player; originalItem = sceneForeground.item;
+                    originalBackground = sceneBackground; transportImage = sceneImage;
+                    before = seconds(originalForeground.currentTime);
+                    probeTransport(YES, 2, 0, 0);
+                    probeApply(38, 80, first, imagePath, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 38; phaseBegan = now;
+                } else if (phase == 38 && appliedSceneRevision == 38 && now - phaseBegan > .25) {
+                    if (sceneForeground.player != originalForeground || sceneForeground.item != originalItem || originalForeground.rate != 0 ||
+                        fabs(seconds(originalForeground.currentTime) - before) > .08 || !originalForeground.muted ||
+                        sceneForeground.player.volume < .999 || sceneBackground != originalBackground ||
+                        (sceneBackground.player.volume > .001 && !sceneBackground.player.muted) || sceneImage != transportImage ||
+                        sceneImage.layer.hidden || !stageEnabled || ![transportEvents containsObject:@"80:2:paused"]) {
+                        fprintf(stderr, "Audio pause moved the clock, replaced the decoder, or returned to background\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"audioPauseFreezesNativeClockAndRetainsDecoder":@YES,
+                        @"audioPausePreservesImageAndBackgroundOwnership":@YES}];
+                    probeApply(39, 80, first, imagePath, background, @"video", YES, audio, display, NO, .8, NO);
+                    phase = 39; phaseBegan = now;
+                } else if (phase == 39 && appliedSceneRevision == 39 && now - phaseBegan > .15) {
+                    if (stageEnabled || sceneForeground.player != originalForeground || originalForeground.rate != 0 ||
+                        fabs(seconds(originalForeground.currentTime) - before) > .08) {
+                        fprintf(stderr, "Stage-off resumed paused audio\n"); ss_quit(); return;
+                    }
+                    probeApply(40, 80, first, imagePath, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 40; phaseBegan = now;
+                } else if (phase == 40 && appliedSceneRevision == 40 && now - phaseBegan > .2) {
+                    if (!stageEnabled || sceneForeground.player != originalForeground || originalForeground.rate != 0 ||
+                        fabs(seconds(originalForeground.currentTime) - before) > .08 || sceneImage != transportImage) {
+                        fprintf(stderr, "Stage-on resumed paused audio or replaced its image\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"stageChangesRetainPausedAudioAndImage":@YES}];
+                    probeTransport(YES, 3, 1, 5.25);
+                    probeApply(41, 80, first, imagePath, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 41; phaseBegan = now;
+                } else if (phase == 41 && sceneForeground.completedSeekRevision == 1 && !sceneForeground.seeking && now - phaseBegan > .2) {
+                    if (sceneForeground.player != originalForeground || sceneForeground.item != originalItem || originalForeground.rate != 0 ||
+                        fabs(seconds(originalForeground.currentTime) - 5.25) > .06 || ![transportEvents containsObject:@"80:3:paused"]) {
+                        fprintf(stderr, "Paused audio seek lost its position, pause, or decoder\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"pausedAudioSeekUsesRequestedNativePositionWithoutPlayback":@YES}];
+                    before = seconds(originalForeground.currentTime); observedSeekSerial = sceneForeground.seekSerial;
+                    probeApply(42, 80, first, imagePath, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 42; phaseBegan = now;
+                } else if (phase == 42 && appliedSceneRevision == 42 && now - phaseBegan > .2) {
+                    if (sceneForeground.seekSerial != observedSeekSerial || originalForeground.rate != 0 ||
+                        fabs(seconds(originalForeground.currentTime) - before) > .06) {
+                        fprintf(stderr, "Unchanged seek intent repeated on unrelated scene update\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"unchangedSeekRevisionDoesNotRepeatNativeSeek":@YES}];
+                    probeTransport(NO, 4, 1, 5.25);
+                    probeApply(43, 80, first, imagePath, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 43; phaseBegan = now;
+                } else if (phase == 43 && originalForeground.rate > 0 && seconds(originalForeground.currentTime) > before + .2) {
+                    if (sceneForeground.player != originalForeground || sceneForeground.item != originalItem ||
+                        seconds(originalForeground.currentTime) > before + 1.2 || ![transportEvents containsObject:@"80:4:playing"]) {
+                        fprintf(stderr, "Audio resume restarted instead of continuing the paused clock\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"audioResumeContinuesSameNativeDecoderAndClock":@YES}];
+                    probeTransport(NO, 5, 2, 9);
+                    probeApply(44, 80, first, imagePath, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 44; phaseBegan = now;
+                } else if (phase == 44 && sceneForeground.completedSeekRevision == 2 && !sceneForeground.seeking && seconds(originalForeground.currentTime) > 9.15) {
+                    if (sceneForeground.player != originalForeground || sceneForeground.item != originalItem || originalForeground.rate <= 0 ||
+                        seconds(originalForeground.currentTime) > 10.2 || ![transportEvents containsObject:@"80:5:playing"]) {
+                        fprintf(stderr, "Playing audio seek did not continue from its native target\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"playingAudioSeekPreservesPlaybackAndDecoder":@YES}];
+                    probeTransport(NO, 6, 3, 15);
+                    probeApply(45, 80, first, imagePath, background, @"video", YES, audio, display, YES, .8, NO);
+                    // This block follows the actual first seek application but
+                    // precedes its queued main-thread completion. The next API
+                    // request invalidates that completion before it can play.
+                    onMain(^{
+                        seekRacePending = sceneForeground.seeking;
+                        probeTransport(NO, 7, 4, 2);
+                        probeApply(46, 80, first, imagePath, background, @"video", YES, audio, display, YES, .8, NO);
+                    });
+                    phase = 45; phaseBegan = now;
+                } else if (phase == 45 && appliedSceneRevision == 46 && sceneForeground.completedSeekRevision == 4 &&
+                           !sceneForeground.seeking && seconds(originalForeground.currentTime) > 2.15) {
+                    if (!seekRacePending || sceneForeground.player != originalForeground || originalForeground.rate <= 0 ||
+                        seconds(originalForeground.currentTime) > 3.2 || [transportEvents containsObject:@"80:6:playing"] ||
+                        ![transportEvents containsObject:@"80:7:playing"]) {
+                        fprintf(stderr, "A superseded in-flight seek won over the latest native intent\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"latestAudioSeekWinsOverInFlightCompletion":@YES}];
+                    [NSNotificationCenter.defaultCenter postNotificationName:AVPlayerItemDidPlayToEndTimeNotification object:originalItem];
+                    phase = 46; phaseBegan = now;
+                } else if (phase == 46 && now - phaseBegan > .15) {
+                    if (sceneForeground.player != originalForeground || originalForeground.rate <= 0 ||
+                        [transportEvents containsObject:@"80:7:ended"]) {
+                        fprintf(stderr, "Stale native end notification retired the newly sought cue\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"staleEndAfterSeekCannotRetireForeground":@YES}];
+                    probeTransport(NO, 8, 0, 0);
+                    probeApply(47, 90, background, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 47; phaseBegan = now;
+                } else if (phase == 47 && sceneForeground.started && sceneForeground.layer.readyForDisplay &&
+                           sceneVisualCurrent == sceneForeground && sceneFadeTimer && sceneVisualTimer &&
+                           sceneForeground.player.volume > .1 && sceneForeground.player.volume < .7) {
+                    originalForeground = sceneForeground.player; originalItem = sceneForeground.item;
+                    transportTail = sceneRetiring; before = seconds(originalForeground.currentTime);
+                    audioFadeBeforePause = sceneFadeStarted; visualFadeBeforePause = sceneVisualStarted;
+                    probeTransport(YES, 9, 0, 0);
+                    probeApply(48, 90, background, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 48; phaseBegan = now;
+                } else if (phase == 48 && appliedSceneRevision == 48 && now - phaseBegan > .2) {
+                    if (sceneForeground.player != originalForeground || sceneForeground.item != originalItem || originalForeground.rate != 0 ||
+                        fabs(seconds(originalForeground.currentTime) - before) > .08 || !sceneForeground.layer.readyForDisplay ||
+                        sceneForeground.layer.hidden || sceneBackground != originalBackground ||
+                        sceneFadeStarted != audioFadeBeforePause || sceneVisualStarted != visualFadeBeforePause ||
+                        (transportTail.player && (!transportTail.player.muted || transportTail.player.volume > .001)) ||
+                        ![transportEvents containsObject:@"90:9:paused"]) {
+                        fprintf(stderr, "Video pause moved the frame, restarted a fade, or left its retiring audio audible\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"videoPauseFreezesNativeClockAndRetainsVisibleFrame":@YES,
+                        @"pausePreservesFadeClocksAndSilencesRetiringForegroundAudio":@YES}];
+                    probeTransport(YES, 10, 1, 1.5);
+                    probeApply(49, 90, background, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 49; phaseBegan = now;
+                } else if (phase == 49 && sceneForeground.completedSeekRevision == 1 && !sceneForeground.seeking && now - phaseBegan > .2) {
+                    if (sceneForeground.player != originalForeground || sceneForeground.item != originalItem || originalForeground.rate != 0 ||
+                        fabs(seconds(originalForeground.currentTime) - 1.5) > .06 || !sceneForeground.layer.readyForDisplay ||
+                        ![transportEvents containsObject:@"90:10:paused"]) {
+                        fprintf(stderr, "Paused video seek failed to hold its requested native frame\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"pausedVideoSeekHoldsRequestedFrameWithSameDecoder":@YES}];
+                    probeApply(50, 90, background, nil, background, @"video", YES, audio, display, NO, .8, NO);
+                    phase = 50; phaseBegan = now;
+                } else if (phase == 50 && appliedSceneRevision == 50 && now - phaseBegan > .1) {
+                    if (stageEnabled || originalForeground.rate != 0 || fabs(seconds(originalForeground.currentTime) - 1.5) > .06) {
+                        fprintf(stderr, "Stage-off changed paused video transport\n"); ss_quit(); return;
+                    }
+                    probeApply(51, 90, background, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 51; phaseBegan = now;
+                } else if (phase == 51 && appliedSceneRevision == 51 && now - phaseBegan > .15) {
+                    if (sceneForeground.player != originalForeground || originalForeground.rate != 0 || !stageEnabled ||
+                        sceneForeground.layer.hidden || fabs(seconds(originalForeground.currentTime) - 1.5) > .06) {
+                        fprintf(stderr, "Stage-on restarted or hid paused video\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"stageChangesRetainPausedVideoFrameAndClock":@YES}];
+                    probeTransport(NO, 11, 1, 1.5);
+                    probeApply(52, 90, background, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 52; phaseBegan = now;
+                } else if (phase == 52 && originalForeground.rate > 0 && seconds(originalForeground.currentTime) > 1.65) {
+                    if (sceneForeground.player != originalForeground || sceneForeground.item != originalItem ||
+                        seconds(originalForeground.currentTime) > 2.5 || ![transportEvents containsObject:@"90:11:playing"]) {
+                        fprintf(stderr, "Video resume failed native timeline continuity\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"videoResumeContinuesSameNativeDecoderAndClock":@YES}];
+                    probeTransport(NO, 12, 2, .4);
+                    probeApply(53, 90, background, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 53; phaseBegan = now;
+                } else if (phase == 53 && sceneForeground.completedSeekRevision == 2 && !sceneForeground.seeking &&
+                           originalForeground.rate > 0 && seconds(originalForeground.currentTime) > .55) {
+                    if (sceneForeground.player != originalForeground || sceneForeground.item != originalItem ||
+                        seconds(originalForeground.currentTime) > 1.4 || ![transportEvents containsObject:@"90:12:playing"]) {
+                        fprintf(stderr, "Playing video seek failed to resume at its native target\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"playingVideoSeekPreservesPlaybackAndDecoder":@YES}];
+                    probeTransport(NO, 13, 3, 2);
+                    probeApply(54, 90, background, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    onMain(^{
+                        stopSeekPending = sceneForeground.seeking;
+                        outgoingVideo = sceneForeground;
+                        probeTransport(NO, 14, 0, 0);
+                        probeApply(55, 0, nil, nil, nil, nil, NO, audio, display, NO, .8, YES);
+                    });
+                    phase = 54; phaseBegan = now;
+                } else if (phase == 54 && appliedSceneRevision == 55 && now - phaseBegan > .3) {
+                    if (!stopSeekPending || sceneForeground || sceneBackground || sceneRetiring || sceneFadeTimer || sceneVisualTimer ||
+                        stageEnabled || stageWindow.isVisible || originalForeground.currentItem || originalForeground.rate != 0 || !outgoingVideo.disposed) {
+                        fprintf(stderr, "Hard STOP lost to an in-flight seek completion\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"hardStopDuringNativeSeekPreventsLatePlaybackAndReveal":@YES}];
+                    probeTransport(YES, 15, 0, 0);
+                    probeApply(56, 100, background, nil, nil, nil, NO, audio, display, YES, .8, NO);
+                    phase = 55; phaseBegan = now;
+                } else if (phase == 55 && sceneForeground.layer.readyForDisplay && now - phaseBegan > .25) {
+                    if (sceneForeground.started || sceneForeground.player.rate != 0 || !sceneForeground.player.muted ||
+                        seconds(sceneForeground.player.currentTime) > .03 || sceneForeground.layer.hidden ||
+                        ![transportEvents containsObject:@"100:15:paused"] || [transportEvents containsObject:@"100:15:playing"]) {
+                        fprintf(stderr, "Initially paused video briefly played or failed to prepare its first frame\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"pauseBeforeVideoReadyDecodesFirstFrameWithoutStartingClock":@YES}];
+                    originalForeground = sceneForeground.player;
+                    probeTransport(NO, 16, 0, 0);
+                    probeApply(57, 100, background, nil, nil, nil, NO, audio, display, YES, .8, NO);
+                    phase = 56; phaseBegan = now;
+                } else if (phase == 56 && sceneForeground.started && seconds(originalForeground.currentTime) > .15) {
+                    probeTransport(NO, 17, 1, 2);
+                    probeApply(58, 100, background, nil, nil, nil, NO, audio, display, YES, .8, NO);
+                    onMain(^{
+                        escapeSeekPending = sceneForeground.seeking;
+                        outgoingVideo = sceneForeground;
+                        sceneEmergency();
+                    });
+                    phase = 57; phaseBegan = now;
+                } else if (phase == 57 && now - phaseBegan > .3) {
+                    if (!escapeSeekPending || sceneForeground || sceneBackground || sceneRetiring || sceneVisualCurrent || sceneVisualOutgoing ||
+                        stageEnabled || stageWindow.isVisible || originalForeground.currentItem || originalForeground.rate != 0 || !outgoingVideo.disposed) {
+                        fprintf(stderr, "Escape lost to an in-flight seek completion\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"escapeDuringNativeSeekPreventsLatePlaybackAndReveal":@YES}];
+                    probeTransport(YES, 18, 0, 0);
+                    probeApply(59, 110, silentVideo, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 58; phaseBegan = now;
+                } else if (phase == 58 && sceneForeground.layer.readyForDisplay && sceneBackground.started &&
+                           sceneBackground.player.volume > .999 && seconds(sceneBackground.player.currentTime) > .2) {
+                    originalForeground = sceneForeground.player; originalBackground = sceneBackground;
+                    before = seconds(sceneBackground.player.currentTime);
+                    phase = 59; phaseBegan = now;
+                } else if (phase == 59 && now - phaseBegan > .25) {
+                    if (sceneForeground.player != originalForeground || originalForeground.rate != 0 ||
+                        seconds(originalForeground.currentTime) > .03 || sceneForeground.layer.hidden ||
+                        sceneBackground != originalBackground || sceneBackground.player.volume < .999 || sceneBackground.player.muted ||
+                        seconds(sceneBackground.player.currentTime) < before + .15) {
+                        fprintf(stderr, "Paused silent video interrupted its independent background soundtrack\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"silentVideoPauseKeepsIndependentBackgroundAudioAndClock":@YES}];
+                    probeTransport(YES, 19, 1, 99);
+                    probeApply(60, 110, silentVideo, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 60; phaseBegan = now;
+                } else if (phase == 60 && sceneForeground.completedSeekRevision == 1 && !sceneForeground.seeking && now - phaseBegan > .15) {
+                    if (sceneForeground.player != originalForeground || originalForeground.rate != 0 ||
+                        fabs(seconds(originalForeground.currentTime) - seconds(sceneForeground.item.duration)) > .06) {
+                        fprintf(stderr, "Native seek did not clamp to finite duration while retaining pause\n"); ss_quit(); return;
+                    }
+                    probeTransport(YES, 20, 2, -5);
+                    probeApply(61, 110, silentVideo, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 61; phaseBegan = now;
+                } else if (phase == 61 && sceneForeground.completedSeekRevision == 2 && !sceneForeground.seeking && now - phaseBegan > .15) {
+                    if (sceneForeground.player != originalForeground || originalForeground.rate != 0 || seconds(originalForeground.currentTime) > .03) {
+                        fprintf(stderr, "Native seek did not clamp a negative target to zero\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"nativeSeekClampsBothFiniteTimelineBounds":@YES}];
+                    probeTransport(YES, 21, 3, 1.2);
+                    probeApply(62, 110, silentVideo, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    onMain(^{
+                        stageSeekPending = sceneForeground.seeking;
+                        probeApply(63, 110, silentVideo, nil, background, @"video", YES, audio, display, NO, .8, NO);
+                    });
+                    phase = 62; phaseBegan = now;
+                } else if (phase == 62 && appliedSceneRevision == 63 && sceneForeground.completedSeekRevision == 3 &&
+                           !sceneForeground.seeking && now - phaseBegan > .2) {
+                    if (!stageSeekPending || stageEnabled || sceneForeground.player != originalForeground || originalForeground.rate != 0 ||
+                        fabs(seconds(originalForeground.currentTime) - 1.2) > .06 || ![transportEvents containsObject:@"110:21:paused"]) {
+                        fprintf(stderr, "Stage update lost the completion of the current paused seek\n"); ss_quit(); return;
+                    }
+                    observedSeekSerial = sceneForeground.seekSerial;
+                    probeApply(64, 110, silentVideo, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 63; phaseBegan = now;
+                } else if (phase == 63 && appliedSceneRevision == 64 && now - phaseBegan > .15) {
+                    if (sceneForeground.seekSerial != observedSeekSerial || originalForeground.rate != 0 ||
+                        fabs(seconds(originalForeground.currentTime) - 1.2) > .06 || sceneForeground.layer.hidden) {
+                        fprintf(stderr, "Stage restoration repeated the completed seek or resumed video\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"stageDuringNativeSeekRetainsCompletionAndPauseWithoutRepeatingSeek":@YES}];
+                    probeTransport(NO, 22, 3, 1.2);
+                    probeApply(65, 110, silentVideo, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    phase = 64; phaseBegan = now;
+                } else if (phase == 64 && originalForeground.rate > 0 && seconds(originalForeground.currentTime) > 1.35) {
+                    probeTransport(NO, 23, 4, .4);
+                    probeApply(66, 110, silentVideo, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    onMain(^{
+                        pauseSeekPending = sceneForeground.seeking;
+                        probeTransport(YES, 24, 4, .4);
+                        probeApply(67, 110, silentVideo, nil, background, @"video", YES, audio, display, YES, .8, NO);
+                    });
+                    phase = 65; phaseBegan = now;
+                } else if (phase == 65 && appliedSceneRevision == 67 && sceneForeground.completedSeekRevision == 4 &&
+                           !sceneForeground.seeking && now - phaseBegan > .25) {
+                    if (!pauseSeekPending || sceneForeground.player != originalForeground || originalForeground.rate != 0 ||
+                        fabs(seconds(originalForeground.currentTime) - .4) > .06 || [transportEvents containsObject:@"110:23:playing"] ||
+                        ![transportEvents containsObject:@"110:24:paused"]) {
+                        fprintf(stderr, "Pause during an in-flight seek lost to the earlier playing intent\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"pauseDuringNativeSeekPreventsEarlierPlayingIntentFromResuming":@YES}];
                     passed = YES;
                     dispatch_source_cancel(timer);
                     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:@{@"status":@"passed",@"observations":observations,

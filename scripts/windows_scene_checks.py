@@ -43,6 +43,13 @@ def scene_checks(audio, display):
             (temporary / name).write_bytes(png)
         result = subprocess.run([str(probe), audio["id"] if audio else "-", display["id"], str(temporary / "first.wav"),
                                  str(temporary / "second.wav"), str(root / "testdata/media/video-aac-1080p.mp4"),
-                                 str(temporary / "background.png"), str(temporary / "green.png")], capture_output=True, text=True, timeout=90)
+                                 str(temporary / "background.png"), str(temporary / "green.png")], capture_output=True, text=True, timeout=150)
         assert result.returncode == 0, f"Native scene probe failed ({result.returncode}): {result.stderr}"
-        return json.loads(result.stdout)
+        evidence = json.loads(result.stdout)
+        for check in ("videoPauseClockAndFrameFreeze", "videoResumeContinuity", "seekPlayingAndPaused",
+                      "stageAndImagePreservePausedTransport", "rapidSeeksCoalesce", "stopDuringPendingSeek",
+                      "initialPauseAndSupersededResume", "seekNaturalEnd",
+                      "pausedSeekEndRetainsSelection", "terminalPauseRaceAcknowledged"):
+            assert evidence.get(check) is True, f"Native transport evidence missing: {check}"
+        assert evidence.get("audioPauseResumeSeekVerified") is bool(audio), "Native audio evidence does not match endpoint availability"
+        return evidence

@@ -51,8 +51,32 @@ def scene_checks(devices):
                             "SMARTSTAGE_SCENE_PROBE_BACKGROUND": str(root / "testdata/media/video-aac-1080p.mp4"),
                             "SMARTSTAGE_SCENE_PROBE_IMAGE": str(image),
                             "SMARTSTAGE_SCENE_PROBE_SECOND_IMAGE": str(second_image)})
-        result = subprocess.run([str(binary)], env=environment, capture_output=True, text=True, timeout=65)
+        result = subprocess.run([str(binary)], env=environment, capture_output=True, text=True, timeout=100)
         assert result.returncode == 0, f"Native scene probe failed: {result.stdout}\n{result.stderr}"
         reports = [json.loads(line) for line in result.stdout.splitlines() if line.startswith("{")]
         assert len(reports) == 1 and reports[0]["status"] == "passed", result.stdout
+        observations = {key for observation in reports[0]["observations"] for key, value in observation.items() if value is True}
+        required = {
+            "audioPauseFreezesNativeClockAndRetainsDecoder",
+            "audioResumeContinuesSameNativeDecoderAndClock",
+            "pausedAudioSeekUsesRequestedNativePositionWithoutPlayback",
+            "playingAudioSeekPreservesPlaybackAndDecoder",
+            "latestAudioSeekWinsOverInFlightCompletion",
+            "staleEndAfterSeekCannotRetireForeground",
+            "videoPauseFreezesNativeClockAndRetainsVisibleFrame",
+            "videoResumeContinuesSameNativeDecoderAndClock",
+            "pausedVideoSeekHoldsRequestedFrameWithSameDecoder",
+            "playingVideoSeekPreservesPlaybackAndDecoder",
+            "stageChangesRetainPausedAudioAndImage",
+            "stageChangesRetainPausedVideoFrameAndClock",
+            "pausePreservesFadeClocksAndSilencesRetiringForegroundAudio",
+            "pauseBeforeVideoReadyDecodesFirstFrameWithoutStartingClock",
+            "hardStopDuringNativeSeekPreventsLatePlaybackAndReveal",
+            "escapeDuringNativeSeekPreventsLatePlaybackAndReveal",
+            "silentVideoPauseKeepsIndependentBackgroundAudioAndClock",
+            "nativeSeekClampsBothFiniteTimelineBounds",
+            "stageDuringNativeSeekRetainsCompletionAndPauseWithoutRepeatingSeek",
+            "pauseDuringNativeSeekPreventsEarlierPlayingIntentFromResuming",
+        }
+        assert required <= observations, f"Native transport checks were skipped: {sorted(required - observations)}"
         return reports[0]

@@ -12,10 +12,15 @@ import (
 )
 
 type presentationSource struct {
-	id                         uint64
-	cueID, path, kind, audioID string
-	hasAudio                   bool
-	duration                   float64
+	id                              uint64
+	cueID, path, kind, audioID      string
+	hasAudio                        bool
+	duration                        float64
+	position                        float64
+	paused                          bool
+	seekPending                     bool
+	transportRevision, seekRevision uint64
+	seekSeconds                     float64
 }
 
 type visualJob struct {
@@ -39,16 +44,6 @@ func imageFile(path string) bool {
 	return false
 }
 
-// Only used to cancel an already selected cue before its first inspection has
-// determined its actual kind. Once known, the inspected kind always wins.
-func videoFile(path string) bool {
-	switch strings.ToLower(filepath.Ext(path)) {
-	case ".mp4", ".m4v", ".mov", ".avi", ".mkv", ".webm", ".wmv", ".mpeg", ".mpg", ".mts", ".m2ts", ".ts", ".3gp", ".3g2", ".ogv":
-		return true
-	}
-	return false
-}
-
 func (s *Service) applySceneLocked(hard bool) error {
 	s.sceneRevision++
 	audio := s.foreground.audioID
@@ -63,11 +58,16 @@ func (s *Service) applySceneLocked(hard bool) error {
 		Revision: s.sceneRevision, Generation: s.state.Generation,
 		ForegroundID: s.foreground.id, ForegroundPath: s.foreground.path,
 		ForegroundKind: s.foreground.kind, ForegroundHasAudio: s.foreground.hasAudio,
+		ForegroundPaused: s.foreground.paused, TransportRevision: s.foreground.transportRevision,
+		SeekRevision: s.foreground.seekRevision, SeekSeconds: s.foreground.seekSeconds,
 		ImagePath: s.image.path, BackgroundPath: s.background.path,
 		BackgroundKind:  s.background.kind,
 		BackgroundAudio: s.config.Stage.BackgroundAudio && s.background.hasAudio,
 		AudioID:         audio, DisplayID: s.config.Outputs.DisplayID,
 		StageEnabled: s.stageDesired, FadeSeconds: fade, HardStop: hard,
+	}
+	if scene.ForegroundID == 0 {
+		scene.TransportRevision = s.state.TransportRevision
 	}
 	s.stageEnablePending = s.stageDesired && !s.state.StageEnabled
 	if native, ok := s.backend.(playback.SceneBackend); ok {

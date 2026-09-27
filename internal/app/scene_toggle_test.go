@@ -10,52 +10,49 @@ import (
 	"smartstage/internal/playback"
 )
 
-func TestSceneSelectedVideoTogglesToBackgroundOrBlack(t *testing.T) {
+func TestSceneSelectedVideoPausesAndResumesWithBackgroundIntact(t *testing.T) {
 	for _, background := range []string{"", "backdrop", "background-video"} {
 		t.Run("background-"+background, func(t *testing.T) {
-			settings := model.StageSettings{BackgroundCueID: background, BackgroundAudio: true, FadeEnabled: true, FadeSeconds: 2.5}
-			s, f, _, paths := sceneSetup(t, settings)
+			s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: background, BackgroundAudio: true, FadeEnabled: true, FadeSeconds: 2.5})
 			if background != "" {
 				eventually(t, func() bool { return f.latest().BackgroundPath == paths[background] })
 			}
+			video := scenePlaying(t, s, f, "video")
 			before := s.Snapshot(true)
-			start := PlayRequest{RequestID: "video-first-press", InstanceID: before.InstanceID, StopEpoch: before.StopEpoch, CueID: "video"}
-			accepted, err := s.Play(start)
+			r := PlayRequest{RequestID: "video-second-press", InstanceID: before.InstanceID, StopEpoch: before.StopEpoch, CueID: "video"}
+			ack, err := s.Play(r)
 			if err != nil {
 				t.Fatal(err)
 			}
-			eventually(t, func() bool { return f.latest().ForegroundPath == paths["video"] })
-			video := f.latest()
-			s.nativeEvent(playback.Event{Kind: "playing", Generation: video.ForegroundID, SceneRevision: video.Revision, StageEnabled: true})
-			if retry, err := s.Play(start); err != nil || !retry.Duplicate || retry.Generation != accepted.Generation || f.latest().Revision != video.Revision {
-				t.Fatalf("duplicate first press changed playback: ack=%+v error=%v scene=%+v", retry, err, f.latest())
+			paused := f.latest()
+			if !paused.ForegroundPaused || paused.ForegroundID != video.ForegroundID || paused.BackgroundPath != paths[background] || !paused.StageEnabled || paused.HardStop || paused.FadeSeconds != 2.5 || s.Snapshot(true).StopEpoch != before.StopEpoch {
+				t.Fatalf("pause changed presentation: %+v", paused)
 			}
-			stopRequest := start
-			stopRequest.RequestID = "video-second-press"
-			stopped, err := s.Play(stopRequest)
-			if err != nil {
+			if retry, err := s.Play(r); err != nil || !retry.Duplicate || retry.TransportRevision != ack.TransportRevision || f.latest().Revision != paused.Revision {
+				t.Fatalf("pause retry changed intent: %+v %v", retry, err)
+			}
+			s.nativeEvent(playback.Event{Kind: "paused", Generation: paused.ForegroundID, TransportRevision: paused.TransportRevision, Position: 8, Duration: 30})
+			s.nativeEvent(playback.Event{Kind: "ended", Generation: video.ForegroundID, TransportRevision: video.TransportRevision})
+			if state := s.Snapshot(true); state.State != "paused" || state.ActiveCueID != "video" || state.Elapsed != 8 {
+				t.Fatalf("late end displaced pause: %+v", state)
+			}
+			r.RequestID = "video-third-press"
+			if _, err := s.Play(r); err != nil {
 				t.Fatal(err)
 			}
-			scene := f.latest()
-			state := s.Snapshot(true)
-			if scene.ForegroundID != 0 || scene.ForegroundPath != "" || scene.ImagePath != "" || scene.BackgroundPath != paths[background] || !scene.StageEnabled || scene.HardStop || scene.FadeSeconds != 2.5 || state.ActiveCueID != "" || state.State != "stopping" || state.StopEpoch != before.StopEpoch+1 {
-				t.Fatalf("second video press did not return to its background: scene=%+v state=%+v", scene, state)
+			resumed := f.latest()
+			if resumed.ForegroundPaused || resumed.ForegroundID != video.ForegroundID || resumed.SeekRevision != 0 {
+				t.Fatalf("resume restarted video: %+v", resumed)
 			}
-			if retry, err := s.Play(stopRequest); err != nil || !retry.Duplicate || retry.StopEpoch != stopped.StopEpoch || f.latest().Revision != scene.Revision {
-				t.Fatalf("duplicate second press changed the stop: ack=%+v error=%v", retry, err)
+			s.nativeEvent(playback.Event{Kind: "playing", Generation: resumed.ForegroundID, TransportRevision: resumed.TransportRevision, Position: 8, Duration: 30})
+			if state := s.Snapshot(true); state.State != "playing" || state.Elapsed != 8 {
+				t.Fatalf("resume lost position: %+v", state)
 			}
-			start.RequestID = "stale-video-press"
-			if _, err := s.Play(start); err == nil {
-				t.Fatal("a delayed PLAY from before the toggle was accepted")
+			if _, err := s.Stop(StopRequest{"video-explicit-stop"}); err != nil {
+				t.Fatal(err)
 			}
-			s.nativeEvent(playback.Event{Kind: "playing", Generation: video.ForegroundID, SceneRevision: video.Revision, StageEnabled: true})
-			s.nativeEvent(playback.Event{Kind: "ended", Generation: video.ForegroundID, SceneRevision: video.Revision, StageEnabled: true})
-			if state := s.Snapshot(true); state.ActiveCueID != "" || state.State != "stopping" {
-				t.Fatalf("late video callbacks undid its toggle: %+v", state)
-			}
-			s.nativeEvent(playback.Event{Kind: "stopped", Generation: stopped.Generation, SceneRevision: scene.Revision, StageEnabled: true})
-			if state := s.Snapshot(true); state.State != "stopped" || !state.StageEnabled {
-				t.Fatalf("video toggle closed the stage: %+v", state)
+			if scene := f.latest(); scene.ForegroundID != 0 || scene.BackgroundPath != paths[background] || !scene.StageEnabled {
+				t.Fatalf("STOP lost background: %+v", scene)
 			}
 		})
 	}
@@ -71,7 +68,7 @@ func TestSceneSelectedImageToggleKeepsIndependentMusic(t *testing.T) {
 	eventually(t, func() bool { return f.latest().ImagePath == paths["image"] })
 	image := f.latest()
 	sceneStageCompletion(t, s, f, image)
-	s.nativeEvent(playback.Event{Kind: "progress", Generation: music.ForegroundID, SceneRevision: image.Revision, StageEnabled: true, Position: 8})
+	s.nativeEvent(playback.Event{Kind: "progress", Generation: music.ForegroundID, SceneRevision: image.Revision, TransportRevision: image.TransportRevision, StageEnabled: true, Position: 8})
 	before := s.Snapshot(true)
 	r := PlayRequest{RequestID: "image-second-press", InstanceID: before.InstanceID, StopEpoch: before.StopEpoch, CueID: "image"}
 	ack, err := s.Play(r)
@@ -91,7 +88,7 @@ func TestSceneSelectedImageToggleKeepsIndependentMusic(t *testing.T) {
 		t.Fatal("a delayed image press reselected the removed image")
 	}
 	// Progress queued before the image disappeared still belongs to this music.
-	s.nativeEvent(playback.Event{Kind: "progress", Generation: music.ForegroundID, SceneRevision: image.Revision, StageEnabled: true, Position: 9})
+	s.nativeEvent(playback.Event{Kind: "progress", Generation: music.ForegroundID, SceneRevision: image.Revision, TransportRevision: image.TransportRevision, StageEnabled: true, Position: 9})
 	if state := s.Snapshot(true); state.Elapsed != 9 || state.ActiveCueID != "music" || state.ImageCueID != "" {
 		t.Fatalf("image removal invalidated independent music: %+v", state)
 	}
@@ -135,7 +132,7 @@ func TestSceneHiddenSelectedImagePressShowsItAgain(t *testing.T) {
 	}
 }
 
-func TestSceneVideoToggleClearsItsImageOverlay(t *testing.T) {
+func TestSceneVideoPausePreservesItsImageOverlay(t *testing.T) {
 	s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: "backdrop", FadeSeconds: 1})
 	eventually(t, func() bool { return f.latest().BackgroundPath == paths["backdrop"] })
 	scenePlaying(t, s, f, "video")
@@ -146,13 +143,13 @@ func TestSceneVideoToggleClearsItsImageOverlay(t *testing.T) {
 	if _, err := play(s, "video", "toggle-covered-video"); err != nil {
 		t.Fatal(err)
 	}
-	if scene := f.latest(); scene.ForegroundID != 0 || scene.ImagePath != "" || scene.BackgroundPath != paths["backdrop"] || !scene.StageEnabled {
-		t.Fatalf("video toggle left its image covering the background: %+v", scene)
+	if scene := f.latest(); scene.ForegroundID == 0 || !scene.ForegroundPaused || scene.ImagePath != paths["image"] || scene.BackgroundPath != paths["backdrop"] || !scene.StageEnabled {
+		t.Fatalf("video pause disturbed its image overlay: %+v", scene)
 	}
 }
 
 func TestSceneSecondPressCancelsPendingVisualAndLatePreparation(t *testing.T) {
-	for _, cue := range []string{"image", "video"} {
+	for _, cue := range []string{"image"} {
 		t.Run(cue, func(t *testing.T) {
 			s, f, _, paths := sceneSetup(t, model.StageSettings{FadeEnabled: true, FadeSeconds: 1})
 			if err := s.Stage(context.Background(), true); err != nil {
@@ -232,23 +229,16 @@ func TestSceneBackgroundButtonRemainsSelectedOnSecondPress(t *testing.T) {
 	}
 }
 
-func TestSceneMusicStillUsesOptionalToggleSetting(t *testing.T) {
+func TestSceneMusicPausesRegardlessOfLegacyToggleSetting(t *testing.T) {
 	for _, enabled := range []bool{false, true} {
-		t.Run(map[bool]string{false: "restart", true: "stop"}[enabled], func(t *testing.T) {
+		t.Run(map[bool]string{false: "disabled", true: "enabled"}[enabled], func(t *testing.T) {
 			s, f, _, paths := sceneSetup(t, model.StageSettings{ToggleAudio: enabled, FadeSeconds: 1})
 			music := scenePlaying(t, s, f, "music")
 			if _, err := play(s, "music", "second-music-press"); err != nil {
 				t.Fatal(err)
 			}
-			if enabled {
-				if scene := f.latest(); scene.ForegroundID != 0 || s.Snapshot(true).ActiveCueID != "" {
-					t.Fatalf("enabled music toggle failed to stop: %+v", scene)
-				}
-			} else {
-				eventually(t, func() bool { return f.latest().ForegroundID != music.ForegroundID })
-				if scene := f.latest(); scene.ForegroundID == 0 || scene.ForegroundPath != paths["music"] || s.Snapshot(true).ActiveCueID != "music" {
-					t.Fatalf("disabled music toggle no longer restarts: %+v", scene)
-				}
+			if scene := f.latest(); !scene.ForegroundPaused || scene.ForegroundID != music.ForegroundID || scene.ForegroundPath != paths["music"] || s.Snapshot(true).ActiveCueID != "music" {
+				t.Fatalf("music did not pause in place: %+v", scene)
 			}
 		})
 	}

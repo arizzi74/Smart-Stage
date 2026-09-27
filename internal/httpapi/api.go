@@ -169,7 +169,7 @@ func respondError(w http.ResponseWriter, err error) {
 	}
 	status := 400
 	switch e.Code {
-	case "revision_conflict", "request_conflict", "stale_epoch", "stale_instance", "active_cue", "must_stop", "updating":
+	case "revision_conflict", "request_conflict", "stale_epoch", "stale_instance", "stale_generation", "stale_transport", "active_cue", "must_stop", "updating":
 		status = 409
 	case "cue_not_found":
 		status = 404

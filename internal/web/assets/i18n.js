@@ -2,6 +2,26 @@
 (() => {
   'use strict';
   const italian = {
+  "Playback position": "Posizione di riproduzione",
+  "Press again to pause": "Premi ancora per mettere in pausa",
+  "Press again to resume": "Premi ancora per riprendere",
+  "Pause": "Pausa",
+  "Resume": "Riprendi",
+  "paused": "in pausa",
+  "Seeking…": "Spostamento…",
+  "Seeking unavailable": "Spostamento non disponibile",
+  "Choose play, pause, resume or seek": "Scegli riproduci, pausa, riprendi o spostamento",
+  "The active cue changed; refresh state before changing playback": "L’elemento attivo è cambiato; aggiorna lo stato prima di modificare la riproduzione",
+  "Playback changed; refresh state before changing playback": "La riproduzione è cambiata; aggiorna lo stato prima di modificarla",
+  "This playback backend does not support pause or seek": "Questo motore di riproduzione non supporta la pausa o lo spostamento",
+  "Wait for an active audio or video cue before seeking": "Attendi un elemento audio o video attivo prima di spostarti",
+  "Seeking requires a known finite duration": "Per spostarti è necessaria una durata finita e nota",
+  "Seek position must be between zero and the cue duration": "La posizione deve essere compresa tra zero e la durata dell’elemento",
+  "Select an audio or video cue before changing playback": "Seleziona un elemento audio o video prima di modificare la riproduzione",
+  "Disconnected": "Disconnesso",
+  "Press the selected audio or video button to pause, then press again to resume. Use STOP to stop playback and return to the background.": "Premi il pulsante audio o video selezionato per mettere in pausa, poi premi ancora per riprendere. Usa STOP per interrompere la riproduzione e tornare allo sfondo.",
+  "Press a selected image again to hide it. Independent music keeps playing.": "Premi di nuovo un’immagine selezionata per nasconderla. La musica indipendente continua.",
+
   "Save playlist…": "Salva playlist…",
   "Load playlist…": "Carica playlist…",
   "Playlist files include cue order, colors and stage settings. Media stays at its original paths; outputs and connection settings stay on this computer.": "I file playlist includono ordine degli elementi, colori e impostazioni della scena. I file multimediali restano nei percorsi originali; uscite e impostazioni di connessione restano su questo computer.",

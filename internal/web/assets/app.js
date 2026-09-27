@@ -18,6 +18,7 @@ let playlist = null, devices = null;
 let playlistBusy = false, refreshing = false, renderedOrder = '', playlistRefresh = false;
 let stageSettingsDirty = false, stageSettingsRevision = 0;
 let controlSequence = 0;
+let seekGesture = null, seekSending = false, seekTarget = null, pendingTransport = null;
 let validationSignature = '', validationRefresh = false, validationRefreshPending = false;
 let localSessionBusy = false, localSessionRetry = null;
 let presenceBusy = false, quitBusy = false, appClosed = false, reloadingAdmin = false;
@@ -118,6 +119,140 @@ function notify(message, error = false) {
   if (appClosed || reloadingAdmin) return;
   localizedText($('notice'), () => message); $('notice').classList.toggle('error', error);
 }
+function playbackPaused() { return Boolean(state?.paused ?? (state?.state === 'paused')); }
+function activeMediaCue() {
+  if (!state || !['loading', 'playing', 'paused'].includes(state.state)) return null;
+  return state.cues.find(cue => cue.id === state.activeCueId && ['audio', 'video'].includes(cue.kind)) || null;
+}
+function transportIdentity() {
+  return { instanceId: state.instanceId, stopEpoch: state.stopEpoch, cueId: state.activeCueId,
+    generation: state.generation, transportRevision: state.transportRevision };
+}
+function sameTransport(value) {
+  return state && value.instanceId === state.instanceId && value.stopEpoch === state.stopEpoch &&
+    value.cueId === state.activeCueId && value.generation === state.generation &&
+    value.transportRevision === state.transportRevision;
+}
+function sameForeground(value) {
+  return value && state && value.instanceId === state.instanceId && value.stopEpoch === state.stopEpoch &&
+    value.cueId === state.activeCueId && value.generation === state.generation;
+}
+function seekRequestPending() { return seekSending && sameForeground(seekTarget); }
+function seekAvailable() {
+  return Boolean(activeMediaCue() && ['playing', 'paused'].includes(state.state) &&
+    Number.isFinite(state.duration) && state.duration > 0 && Number.isSafeInteger(state.transportRevision) &&
+    online && Date.now() - lastSeen <= 18000 && csrf && !updatePending() &&
+    !quitBusy && !appClosed && !reloadingAdmin);
+}
+function canSeek() {
+  return seekAvailable() && !seekRequestPending() && !state.seekPending && !sameForeground(pendingTransport);
+}
+function cancelSeekGesture() {
+  const previous = seekGesture;
+  seekGesture = null;
+  $('seek-preview').classList.remove('visible');
+  if (previous?.pointerId !== undefined && $('seek-range').hasPointerCapture?.(previous.pointerId)) {
+    $('seek-range').releasePointerCapture(previous.pointerId);
+  }
+}
+function renderSeek() {
+  const cue = activeMediaCue();
+  const visible = Boolean(cue) && !appClosed && !quitBusy && !reloadingAdmin;
+  if (seekGesture && (!canSeek() || !sameTransport(seekGesture))) cancelSeekGesture();
+  $('seek-bar').hidden = !visible;
+  document.body.classList.toggle('has-seek-bar', visible);
+  // Keep keyboard focus during native acknowledgement, while all handlers guard input.
+  $('seek-range').disabled = !visible || !seekAvailable();
+  $('seek-range').setAttribute('aria-disabled', String(!canSeek()));
+  if (!visible) { cancelSeekGesture(); return; }
+  const duration = Number.isFinite(state.duration) && state.duration > 0 ? state.duration : 0;
+  const pendingTarget = seekRequestPending();
+  const position = seekGesture ? seekGesture.position : pendingTarget ? seekTarget.position : state.elapsed;
+  if (!seekGesture) {
+    $('seek-range').max = String(duration || 1);
+    $('seek-range').value = String(Math.max(0, Math.min(duration, position || 0)));
+  }
+  localizedText($('seek-cue'), () => cue.label);
+  localizedText($('seek-elapsed'), () => clock(position));
+  localizedText($('seek-duration'), () => duration ? clock(duration) : '—');
+  localizedAttribute($('seek-range'), 'aria-valuetext', () => t('{0} of {1}', {0: clock(position), 1: duration ? clock(duration) : '—'}));
+  localizedText($('seek-status'), () => !online ? t('Disconnected') : state.state === 'loading' ? t('Loading…') :
+    seekRequestPending() || state.seekPending ? t('Seeking…') : !duration ? t('Seeking unavailable') : playbackPaused() ? t('Paused') : '');
+}
+function beginSeek(kind, pointerId) {
+  if (seekGesture || !canSeek()) return false;
+  seekGesture = { ...transportIdentity(), kind, pointerId, position: Number($('seek-range').value), changed: false };
+  localizedText($('seek-preview-time'), () => clock(seekGesture?.position ?? state?.elapsed));
+  $('seek-preview').classList.add('visible');
+  return true;
+}
+function previewSeek() {
+  if (!seekGesture) return;
+  if (!canSeek() || !sameTransport(seekGesture)) { cancelSeekGesture(); renderSeek(); return; }
+  const value = Number($('seek-range').value);
+  if (!Number.isFinite(value)) return;
+  seekGesture.changed ||= Math.abs(value - seekGesture.position) > .01;
+  seekGesture.position = Math.max(0, Math.min(state.duration, value));
+  localizedText($('seek-preview-time'), () => clock(seekGesture?.position ?? value));
+  renderSeek();
+}
+async function finishSeek(commit) {
+  const gesture = seekGesture;
+  const send = commit && gesture?.changed && canSeek() && sameTransport(gesture);
+  cancelSeekGesture();
+  if (!send) { renderSeek(); return; }
+  const request = { requestId: requestID(), action: 'seek', instanceId: gesture.instanceId,
+    stopEpoch: gesture.stopEpoch, cueId: gesture.cueId, generation: gesture.generation,
+    transportRevision: gesture.transportRevision, position: Math.min(state.duration, gesture.position) };
+  const sequence = ++controlSequence;
+  seekSending = true; seekTarget = request; renderSeek();
+  try { await api('POST', '/api/play', request); await refreshState(); }
+  catch (error) { if (sequence === controlSequence) notify(() => errorText(error), true); await refreshState(); }
+  finally { if (seekTarget === request) { seekSending = false; seekTarget = null; } renderSeek(); }
+}
+$('seek-range').addEventListener('pointerdown', event => {
+  if (!canSeek()) { event.preventDefault(); return; }
+  if (!event.isPrimary || event.button !== 0 || !beginSeek('pointer', event.pointerId)) return;
+  try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* Native range tracking remains available. */ }
+});
+$('seek-range').addEventListener('input', () => {
+  if (!seekGesture) {
+    if (!beginSeek('assistive')) { renderSeek(); return; }
+    seekGesture.changed = true;
+  }
+  previewSeek();
+});
+$('seek-range').addEventListener('change', () => {
+  if (seekGesture?.kind === 'assistive') void finishSeek(true);
+});
+document.addEventListener('pointerup', event => {
+  if (seekGesture?.kind === 'pointer' && event.pointerId === seekGesture.pointerId) void finishSeek(true);
+});
+document.addEventListener('pointercancel', event => {
+  if (seekGesture?.pointerId === event.pointerId) { cancelSeekGesture(); renderSeek(); }
+});
+$('seek-range').addEventListener('lostpointercapture', event => {
+  if (seekGesture?.pointerId === event.pointerId) { cancelSeekGesture(); renderSeek(); }
+});
+const seekKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'];
+$('seek-range').addEventListener('keydown', event => {
+  if (event.key === 'Escape') { cancelSeekGesture(); renderSeek(); return; }
+  if (!seekKeys.includes(event.key)) return;
+  event.preventDefault();
+  if (!canSeek()) return;
+  if (seekGesture && seekGesture.kind !== 'keyboard' || !seekGesture && !beginSeek('keyboard')) return;
+  const delta = ['ArrowLeft', 'ArrowDown'].includes(event.key) ? -1 :
+    ['ArrowRight', 'ArrowUp'].includes(event.key) ? 1 : event.key === 'PageDown' ? -10 : 10;
+  const position = event.key === 'Home' ? 0 : event.key === 'End' ? state.duration : seekGesture.position + delta;
+  $('seek-range').value = String(Math.max(0, Math.min(state.duration, position)));
+  previewSeek();
+});
+$('seek-range').addEventListener('keyup', event => {
+  if (seekGesture?.kind === 'keyboard' && seekKeys.includes(event.key)) void finishSeek(true);
+});
+$('seek-range').addEventListener('blur', () => { cancelSeekGesture(); renderSeek(); });
+window.addEventListener('blur', () => { cancelSeekGesture(); renderSeek(); });
+document.addEventListener('visibilitychange', () => { if (document.hidden) { cancelSeekGesture(); renderSeek(); } });
 function connection(connected) {
   if (appClosed || quitBusy || reloadingAdmin) return;
   online = connected;
@@ -126,10 +261,10 @@ function connection(connected) {
   renderRemoteStage();
   for (const [id, node] of cueButtons) {
     const cue = state?.cues.find(c => c.id === id);
-    node.disabled = !connected || updatePending() || !cue || ['missing', 'unsupported', 'error'].includes(cue.validation);
+    node.disabled = !connected || updatePending() || !cue || sameForeground(pendingTransport) && pendingTransport.cueId === id || ![state?.activeCueId, state?.imageCueId].includes(id) && ['missing', 'unsupported', 'error'].includes(cue.validation);
   }
   if (adminPage) { renderUpdateStatus(); renderEditAvailability(); }
-  renderLanguageControls();
+  renderLanguageControls(); renderSeek();
 }
 function showPair() {
   if (appClosed || quitBusy || reloadingAdmin) return;
@@ -208,11 +343,12 @@ function showAppClosed() {
   $('app-closed').hidden = false; $('stop').disabled = true; $('quit-app').disabled = true;
   localizedText($('connection'), () => t("Smart Stage is closed")); $('connection').className = '';
   localizedText($('play-state'), () => t("Closed")); localizedText($('current-cue'), () => t("No playback")); localizedText($('time'), () => '0:00');
+  cancelSeekGesture(); renderSeek();
   localSessionRetry = setTimeout(() => { void probeClosedAdmin(); }, 2000);
 }
 $('quit-app').addEventListener('click', async () => {
   if (!adminPage || role !== 'admin' || !online || quitBusy || appClosed) return;
-  quitBusy = true; $('quit-app').disabled = true; localizedText($('quit-app'), () => t("Closing…"));
+  quitBusy = true; cancelSeekGesture(); renderSeek(); $('quit-app').disabled = true; localizedText($('quit-app'), () => t("Closing…"));
   $('admin-view').inert = true;
   localizedText($('connection'), () => t("Closing Smart Stage…")); notify(() => t("Closing Smart Stage…"));
   try {
@@ -287,7 +423,7 @@ function applyState(next) {
     updatePreparing = false; updateRestartInstance = ''; updateRestartStarted = 0; updateRestartComplete = true;
   }
   state = next;
-  renderRemoteStage();
+  renderRemoteStage(); renderSeek();
   const current = next.cues.find(c => c.id === next.activeCueId);
   localizedText($('play-state'), () => t(next.state));
   localizedText($('current-cue'), () => current ? `${current.position}. ${current.label}` : next.state === 'error' ? t("Operator attention needed") : t("Ready when you are"));
@@ -347,18 +483,18 @@ function renderCues() {
     node.classList.toggle('custom-color', Boolean(color));
     if (color) { node.style.setProperty('--cue-fill', color); node.style.setProperty('--cue-ink', cueTextColor(color)); }
     else { node.style.removeProperty('--cue-fill'); node.style.removeProperty('--cue-ink'); }
-    const foreground = state.activeCueId === cue.id && ['loading', 'playing'].includes(state.state);
+    const foreground = state.activeCueId === cue.id && ['loading', 'playing', 'paused'].includes(state.state);
     const image = state.stageEnabled && state.imageCueId === cue.id;
     const background = Boolean(cue.background && state.backgroundCueId === cue.id);
     const active = foreground || image || background;
     let action = cue.background ? t("Set background ↗") : cue.kind === 'image' ? t("Show image ↗") : t("Start cue ↗");
     if (background) action = t("Background selected");
     if (!cue.background && image) action = t("Press again to stop");
-    if (!cue.background && foreground) action = cue.kind === 'video' || cue.kind === 'audio' && state.stage?.toggleAudio ? t("Press again to stop") : t(state.state);
+    if (!cue.background && foreground) action = ['video', 'audio'].includes(cue.kind) ? t(playbackPaused() ? "Press again to resume" : "Press again to pause") : t(state.state);
     if (cue.validation !== 'ready' && !active) action = t(cue.validation);
     node.lastChild.replaceChildren(element('span', () => `${String(cue.position).padStart(2, '0')} · ${cue.background ? t("background ") : ''}${t(cue.kind || 'unchecked')}`), element('span', action));
-    node.classList.toggle('active', active); node.setAttribute('aria-pressed', String(active));
-    node.disabled = !online || updatePending() || ['missing', 'unsupported', 'error'].includes(cue.validation);
+    node.classList.toggle('active', active); node.classList.toggle('paused', foreground && Boolean(state.paused)); node.setAttribute('aria-pressed', String(active));
+    node.disabled = !online || updatePending() || sameForeground(pendingTransport) && pendingTransport.cueId === cue.id || !(foreground || image) && ['missing', 'unsupported', 'error'].includes(cue.validation);
     if (renderedOrder !== order) $('cue-grid').append(node);
   }
   renderedOrder = order; $('empty-cues').hidden = visible.length > 0;
@@ -382,11 +518,24 @@ async function trigger(cueId) {
   if (updatePending()) { notify(() => t("Smart Stage is preparing an update. Playback is unavailable until it finishes.")); return; }
   if (!online || Date.now() - lastSeen > 18000 || !state) { connection(false); notify(() => t("Disconnected: PLAY was not sent. Reconnect before triggering a cue."), true); return; }
   const request = { requestId: requestID(), instanceId: state.instanceId, stopEpoch: state.stopEpoch, cueId };
+  const cue = state.cues.find(item => item.id === cueId);
+  const foreground = activeMediaCue();
+  if (!cue?.background && foreground?.id === cueId && Number.isSafeInteger(state.transportRevision)) {
+    if (sameForeground(pendingTransport) && pendingTransport.cueId === cueId) return;
+    Object.assign(request, transportIdentity(), { action: playbackPaused() ? 'resume' : 'pause' });
+    pendingTransport = request;
+  }
+  cancelSeekGesture(); renderSeek(); renderCues(); renderEditAvailability();
   const sequence = ++controlSequence;
   try { await api('POST', '/api/play', request); if (sequence === controlSequence) notify(() => t("Cue accepted. Check host playback status.")); await refreshState(); }
   catch (error) { if (sequence === controlSequence) notify(() => errorText(error), true); await refreshState(); }
+  finally {
+    if (pendingTransport === request) pendingTransport = null;
+    renderSeek(); renderCues(); renderEditAvailability();
+  }
 }
 $('stop').addEventListener('click', async () => {
+  cancelSeekGesture(); renderSeek();
   if (!csrf) { showPair(); return; }
   const sequence = ++controlSequence;
   notify(() => t("Sending STOP…"));
@@ -598,13 +747,13 @@ function renderEditAvailability() {
   $('enable-stage').disabled = !online || pending || state.outputFault;
   $('disable-stage').disabled = !online;
   const editingStage = !online || pending || playlistBusy || !playlist;
-  for (const id of ['background-cue', 'background-audio', 'fade-enabled', 'toggle-audio', 'save-stage-settings']) $(id).disabled = editingStage;
+  for (const id of ['background-cue', 'background-audio', 'fade-enabled', 'save-stage-settings']) $(id).disabled = editingStage;
   $('fade-seconds').disabled = editingStage || !$('fade-enabled').checked;
   $('validate').disabled = pending || state.validationJob.running;
   for (const id of ['audio-output', 'display-output', 'allow-primary']) $(id).disabled = pending;
   for (const [id, row] of playlistRows) {
     row.input.disabled = pending;
-    row.play.disabled = pending || !online;
+    row.play.disabled = pending || !online || sameForeground(pendingTransport) && pendingTransport.cueId === id;
     row.up.disabled = pending || row.first;
     row.down.disabled = pending || row.last;
     row.remove.disabled = pending || id === state.activeCueId;
@@ -612,11 +761,11 @@ function renderEditAvailability() {
     row.resetColor.disabled = pending || !row.customColor;
     row.hidden.disabled = pending || playlistBusy;
     const cue = playlist?.cues.find(c => c.id === id);
-    const foreground = state.activeCueId === id && ['loading', 'playing'].includes(state.state);
+    const foreground = state.activeCueId === id && ['loading', 'playing', 'paused'].includes(state.state);
     const image = state.stageEnabled && state.imageCueId === id;
     const selected = foreground || image || (cue?.background && state.backgroundCueId === id);
     row.play.setAttribute('aria-pressed', String(Boolean(selected)));
-    localizedText(row.play, () => cue?.background ? t("Set background") : cue?.cache.media.kind === 'image' ? t(image ? "Hide image" : "Show image") : foreground && cue?.cache.media.kind === 'video' ? t("Stop video") : foreground && cue?.cache.media.kind === 'audio' && state.stage?.toggleAudio ? t("Stop music") : t("Play"));
+    localizedText(row.play, () => cue?.background ? t("Set background") : cue?.cache.media.kind === 'image' ? t(image ? "Hide image" : "Show image") : foreground && ['video', 'audio'].includes(cue?.cache.media.kind) ? t(playbackPaused() ? "Resume" : "Pause") : t("Play"));
     row.background.disabled = pending || playlistBusy || !['image', 'video'].includes(cue?.cache.media.kind);
     row.backgroundLabel.hidden = !['image', 'video'].includes(cue?.cache.media.kind) && !cue?.background;
   }
@@ -940,11 +1089,10 @@ function renderStageSettings() {
     $('background-audio').checked = Boolean(settings.backgroundAudio);
     $('fade-enabled').checked = Boolean(settings.fadeEnabled);
     $('fade-seconds').value = settings.fadeSeconds > 0 ? settings.fadeSeconds : 1;
-    $('toggle-audio').checked = Boolean(settings.toggleAudio);
   }
   renderBackgroundStatus();
 }
-for (const id of ['background-cue', 'background-audio', 'fade-enabled', 'fade-seconds', 'toggle-audio']) $(id).addEventListener('input', () => {
+for (const id of ['background-cue', 'background-audio', 'fade-enabled', 'fade-seconds']) $(id).addEventListener('input', () => {
   if (!stageSettingsDirty) stageSettingsRevision = playlist?.playlistRevision || 0;
   stageSettingsDirty = true; localizedText($('stage-settings-message'), () => t("Unsaved changes."));
   $('stage-settings-message').classList.remove('error'); renderEditAvailability();
@@ -959,7 +1107,7 @@ $('stage-settings-form').addEventListener('submit', async event => {
   }
   const settings = {
     backgroundCueId: $('background-cue').value, backgroundAudio: $('background-audio').checked,
-    fadeEnabled: $('fade-enabled').checked, fadeSeconds, toggleAudio: $('toggle-audio').checked
+    fadeEnabled: $('fade-enabled').checked, fadeSeconds, toggleAudio: Boolean(playlist.stage?.toggleAudio)
   };
   playlistBusy = true; renderEditAvailability();
   try {
@@ -1012,7 +1160,7 @@ for (const [id, enabled] of [['enable-stage', true], ['disable-stage', false]]) 
 $('remote-stage').addEventListener('click', () => { void setStageOutput(!state?.stageEnabled); });
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || event.repeat || !csrf || !online || $('pairing').open || $('playlist-load-confirm').open) return;
-  event.preventDefault();
+  event.preventDefault(); cancelSeekGesture(); renderSeek();
   const sequence = ++controlSequence;
   void api('POST', '/api/emergency-stop', { requestId: requestID() }).then(async () => {
     if (sequence === controlSequence) notify(() => t("Emergency stop accepted. All sound stops and the stage closes."));
@@ -1072,5 +1220,6 @@ window.addEventListener('smartstage-languagechange', () => {
 void start();
 
 if (typeof ResizeObserver === 'function') {
+  new ResizeObserver(entries => { document.documentElement.style.setProperty('--seek-height', entries[0].target.getBoundingClientRect().height + 'px'); }).observe($('seek-bar'));
   new ResizeObserver(entries => { document.documentElement.style.setProperty('--transport-height', `${entries[0].target.getBoundingClientRect().height}px`); }).observe(document.querySelector('.transport'));
 }

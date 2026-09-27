@@ -130,14 +130,15 @@ opt-in, output IDs, stage visibility, fade duration and hard-stop flag. Native
 code copies every string before returning. Scene revision orders a latest-only
 command mailbox; foreground identity remains stable across image, background
 and visibility changes. A new foreground PLAY uses a new identity; repeating a
-selected visual cue toggles it off. Legacy `Start/Stop/Stage` remain for the
+selected audio/video cue pauses or resumes it; repeating an image toggles it off. Legacy `Start/Stop/Stage` remain for the
 native diagnostic harness.
 
 PLAY requires the current process instance and stop epoch. Accepted foreground
 changes advance a generation; replacement preparation keeps outgoing sound
 available until the incoming decoder starts. STOP advances the epoch, cancels
 pending foreground/image work and clears both selections. Native foreground
-`playing/progress/ended` events identify that foreground generation;
+`playing/paused/progress/ended` events identify the foreground generation and
+its exact applied transport revision;
 `stage/background-error` events identify the applied scene revision. This lets
 music progress remain valid across a stage toggle while stale visual state is
 ignored. Async decoder completion is tied to source identity, and newer STOP
@@ -145,13 +146,30 @@ or hard-stop commands prevent a stale decoder from starting or revealing.
 
 The last 4,096 accepted request IDs retain their payload hash and acknowledgement
 (FIFO eviction). Identical retries are idempotent; different payloads conflict.
-Deliberate repeated video presses stop the foreground and clear any image
-overlay. Repeating a visible or preparing image clears it while preserving
-independent music; an underlying foreground video is also stopped to return
-to background/black. Image removal advances the stop epoch without changing
-an independent music source's generation. A retained image with Stage off can
-be selected again to show it. Audio presses restart unless optional audio-toggle
-mode is enabled. Background buttons replace only the session's background.
+Deliberate repeated audio/video presses pause/resume the same native source,
+retaining its timeline and image overlay. Repeating a visible or preparing image
+clears it while preserving independent music; an underlying foreground video is
+also stopped to return to background/black. Image removal advances the stop epoch
+without changing an independent music source's generation. A retained image with
+Stage off can be selected again to show it. Background buttons replace only the
+session's background. The persisted legacy `toggleAudio` field has no effect.
+
+Pause/resume/seek share the authenticated `/api/play` route so existing gateways
+can relay them. Explicit transport actions require the current foreground
+identity, generation, transport revision, instance and stop epoch. Seeking also
+requires a known positive finite duration and a bounded position. Pause/resume
+advances transport revision; a separate seek revision changes only for a seek,
+so Stage/image edits cannot repeat it. Native callbacks use the applied intent's
+revision; stale progress, completion and async seek callbacks cannot reverse a
+newer action. Mac retains its AVPlayer and layers. Windows serializes asynchronous
+Media Foundation Start/Pause operations and reconciles the newest desired intent
+on acknowledgement. Paused seeks preserve paused state and the selected frame.
+
+The browser snapshots transport identity on gesture start, previews locally,
+and posts one seek on release. New foreground/transport identity, STOP, lost
+connection, pointer cancellation or focus loss cancels an unfinished gesture.
+The centered, non-interactive time preview fades in/out (no animation when reduced
+motion is requested); keyboard and assistive range input use the same guarded path.
 Hidden buttons remain saved cues and are omitted from the remote UI, not from
 role-appropriate state. Command responses contain no source paths or raw errors.
 

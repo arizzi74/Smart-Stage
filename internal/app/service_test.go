@@ -167,10 +167,12 @@ func TestRequestRetryAndDifferentContent(t *testing.T) {
 		t.Fatal("conflicting reuse accepted")
 	}
 	eventually(t, func() bool { return f.count() == 1 })
-	if _, err := play(s, "a", "intentional-two"); err != nil {
-		t.Fatal(err)
+	if _, err := play(s, "a", "intentional-two"); err == nil {
+		t.Fatal("legacy backend accepted unsupported pause")
 	}
-	eventually(t, func() bool { return f.count() == 2 })
+	if f.count() != 1 {
+		t.Fatal("unsupported pause restarted legacy playback")
+	}
 	stop, _ := s.Stop(StopRequest{"stop-delivery"})
 	retry, _ := s.Stop(StopRequest{"stop-delivery"})
 	if stop.StopEpoch != retry.StopEpoch || !retry.Duplicate {

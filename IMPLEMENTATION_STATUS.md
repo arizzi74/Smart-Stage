@@ -15,11 +15,16 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.3.1
   600 in both English and Italian. Narrow Admin uses a single column with the QR
   before the URL; the phone remote layout stays unchanged. Known duplicate
   connected text is suppressed while diagnostics remain visible.
-- Pressing a selected foreground video or visible/preparing image again stops
-  that visual and returns the enabled stage to the current background or black.
-  Image stop preserves independent music, but stops a covered foreground video
-  so it cannot reappear. Background selector buttons and the optional music
-  toggle retain their existing behavior; retried request IDs stay idempotent.
+- Audio/video cues pause on a second press and resume on the next, preserving
+  the native source, position, selected cue and paused video frame. STOP returns
+  to the background. The bottom seek bar appears in Admin and remote, previews
+  time in a large centered fade overlay during touch/mouse/keyboard gestures,
+  then sends one guarded seek on release. Seeking while paused remains paused.
+  Native transport revisions reject stale events and commands, with STOP priority.
+  Images retain their toggle behavior and preserve independent music; clearing
+  an image stops a covered foreground video so it cannot reappear. Background
+  selector buttons keep their existing behavior. The legacy music-toggle setting
+  stays in saved files for compatibility but no longer changes cue behavior.
 - The existing optional fade setting now covers audio, video and images. First
   playback from silence/black is immediate; replacements crossfade and clearing
   a visual returns to its background or fades to black. Mac retains bounded
@@ -78,7 +83,7 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.3.1
   or when disabled. Mac stage cursor handling is unchanged.
 - Saved background selection and session background cue buttons, hidden remote
   buttons, configurable fades (default duration one second, initially disabled),
-  and an optional selected-music-button toggle that keeps the image displayed.
+  and audio/video pause/resume that keeps an independent image displayed.
   STOP returns to the background; emergency Escape stops everything and hides
   the stage.
 - Go coordinator with generations, stop epochs, latest-only native/load mailboxes,

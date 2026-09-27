@@ -1102,7 +1102,7 @@ static void beginPlayback(uint64_t gen, NSString *path, NSString *audio, NSStrin
 // Scene revisions order commands; foreground identity survives stage changes.
 static _Atomic(uint64_t) requestedSceneRevision;
 static _Atomic(bool) sceneEmergencyPending;
-static uint64_t appliedSceneRevision, sceneGeneration, sceneEndedForegroundID;
+static uint64_t appliedSceneRevision, sceneGeneration, sceneEndedForegroundID, sceneTransportRevision;
 static BOOL sceneBackgroundAudio, sceneStoppedPending, sceneApplying;
 static double sceneFadeSeconds, sceneFadeStarted, sceneFadeDuration;
 static dispatch_source_t sceneFadeTimer;
@@ -1114,6 +1114,9 @@ static NSOperationQueue *sceneImageQueue;
 @property(nonatomic, copy) NSString *audioID;
 @property(nonatomic, copy) NSString *pendingError;
 @property(nonatomic) BOOL video, background, hasAudio, observing, started, reported, ended, disposed;
+@property(nonatomic) BOOL paused, seeking, silenced, primed;
+@property(nonatomic) uint64_t transportRevision, seekRevision, completedSeekRevision, seekSerial;
+@property(nonatomic) double seekSeconds;
 @property(nonatomic) float fadeFrom, fadeTo;
 @property(nonatomic, strong) AVURLAsset *asset;
 @property(nonatomic, strong) AVPlayerItem *item;
@@ -1122,6 +1125,8 @@ static NSOperationQueue *sceneImageQueue;
 @property(nonatomic, strong) id timeObserver, endObserver, failureObserver;
 - (void)prepare;
 - (void)ready;
+- (void)observeTransport;
+- (void)transportPaused:(BOOL)paused revision:(uint64_t)revision seekRevision:(uint64_t)seekRevision seconds:(double)position;
 - (void)teardown;
 @end
 @interface SSSceneImage : NSObject
@@ -1150,6 +1155,7 @@ static BOOL currentScene(void) {
 static void emitScene(uint64_t generation, NSString *kind, NSString *message, double position, double duration) {
     if (!currentScene()) return;
     NSDictionary *value = @{ @"generation": @(generation), @"sceneRevision": @(appliedSceneRevision),
+        @"transportRevision": @(sceneTransportRevision),
         @"kind": kind, @"message": message ?: @"", @"position": @(position), @"duration": @(duration),
         @"stageEnabled": jbool(stageEnabled) };
     NSData *data = [NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];
@@ -1227,11 +1233,15 @@ static void mixScene(void) {
     BOOL foregroundWaiting = sceneForeground && sceneForeground.hasAudio && !sceneForeground.started && !sceneForeground.ended;
     if (sceneForeground.hasAudio && sceneForeground.started && !sceneForeground.ended) owner = sceneForeground;
     else if (foregroundWaiting && audibleScenePlayer(sceneRetiring)) owner = sceneRetiring;
-    else if (stageEnabled && sceneBackgroundAudio && sceneBackground.hasAudio && sceneBackground.started) owner = sceneBackground;
+    else if (!(sceneForeground.hasAudio && sceneForeground.paused) && stageEnabled && sceneBackgroundAudio && sceneBackground.hasAudio && sceneBackground.started) owner = sceneBackground;
     else if (!sceneForeground && stageEnabled && sceneBackgroundAudio && sceneBackground && !sceneBackground.started && audibleScenePlayer(sceneRetiring)) owner = sceneRetiring;
     NSArray<SSScenePlayer *> *players = scenePlayers();
     BOOL changed = NO, audible = NO;
     for (SSScenePlayer *player in players) {
+        // Pause retains the foreground's audio ownership and does not retarget
+        // a running fade. Background sound for a silent video stays independent.
+        player.player.muted = player.silenced || (player == sceneForeground && (player.paused || player.seeking)) ||
+            (player.background && sceneForeground.hasAudio && sceneForeground.paused);
         float target = player == owner ? 1.0f : 0.0f;
         if (fabsf(player.fadeTo - target) > 0.0001f) changed = YES;
         if (audibleScenePlayer(player)) audible = YES;
@@ -1354,11 +1364,26 @@ static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
         [player teardown]; renderScene(); mixScene();
     }
 }
+static BOOL finishSceneForeground(SSScenePlayer *source) {
+    if (!source || source != sceneForeground || source.disposed || source.paused || source.seeking ||
+        source.seekRevision != source.completedSeekRevision || !currentScene()) return NO;
+    double duration = seconds(source.item.duration), position = seconds(source.player.currentTime);
+    // A delivered notification can precede a seek. Only the current native
+    // clock at the end of this transport intent is allowed to retire the cue.
+    if (duration <= 0 || position < duration - .03) return NO;
+    uint64_t identifier = source.identifier;
+    source.ended = YES; sceneEndedForegroundID = identifier;
+    sceneForeground = nil; retireScenePlayer(source);
+    renderScene(); mixScene(); emitScene(identifier, @"ended", nil, position, duration);
+    return YES;
+}
 @implementation SSScenePlayer
 - (void)teardown {
     if (self.disposed) return;
     self.disposed = YES;
+    ++self.seekSerial;
     [self.asset cancelLoading];
+    [self.item cancelPendingSeeks];
     self.player.muted = YES; self.player.volume = 0; [self.player pause];
     if (self.observing) {
         [self.item removeObserver:self forKeyPath:@"status"];
@@ -1374,6 +1399,60 @@ static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
     [self.player replaceCurrentItemWithPlayerItem:nil];
     self.player = nil; self.item = nil; self.asset = nil;
 }
+- (void)transportPaused:(BOOL)paused revision:(uint64_t)revision seekRevision:(uint64_t)seekRevision seconds:(double)position {
+    BOOL changed = self.transportRevision != revision || self.paused != paused;
+    self.paused = paused; self.transportRevision = revision;
+    if (self.seekRevision != seekRevision) {
+        ++self.seekSerial; self.seeking = NO;
+        self.seekRevision = seekRevision; self.seekSeconds = position;
+        [self.item cancelPendingSeeks];
+    }
+    if (changed) { self.reported = NO; [self observeTransport]; }
+    if (paused) {
+        self.player.muted = YES; [self.player pause];
+        for (SSScenePlayer *tail in scenePlayers()) if (tail != self && !tail.background) {
+            tail.silenced = YES; tail.player.muted = YES;
+            tail.player.volume = 0; tail.fadeFrom = 0; tail.fadeTo = 0;
+        }
+    }
+}
+- (void)observeTransport {
+    if (!self.player) return;
+    if (self.timeObserver) [self.player removeTimeObserver:self.timeObserver];
+    if (self.endObserver) [NSNotificationCenter.defaultCenter removeObserver:self.endObserver];
+    if (self.failureObserver) [NSNotificationCenter.defaultCenter removeObserver:self.failureObserver];
+    __weak SSScenePlayer *weakSelf = self;
+    uint64_t transport = self.transportRevision;
+    self.timeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMake(1, 4) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
+        (void)time; SSScenePlayer *source = weakSelf;
+        if (source && source == sceneForeground && !source.disposed && !source.ended && !source.paused &&
+            !source.seeking && source.seekRevision == source.completedSeekRevision && source.transportRevision == transport)
+            emitScene(source.identifier, @"progress", nil, seconds(source.player.currentTime), seconds(source.item.duration));
+    }];
+    self.endObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:self.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
+        (void)note; SSScenePlayer *source = weakSelf;
+        if (!source || source.disposed || source.transportRevision != transport) return;
+        if (source.background && [scenePlayers() containsObject:source]) {
+            [source.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
+                onMain(^{ SSScenePlayer *loop = weakSelf;
+                    if (finished && loop && !loop.disposed && stageEnabled && currentScene()) [loop.player play];
+                });
+            }];
+        } else if (source == sceneForeground) {
+            finishSceneForeground(source);
+        } else {
+            source.ended = YES;
+            if (source == sceneRetiring) { sceneRetiring = nil; releaseSceneOwner(source); mixScene(); }
+            else releaseSceneOwner(source);
+        }
+    }];
+    self.failureObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemFailedToPlayToEndTimeNotification object:self.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
+        SSScenePlayer *source = weakSelf;
+        if (!source || source.transportRevision != transport || source.seeking) return;
+        NSError *error = note.userInfo[AVPlayerItemFailedToPlayToEndTimeErrorKey];
+        scenePlayerFailed(source, error.localizedDescription ?: @"Native playback failed");
+    }];
+}
 - (void)ready {
     if (self.disposed || !currentScene()) return;
     if (![scenePlayers() containsObject:self]) return;
@@ -1383,7 +1462,65 @@ static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
     }
     if (self.item.status != AVPlayerItemStatusReadyToPlay) return;
     if (self.background && !stageEnabled) return;
-    if (!self.started && !self.ended && currentScene()) { self.player.muted = NO; [self.player play]; }
+    if (self == sceneForeground && self.seekRevision != self.completedSeekRevision) {
+        if (!self.seeking) {
+            double duration = seconds(self.item.duration);
+            if (!isfinite(self.seekSeconds) || duration <= 0) {
+                scenePlayerFailed(self, @"This cue does not have a finite seekable timeline"); return;
+            }
+            self.seeking = YES; self.player.muted = YES; [self.player pause];
+            uint64_t serial = ++self.seekSerial, seek = self.seekRevision;
+            double target = MAX(0, MIN(duration, self.seekSeconds));
+            __weak SSScenePlayer *weakSelf = self;
+            [self.player seekToTime:CMTimeMakeWithSeconds(target, 60000) toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
+                onMain(^{
+                    SSScenePlayer *source = weakSelf;
+                    if (!source || source.disposed || source != sceneForeground || source.seekSerial != serial || source.seekRevision != seek) return;
+                    source.seeking = NO;
+                    if (!finished) {
+                        scenePlayerFailed(source, @"Native playback could not seek to the requested time"); return;
+                    }
+                    source.completedSeekRevision = seek;
+                    // A queued Stage/pause/STOP scene owns the next decision.
+                    // ready never plays or emits until that scene is current.
+                    [source ready];
+                });
+            }];
+        }
+        renderScene(); mixScene(); return;
+    }
+    if (self == sceneForeground && self.seeking) { renderScene(); mixScene(); return; }
+    if (self == sceneForeground && self.paused) {
+        self.player.muted = YES; [self.player pause];
+        // A cue paused while its asset loads still needs its first video frame.
+        // Decode at the existing position without briefly starting its clock.
+        if (self.video && !self.started && !self.primed && !self.layer.readyForDisplay) {
+            self.primed = YES; self.seeking = YES;
+            uint64_t serial = ++self.seekSerial;
+            __weak SSScenePlayer *weakSelf = self;
+            CMTime frame = CMTIME_IS_NUMERIC(self.player.currentTime) ? self.player.currentTime : kCMTimeZero;
+            [self.player seekToTime:frame toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
+                onMain(^{
+                    SSScenePlayer *source = weakSelf;
+                    if (!source || source.disposed || source != sceneForeground || source.seekSerial != serial) return;
+                    source.seeking = NO;
+                    if (!finished) { scenePlayerFailed(source, @"Native playback could not prepare the paused video frame"); return; }
+                    [source ready];
+                });
+            }];
+            renderScene(); mixScene(); return;
+        }
+        if (self.video && stageEnabled && !self.layer.readyForDisplay) { renderScene(); mixScene(); return; }
+        if (!self.reported) {
+            self.reported = YES;
+            emitScene(self.identifier, @"paused", nil, seconds(self.player.currentTime), seconds(self.item.duration));
+        }
+        renderScene(); mixScene(); return;
+    }
+    if (self == sceneForeground && self.started && self.player.rate == 0 && finishSceneForeground(self)) return;
+    if (!self.ended && (!self.started || (self == sceneForeground && self.player.rate == 0))) {
+        self.player.muted = self.silenced; [self.player play];
+    }
     if (self.player.timeControlStatus == AVPlayerTimeControlStatusPlaying) {
         self.started = YES;
         if (self == sceneForeground && !self.reported) {
@@ -1448,35 +1585,7 @@ static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
             [player.player addObserver:player forKeyPath:@"timeControlStatus" options:NSKeyValueObservingOptionNew context:NULL];
             if (player.video) [player.layer addObserver:player forKeyPath:@"readyForDisplay" options:NSKeyValueObservingOptionNew context:NULL];
             player.observing = YES;
-            player.timeObserver = [player.player addPeriodicTimeObserverForInterval:CMTimeMake(1, 4) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
-                SSScenePlayer *source = weakSelf;
-                if (source && source == sceneForeground && !source.disposed && !source.ended)
-                    emitScene(source.identifier, @"progress", nil, seconds(time), seconds(source.item.duration));
-            }];
-            player.endObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:player.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
-                (void)note; SSScenePlayer *source = weakSelf;
-                if (!source || source.disposed) return;
-                if (source.background && [scenePlayers() containsObject:source]) {
-                    [source.player seekToTime:kCMTimeZero toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
-                        onMain(^{ SSScenePlayer *loop = weakSelf;
-                            if (finished && loop && !loop.disposed && stageEnabled && currentScene()) [loop.player play];
-                        });
-                    }];
-                } else if (source == sceneForeground) {
-                    uint64_t identifier = source.identifier;
-                    source.ended = YES; sceneEndedForegroundID = identifier;
-                    sceneForeground = nil; retireScenePlayer(source);
-                    renderScene(); mixScene(); emitScene(identifier, @"ended", nil, 0, 0);
-                } else {
-                    source.ended = YES;
-                    if (source == sceneRetiring) { sceneRetiring = nil; releaseSceneOwner(source); mixScene(); }
-                    else releaseSceneOwner(source);
-                }
-            }];
-            player.failureObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemFailedToPlayToEndTimeNotification object:player.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
-                NSError *error = note.userInfo[AVPlayerItemFailedToPlayToEndTimeErrorKey];
-                scenePlayerFailed(weakSelf, error.localizedDescription ?: @"Native playback failed");
-            }];
+            [player observeTransport];
             [player ready];
         });
     }];
@@ -1587,10 +1696,10 @@ static SSScenePlayer *newScenePlayer(uint64_t identifier, NSString *path, NSStri
 static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregroundID, NSString *foregroundPath,
     NSString *foregroundKind, BOOL foregroundAudio, NSString *imagePath, NSString *backgroundPath,
     NSString *backgroundKind, BOOL backgroundAudio, NSString *audio, NSString *display, BOOL stage,
-    double fade, BOOL hardStop) {
+    double fade, BOOL hardStop, BOOL paused, uint64_t transportRevision, uint64_t seekRevision, double seekSeconds) {
     if (revision != atomic_load(&requestedSceneRevision) || atomic_load(&shuttingDown) || atomic_load(&sceneEmergencyPending)) return;
     if (!sceneMode) { stopCurrent(); sceneMode = YES; }
-    appliedSceneRevision = revision; sceneGeneration = generation;
+    appliedSceneRevision = revision; sceneGeneration = generation; sceneTransportRevision = transportRevision;
     sceneBackgroundAudio = backgroundAudio; sceneFadeSeconds = isfinite(fade) ? MAX(0, MIN(30, fade)) : 0;
     sceneStoppedPending = !foregroundID || !foregroundPath.length;
     if (hardStop) {
@@ -1615,6 +1724,7 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
             [sceneForeground prepare];
         }
     }
+    [sceneForeground transportPaused:paused revision:transportRevision seekRevision:seekRevision seconds:seekSeconds];
     BOOL backgroundVideo = [backgroundKind isEqualToString:@"video"] && backgroundPath.length;
     BOOL sameBackground = sceneBackground && backgroundVideo && [backgroundPath isEqual:sceneBackground.path] && (!backgroundAudio || [audio isEqual:sceneBackground.audioID]);
     if (!sameBackground) {
@@ -1670,13 +1780,17 @@ void ss_scene(const ss_scene_request *request) {
         NSString *audio = copyUTF8(request->audio), *display = copyUTF8(request->display);
         BOOL hasAudio = request->foreground_has_audio, backgroundAudio = request->background_audio;
         BOOL stage = request->stage_enabled, hardStop = request->hard_stop;
+        BOOL paused = request->foreground_paused;
+        uint64_t transportRevision = request->transport_revision, seekRevision = request->seek_revision;
+        double seekSeconds = request->seek_seconds;
         double fade = request->fade_seconds;
         pthread_mutex_lock(&commandMutex);
         if (revision <= atomic_load(&requestedSceneRevision)) { pthread_mutex_unlock(&commandMutex); return; }
         atomic_store(&requestedSceneRevision, revision);
         atomic_store(&sceneEmergencyPending, false);
         latestCommand = [^{ applyScene(revision, generation, foregroundID, foreground, kind, hasAudio, image,
-            background, backgroundKind, backgroundAudio, audio, display, stage, fade, hardStop); } copy];
+            background, backgroundKind, backgroundAudio, audio, display, stage, fade, hardStop,
+            paused, transportRevision, seekRevision, seekSeconds); } copy];
         BOOL wake = !commandScheduled; commandScheduled = YES;
         pthread_mutex_unlock(&commandMutex);
         if (wake) onMain(^{

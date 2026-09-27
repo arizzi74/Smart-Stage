@@ -18,6 +18,17 @@ bool movingTargetVideo = false, movingSourceVideo = false, movingBothVideos = fa
 double visualClockA = -1, visualClockB = -1;
 LONGLONG visualFrameA = 0, visualFrameB = 0;
 ULONGLONG visualClockStart = 0;
+VisualFrame pausedFrame;
+bool videoTransportVerified = false, audioTransportVerified = false, sawTransportEnd = false, sawReleasedEnd = false;
+uint64_t stoppedTransportGeneration = 0;
+void finishProbe() { passed = true; ss_quit(); }
+void transport(bool paused) { desired.foreground_paused = paused; ++desired.transport_revision; }
+void seek(double seconds) { desired.seek_seconds = seconds; ++desired.seek_revision; ++desired.transport_revision; }
+bool transportSettled() {
+    return sceneForeground && sceneForeground->transportRevision == desired.transport_revision &&
+        sceneForeground->transportOperation == Playback::TransportOperation::None &&
+        sceneForeground->paused == (desired.foreground_paused != 0);
+}
 COLORREF centerPixel(HWND window) {
     RECT r; GetClientRect(window, &r); HDC dc = GetDC(window);
     COLORREF value = GetPixel(dc, r.right/2, r.bottom/2); ReleaseDC(window, dc); return value;
@@ -38,7 +49,7 @@ void checkGain(Playback *p) {
     require(p && p->streamVolume && !p->silence.empty(), "Missing actual per-stream volume service");
     std::vector<float> actual(p->silence.size());
     require(SUCCEEDED(p->streamVolume->GetAllVolumes((UINT32)actual.size(), actual.data())), "Cannot read actual native gain");
-    for (float gain : actual) require(std::abs(gain-p->gain) < .02f, "Native stream gain differs from the configured fade");
+    for (float gain : actual) require(std::abs(gain-(p->transportMuted ? 0.0f : p->gain)) < .02f, "Native stream gain differs from the configured fade");
 }
 void checkRendererTargets() {
     std::vector<HWND> targets;
@@ -69,6 +80,15 @@ void consumeEvents() {
             require(phase == 12 || phase == 218 || phase == 220, "Unexpected background error"); sawBackgroundError = true;
         }
         if (event.find("\"kind\":\"error\"") != std::string::npos) throw std::string("Native scene error: ")+event;
+        if (phase == 335 && event.find("\"generation\":330,") != std::string::npos &&
+            event.find("\"kind\":\"ended\"") != std::string::npos) sawTransportEnd = true;
+        if (phase == 336 && event.find("\"generation\":330,") != std::string::npos &&
+            event.find("\"transportRevision\":"+std::to_string(desired.transport_revision)+",") != std::string::npos &&
+            event.find("\"kind\":\"ended\"") != std::string::npos) sawReleasedEnd = true;
+        if (stoppedTransportGeneration && event.find("\"generation\":"+std::to_string(stoppedTransportGeneration)+",") != std::string::npos &&
+            (event.find("\"kind\":\"playing\"") != std::string::npos || event.find("\"kind\":\"paused\"") != std::string::npos ||
+             event.find("\"kind\":\"progress\"") != std::string::npos || event.find("\"kind\":\"ended\"") != std::string::npos))
+            throw std::string("Canceled transport emitted a stale event after STOP: ")+event;
         if (phase == 14 && event.find("\"kind\":\"playing\"") != std::string::npos)
             throw std::string("Canceled foreground started after hard STOP: ")+event;
     }
@@ -250,7 +270,247 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
             if (sawBackgroundError && !visualTransition.active && !sceneVisualRetiring) {
                 require(visualImage() == sceneBackground.get() && GetRValue(centerPixel(stageWindow)) > 220,
                         "Failed image did not return to the saved background");
-                passed = true; KillTimer(nullptr, timer); ss_quit();
+                desired = {}; next(300);
+            }
+            break;
+        case 300:
+            desired.generation = desired.foreground_id = 300; desired.transport_revision = 1;
+            desired.foreground_path = probeVideo.c_str(); desired.foreground_kind = "video";
+            desired.background_path = probeImage.c_str(); desired.background_kind = "image";
+            desired.display = probeDisplay.c_str(); desired.audio = ""; desired.stage_enabled = 1;
+            apply(); next(301); break;
+        case 301:
+            if (transportSettled() && sceneForeground->playing && position(sceneForeground.get()) > .25) {
+                retainedToken = sceneForeground->token;
+                transport(true); apply(); next(302);
+            }
+            break;
+        case 302:
+            if (transportSettled()) {
+                require(sceneForeground->token == retainedToken, "Video pause recreated the renderer");
+                require(IsWindowVisible(sceneForeground->target), "Paused video lost its native frame window");
+                require(!visualTransition.active, "Video pause started a visual fade");
+                retainedTime = position(sceneForeground.get());
+                require(captureVisual(sceneForeground.get(), pausedFrame), "Cannot capture paused video frame");
+                next(303);
+            }
+            break;
+        case 303:
+            if (elapsed > 450) {
+                require(std::abs(position(sceneForeground.get())-retainedTime) < .04, "Paused video clock continued running");
+                VisualFrame frame; require(captureVisual(sceneForeground.get(), frame), "Cannot read frozen video frame");
+                require(frame.timestamp == pausedFrame.timestamp, "Paused video frame continued advancing");
+                seek(1.2); apply(); processSceneCommand(); pumpScene(*sceneForeground, false);
+                require(sceneForeground->transportOperation == Playback::TransportOperation::Start, "Paused seek did not start asynchronously");
+                desired.stage_enabled = 0; apply(); processSceneCommand();
+                require(sceneForeground->token == retainedToken && sceneForeground->transportOperation == Playback::TransportOperation::Start,
+                        "Stage edit during pending paused seek replaced native transport");
+                next(304);
+            }
+            break;
+        case 304:
+            if (transportSettled()) {
+                require(sceneForeground->paused && sceneForeground->token == retainedToken, "Paused seek resumed or recreated video");
+                require(position(sceneForeground.get()) >= 1.15 && position(sceneForeground.get()) < 1.5, "Paused video seek missed its target");
+                retainedTime = position(sceneForeground.get());
+                desired.stage_enabled = 1; apply(); next(305);
+            }
+            break;
+        case 305:
+            if (elapsed > 350) {
+                require(std::abs(position(sceneForeground.get())-retainedTime) < .04, "Paused seek failed to keep video frozen");
+                SendMessageW(stageWindow, WM_SETCURSOR, (WPARAM)stageWindow, MAKELPARAM(HTCLIENT, WM_MOUSEMOVE));
+                desired.stage_enabled = 0; apply(); processSceneCommand();
+                require(!stageEnabled && !IsWindowVisible(stageWindow), "Stage off failed during video pause");
+                require(GetCursor() != stageCursor, "Stage off during pause failed to restore cursor");
+                next(306);
+            }
+            break;
+        case 306:
+            if (elapsed > 250) {
+                require(sceneForeground && sceneForeground->paused && sceneForeground->token == retainedToken &&
+                        std::abs(position(sceneForeground.get())-retainedTime) < .04, "Stage off changed paused video transport");
+                desired.stage_enabled = 1; desired.image_path = probeGreen.c_str(); apply(); next(307);
+            }
+            break;
+        case 307:
+            if (sceneImage && visualImage() == sceneImage.get()) {
+                require(sceneForeground->paused && sceneForeground->token == retainedToken &&
+                        std::abs(position(sceneForeground.get())-retainedTime) < .04, "Image cue changed paused video transport");
+                desired.image_path = ""; apply(); next(308);
+            }
+            break;
+        case 308:
+            if (IsWindowVisible(sceneForeground->target)) {
+                require(sceneForeground->paused && !visualTransition.active, "Restoring paused video restarted transport or a fade");
+                transport(false); apply(); next(309);
+            }
+            break;
+        case 309:
+            if (transportSettled() && position(sceneForeground.get()) > retainedTime+.18) {
+                require(sceneForeground->token == retainedToken && position(sceneForeground.get()) < retainedTime+.9,
+                        "Video resume lost native clock continuity");
+                seek(.35); apply(); next(310);
+            }
+            break;
+        case 310:
+            if (transportSettled()) {
+                require(!sceneForeground->paused && sceneForeground->token == retainedToken, "Playing seek paused or recreated video");
+                require(position(sceneForeground.get()) >= .3 && position(sceneForeground.get()) < .8, "Playing seek missed its target");
+                require(!visualTransition.active, "Video seek started a visual fade");
+                retainedTime = position(sceneForeground.get()); next(311);
+            }
+            break;
+        case 311:
+            if (elapsed > 280) {
+                require(position(sceneForeground.get()) > retainedTime+.18, "Playing seek did not keep advancing");
+                seek(.8); apply(); processSceneCommand(); pumpScene(*sceneForeground, false);
+                require(sceneForeground->transportOperation == Playback::TransportOperation::Start, "Seek did not use an asynchronous native operation");
+                for (unsigned i=0; i<200; ++i) { seek(.4+i*.003); apply(); }
+                require(latestScene && latestScene->revision == desired.revision, "Rapid seeks did not coalesce to the latest mailbox value");
+                next(312);
+            }
+            break;
+        case 312:
+            if (transportSettled()) {
+                require(sceneForeground->token == retainedToken && sceneForeground->seekRevision == desired.seek_revision,
+                        "Rapid seeks replaced the renderer or applied an old target");
+                require(position(sceneForeground.get()) >= .95 && position(sceneForeground.get()) < 1.6, "Rapid seeks did not reach the last requested position");
+                consumeEvents();
+                seek(.4); apply(); processSceneCommand(); pumpScene(*sceneForeground, false);
+                require(sceneForeground->transportOperation == Playback::TransportOperation::Start, "No pending seek exists for the STOP check");
+                stoppedTransportGeneration = desired.foreground_id;
+                desired.hard_stop = 1; desired.stage_enabled = 0; desired.generation = 301; apply(); processSceneCommand();
+                require(!sceneForeground && !sceneIncoming && !sceneRetiring && !sceneVisualRetiring && !IsWindowVisible(stageWindow),
+                        "STOP during a native seek retained scene state");
+                next(313);
+            }
+            break;
+        case 313:
+            if (elapsed > 450) {
+                require(!sceneForeground && !sceneIncoming && !stageEnabled, "Late seek callback resurrected a stopped video");
+                desired = {}; next(330);
+            }
+            break;
+        case 330:
+            desired.generation = desired.foreground_id = 330; desired.transport_revision = 1; desired.foreground_paused = 1;
+            desired.foreground_path = probeVideo.c_str(); desired.foreground_kind = "video";
+            desired.background_path = probeVideo.c_str(); desired.background_kind = "video";
+            desired.background_audio = soundAvailable ? 1 : 0; desired.audio = soundAvailable ? probeAudio.c_str() : "";
+            desired.display = probeDisplay.c_str(); desired.stage_enabled = 1; apply(); next(331); break;
+        case 331:
+            if (transportSettled() && sceneForeground->playing && sceneBackground && sceneBackground->playing) {
+                require(sceneForeground->paused && position(sceneForeground.get()) < .3, "Initially paused video started as playing");
+                retainedToken = sceneForeground->token; retainedTime = position(sceneForeground.get());
+                lastBackgroundTime = position(sceneBackground.get()); next(332);
+            }
+            break;
+        case 332:
+            if (elapsed > 350) {
+                require(std::abs(position(sceneForeground.get())-retainedTime) < .04, "Initially paused video clock advanced");
+                require(std::abs(position(sceneBackground.get())-lastBackgroundTime) > .15, "Silent paused video stopped independent background");
+                if (soundAvailable) {
+                    checkGain(sceneBackground.get()); require(sceneBackground->gain > .99f, "Silent paused video suppressed the background soundtrack");
+                }
+                consumeEvents();
+                transport(false); apply(); processSceneCommand(); pumpScene(*sceneForeground, false);
+                require(sceneForeground->transportOperation == Playback::TransportOperation::Start, "Resume was not native asynchronous Start");
+                transport(true); apply(); next(333);
+            }
+            break;
+        case 333:
+            if (transportSettled()) {
+                require(sceneForeground->paused && sceneForeground->token == retainedToken, "Superseded resume undid the newer pause");
+                seek(sceneForeground->duration); apply(); next(337);
+            }
+            break;
+        case 337:
+            if (transportSettled()) {
+                require(sceneForeground->paused && sceneForeground->token == retainedToken && position(sceneForeground.get()) > 2.8,
+                        "Paused seek to EOF released the selected video");
+                retainedTime = position(sceneForeground.get()); next(338);
+            }
+            break;
+        case 338:
+            if (elapsed > 350) {
+                require(sceneForeground && sceneForeground->paused && std::abs(position(sceneForeground.get())-retainedTime) < .04,
+                        "Paused seek to EOF did not retain its frozen selection");
+                transport(false); seek(2.0); apply(); next(334);
+            }
+            break;
+        case 334:
+            if (transportSettled()) {
+                require(!sceneForeground->paused && sceneForeground->token == retainedToken, "Resume after superseded transport replaced playback");
+                next(335);
+            }
+            break;
+        case 335:
+            if (!sceneForeground && sawTransportEnd) {
+                transport(true); apply(); next(336);
+            }
+            break;
+        case 336:
+            if (sawReleasedEnd) {
+                require(!sceneForeground && !sceneIncoming, "Pause raced with terminal release and restarted the old source");
+                videoTransportVerified = true;
+                desired.hard_stop = 1; desired.stage_enabled = 0; desired.generation = 331; apply(); processSceneCommand();
+                if (soundAvailable) { desired = {}; next(320); }
+                else { KillTimer(nullptr, timer); finishProbe(); }
+            }
+            break;
+        case 320:
+            desired.generation = desired.foreground_id = 400; desired.transport_revision = 1;
+            desired.foreground_path = probeWaveA.c_str(); desired.foreground_kind = "audio"; desired.foreground_has_audio = 1;
+            desired.background_path = probeVideo.c_str(); desired.background_kind = "video"; desired.background_audio = 1;
+            desired.audio = probeAudio.c_str(); desired.display = probeDisplay.c_str(); desired.stage_enabled = 1; desired.fade_seconds = .5;
+            apply(); next(321); break;
+        case 321:
+            if (transportSettled() && sceneForeground->playing && sceneForeground->gain > .99f && sceneBackground && sceneBackground->playing) {
+                retainedToken = sceneForeground->token; transport(true); apply(); next(322);
+            }
+            break;
+        case 322:
+            if (transportSettled()) {
+                checkGain(sceneForeground.get()); checkGain(sceneBackground.get());
+                require(sceneForeground->transportMuted && sceneBackground->gain < .01, "Audio pause enabled the background soundtrack");
+                retainedTime = position(sceneForeground.get()); lastBackgroundTime = position(sceneBackground.get()); next(323);
+            }
+            break;
+        case 323:
+            if (elapsed > 350) {
+                require(std::abs(position(sceneForeground.get())-retainedTime) < .04, "Paused audio clock advanced");
+                require(std::abs(position(sceneBackground.get())-lastBackgroundTime) > .15, "Audio pause stopped independent background video");
+                seek(8); apply(); next(324);
+            }
+            break;
+        case 324:
+            if (transportSettled()) {
+                require(sceneForeground->paused && position(sceneForeground.get()) >= 7.95 && position(sceneForeground.get()) < 8.3,
+                        "Paused audio seek resumed or missed target");
+                checkGain(sceneForeground.get()); require(sceneBackground->gain < .01, "Paused audio seek enabled background soundtrack");
+                retainedTime = position(sceneForeground.get()); next(325);
+            }
+            break;
+        case 325:
+            if (elapsed > 300) {
+                require(std::abs(position(sceneForeground.get())-retainedTime) < .04, "Paused audio seek did not stay paused");
+                transport(false); apply(); next(326);
+            }
+            break;
+        case 326:
+            if (transportSettled() && position(sceneForeground.get()) > retainedTime+.15) {
+                require(sceneForeground->token == retainedToken && sceneForeground->gain > .99f && sceneForeground->rampSeconds == 0,
+                        "Audio resume recreated playback or started a new fade");
+                checkGain(sceneForeground.get()); seek(3); apply(); next(327);
+            }
+            break;
+        case 327:
+            if (transportSettled()) {
+                require(!sceneForeground->paused && position(sceneForeground.get()) >= 2.95 && position(sceneForeground.get()) < 3.6,
+                        "Playing audio seek paused or missed target");
+                checkGain(sceneForeground.get()); audioTransportVerified = true;
+                desired.hard_stop = 1; desired.stage_enabled = 0; desired.generation = 401; apply(); processSceneCommand();
+                KillTimer(nullptr, timer); finishProbe();
             }
             break;
         case 100:
@@ -482,11 +742,11 @@ int main(int argc, char **argv) {
     soundAvailable = probeAudio != "-";
     if (!soundAvailable) phase = 100;
     phaseStart = GetTickCount64(); SetTimer(nullptr, 0, 20, probeTick); ss_run();
-    if (!passed) { fprintf(stderr, "%s\n", probeFailure.c_str()); return 5; }
+    if (!passed || !videoTransportVerified || (soundAvailable && !audioTransportVerified)) { fprintf(stderr, "%s\n", probeFailure.c_str()); return 5; }
     if (!soundAvailable) {
-        puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":false,\"audioFadesVerified\":false,\"audioUnavailableReason\":\"No active runner audio endpoint\",\"backgroundLoop\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesForeground\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR and current-thread GetCursor only\",\"hardStopClearsScene\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"physicalOutputsVerified\":false}");
+        puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":false,\"audioFadesVerified\":false,\"audioPauseResumeSeekVerified\":false,\"audioUnavailableReason\":\"No active runner audio endpoint\",\"backgroundLoop\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesForeground\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR and current-thread GetCursor only\",\"hardStopClearsScene\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"videoPauseClockAndFrameFreeze\":true,\"videoResumeContinuity\":true,\"seekPlayingAndPaused\":true,\"stageAndImagePreservePausedTransport\":true,\"rapidSeeksCoalesce\":true,\"stopDuringPendingSeek\":true,\"initialPauseAndSupersededResume\":true,\"seekNaturalEnd\":true,\"pausedSeekEndRetainsSelection\":true,\"terminalPauseRaceAcknowledged\":true,\"physicalOutputsVerified\":false}");
         return 0;
     }
-    puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":true,\"backgroundLoop\":true,\"backgroundToCueCrossfade\":true,\"cueToCueCrossfade\":true,\"stopToBackgroundCrossfade\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesMusic\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR and current-thread GetCursor only\",\"startFromSilenceImmediate\":true,\"backgroundFailurePreservesMusic\":true,\"hardStopCancelsIncoming\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"physicalOutputsVerified\":false}");
+    puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":true,\"audioPauseResumeSeekVerified\":true,\"backgroundLoop\":true,\"backgroundToCueCrossfade\":true,\"cueToCueCrossfade\":true,\"stopToBackgroundCrossfade\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesMusic\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR and current-thread GetCursor only\",\"startFromSilenceImmediate\":true,\"backgroundFailurePreservesMusic\":true,\"hardStopCancelsIncoming\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"videoPauseClockAndFrameFreeze\":true,\"videoResumeContinuity\":true,\"seekPlayingAndPaused\":true,\"stageAndImagePreservePausedTransport\":true,\"rapidSeeksCoalesce\":true,\"stopDuringPendingSeek\":true,\"initialPauseAndSupersededResume\":true,\"seekNaturalEnd\":true,\"pausedSeekEndRetainsSelection\":true,\"terminalPauseRaceAcknowledged\":true,\"physicalOutputsVerified\":false}");
     return 0;
 }

@@ -115,3 +115,23 @@
   .admin-page .remote-qr{grid-row:1}
   .admin-page #remote-section{padding:16px}
 }
+
+.has-seek-bar main{padding-bottom:calc(var(--seek-height,96px) + 40px)}
+.seek-bar{position:fixed;bottom:0;left:0;right:0;z-index:15;padding:10px max(20px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left));border-top:1px solid var(--line);background:#141b20f5;box-shadow:0 -5px 22px #0004}
+.seek-readout{display:flex;align-items:baseline;gap:12px;font-size:.8rem}
+#seek-cue{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.seek-status{color:var(--muted);font-size:.72rem;white-space:nowrap}
+.seek-times{margin-left:auto;white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--muted)}
+#seek-elapsed{color:var(--accent)}
+#seek-range{display:block;width:100%;height:44px;min-height:44px;margin:0;padding:0;border:0;border-radius:0;background:transparent;accent-color:var(--accent);cursor:pointer;touch-action:pan-y;appearance:none;-webkit-appearance:none}
+#seek-range:disabled,#seek-range[aria-disabled="true"]{opacity:.4;cursor:default}
+#seek-range::-webkit-slider-runnable-track{height:6px;background:#59676f;border-radius:6px}
+#seek-range::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-9px;border:2px solid #e7fff6;border-radius:50%;background:var(--accent);box-shadow:0 1px 5px #0008}
+#seek-range::-moz-range-track{height:6px;background:#59676f;border-radius:6px}
+#seek-range::-moz-range-thumb{width:20px;height:20px;border:2px solid #e7fff6;border-radius:50%;background:var(--accent)}
+.seek-preview{position:fixed;inset:0;display:grid;place-items:center;z-index:30;pointer-events:none;opacity:0;transition:opacity .18s ease}
+.seek-preview.visible{opacity:1}
+#seek-preview-time{padding:18px 30px;max-width:calc(100vw - 32px);border:1px solid #819a9b66;border-radius:18px;background:#0b141aed;color:#edf2f2;box-shadow:0 14px 60px #0007;font-size:clamp(3rem,12vw,6.5rem);font-weight:750;line-height:1.2;letter-spacing:-.035em;font-variant-numeric:tabular-nums}
+.cue.paused .cue-title::after{content:" Ⅱ";font-size:.85em}
+@media(max-width:400px){.seek-bar{padding-right:max(16px,env(safe-area-inset-right));padding-left:max(16px,env(safe-area-inset-left))}.seek-readout{gap:6px;font-size:.73rem}.seek-status{font-size:.65rem}}
+@media(prefers-reduced-motion:reduce){.seek-preview{transition:none}}

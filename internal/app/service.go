@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"strings"
 	"sync"
@@ -28,21 +29,26 @@ func problem(code, message string) error { return &Error{code, message} }
 
 type Persistence interface{ Save(model.Config) error }
 type PlayRequest struct {
-	RequestID  string `json:"requestId"`
-	InstanceID string `json:"instanceId"`
-	StopEpoch  uint64 `json:"stopEpoch"`
-	CueID      string `json:"cueId"`
+	RequestID         string   `json:"requestId"`
+	InstanceID        string   `json:"instanceId"`
+	StopEpoch         uint64   `json:"stopEpoch"`
+	CueID             string   `json:"cueId"`
+	Action            string   `json:"action,omitempty"`
+	Generation        uint64   `json:"generation,omitempty"`
+	TransportRevision uint64   `json:"transportRevision,omitempty"`
+	Position          *float64 `json:"position,omitempty"`
 }
 type StopRequest struct {
 	RequestID string `json:"requestId"`
 }
 type Ack struct {
-	Accepted   bool   `json:"accepted"`
-	Duplicate  bool   `json:"duplicate"`
-	InstanceID string `json:"instanceId"`
-	Revision   uint64 `json:"revision"`
-	Generation uint64 `json:"generation"`
-	StopEpoch  uint64 `json:"stopEpoch"`
+	Accepted          bool   `json:"accepted"`
+	Duplicate         bool   `json:"duplicate"`
+	InstanceID        string `json:"instanceId"`
+	Revision          uint64 `json:"revision"`
+	Generation        uint64 `json:"generation"`
+	StopEpoch         uint64 `json:"stopEpoch"`
+	TransportRevision uint64 `json:"transportRevision"`
 }
 type CueView struct {
 	ID         string  `json:"id"`
@@ -61,28 +67,31 @@ type ValidationJob struct {
 	Total     int  `json:"total"`
 }
 type State struct {
-	InstanceID       string              `json:"instanceId"`
-	Revision         uint64              `json:"revision"`
-	PlaylistRevision uint64              `json:"playlistRevision"`
-	State            string              `json:"state"`
-	ActiveCueID      string              `json:"activeCueId"`
-	ActivePosition   int                 `json:"activePosition"`
-	Elapsed          float64             `json:"elapsed"`
-	Duration         float64             `json:"duration"`
-	LastError        string              `json:"lastError"`
-	Outputs          model.Outputs       `json:"outputs"`
-	Stage            model.StageSettings `json:"stage"`
-	BackgroundCueID  string              `json:"backgroundCueId"`
-	ImageCueID       string              `json:"imageCueId"`
-	BackgroundError  string              `json:"backgroundError"`
-	ResolvedAudioID  string              `json:"resolvedAudioId"`
-	StageEnabled     bool                `json:"stageEnabled"`
-	OutputFault      bool                `json:"outputFault"`
-	Generation       uint64              `json:"generation"`
-	StopEpoch        uint64              `json:"stopEpoch"`
-	Cues             []CueView           `json:"cues"`
-	ValidationJob    ValidationJob       `json:"validationJob"`
-	UpdatePending    bool                `json:"updatePending"`
+	InstanceID        string              `json:"instanceId"`
+	Revision          uint64              `json:"revision"`
+	PlaylistRevision  uint64              `json:"playlistRevision"`
+	State             string              `json:"state"`
+	ActiveCueID       string              `json:"activeCueId"`
+	ActivePosition    int                 `json:"activePosition"`
+	Elapsed           float64             `json:"elapsed"`
+	Duration          float64             `json:"duration"`
+	LastError         string              `json:"lastError"`
+	Outputs           model.Outputs       `json:"outputs"`
+	Stage             model.StageSettings `json:"stage"`
+	BackgroundCueID   string              `json:"backgroundCueId"`
+	ImageCueID        string              `json:"imageCueId"`
+	BackgroundError   string              `json:"backgroundError"`
+	ResolvedAudioID   string              `json:"resolvedAudioId"`
+	StageEnabled      bool                `json:"stageEnabled"`
+	OutputFault       bool                `json:"outputFault"`
+	Generation        uint64              `json:"generation"`
+	StopEpoch         uint64              `json:"stopEpoch"`
+	TransportRevision uint64              `json:"transportRevision"`
+	Paused            bool                `json:"paused"`
+	SeekPending       bool                `json:"seekPending"`
+	Cues              []CueView           `json:"cues"`
+	ValidationJob     ValidationJob       `json:"validationJob"`
+	UpdatePending     bool                `json:"updatePending"`
 }
 type cachedRequest struct {
 	fingerprint [32]byte
@@ -243,7 +252,7 @@ func (s *Service) duplicateLocked(id string, hash [32]byte) (Ack, bool, error) {
 	return Ack{}, false, nil
 }
 func (s *Service) rememberLocked(id string, hash [32]byte) Ack {
-	a := Ack{true, false, s.state.InstanceID, s.state.Revision, s.state.Generation, s.state.StopEpoch}
+	a := Ack{Accepted: true, InstanceID: s.state.InstanceID, Revision: s.state.Revision, Generation: s.state.Generation, StopEpoch: s.state.StopEpoch, TransportRevision: s.state.TransportRevision}
 	if len(s.requestOrder) >= 4096 {
 		delete(s.requests, s.requestOrder[0])
 		s.requestOrder = s.requestOrder[1:]
@@ -262,6 +271,7 @@ func (s *Service) invalidateLocked() {
 	default:
 	}
 	s.state.Generation++
+	s.state.TransportRevision++
 }
 func (s *Service) clearActiveLocked() {
 	s.state.ActiveCueID = ""
@@ -269,6 +279,8 @@ func (s *Service) clearActiveLocked() {
 	s.state.Elapsed = 0
 	s.state.Duration = 0
 	s.state.ResolvedAudioID = ""
+	s.state.Paused = false
+	s.state.SeekPending = false
 }
 
 func (s *Service) Play(r PlayRequest) (Ack, error) {
@@ -296,6 +308,12 @@ func (s *Service) Play(r PlayRequest) (Ack, error) {
 	if s.state.OutputFault {
 		return Ack{}, problem("output_unavailable", "Select and save available outputs in Admin before retrying")
 	}
+	if r.Action != "" && r.Action != "play" {
+		if err := s.transportLocked(r); err != nil {
+			return Ack{}, err
+		}
+		return s.rememberLocked(r.RequestID, hash), nil
+	}
 	var cue *model.Cue
 	for i := range s.config.Cues {
 		if s.config.Cues[i].ID == r.CueID {
@@ -307,24 +325,18 @@ func (s *Service) Play(r PlayRequest) (Ack, error) {
 	if cue == nil {
 		return Ack{}, problem("cue_not_found", "Cue does not exist")
 	}
-	// A second intentional press also cancels a cue that is still preparing.
-	// Handle this before validation errors: a file disappearing after it started
-	// must not prevent the operator from stopping its current presentation.
+	// Selected image buttons retain their toggle behavior. Foreground buttons
+	// pause/resume, including intent accepted while preparation is still pending.
 	if !cue.Background {
 		if cue.ID == s.pendingImageID || cue.ID == s.state.ImageCueID && s.stageDesired {
 			s.stopImageLocked()
 			return s.rememberLocked(r.RequestID, hash), nil
 		}
 		if cue.ID == s.state.ActiveCueID {
-			kind := cue.Cache.Media.Kind
-			if s.foreground.cueID == cue.ID {
-				kind = s.foreground.kind
+			if err := s.pauseLocked(!s.state.Paused); err != nil {
+				return Ack{}, err
 			}
-			video := kind == "video" || kind == "" && videoFile(cue.Path)
-			if video || kind == "audio" && s.config.Stage.ToggleAudio {
-				s.stopForegroundLocked(video, false)
-				return s.rememberLocked(r.RequestID, hash), nil
-			}
+			return s.rememberLocked(r.RequestID, hash), nil
 		}
 	}
 	if cue.Cache.Status == "missing" || cue.Cache.Status == "unsupported" || cue.Cache.Status == "error" {
@@ -348,6 +360,8 @@ func (s *Service) Play(r PlayRequest) (Ack, error) {
 	s.state.Elapsed = 0
 	s.state.Duration = cue.Cache.Media.Duration
 	s.state.ResolvedAudioID = ""
+	s.state.Paused = false
+	s.state.SeekPending = false
 	// Keep the previous native source audible while the replacement is checked
 	// and prepared. The native scene mixer performs the eventual crossfade.
 	ctx, cancel := context.WithCancel(s.ctx)
@@ -497,10 +511,20 @@ func (s *Service) prepare(job loadJob) {
 		s.state.ActiveCueID = s.foreground.cueID
 		if s.foreground.id == 0 {
 			s.state.State = "stopped"
+		} else if s.foreground.paused {
+			s.state.State = "paused"
 		} else {
 			s.state.State = "playing"
 		}
+		s.state.Paused = s.foreground.paused
+		s.state.SeekPending = s.foreground.seekPending
+		s.state.Elapsed = s.foreground.position
 		s.state.Duration = s.foreground.duration
+		s.state.ResolvedAudioID = s.foreground.audioID
+		// Inspection corrected an unknown/stale kind to image. Restore the
+		// independent source without restarting it, and acknowledge its current
+		// transport under the latest controller revision.
+		s.foreground.transportRevision = s.state.TransportRevision
 		s.image = presentationSource{cueID: job.cue.ID, path: path, kind: "image"}
 		s.state.ImageCueID = job.cue.ID
 		if job.stageSerial == s.stageSerial {
@@ -515,7 +539,7 @@ func (s *Service) prepare(job loadJob) {
 	}
 	s.state.ResolvedAudioID = resolvedAudio
 	s.state.Duration = cache.Media.Duration
-	s.foreground = presentationSource{id: job.generation, cueID: job.cue.ID, path: path, kind: cache.Media.Kind, hasAudio: cache.Media.HasAudio, audioID: resolvedAudio, duration: cache.Media.Duration}
+	s.foreground = presentationSource{id: job.generation, cueID: job.cue.ID, path: path, kind: cache.Media.Kind, hasAudio: cache.Media.HasAudio, audioID: resolvedAudio, duration: cache.Media.Duration, paused: s.state.Paused, transportRevision: s.state.TransportRevision}
 	if cache.Media.HasVideo && job.stageSerial == s.stageSerial {
 		s.stageDesired = true
 	}
@@ -597,11 +621,21 @@ func (s *Service) nativeEvent(e playback.Event) {
 		s.failLocked(e.Message)
 		return
 	}
+	// Global failures of the committed scene (for example a stage operation
+	// during replacement inspection) belong to its command generation rather
+	// than the previous source's independent transport revision.
+	if e.Kind == "error" && e.SceneRevision != 0 && e.SceneRevision == s.sceneRevision && e.Generation == s.state.Generation && s.foreground.id != s.state.Generation {
+		s.failLocked(e.Message)
+		return
+	}
 	expected := s.state.Generation
-	if s.state.State == "playing" && s.foreground.id != 0 {
+	if (s.state.State == "playing" || s.state.State == "paused") && s.foreground.id != 0 {
 		expected = s.foreground.id
 	}
 	if e.Generation != expected {
+		return
+	}
+	if _, native := s.backend.(playback.SceneBackend); native && (e.Kind == "playing" || e.Kind == "paused" || e.Kind == "progress" || e.Kind == "ended" || e.Kind == "error") && e.TransportRevision != s.state.TransportRevision {
 		return
 	}
 	// Music keeps its identity across visual changes. Its queued progress may
@@ -613,22 +647,38 @@ func (s *Service) nativeEvent(e playback.Event) {
 		}
 	}
 	switch e.Kind {
-	case "playing":
-		if s.state.State != "loading" {
+	case "playing", "paused":
+		if s.state.State != "loading" && s.state.State != "playing" && s.state.State != "paused" || (e.Kind == "paused") != s.state.Paused {
 			return
 		}
-		s.state.State = "playing"
-		s.state.Duration = e.Duration
-	case "progress":
-		if s.state.State != "playing" {
-			return
+		s.state.State = e.Kind
+		s.state.SeekPending = false
+		s.foreground.seekPending = false
+		if finitePosition(e.Position) {
+			s.state.Elapsed = e.Position
+			s.foreground.position = e.Position
 		}
-		s.state.Elapsed = e.Position
-		if e.Duration > 0 {
+		if e.Duration > 0 && finitePosition(e.Duration) {
 			s.state.Duration = e.Duration
+			s.foreground.duration = e.Duration
+		}
+	case "progress":
+		if s.state.State != "playing" && s.state.State != "paused" {
+			return
+		}
+		if finitePosition(e.Position) {
+			s.state.Elapsed = e.Position
+			s.foreground.position = e.Position
+		}
+		if e.Duration > 0 && finitePosition(e.Duration) {
+			s.state.Duration = e.Duration
+			s.foreground.duration = e.Duration
 		}
 	case "ended":
-		if s.state.State != "playing" && s.state.State != "loading" {
+		// An exact-revision terminal event also acknowledges a source that
+		// naturally ended before a newly accepted pause reached native. Native
+		// backends keep paused seeks to the duration selected until resumed.
+		if s.state.State != "playing" && s.state.State != "loading" && s.state.State != "paused" {
 			return
 		}
 		s.clearActiveLocked()
@@ -653,6 +703,10 @@ func (s *Service) nativeEvent(e playback.Event) {
 		return
 	}
 	s.changedLocked()
+}
+
+func finitePosition(value float64) bool {
+	return value >= 0 && !math.IsNaN(value) && !math.IsInf(value, 0)
 }
 func (s *Service) Close() {
 	s.mu.Lock()

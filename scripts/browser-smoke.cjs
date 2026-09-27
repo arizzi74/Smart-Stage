@@ -17,7 +17,7 @@ const assert = require('node:assert/strict');
   let stateGets = 0, holdPlay = false, remoteGets = 0, links = [], sessionCounter = 0;
   let updateGets = 0, updateGetDelay = 0, failUpdateCheck = false, restarting = false;
   let nativeChooserImports = [], playlistFailSave = false;
-  let playlistReadGate = null;
+  let playlistReadGate = null, transportGate = null, rejectTransport = false;
   let nativePlaylistStatus = { id: 0, phase: 'idle' }, nativePlaylistResult = { phase: 'complete' }, nativePlaylistMismatch = false;
   let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: false };
   let gateway = { mode: 'lan', url: '', hasToken: false, status: 'disabled', message: '', remoteURL: '' };
@@ -27,7 +27,7 @@ const assert = require('node:assert/strict');
   let update = { currentVersion: 'v0.1.0-preview.8', latestVersion: 'v0.1.0-preview.9', phase: 'available', available: true, canInstall: true, message: 'A new version is available.', releaseURL: 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', checkedAt: new Date().toISOString() };
   const labels = ['Opening music', 'Welcome video with a deliberately long label that must wrap clearly', "Café's interlude", '<img src=x onerror="window.__xss=true">'];
   const stageDefaults = { backgroundCueId: '', backgroundAudio: false, fadeEnabled: false, fadeSeconds: 1, toggleAudio: false };
-  const state = { stage: { ...stageDefaults }, backgroundCueId: '', imageCueId: '', instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
+  const state = { stage: { ...stageDefaults }, backgroundCueId: '', imageCueId: '', instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, transportRevision: 1, paused: false, seekPending: false, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
   const config = { stage: { ...stageDefaults }, schema: 1, playlistRevision: 1, outputs: state.outputs, cues: state.cues.map(c => ({ id: c.id, label: c.label, path: `/Host/Show/${c.id}.mp4`, cache: { status: 'ready', media: { kind: c.kind, duration: 3 } } })) };
   const broadcast = () => { for (const c of clients) c.write(`event: state\ndata: ${JSON.stringify(state)}\n\n`); };
   const exportedPlaylist = () => ({ format: 'smartstage-playlist', version: 1,
@@ -213,9 +213,25 @@ const assert = require('node:assert/strict');
       if (body.enabled) assert.equal(Boolean(state.updatePending), false);
       state.stageEnabled = body.enabled; state.revision++; broadcast();
     }
-    if (url.pathname === '/api/emergency-stop') { assert.equal(req.headers['x-csrf-token'], 'test-csrf'); state.state = 'stopped'; state.activeCueId = ''; state.imageCueId = ''; state.stageEnabled = false; state.stopEpoch++; state.revision++; broadcast(); }
+    if (url.pathname === '/api/emergency-stop') { assert.equal(req.headers['x-csrf-token'], 'test-csrf'); state.state = 'stopped'; state.paused = false; state.activeCueId = ''; state.imageCueId = ''; state.stageEnabled = false; state.stopEpoch++; state.revision++; broadcast(); }
+    if (url.pathname === '/api/play' && body.action) {
+      assert.equal(req.headers['x-csrf-token'], 'test-csrf');
+      assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
+      if (transportGate) await transportGate;
+      if (rejectTransport) { reply({ error: { message: 'Seeking unavailable' } }, 409); return; }
+      if (body.instanceId !== state.instanceId || body.stopEpoch !== state.stopEpoch || body.cueId !== state.activeCueId ||
+          body.generation !== state.generation || body.transportRevision !== state.transportRevision) {
+        reply({ error: { message: 'Playback changed; refresh state before changing playback' } }, 409); return;
+      }
+      assert(['pause', 'resume', 'seek'].includes(body.action));
+      if (body.action === 'seek') {
+        assert(Number.isFinite(body.position) && body.position >= 0 && body.position <= state.duration);
+        state.elapsed = body.position;
+      } else { state.paused = body.action === 'pause'; state.state = state.paused ? 'paused' : 'playing'; }
+      state.transportRevision++; state.revision++; broadcast();
+    }
     if (url.pathname === '/api/play' && holdPlay) { await new Promise(resolve => setTimeout(resolve, 600)); }
-    if (url.pathname === '/api/stop') { state.revision++; state.stopEpoch++; state.activeCueId = ''; state.state = 'stopped'; broadcast(); }
+    if (url.pathname === '/api/stop') { state.revision++; state.stopEpoch++; state.activeCueId = ''; state.state = 'stopped'; state.paused = false; broadcast(); }
     reply({ accepted: true }, 202);
   });
   const adminServer = createServer('admin'), commandServer = createServer('command'), publicServer = createServer('command', publicPrefix);
@@ -608,16 +624,15 @@ const assert = require('node:assert/strict');
     await admin.locator('#background-audio').check();
     await admin.locator('#fade-enabled').check();
     await admin.locator('#fade-seconds').fill('1.6');
-    await admin.locator('#toggle-audio').check();
     await admin.locator('#save-stage-settings').click();
     await admin.waitForFunction(() => document.getElementById('stage-settings-message').textContent === 'Stage and sound settings saved.');
-    assert.deepEqual(config.stage, { backgroundCueId: 'cue-1', backgroundAudio: true, fadeEnabled: true, fadeSeconds: 1.6, toggleAudio: true });
+    assert.deepEqual(config.stage, { backgroundCueId: 'cue-1', backgroundAudio: true, fadeEnabled: true, fadeSeconds: 1.6, toggleAudio: false });
     assert.equal(config.cues[1].background, true, 'stage settings preserve background button flags');
     await admin.reload(); await admin.locator('.playlist-row').first().waitFor();
     assert.equal(await admin.locator('#background-cue').inputValue(), 'cue-1');
     assert.equal(await admin.locator('#fade-seconds').inputValue(), '1.6', 'saved settings survive an Admin reload');
     assert.equal(await admin.locator('#background-audio').isChecked(), true);
-    assert.equal(await admin.locator('#toggle-audio').isChecked(), true);
+    assert.equal(await admin.locator('#toggle-audio').count(), 0, 'audio/video repeat always pauses; no obsolete stop toggle');
     config.cues.push({ id: 'image-fixture', label: 'Sponsor image', path: '/Host/Show/sponsor.png', hidden: false, background: false, cache: { status: 'ready', media: { kind: 'image', duration: 0 } } });
     config.playlistRevision++; state.playlistRevision = config.playlistRevision;
     state.cues.push({ id: 'image-fixture', label: 'Sponsor image', position: config.cues.length, kind: 'image', duration: 0, validation: 'ready' });
@@ -637,20 +652,28 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('[data-cue-id="cue-0"]').getAttribute('aria-pressed'), 'true', 'toggling an image off keeps independent music selected');
     state.imageCueId = 'image-fixture'; state.revision++; broadcast();
     await page.waitForFunction(() => document.querySelector('[data-cue-id="image-fixture"]').getAttribute('aria-pressed') === 'true');
-    assert.match(await page.locator('[data-cue-id="cue-0"] .cue-meta').textContent(), /Press again to stop/);
+    assert.match(await page.locator('[data-cue-id="cue-0"] .cue-meta').textContent(), /Press again to pause/);
     await page.locator('[data-cue-id="cue-0"]').click();
-    assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.cueId, 'cue-0', 'a selected music button sends the same cue; host decides the configured toggle');
-    state.activeCueId = ''; state.state = 'stopped'; state.revision++; broadcast();
-    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-0"]').getAttribute('aria-pressed') === 'false');
-    assert.equal(await page.locator('[data-cue-id="image-fixture"]').getAttribute('aria-pressed'), 'true', 'stopping music alone preserves the selected image');
-    // Video toggles do not depend on the optional music setting. The fixture
-    // only supplies authoritative state; native fade execution is tested elsewhere.
-    state.stage.toggleAudio = false; state.activeCueId = 'cue-3'; state.imageCueId = ''; state.state = 'playing'; state.revision++; broadcast();
-    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-3"] .cue-meta').textContent.includes('Press again to stop'));
-    await admin.waitForFunction(() => [...document.querySelectorAll('.playlist-row button')].some(button => button.textContent === 'Stop video'));
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-0"] .cue-meta').textContent.includes('Press again to resume'));
+    assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.action, 'pause');
+    assert.equal(state.paused, true);
+    assert.equal(await page.locator('[data-cue-id="image-fixture"]').getAttribute('aria-pressed'), 'true', 'pausing music preserves the independent image');
+    assert.equal(await page.locator('[data-cue-id="cue-0"]').getAttribute('aria-pressed'), 'true');
+    await page.locator('[data-cue-id="cue-0"]').click();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-0"] .cue-meta').textContent.includes('Press again to pause'));
+    assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.action, 'resume');
+    // Native frame retention is checked separately; this fixture checks selected
+    // controls and explicit pause/resume requests, regardless of legacy settings.
+    state.stage.toggleAudio = false; state.activeCueId = 'cue-3'; state.imageCueId = ''; state.state = 'playing'; state.paused = false; state.revision++; broadcast();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-3"] .cue-meta').textContent.includes('Press again to pause'));
+    await admin.waitForFunction(() => [...document.querySelectorAll('.playlist-row button')].some(button => button.textContent === 'Pause'));
     await page.locator('[data-cue-id="cue-3"]').click();
-    assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.cueId, 'cue-3');
-    state.stage.toggleAudio = true; state.activeCueId = ''; state.state = 'stopped'; state.revision++; broadcast();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-3"] .cue-meta').textContent.includes('Press again to resume'));
+    assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.action, 'pause');
+    await admin.getByRole('button', { name: 'Resume', exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-3"] .cue-meta').textContent.includes('Press again to pause'));
+    assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.action, 'resume');
+    await page.locator('#stop').click();
     await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-3"]').getAttribute('aria-pressed') === 'false');
     await page.locator('[data-cue-id="cue-1"]').click();
     assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.cueId, 'cue-1');
@@ -1173,9 +1196,130 @@ const assert = require('node:assert/strict');
     }
     assert(await italianRemote.evaluate(before => window.smartStageI18n.bindingCount <= before + 4, bindingBaseline), 'repeated state rendering cannot retain removed localized nodes indefinitely');
     assert.equal(requests.some(r => r.listenerRole === 'command' && r.path === '/api/language'), false, 'Remote never accesses the privileged language API');
+    // Transport fixture checks only browser gestures and HTTP ordering; it never
+    // claims to decode, render, or audibly pause the media source.
+    const beforeSeekFixture = structuredClone(state);
+    const seekCue = state.cues.find(cue => ['audio', 'video'].includes(cue.kind) && !cue.background);
+    assert(seekCue, 'Seek checks need an ordinary audio/video cue');
+    const seekContext = await browser.newContext({locale: 'en-US', viewport: {width: 390, height: 844}, hasTouch: true});
+    const seekPage = await seekContext.newPage(); seekPage.on('pageerror', e => errors.push(e.message));
+    await seekPage.goto(commandBase + '/command#token=' + token); await seekPage.locator('#connection.live').waitFor();
+    const seekCount = () => requests.filter(item => item.path === '/api/play' && item.body.action === 'seek').length;
+    const publishSeekState = async (patch = {}) => {
+      Object.assign(state, {state: 'playing', activeCueId: seekCue.id, duration: 120, elapsed: 12, paused: false, seekPending: false, lastError: '', updatePending: false}, patch);
+      state.revision++; broadcast(); await seekPage.evaluate(() => refreshState());
+    };
+    const seekReady = async (targetPage = seekPage) => targetPage.waitForFunction(() => {
+      const input = document.getElementById('seek-range'); return !input.disabled && input.getAttribute('aria-disabled') === 'false';
+    });
+    const beginSeekDrag = async () => {
+      await seekReady(); await seekPage.locator('#seek-range').scrollIntoViewIfNeeded();
+      const box = await seekPage.locator('#seek-range').boundingBox();
+      await seekPage.mouse.move(box.x + box.width * .2, box.y + box.height / 2); await seekPage.mouse.down();
+      await seekPage.mouse.move(box.x + box.width * .65, box.y + box.height / 2, {steps: 5});
+      await seekPage.locator('#seek-preview.visible').waitFor(); return box;
+    };
+    await publishSeekState();
+    let seeksBefore = seekCount();
+    await beginSeekDrag();
+    const dragged = Number(await seekPage.locator('#seek-range').inputValue());
+    assert(dragged > 60 && dragged < 90, 'Mouse drag tracks its pointer position');
+    assert.equal(seekCount(), seeksBefore, 'Pointer movement previews without sending native work');
+    state.elapsed = 13; state.revision++; broadcast(); await seekPage.waitForTimeout(60);
+    assert.equal(Number(await seekPage.locator('#seek-range').inputValue()), dragged, 'Progress cannot snap a held thumb back to the native position');
+    await seekPage.screenshot({path: path.join(output, 'command-seek-preview-phone.png')});
+    await admin.evaluate(() => scrollTo(0, 0)); await admin.locator('#seek-bar').waitFor({state: 'visible'});
+    await admin.screenshot({path: path.join(output, 'admin-active-seek.png'), mask: [admin.locator('#remote-url'), admin.locator('#remote-code'), admin.locator('#remote-qr')]});
+    await seekPage.mouse.up(); await seekReady();
+    assert.equal(seekCount(), seeksBefore + 1, 'Pointer release sends exactly one seek');
+    assert.equal(requests.filter(item => item.body.action === 'seek').at(-1).body.position, dragged);
+    assert.equal(await seekPage.locator('#seek-preview.visible').count(), 0);
+
+    // Touch events are sent through Chromium's touchscreen device, so pointer
+    // capture/default range behavior and touch cancellation are exercised.
+    const touch = await seekContext.newCDPSession(seekPage);
+    await publishSeekState({state: 'paused', paused: true}); await seekReady();
+    let touchBox = await seekPage.locator('#seek-range').boundingBox();
+    seeksBefore = seekCount();
+    await touch.send('Input.dispatchTouchEvent', {type: 'touchStart', touchPoints: [{x: touchBox.x + touchBox.width * .25, y: touchBox.y + touchBox.height / 2, id: 1}]});
+    await touch.send('Input.dispatchTouchEvent', {type: 'touchMove', touchPoints: [{x: touchBox.x + touchBox.width * .7, y: touchBox.y + touchBox.height / 2, id: 1}]});
+    await seekPage.locator('#seek-preview.visible').waitFor();
+    const touchTarget = Number(await seekPage.locator('#seek-range').inputValue());
+    assert.equal(seekCount(), seeksBefore);
+    await touch.send('Input.dispatchTouchEvent', {type: 'touchEnd', touchPoints: []}); await seekReady();
+    assert.equal(seekCount(), seeksBefore + 1); assert.equal(state.elapsed, touchTarget); assert.equal(state.paused, true);
+    touchBox = await seekPage.locator('#seek-range').boundingBox(); seeksBefore = seekCount();
+    await touch.send('Input.dispatchTouchEvent', {type: 'touchStart', touchPoints: [{x: touchBox.x + touchBox.width * .35, y: touchBox.y + touchBox.height / 2, id: 2}]});
+    await touch.send('Input.dispatchTouchEvent', {type: 'touchCancel', touchPoints: []});
+    assert.equal(seekCount(), seeksBefore, 'Touch cancellation never commits a seek');
+    assert.equal(await seekPage.locator('#seek-preview.visible').count(), 0);
+
+    await seekPage.locator('#seek-range').focus(); seeksBefore = seekCount();
+    for (let i = 0; i < 3; i++) await seekPage.keyboard.down('ArrowLeft');
+    assert.equal(seekCount(), seeksBefore, 'Repeated keyboard input is coalesced until key release');
+    await seekPage.keyboard.up('ArrowLeft'); await seekReady();
+    assert.equal(seekCount(), seeksBefore + 1);
+    assert.equal(await seekPage.evaluate(() => document.activeElement.id), 'seek-range', 'Seeking retains keyboard focus');
+    await seekPage.keyboard.press('Home'); await seekReady(); assert.equal(state.elapsed, 0);
+    await seekPage.keyboard.press('End'); await seekReady(); assert.equal(state.elapsed, 120);
+    assert.equal(state.paused, true, 'Keyboard endpoint seeking preserves pause');
+
+    for (const cancelledBy of ['stop', 'replacement', 'disconnect']) {
+      await publishSeekState(); seeksBefore = seekCount(); await beginSeekDrag();
+      if (cancelledBy === 'disconnect') await seekPage.evaluate(() => connection(false));
+      else if (cancelledBy === 'stop') { state.state = 'stopped'; state.activeCueId = ''; state.stopEpoch++; state.revision++; broadcast(); }
+      else { state.generation++; state.transportRevision++; state.revision++; broadcast(); }
+      await seekPage.locator('#seek-preview.visible').waitFor({state: 'hidden'}); await seekPage.mouse.up();
+      assert.equal(seekCount(), seeksBefore, `${cancelledBy} invalidates the gesture captured before it`);
+      if (cancelledBy === 'disconnect') await seekPage.evaluate(() => refreshState());
+    }
+    await publishSeekState(); rejectTransport = true;
+    await seekPage.locator('#seek-range').focus(); await seekPage.keyboard.press('End');
+    await seekPage.waitForFunction(() => document.getElementById('notice').textContent.includes('Seeking unavailable'));
+    await seekReady(); assert.equal(Number(await seekPage.locator('#seek-range').inputValue()), 12, 'A failed seek restores the authoritative position');
+    rejectTransport = false;
+    let releaseSeek; transportGate = new Promise(resolve => { releaseSeek = resolve; });
+    seeksBefore = seekCount(); await seekPage.keyboard.press('End');
+    await seekPage.waitForFunction(() => document.getElementById('seek-range').getAttribute('aria-disabled') === 'true');
+    assert.equal(await seekPage.locator('#stop').isDisabled(), false, 'STOP remains available while a seek request is pending');
+    await seekPage.locator('#stop').click();
+    await seekPage.locator('#seek-bar').waitFor({state: 'hidden'});
+    assert.equal(state.state, 'stopped'); assert.equal(state.activeCueId, ''); assert.equal(seekCount(), seeksBefore + 1);
+    const replacementCue = state.cues.find(cue => ['audio', 'video'].includes(cue.kind) && cue.id !== seekCue.id) || seekCue;
+    state.generation++; state.transportRevision++;
+    await publishSeekState({activeCueId: replacementCue.id}); await seekReady();
+    assert.equal(await seekPage.locator('#seek-range').getAttribute('aria-disabled'), 'false', 'A new cue remains seekable while an obsolete HTTP response waits');
+    transportGate = null; // Only the already-received old request retains the gate.
+    await seekPage.locator('#seek-range').focus(); await seekPage.keyboard.press('ArrowRight'); await seekReady();
+    assert.equal(state.elapsed, 13); assert.equal(seekCount(), seeksBefore + 2);
+    releaseSeek(); await seekPage.waitForTimeout(80);
+    assert.equal(state.activeCueId, replacementCue.id); assert.equal(state.state, 'playing'); assert.equal(state.elapsed, 13, 'The late seek response cannot overwrite a new foreground seek');
+    await publishSeekState(); await seekReady();
+    for (const locale of ['en', 'it']) {
+      await seekPage.locator('#language-mode').selectOption(locale);
+      for (const [width, height] of [[320, 844], [390, 844], [844, 390]]) {
+        await seekPage.setViewportSize({width, height});
+        const geometry = await seekPage.evaluate(() => {
+          const seek = document.getElementById('seek-bar').getBoundingClientRect(), stop = document.getElementById('stop').getBoundingClientRect();
+          return {overflow: document.documentElement.scrollWidth > innerWidth, seekBottom: seek.bottom, stopBottom: stop.bottom, stopTop: stop.top, height: innerHeight};
+        });
+        assert.equal(geometry.overflow, false, `${locale} seek layout fits ${width}`);
+        assert(geometry.seekBottom <= geometry.height + 1 && geometry.stopBottom <= geometry.height + 1 && geometry.stopTop >= 0, `${locale} seek and STOP stay visible at ${width}x${height}`);
+      }
+    }
+    const publicSeekContext = await browser.newContext({viewport: {width: 390, height: 844}});
+    const publicSeek = await publicSeekContext.newPage(); publicSeek.on('pageerror', e => errors.push(e.message));
+    await publicSeek.goto(publicBase + publicPrefix + '/command#token=' + gatewayRemoteToken);
+    await publicSeek.locator('#connection.live').waitFor(); await seekReady(publicSeek);
+    await publicSeek.locator('#seek-range').focus(); await publicSeek.keyboard.press('ArrowRight'); await seekReady(publicSeek);
+    const publicSeekRequest = requests.filter(item => item.body.action === 'seek').at(-1);
+    assert.equal(publicSeekRequest.requestPath, publicPrefix + '/api/play', 'Gateway seek uses the deployed endpoint-relative PLAY route');
+    assert.equal(publicSeekRequest.body.generation, state.generation);
+    await publicSeekContext.close(); await seekContext.close();
+    Object.assign(state, beforeSeekFixture); state.revision++; broadcast();
     await italianRemoteContext.close();
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, fadeAndMusicToggleSettings: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }

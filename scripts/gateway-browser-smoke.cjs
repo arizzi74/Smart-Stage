@@ -147,6 +147,23 @@ const path = require('node:path');
     assert.equal((await play).status(), 202);
     await page.waitForFunction(() => window.__gatewaySSEStates.some(state => state.state === 'playing' && state.activeCueId === 'gateway-browser-cue'));
     await page.locator('[data-cue-id="gateway-browser-cue"].active').waitFor();
+    const pause = page.waitForResponse(response => response.url().endsWith('/api/play'));
+    await page.locator('[data-cue-id="gateway-browser-cue"]').click();
+    assert.equal((await pause).status(), 202);
+    await page.waitForFunction(() => window.__gatewaySSEStates.at(-1).state === 'paused');
+    await page.waitForFunction(() => document.getElementById('seek-range').getAttribute('aria-disabled') === 'false');
+    const seek = page.waitForResponse(response => response.url().endsWith('/api/play'));
+    await page.locator('#seek-range').focus();
+    await page.keyboard.press('PageUp');
+    const sought = await seek;
+    assert.equal(sought.status(), 202);
+    assert.equal(sought.request().postDataJSON().action, 'seek');
+    assert.equal(sought.request().postDataJSON().position, 10);
+    await page.waitForFunction(() => { const s = window.__gatewaySSEStates.at(-1); return s.state === 'paused' && !s.seekPending && s.elapsed === 10; });
+    const resume = page.waitForResponse(response => response.url().endsWith('/api/play'));
+    await page.locator('[data-cue-id="gateway-browser-cue"]').click();
+    assert.equal((await resume).status(), 202);
+    await page.waitForFunction(() => window.__gatewaySSEStates.at(-1).state === 'playing');
     await page.locator('#keep-awake').click();
     await page.waitForFunction(() => document.getElementById('keep-awake-status').textContent === 'On');
     assert.equal(await page.evaluate(() => window.__wakeRequests), 1);
@@ -185,7 +202,7 @@ const path = require('node:path');
       windowsDesktopPresentationAndCapabilities: true, windowsDesktopDropCannotInventPaths: true,
       windowsNativeWindowExecutionVerified: false,
       actualPairingAndScopedSecureCookie: true, actualCSRFMutations: true,
-      actualSSEPlaybackTransitions: true, endpointRelativeAssetsAndRequests: true,
+      actualSSEPlaybackTransitions: true, actualTLSRelayPauseSeekResume: true, endpointRelativeAssetsAndRequests: true,
       publicPairingFragmentRemovedBeforeRequest: true, noPairingSecretInBrowserStorage: true,
       CSPWithoutViolations: true, logoutRevokesCookieAndWakeLock: true,
       HTTPSWakeLockRequested: true, nativePlaybackSimulated: true, deviceWakeLockGrantSimulated: true,

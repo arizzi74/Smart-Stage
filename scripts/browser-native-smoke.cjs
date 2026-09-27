@@ -313,9 +313,19 @@ function dedicatedWindowsAdmin(platform, release) {
       assert.equal(await button.getAttribute('aria-pressed'), 'true');
       assert.equal(requests.filter(request => new URL(request.url).pathname === '/api/play').length, previous + 1);
       if (cue.path.endsWith('.mp4')) {
-        assert.match(await button.locator('.cue-meta').textContent(), /Press again to stop/);
-        await button.tap();
-      } else await command.locator('#stop').tap();
+        assert.match(await button.locator('.cue-meta').textContent(), /Press again to pause/);
+        const selected = await snapshot();
+        await button.tap(); await waitState('paused');
+        const paused = await snapshot();
+        assert.equal(paused.activeCueId, selected.activeCueId); assert.equal(paused.generation, selected.generation);
+        assert.equal(paused.stageEnabled, true); assert.equal(paused.paused, true);
+        await sleep(450);
+        const held = await snapshot();
+        assert.equal(held.state, 'paused'); assert(Math.abs(held.elapsed - paused.elapsed) < .08, 'Paused native video timeline must remain frozen');
+        await button.tap(); await waitState('playing');
+        assert.equal((await snapshot()).generation, selected.generation, 'Resume must keep the same native video generation');
+      }
+      await command.locator('#stop').tap();
       await waitState('stopped');
       const stopped = await snapshot();
       assert.equal(stopped.activeCueId, '');
@@ -403,29 +413,73 @@ function dedicatedWindowsAdmin(platform, release) {
     await admin.locator('#background-audio').setChecked(Boolean(audio));
     await admin.locator('#fade-enabled').check();
     await admin.locator('#fade-seconds').fill('1.2');
-    await admin.locator('#toggle-audio').check();
+    assert.equal(await admin.locator('#toggle-audio').count(), 0, 'Pause is always available, without a toggle preference');
     await saveStageSettings();
-    assert.deepEqual(saved.stage, { backgroundCueId: backgroundCue.id, backgroundAudio: Boolean(audio), fadeEnabled: true, fadeSeconds: 1.2, toggleAudio: true });
+    assert.deepEqual(saved.stage, { backgroundCueId: backgroundCue.id, backgroundAudio: Boolean(audio), fadeEnabled: true, fadeSeconds: 1.2, toggleAudio: false });
     await admin.reload({ waitUntil: 'domcontentloaded' });
     await admin.locator('#connection.live').waitFor();
     await admin.locator('.playlist-row').last().waitFor();
     assert.equal(await admin.locator('#background-cue').inputValue(), backgroundCue.id);
     assert.equal(await admin.locator('#background-audio').isChecked(), Boolean(audio));
     assert.equal(await admin.locator('#fade-seconds').inputValue(), '1.2');
-    assert.equal(await admin.locator('#toggle-audio').isChecked(), true);
+    assert.equal(await admin.locator('#toggle-audio').count(), 0);
     assert.equal(await admin.getByRole('checkbox', { name: `Hide remote button for cue ${backgroundIndex}`, exact: true }).isChecked(), true);
     await command.locator('#remote-stage').tap();
     await until(async () => {
       const state = await snapshot(); return state.stageEnabled && state.backgroundCueId === backgroundCue.id && !state.backgroundError;
     }, 'Stage did not enable the configured video background');
+    async function seekWithKeyboard(position, playbackState) {
+      const range = command.locator('#seek-range');
+      await command.locator('#seek-bar').waitFor({ state: 'visible' });
+      await command.waitForFunction(() => !document.getElementById('seek-range').disabled && document.getElementById('seek-range').getAttribute('aria-disabled') !== 'true');
+      const before = await snapshot();
+      assert.equal(before.state, playbackState);
+      const count = requests.filter(item => new URL(item.url).pathname === '/api/play').length;
+      await range.focus();
+      await command.keyboard.down('Home');
+      let releaseKey = 'Home';
+      for (let i = 0; i < Math.floor(position / 10); ++i) { await command.keyboard.down('PageUp'); releaseKey = 'PageUp'; }
+      for (let i = 0; i < position % 10; ++i) { await command.keyboard.down('ArrowRight'); releaseKey = 'ArrowRight'; }
+      assert.equal(Number(await range.inputValue()), position);
+      assert.equal(await command.locator('#seek-preview.visible').isVisible(), true, 'Scrubbing must show the time preview');
+      assert.equal(requests.filter(item => new URL(item.url).pathname === '/api/play').length, count, 'Held seek keys must not send transport commands');
+      const [response] = await Promise.all([
+        command.waitForResponse(item => apiPath(item) === '/api/play' && item.request().postDataJSON()?.action === 'seek'),
+        command.keyboard.up(releaseKey)
+      ]);
+      if (releaseKey !== 'Home') await command.keyboard.up('Home');
+      if (releaseKey !== 'PageUp' && position >= 10) await command.keyboard.up('PageUp');
+      assert.equal(response.status(), 202, 'Seek release must reach the real host through the existing PLAY route');
+      const body = response.request().postDataJSON();
+      assert.equal(body.position, position); assert.equal(body.generation, before.generation);
+      assert.equal(body.transportRevision, before.transportRevision); assert.equal(body.cueId, before.activeCueId);
+      assert.equal(requests.filter(item => new URL(item.url).pathname === '/api/play').length, count + 1, 'One keyboard release sends one native seek');
+      await until(async () => {
+        const current = await snapshot();
+        assert.equal(current.generation, before.generation, 'Seek must retain native foreground generation');
+        assert.equal(current.activeCueId, before.activeCueId);
+        assert.equal(current.paused, playbackState === 'paused');
+        return !current.seekPending && current.state === playbackState && Math.abs(current.elapsed - position) < (playbackState === 'paused' ? .12 : .8);
+      }, 'Native seek did not acknowledge its target while preserving playback state');
+      await command.locator('#seek-preview.visible').waitFor({ state: 'hidden' });
+      await command.waitForFunction(() => !document.getElementById('seek-range').disabled && document.getElementById('seek-range').getAttribute('aria-disabled') !== 'true');
+    }
     const videoButton = command.locator('.cue').filter({ hasText: 'Finale' });
     await videoButton.tap(); await waitState('playing');
-    await videoButton.tap(); await waitState('stopped');
+    const selectedVideo = await snapshot();
+    await videoButton.tap(); await waitState('paused');
+    const pausedVideo = await snapshot();
+    assert.equal(pausedVideo.generation, selectedVideo.generation); assert.equal(pausedVideo.activeCueId, selectedVideo.activeCueId);
+    assert.equal(pausedVideo.stageEnabled, true); assert.equal(pausedVideo.backgroundCueId, backgroundCue.id);
+    await seekWithKeyboard(1, 'paused');
+    await videoButton.tap(); await waitState('playing');
+    assert.equal((await snapshot()).generation, selectedVideo.generation);
+    await command.locator('#stop').tap(); await waitState('stopped');
     const videoToggledOff = await snapshot();
     assert.equal(videoToggledOff.activeCueId, '');
     assert.equal(videoToggledOff.stageEnabled, true);
     assert.equal(videoToggledOff.backgroundCueId, backgroundCue.id);
-    record.checks.push('A second press stopped the selected native video with Stage still on, returning to black or the configured background without changing the background selection');
+    record.checks.push('Video second press paused in place; seeking while paused preserved the native generation and Stage; third press resumed; STOP then returned to the selected background');
     const musicButton = command.locator(`[data-cue-id="${musicCue.id}"]`);
     const imageButton = command.locator(`[data-cue-id="${imageCue.id}"]`);
     async function assertIndependentStage(expected, source) {
@@ -461,20 +515,42 @@ function dedicatedWindowsAdmin(platform, release) {
       await until(async () => (await snapshot()).elapsed > beforeStageToggle.elapsed + .2, 'Native music timeline stopped while stage was off');
       await assertIndependentStage(true, beforeStageToggle);
       assert.equal((await snapshot()).imageCueId, imageCue.id, 'Stage reopening must preserve the selected image');
-      await musicButton.tap(); await waitState('stopped');
-      const toggledOff = await snapshot();
-      assert.equal(toggledOff.activeCueId, ''); assert.equal(toggledOff.imageCueId, imageCue.id);
-      assert.equal(toggledOff.stageEnabled, true); assert.equal(toggledOff.backgroundCueId, backgroundCue.id);
+      await musicButton.tap(); await waitState('paused');
+      const pausedMusic = await snapshot();
+      assert.equal(pausedMusic.activeCueId, musicCue.id); assert.equal(pausedMusic.imageCueId, imageCue.id);
+      assert.equal(pausedMusic.generation, musicPlaying.generation); assert.equal(pausedMusic.stageEnabled, true);
+      assert.equal(pausedMusic.backgroundCueId, backgroundCue.id);
       await command.waitForFunction(id => document.querySelector(`[data-cue-id="${id}"]`)?.getAttribute('aria-pressed') === 'true', imageCue.id);
+      await seekWithKeyboard(18, 'paused');
+      const pausedAtTarget = await snapshot();
+      assert.equal(pausedAtTarget.imageCueId, imageCue.id);
+      await sleep(700);
+      const stillPaused = await snapshot();
+      assert.equal(stillPaused.state, 'paused');
+      assert(Math.abs(stillPaused.elapsed - pausedAtTarget.elapsed) < .08, 'Paused seek must remain stopped at its native target');
       await musicButton.tap(); await waitState('playing');
-      await until(async () => (await snapshot()).imageCueId === '', 'Starting a music button did not return visual output to the background');
-      await imageButton.tap();
-      await until(async () => (await snapshot()).imageCueId === imageCue.id, 'Image did not become active again');
+      const resumedMusic = await snapshot();
+      assert.equal(resumedMusic.generation, musicPlaying.generation); assert.equal(resumedMusic.imageCueId, imageCue.id);
+      await until(async () => (await snapshot()).elapsed > pausedAtTarget.elapsed + .25, 'Native music did not advance from the seek target after resume');
+      await seekWithKeyboard(35, 'playing');
+      const playingAtTarget = await snapshot();
+      assert.equal(playingAtTarget.imageCueId, imageCue.id);
+      await until(async () => (await snapshot()).elapsed > playingAtTarget.elapsed + .25, 'Seeking while playing did not continue native playback');
+      const delayedSeek = { requestId: 'native-browser-delayed-seek', action: 'seek', position: 10,
+        instanceId: playingAtTarget.instanceId, stopEpoch: playingAtTarget.stopEpoch,
+        generation: playingAtTarget.generation, transportRevision: playingAtTarget.transportRevision,
+        cueId: playingAtTarget.activeCueId };
       await command.locator('#stop').tap(); await waitState('stopped');
+      const rejectedSeek = await command.evaluate(async body => {
+        const response = await fetch('/api/play', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': csrf }, body: JSON.stringify(body) });
+        return { status: response.status, body: await response.json() };
+      }, delayedSeek);
+      assert.equal(rejectedSeek.status, 409, 'STOP must reject a delayed native seek from its prior epoch');
+      assert.equal(rejectedSeek.body.error.code, 'stale_epoch');
       const stoppedScene = await snapshot();
       assert.equal(stoppedScene.imageCueId, ''); assert.equal(stoppedScene.activeCueId, '');
       assert.equal(stoppedScene.backgroundCueId, backgroundCue.id); assert.equal(stoppedScene.stageEnabled, true);
-      record.checks.push('Real native music kept its cue ID, generation and advancing timeline through image selection and Stage off/on; pressing the music button again stopped only music and kept the image; STOP cleared the image and returned to background');
+      record.checks.push('Real native music kept its generation through image selection, Stage off/on, pause, paused seek, resume and playing seek; paused position stayed frozen and resumed/playing seeks advanced natively; STOP rejected a delayed seek, cleared the image and returned to background');
     } else {
       await imageButton.tap();
       await until(async () => (await snapshot()).imageCueId === imageCue.id, 'Native image cue did not become active');
@@ -510,9 +586,9 @@ function dedicatedWindowsAdmin(platform, release) {
     record.sceneIntegration = { nativeImageInspected: true, savedVideoAndImageBackgrounds: true,
       hiddenBackgroundCueEditableInAdmin: true, persistedConfigReloaded: true, configuredFadeSeconds: 1.2,
       musicImageAndIndependentStage: Boolean(audio), backgroundSoundtrackEnabled: Boolean(audio),
-      selectedMusicToggleKeepsImage: Boolean(audio), nativeAudioGainsMeasuredHere: false,
+      selectedMusicPauseKeepsImage: Boolean(audio), nativePausedVideoSeek: true, nativePausedAndPlayingMusicSeek: Boolean(audio), nativeAudioGainsMeasuredHere: false,
       audioUnavailableReason: audio ? '' : 'No enumerated native audio endpoint' };
-    record.checks.push('Admin saved/reloaded fade, background soundtrack and music-toggle settings; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available');
+    record.checks.push('Admin saved/reloaded fade and background soundtrack settings without a pause preference; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available');
 
     await command.evaluate(() => scrollTo(0, document.body.scrollHeight));
     const bounds = await command.locator('#stop').boundingBox();

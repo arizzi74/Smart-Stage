@@ -45,6 +45,10 @@ type Start struct {
 // Scene is a complete desired presentation. Revision orders native work;
 // ForegroundID identifies one intentional audio/video start and remains stable
 // across image/background/stage changes. Images never replace foreground sound.
+// TransportRevision changes for each start, pause, resume or seek. Foreground
+// events must carry the applied revision so superseded callbacks can be ignored.
+// SeekRevision is zero until the first seek and changes only for a new seek;
+// applying later scenes with that same revision must not replay the seek.
 type Scene struct {
 	Revision           uint64
 	Generation         uint64
@@ -52,6 +56,10 @@ type Scene struct {
 	ForegroundPath     string
 	ForegroundKind     string
 	ForegroundHasAudio bool
+	ForegroundPaused   bool
+	TransportRevision  uint64
+	SeekRevision       uint64
+	SeekSeconds        float64
 	ImagePath          string
 	BackgroundPath     string
 	BackgroundKind     string
@@ -70,13 +78,14 @@ type SceneBackend interface {
 }
 
 type Event struct {
-	Generation    uint64  `json:"generation"`
-	SceneRevision uint64  `json:"sceneRevision,omitempty"`
-	Kind          string  `json:"kind"` // playing, progress, ended, stopped, error, devices, escape
-	Position      float64 `json:"position"`
-	Duration      float64 `json:"duration"`
-	Message       string  `json:"message,omitempty"`
-	StageEnabled  bool    `json:"stageEnabled"`
+	Generation        uint64  `json:"generation"`
+	SceneRevision     uint64  `json:"sceneRevision,omitempty"`
+	TransportRevision uint64  `json:"transportRevision,omitempty"`
+	Kind              string  `json:"kind"` // playing, paused, progress, ended, stopped, error, devices, escape
+	Position          float64 `json:"position"`
+	Duration          float64 `json:"duration"`
+	Message           string  `json:"message,omitempty"`
+	StageEnabled      bool    `json:"stageEnabled"`
 }
 
 // Backend does not retain Go pointers in native objects. Start/Stop/Stage enqueue

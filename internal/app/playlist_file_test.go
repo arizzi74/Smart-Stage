@@ -217,14 +217,14 @@ func TestLoadPlaylistRejectsInvalidMediaWithoutChangingCurrentShow(t *testing.T)
 }
 
 func TestLoadPlaylistRejectsPlaybackStageAndUpdateTransitions(t *testing.T) {
-	for _, mode := range []string{"loading", "playing", "stopping", "stage enabled", "stage desired", "stage pending", "image pending", "updating", "closed"} {
+	for _, mode := range []string{"loading", "playing", "paused", "stopping", "stage enabled", "stage desired", "stage pending", "image pending", "updating", "closed"} {
 		t.Run(mode, func(t *testing.T) {
 			s, _, _ := setup(t, false)
 			file := playlistDocument(t, s)
 			before := s.Playlist()
 			s.mu.Lock()
 			switch mode {
-			case "loading", "playing", "stopping":
+			case "loading", "playing", "paused", "stopping":
 				s.state.State = mode
 			case "stage enabled":
 				s.state.StageEnabled = true

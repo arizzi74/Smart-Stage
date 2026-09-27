@@ -23,14 +23,19 @@ void ss_stop(uint64_t generation);
 void ss_stage(uint64_t generation, const char *display, int enabled);
 typedef struct {
     uint64_t revision, generation, foreground_id;
+    uint64_t transport_revision, seek_revision;
     const char *foreground_path, *foreground_kind, *image_path;
     const char *background_path, *background_kind, *audio, *display;
     int foreground_has_audio, background_audio, stage_enabled, hard_stop;
-    double fade_seconds;
+    int foreground_paused;
+    double fade_seconds, seek_seconds;
 } ss_scene_request;
 /* Complete, latest-revision-wins scene. All pointed-to strings are copied.
  * Foreground events use foreground_id as generation; stopped uses generation.
- * stage/background-error events include sceneRevision. */
+ * stage/background-error events include sceneRevision. Foreground events also
+ * include transportRevision; paused/playing acknowledge transport application.
+ * Seek only when seek_revision changes (zero means no seek). Pausing retains
+ * the foreground's audio dominance, source identity and video frame. */
 void ss_scene(const ss_scene_request *request);
 #if defined(__APPLE__) || defined(_WIN32)
 /* OS UI language preference, narrowed to the first supported language (en/it).

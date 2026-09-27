@@ -50,8 +50,11 @@ func (b *sceneRouteBackend) ApplyScene(scene playback.Scene) error {
 	kind, generation := "stopped", scene.Generation
 	if scene.ForegroundID != 0 {
 		kind, generation = "playing", scene.ForegroundID
+		if scene.ForegroundPaused {
+			kind = "paused"
+		}
 	}
-	b.events <- playback.Event{Kind: kind, Generation: generation, SceneRevision: scene.Revision, StageEnabled: scene.StageEnabled, Duration: 30}
+	b.events <- playback.Event{Kind: kind, Generation: generation, TransportRevision: scene.TransportRevision, Position: scene.SeekSeconds, SceneRevision: scene.Revision, StageEnabled: scene.StageEnabled, Duration: 30}
 	return nil
 }
 func (b *sceneRouteBackend) latest() playback.Scene {

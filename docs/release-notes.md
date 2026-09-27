@@ -1,9 +1,9 @@
-Smart Stage 1.3.1 makes the Admin interface more compact so the full remote-control QR code fits in a desktop app window without scrolling.
+Smart Stage 1.4.0 adds audio/video seeking and pause/resume controls on Mac and Windows, in both Admin and the phone/tablet remote.
 
-- The smaller header and page title leave more room for your show. Empty message areas no longer reserve space.
-- The full-size, 256 × 256 QR code sits at the top-right of the connection panel, beside its instructions, with connection settings still collapsed by default.
-- The duplicate gateway-connected message is removed; errors and connection details remain visible.
-- The layout was checked in English and Italian, including 1095 × 758 and 900 × 600 desktop viewports. Narrow Admin screens put the QR above the link; the phone remote layout is unchanged.
+- Use the bottom slider to seek. While touching or dragging, a large centered time preview fades in; release to jump to that position and fade the preview out.
+- Press the selected audio or video button to pause, then press it again to resume. The cue stays selected, and paused video keeps its frame. Seeking while paused keeps it paused.
+- STOP ends playback and returns the stage to its background or black. Image buttons retain their existing toggle behavior, and Stage on/off remains independent.
+- The controls support touch, mouse, keyboard, English and Italian. Unknown-duration media shows an unavailable seek bar; stale or interrupted gestures are cancelled.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 

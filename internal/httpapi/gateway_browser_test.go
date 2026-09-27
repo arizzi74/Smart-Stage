@@ -157,7 +157,11 @@ func (b *gatewayBrowserBackend) ApplyScene(s playback.Scene) error {
 	b.events <- playback.Event{Kind: "stage", Generation: s.Generation, SceneRevision: s.Revision, StageEnabled: s.StageEnabled}
 	if s.ForegroundID != 0 && s.ForegroundPath != "" {
 		b.played.Add(1)
-		b.events <- playback.Event{Kind: "playing", Generation: s.ForegroundID, SceneRevision: s.Revision, Duration: 30, StageEnabled: s.StageEnabled}
+		kind := "playing"
+		if s.ForegroundPaused {
+			kind = "paused"
+		}
+		b.events <- playback.Event{Kind: kind, Generation: s.ForegroundID, SceneRevision: s.Revision, TransportRevision: s.TransportRevision, Position: s.SeekSeconds, Duration: 30, StageEnabled: s.StageEnabled}
 	} else {
 		b.stopped.Add(1)
 		b.events <- playback.Event{Kind: "stopped", Generation: s.Generation, SceneRevision: s.Revision, StageEnabled: s.StageEnabled}

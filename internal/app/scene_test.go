@@ -114,14 +114,14 @@ func scenePlaying(t *testing.T, s *Service, f *sceneNative, cue string) playback
 		return next.ForegroundID != 0 && next.ForegroundID != before.ForegroundID
 	})
 	scene := f.latest()
-	f.events <- playback.Event{Kind: "playing", Generation: scene.ForegroundID, SceneRevision: scene.Revision, Duration: 30, StageEnabled: scene.StageEnabled}
+	f.events <- playback.Event{Kind: "playing", Generation: scene.ForegroundID, SceneRevision: scene.Revision, TransportRevision: scene.TransportRevision, Duration: 30, StageEnabled: scene.StageEnabled}
 	eventually(t, func() bool { return s.Snapshot(true).State == "playing" })
 	return scene
 }
 
 func sceneStageCompletion(t *testing.T, s *Service, f *sceneNative, scene playback.Scene) {
 	t.Helper()
-	f.events <- playback.Event{Kind: "stage", Generation: scene.Generation, SceneRevision: scene.Revision, StageEnabled: scene.StageEnabled}
+	f.events <- playback.Event{Kind: "stage", Generation: scene.Generation, SceneRevision: scene.Revision, TransportRevision: scene.TransportRevision, StageEnabled: scene.StageEnabled}
 	eventually(t, func() bool { return s.Snapshot(true).StageEnabled == scene.StageEnabled })
 }
 
@@ -147,11 +147,11 @@ func TestSceneImageAndStageChangesKeepForegroundIdentity(t *testing.T) {
 	}
 	// An older native stage-open completion must not reopen an explicitly
 	// closed stage, even while foreground music keeps its older identity.
-	s.nativeEvent(playback.Event{Kind: "stage", Generation: image.Generation, SceneRevision: image.Revision, StageEnabled: true})
+	s.nativeEvent(playback.Event{Kind: "stage", Generation: image.Generation, SceneRevision: image.Revision, TransportRevision: image.TransportRevision, StageEnabled: true})
 	if s.Snapshot(true).StageEnabled {
 		t.Fatal("stale stage completion reopened the display")
 	}
-	s.nativeEvent(playback.Event{Kind: "progress", Generation: music.ForegroundID, SceneRevision: image.Revision, StageEnabled: true, Position: 2})
+	s.nativeEvent(playback.Event{Kind: "progress", Generation: music.ForegroundID, SceneRevision: image.Revision, TransportRevision: image.TransportRevision, StageEnabled: true, Position: 2})
 	if s.Snapshot(true).StageEnabled {
 		t.Fatal("late progress from continuing music reopened the independently closed stage")
 	}
@@ -199,7 +199,7 @@ func TestSceneBackgroundSwitchStopToggleAndEmergency(t *testing.T) {
 	if stopped.ForegroundID != 0 || stopped.ImagePath != "" || stopped.BackgroundPath != paths["background-video"] || !stopped.StageEnabled || stopped.HardStop || stopped.FadeSeconds != settings.FadeSeconds {
 		t.Fatalf("STOP did not request the configured background transition: %+v", stopped)
 	}
-	f.events <- playback.Event{Kind: "stopped", Generation: stopped.Generation, SceneRevision: stopped.Revision, StageEnabled: true}
+	f.events <- playback.Event{Kind: "stopped", Generation: stopped.Generation, SceneRevision: stopped.Revision, TransportRevision: stopped.TransportRevision, StageEnabled: true}
 	eventually(t, func() bool { return s.Snapshot(true).State == "stopped" })
 	music = scenePlaying(t, s, f, "music")
 	if _, err := play(s, "image", "image-before-music-toggle"); err != nil {
@@ -210,7 +210,7 @@ func TestSceneBackgroundSwitchStopToggleAndEmergency(t *testing.T) {
 		t.Fatal(err)
 	}
 	toggled := f.latest()
-	if state := s.Snapshot(true); toggled.ForegroundID != 0 || toggled.ImagePath != paths["image"] || state.ImageCueID != "image" || state.ActiveCueID != "" {
+	if state := s.Snapshot(true); toggled.ForegroundID != music.ForegroundID || !toggled.ForegroundPaused || toggled.ImagePath != paths["image"] || state.ImageCueID != "image" || state.ActiveCueID != "music" {
 		t.Fatalf("selected music toggle failed to retain image: scene=%+v state=%+v", toggled, state)
 	}
 	if _, err := s.EmergencyStop(StopRequest{RequestID: "emergency-during-transition"}); err != nil {
@@ -221,7 +221,7 @@ func TestSceneBackgroundSwitchStopToggleAndEmergency(t *testing.T) {
 		t.Fatalf("emergency stop was not immediate complete silence and stage off: %+v", emergency)
 	}
 	before := s.Snapshot(true)
-	s.nativeEvent(playback.Event{Kind: "playing", Generation: music.ForegroundID, SceneRevision: music.Revision, StageEnabled: true})
+	s.nativeEvent(playback.Event{Kind: "playing", Generation: music.ForegroundID, SceneRevision: music.Revision, TransportRevision: music.TransportRevision, StageEnabled: true})
 	if state := s.Snapshot(true); state.ActiveCueID != "" || state.StageEnabled || state.Generation != before.Generation {
 		t.Fatalf("late foreground completion undid emergency stop: %+v", state)
 	}
@@ -332,7 +332,7 @@ func TestSceneDeviceLossCancelsReplacementWithNewerGeneration(t *testing.T) {
 	if s.Snapshot(true).Generation == music.ForegroundID {
 		t.Fatal("test did not create a newer pending foreground generation")
 	}
-	s.nativeEvent(playback.Event{Kind: "device-lost", Generation: music.ForegroundID, SceneRevision: music.Revision, Message: "Test audio output disconnected"})
+	s.nativeEvent(playback.Event{Kind: "device-lost", Generation: music.ForegroundID, SceneRevision: music.Revision, TransportRevision: music.TransportRevision, Message: "Test audio output disconnected"})
 	if state := s.Snapshot(true); !state.OutputFault || state.State != "error" || state.ActiveCueID != "" || state.StageEnabled || !f.latest().HardStop {
 		t.Fatalf("device loss was ignored during replacement inspection: scene=%+v state=%+v", f.latest(), state)
 	}

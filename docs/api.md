@@ -88,8 +88,19 @@ Emergency stop uses the same request-ID rules and bypasses those limits too.
 HTTP 202 acknowledges acceptance:
 
 ```json
-{"accepted":true,"duplicate":false,"instanceId":"...","revision":5,"generation":3,"stopEpoch":2}
+{"accepted":true,"duplicate":false,"instanceId":"...","revision":5,"generation":3,"stopEpoch":2,"transportRevision":4}
 ```
+
+The same `/api/play` route accepts explicit `action:"pause"`, `"resume"` or
+`"seek"`. Include current `generation` and `transportRevision` as well as
+`instanceId`, `stopEpoch`, `cueId` and a new `requestId`. Seek also requires
+`position` in seconds, including zero. A missing/nonfinite/out-of-range position
+or unknown duration is rejected; seeking requires acknowledged active audio/video.
+Stale cue/generation/transport identity returns 409 without altering playback.
+Every accepted changed transport intent advances `transportRevision`. An identical
+retried request ID returns its original acknowledgement. Seeking while paused
+stays paused. Selected audio/video PLAY without an explicit action toggles pause
+and resume; selected image PLAY retains its image-toggle behavior.
 
 Observe state for actual native transitions. A stale instance/epoch, unknown or
 invalid cue is rejected without replacing playback. An accepted foreground native
@@ -113,18 +124,21 @@ all media and disable the stage without a fade. Quit also stops immediately.
 ## State/events
 
 State contains `instanceId`, `revision`, `playlistRevision`, `state`
-(`stopped|loading|playing|stopping|error`), `activeCueId`, `activePosition`
+(`stopped|loading|playing|paused|stopping|error`), `activeCueId`, `activePosition`
 (one-based, zero if inactive), `elapsed`, `duration` (seconds; zero unknown),
 `lastError`, `outputs`, `resolvedAudioId`, `stageEnabled`, `outputFault`,
 `generation`, `stopEpoch`, `cues`, `validationJob`, `updatePending`, `stage`,
 `backgroundCueId`, `imageCueId`, `backgroundError`. The background/image fields
 are independent of `activeCueId`, which identifies foreground audio/video.
+State also contains `transportRevision`, `paused` (desired pause intent, even while
+loading) and `seekPending` (cleared on native playing/paused acknowledgement).
+The acknowledged `state` and timeline follow the native engine.
 Command state receives a generic background error rather than native details.
 
 `updatePending` reserves the host while a startup update is checked or an update
 is prepared. PLAY, show edits and enabling stage output are rejected during
 this reservation; STOP remains available. A failed check or preparation releases
-the reservation. The update cannot reserve playing/loading/stopping playback
+the reservation. The update cannot reserve playing/paused/loading/stopping playback
 or an enabled stage, including a black stage between cues.
 
 Cue views contain `id,label,position,kind,duration,validation` and optional `color`
@@ -177,13 +191,13 @@ cannot change outputs or stage settings. Escape uses `/api/emergency-stop`, not
 the visibility toggle, and remains effective across a concurrently accepted PLAY.
 
 `backgroundAudio` opts into the selected background video's soundtrack.
-`fadeEnabled` enables the configured crossfade/fade duration. `toggleAudio:true`
-makes a second intentional press of the current audio cue stop foreground music
-while retaining an image overlay; pressing an audio cue otherwise restarts it.
+`fadeEnabled` enables the configured crossfade/fade duration. `toggleAudio` is
+retained in settings and playlist files for compatibility but no longer affects
+behavior: selected audio/video buttons always pause/resume.
 These settings can be saved during playback, subject to revision/update guards.
 
 Authenticated Command access to other Admin APIs returns 403. The remote listener
-returns 404 for `/admin` and `/api/local-session`. Active/loading cue removal/source
+returns 404 for `/admin` and `/api/local-session`. Active/paused/loading cue removal/source
 replacement returns 409; label/order edits are allowed. Active image cues also
 cannot be removed/replaced. Removing the selected background clears its selection.
 Files remain in place. Cache is not accepted as edit input. Schema 1 stores cue
