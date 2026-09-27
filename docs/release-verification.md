@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.4.0 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.5.0 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,34 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.5.0: independent audio and visual fades
+
+Source `529b0e901e128480abaec167b0fe4acd195230a2` passed all seven [candidate gates](verification/release-v1.5.0/candidate-workflow.json)
+before tagging and all [tagged build/security/publication gates](verification/release-v1.5.0/tag-workflow.json).
+Native checks cover audio-only/visual-only transitions, different durations and
+retaining outgoing media until its required fades finish. Browser controls save
+and reload separate switches and durations, including fractional values, while
+preserving edits across validation, language changes and revision conflicts.
+Legacy configuration and playlist files migrate their shared fade values into
+both groups without rewriting the original on read; explicit new values win.
+
+[Native evidence](verification/release-v1.5.0/native-fade-evidence.json) records
+visual fade checks on all four targets and audio availability per target.
+Targets without audio endpoints: windows/amd64, windows/arm64. Their audio and differing audio/visual
+completion checks are unavailable, not passed. Physical speakers, display routing,
+projectors and perceived fade smoothness still need hardware acceptance.
+
+All [50 assets and eight checksum pairs](verification/release-v1.5.0/assets.json),
+[six executable vulnerability scans](verification/release-v1.5.0/security-scans.json),
+[16 post-publication jobs](verification/release-v1.5.0/postpublication-status.json),
+[four real automatic updates](verification/release-v1.5.0/auto-update-evidence.json)
+and [four default-installer jobs](verification/release-v1.5.0/default-installer-workflows.json)
+passed. [Public installer defaults](verification/release-v1.5.0/installer-defaults.json)
+match `7ea6f395a6a086e469a4d3b1e1d050172f03394d` and select v1.5.0. See the [Admin screenshot](verification/release-v1.5.0/admin-independent-fades.png),
+[browser checks](verification/release-v1.5.0/browser-checks.json) and
+[change scope](verification/release-v1.5.0/change-scope.md). No production gateway,
+nginx or firewall configuration changes were made.
 
 ### Version 1.4.0: seeking and pause/resume
 

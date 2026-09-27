@@ -1,0 +1,19 @@
+{
+  "scope": "Synthetic browser host; verifies UI/API payload and persistence behavior, not native media rendering or physical outputs.",
+  "command": "NODE_PATH=scripts/browser/node_modules node scripts/browser-smoke.cjs",
+  "passed": true,
+  "independentAudioAndVisualSwitches": true,
+  "differentDurationsPersisted": true,
+  "fractionalVisualDuration": 2.45,
+  "fractionalSavedValuesKeepFormValid": true,
+  "draftsPreservedAcrossStateAndLanguageChanges": true,
+  "staleEditsRejected": true,
+  "playlistFileRoundTrip": true,
+  "englishAndItalianControls": true,
+  "responsiveWidths": [
+    390,
+    768,
+    1280
+  ],
+  "sourceProvenance": "Precommit working tree; final immutable source and native execution will be recorded by candidate CI."
+}

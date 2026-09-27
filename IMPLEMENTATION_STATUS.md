@@ -1,11 +1,11 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.4.0**.
+The desktop application and Linux gateway are released as **Smart Stage 1.5.0**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.4.0
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.5.0
 
 ## Implemented
 
@@ -153,6 +153,17 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.4.0
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.5.0 is source `529b0e901e128480abaec167b0fe4acd195230a2`. Independent audio/visual
+settings, strict legacy migration, file round-trips and fractional durations pass
+Go/browser tests. All seven candidate gates, tagged build/security/publication
+gates, 16 post-publication jobs, four real automatic updates and four default
+installer jobs passed. All 50 public assets, eight checksum pairs and six binary
+vulnerability scans passed. Native visual fades were checked on all four targets;
+no audio endpoint was available on windows/amd64, windows/arm64, so their audio checks remain
+unverified. See [verification details](docs/verification/release-v1.5.0/README.md)
+and [native evidence](docs/verification/release-v1.5.0/native-fade-evidence.json).
+No production gateway, nginx or firewall changes were made.
 
 Version 1.4.0 is source `e38d6155f56f7f3757363988353f0475fed26f5a`. All seven candidate
 build/test/security gates passed before tagging; tagged build/security checks and publication
