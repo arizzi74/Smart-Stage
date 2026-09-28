@@ -1,0 +1,61 @@
+{
+  "release": "v1.5.1",
+  "releaseSource": "beccb506dbf3eaecebfc5123a76de9b69e13929b",
+  "workflowSource": "5fd57cad948353daccfba849a9f3edd12630356b",
+  "run": 36388303817,
+  "runURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36388303817",
+  "jobID": 108818324600,
+  "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36388303817/job/108818324600",
+  "jobConclusion": "failure",
+  "failedStep": "Install the published app using built-in Windows PowerShell",
+  "target": "windows/arm64",
+  "reportStatus": "incomplete",
+  "defaultVersionUsed": true,
+  "executableSHA256": "c33fc399c8d9acaf683b9e9f9eeb3d935b22356e9ab90c7bed2c79fa08c16483",
+  "publicBinaryHashMatched": true,
+  "installerSHA256": "a07e37d5c0db950bd4a98fab9f2e51b6a7bb8be10debb3db5df5f927ff3fdb3f",
+  "publicInstallerHashMatched": true,
+  "artifactID": 10955333177,
+  "artifactName": "windows-app-install-arm64",
+  "artifactArchiveSHA256": "4570ad850166183f1af134bc3b84dc6c0ca103a5335954f3c4e06d03480cc8f3",
+  "artifactGitHubDigestVerified": true,
+  "rawReportSHA256": "7b5825eb44d6bd26928f0d4c0ae88fbbc44c94b574c108823af28c6fab133dd6",
+  "firewallSnapshotDifference": {
+    "beforeCount": 480,
+    "afterCount": 481,
+    "removedCount": 0,
+    "addedCount": 1,
+    "sameRulesDifferentOrder": false,
+    "addedRule": {
+      "Name": "Microsoft.StartExperiencesApp_8wekyb3d8bbwe<USER-SID>-Out-Allow-AllCapabilities",
+      "Action": 2,
+      "Direction": 2,
+      "Enabled": 1,
+      "Profile": 7
+    },
+    "smartStageNamedRuleChanged": false,
+    "userSIDRedacted": true
+  },
+  "testInstallationAndConfigRemoved": true,
+  "failureExplanation": "The final strict global firewall snapshot equality assertion failed after one Microsoft.StartExperiencesApp rule appeared. No rule was removed and no Smart Stage-named rule changed. The snapshots do not establish which process created the rule.",
+  "latestSelectedConfirmation": {
+    "run": 36388305281,
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36388305281",
+    "workflowSource": "5fd57cad948353daccfba849a9f3edd12630356b",
+    "jobs": [
+      {
+        "id": 108818329337,
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36388305281/job/108818329337",
+        "conclusion": "success"
+      },
+      {
+        "id": 108818329531,
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36388305281/job/108818329531",
+        "conclusion": "success"
+      }
+    ],
+    "strictFirewallAssertionRetained": true,
+    "bothWindowsArchitecturesPassed": true
+  },
+  "scope": "Earlier duplicate workflow failure retained alongside the latest selected same-source successful default-installer run. No claim that every default-installer attempt passed."
+}

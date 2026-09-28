@@ -1,0 +1,49 @@
+{
+  "release": "v1.5.1",
+  "source": "beccb506dbf3eaecebfc5123a76de9b69e13929b",
+  "run": 36386628208,
+  "job": {
+    "id": 108816936437,
+    "name": "verify-update / update (macos-15, darwin, arm64)",
+    "status": "completed",
+    "conclusion": "failure",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36386628208/job/108816936437",
+    "activeStep": null,
+    "failedSteps": [
+      "Exercise real automatic discovery, replacement and restart"
+    ],
+    "startedAt": "2026-09-28T06:43:11Z",
+    "completedAt": "2026-09-28T06:43:25Z"
+  },
+  "report": {
+    "status": "failed",
+    "target": "darwin/arm64",
+    "release": "v1.5.1",
+    "fixtureSourceReported": true,
+    "expectedFixtureSource": "beccb506dbf3eaecebfc5123a76de9b69e13929b",
+    "physicalPlaybackVerified": false,
+    "startupUpdatePending": true,
+    "startupReservationRejectedPLAY": true,
+    "testDirectoryRemoved": true,
+    "testProcessCleanupPassed": true,
+    "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+    "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (beccb506dbf3), go1.26.8, darwin/arm64",
+    "initialUpdatePhase": "checking",
+    "initialVersion": "v0.0.0-preview.1",
+    "publishedDownload": {
+      "release": "v1.5.1",
+      "target": "darwin/arm64",
+      "status": "passed",
+      "archiveSHA256": "bb5110dc48175e31800933870598ca034962a2a6807d10030401f72375fa503c",
+      "executableSHA256": "488b0be1d845f7f494af94f692afea221c5357f0d34e35f57cf38acf3ca92c20"
+    },
+    "lastUpdatePhase": "error",
+    "failureCategory": "GitHub release-discovery rate limit; no replacement or restart completed",
+    "retryAfterUTC": "2026-09-28T06:48:17Z",
+    "artifactID": 10954074772,
+    "artifactName": "auto-update-darwin-arm64",
+    "artifactArchiveSHA256": "5b6d4ca8b4661d630cfc2dffcddbeae1659483382ce27453d9959f395348fa6c"
+  },
+  "rawReportSHA256": "8411d09f081a8512323d200cd7f96ac20bf2d79faec9fff095fadfbf25c70de1",
+  "scope": "Original tagged attempt retained; GitHub release-discovery rate limiting prevented replacement and restart. Supplemental verification is recorded separately."
+}

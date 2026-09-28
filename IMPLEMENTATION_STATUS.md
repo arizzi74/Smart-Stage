@@ -1,11 +1,11 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.5.0**.
+The desktop application and Linux gateway are released as **Smart Stage 1.5.1**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.5.0
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.5.1
 
 ## Implemented
 
@@ -159,6 +159,22 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.5.0
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.5.1 is source `beccb506dbf3eaecebfc5123a76de9b69e13929b`. Background override toggles,
+stage draft/revision recovery and prominent automatic-update notices passed
+Go/browser checks. All seven candidate gates and tagged publication gates passed.
+Fifteen of 16 tagged post-publication jobs passed; the Mac ARM64 updater attempt
+failed on a GitHub release-discovery rate limit before replacement and restart.
+That failure remains recorded. A separate four-target updater workflow at the
+installer-default commit verified actual updates using the same tagged fixtures
+and public binaries; all four latest selected default-installer jobs passed.
+An earlier duplicate Windows ARM64 firewall-snapshot failure is retained in the
+verification record. Public asset/checksum
+and six executable vulnerability scans passed.
+Real browser/native-host checks exercised background selection and saving hidden
+default backgrounds on all four targets; independent music checks were unavailable
+on windows/amd64, windows/arm64. See [verification details](docs/verification/release-v1.5.1/README.md).
+No production gateway, nginx or firewall changes were made.
 
 Version 1.5.0 is source `529b0e901e128480abaec167b0fe4acd195230a2`. Independent audio/visual
 settings, strict legacy migration, file round-trips and fractional durations pass

@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.5.0 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.5.1 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,43 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.5.1: background toggles, stage draft recovery and update notice
+
+Source `beccb506dbf3eaecebfc5123a76de9b69e13929b` passed all seven [candidate gates](verification/release-v1.5.1/candidate-workflow.json)
+before tagging and all [tagged publication gates](verification/release-v1.5.1/tag-workflow.json).
+[Real browser/native-host evidence](verification/release-v1.5.1/native-browser-evidence.json)
+covers default-background saves after hiding cues and retaining drafts across flag
+edits on all four targets. Background buttons deselect to default/black; a button
+equal to the default deselects without hiding that default. Independent music checks
+are unavailable on windows/amd64, windows/arm64, whose visual/state checks passed.
+
+[Browser fixtures](verification/release-v1.5.1/browser-checks.json) cover stale
+responses, safe draft revision updates, genuine conflict recovery and the bilingual
+update notice. The [notice screenshot](verification/release-v1.5.1/admin-update-banner.png)
+uses fixture data. The [original updater reports](verification/release-v1.5.1/auto-update-evidence.json)
+contain three passing targets and the [Mac ARM64 failure](verification/release-v1.5.1/original-tagged-updater-failure.json).
+That attempt hit a GitHub release-discovery rate limit (retry after
+2026-09-28T06:48:17Z) before replacement and restart completed.
+[Supplemental actual updater reports](verification/release-v1.5.1/supplemental-auto-update-evidence.json)
+from a separate four-target workflow at `5fd57cad948353daccfba849a9f3edd12630356b` verify public downloads,
+replacement and restart on all four targets using the original tagged fixture
+artifact hashes and unchanged public binaries. The initial failure is retained.
+
+All [50 assets/eight checksum pairs](verification/release-v1.5.1/assets.json),
+[six executable vulnerability scans](verification/release-v1.5.1/security-scans.json)
+and [four latest selected default-installer jobs](verification/release-v1.5.1/default-installer-workflows.json)
+passed. The [tagged post-publication record](verification/release-v1.5.1/postpublication-status.json)
+contains 15 passing jobs and the one rate-limit failure described above.
+An [earlier duplicate Windows ARM64 installer failure](verification/release-v1.5.1/older-duplicate-installer-failure.json)
+is also retained: its strict global firewall comparison observed one added
+`Microsoft.StartExperiencesApp` rule and no removed or changed Smart Stage-named
+rule. The creator is unproven. The latest selected same-source run passed the
+strict check on both Windows targets using the same public binaries.
+[Public defaults](verification/release-v1.5.1/installer-defaults.json) match
+`5fd57cad948353daccfba849a9f3edd12630356b` and select v1.5.1. See [scope](verification/release-v1.5.1/change-scope.md)
+and [limits](verification/release-v1.5.1/README.md). Physical output and Windows 10
+hardware acceptance remain unverified. No production gateway changes were made.
 
 ### Version 1.5.0: independent audio and visual fades
 
