@@ -111,9 +111,13 @@ failure stops all sound, disables the stage and remains visible in state.
 Starting another audio/video cue replaces the foreground media and clears its
 image overlay. Image cues set a visual overlay without restarting or stopping
 foreground music. Pausing or resuming the selected audio/video cue preserves
-that overlay. A cue with `background:true` selects the current session's background
-without replacing foreground music or enabling a disabled stage. The saved
-`stage.backgroundCueId` is the default restored on the next launch.
+that overlay. A cue with `background:true` selects a background override for the
+current session without replacing foreground music or enabling a disabled stage.
+Pressing the selected override again clears it and restores the saved
+`stage.backgroundCueId`, or black when the saved default is empty. This also
+clears the button's selection when it is itself the saved default; the same
+background remains visible in that case. Identical request retries remain
+idempotent. The override is not saved and starts empty on the next launch.
 
 STOP clears foreground media and the image overlay, retaining stage visibility.
 An enabled stage returns to its background image/video, or black if none is set.
@@ -131,7 +135,10 @@ State contains `instanceId`, `revision`, `playlistRevision`, `state`
 (one-based, zero if inactive), `elapsed`, `duration` (seconds; zero unknown),
 `lastError`, `outputs`, `resolvedAudioId`, `stageEnabled`, `outputFault`,
 `generation`, `stopEpoch`, `cues`, `validationJob`, `updatePending`, `stage`,
-`backgroundCueId`, `imageCueId`, `backgroundError`. The background/image fields
+`backgroundCueId`, `backgroundOverrideCueId`, `imageCueId`, `backgroundError`.
+`backgroundCueId` is the effective background; `backgroundOverrideCueId` identifies
+the selected session override and is empty while using the saved default/black.
+The background/image fields
 are independent of `activeCueId`, which identifies foreground audio/video.
 State also contains `transportRevision`, `paused` (desired pause intent, even while
 loading) and `seekPending` (cleared on native playing/paused acknowledgement).

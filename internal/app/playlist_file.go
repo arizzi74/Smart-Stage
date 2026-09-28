@@ -187,6 +187,7 @@ func (s *Service) LoadPlaylist(load PlaylistLoad) (model.Config, error) {
 	s.clearImageLocked()
 	s.foreground = presentationSource{}
 	s.background = presentationSource{}
+	s.state.BackgroundOverrideCueID = ""
 	s.state.State = "stopped"
 	s.state.LastError = ""
 	s.stageSerial++

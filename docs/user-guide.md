@@ -87,8 +87,10 @@ manual upgrade; preview 10 and later can update on launch.
 Playback and editing wait while a startup update is checked or prepared. If the
 network is unavailable, the initial check times out after ten seconds and you
 can use your show. Checks during a session only announce the next update; they
-never restart a running show. Admin's **Updates** section shows progress and
-also offers **Update and restart** while stopped with stage output disabled.
+never restart a running show. A prominent notice in Admin shows when Smart Stage
+is checking, downloading/verifying an update or preparing to restart. Admin's
+**Updates** section also offers **Update and restart** while stopped with stage
+output disabled.
 After any restart, reconnect phones/tablets using the new QR code.
 
 Mac updates retain the app icon, Dock controls and Terminal-free launch. In
@@ -217,8 +219,15 @@ acceptance testing.
    soundtracks; video/image fading controls only the picture. Older saved shows
    carry their previous fade switch and duration into both groups.
    Playlist images/videos can also be marked **Background**, so their buttons
-   change the background for this session. **Hide button** keeps a cue in Admin
-   while removing it from the remote.
+   change the background for this session. Press the selected background button
+   again to deselect it and restore the saved default, or black if no default is
+   set. If the button is also the saved default, its image/video stays visible
+   after deselection. **Hide button** keeps a cue in Admin while removing it from
+   the remote.
+   You can hide/edit playlist buttons while preparing stage settings; your
+   unsaved stage choices stay in place. If another Admin session changes those
+   same settings, use **Discard draft and reload** in this section
+   to recover without restarting the app.
 6. Tap an audio/video cue to play it. An audio cue returns the stage to its
    background; an image cue changes the picture while the music and its selected
    button stay active. Press the selected audio/video button again to **pause**;
@@ -227,7 +236,8 @@ acceptance testing.
    image visible. Use **STOP** to end playback and return to the background.
    An image button still toggles its image off; independent music continues.
    If the image covers a foreground video, clearing it also stops that video
-   so it does not reappear. Background buttons keep selecting the background.
+   so it does not reappear. Background buttons toggle the session background
+   override; music keeps playing.
    **Stage on/off** opens or closes the stage independently of foreground media.
    The pointer is hidden over the fullscreen stage and restored outside it.
    During audio/video playback, the bottom position slider lets you seek. Touch

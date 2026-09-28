@@ -145,9 +145,17 @@ func (s *Service) editPlaylistLocked(edit PlaylistEdit) (model.Config, error) {
 			}
 		}
 	}
+	defaultChanged := s.config.Stage.BackgroundCueID != next.Stage.BackgroundCueID
 	s.config = next
-	if removing[s.state.BackgroundCueID] {
-		s.selectBackgroundLocked(next.Stage.BackgroundCueID)
+	validOverride := false
+	for _, cue := range next.Cues {
+		if cue.ID == s.state.BackgroundOverrideCueID && cue.Background && !removing[cue.ID] {
+			validOverride = true
+			break
+		}
+	}
+	if defaultChanged || s.state.BackgroundOverrideCueID != "" && !validOverride || removing[s.state.BackgroundCueID] {
+		s.clearBackgroundOverrideLocked()
 	}
 	s.changedLocked()
 	result := s.config.Clone()

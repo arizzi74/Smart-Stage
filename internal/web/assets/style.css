@@ -136,3 +136,11 @@
 .cue.paused .cue-title::after{content:" Ⅱ";font-size:.85em}
 @media(max-width:400px){.seek-bar{padding-right:max(16px,env(safe-area-inset-right));padding-left:max(16px,env(safe-area-inset-left))}.seek-readout{gap:6px;font-size:.73rem}.seek-status{font-size:.65rem}}
 @media(prefers-reduced-motion:reduce){.seek-preview{transition:none}}
+
+.stage-settings-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.update-banner{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 18px;padding:12px 16px;border:1px solid #73bb9f;border-radius:9px;background:#203b32;color:#e4fff2}
+.update-banner strong{font-size:1.02rem}
+.update-banner span{grid-column:1;font-size:.84rem;line-height:1.5;overflow-wrap:anywhere}
+.update-banner a{grid-column:2;grid-row:1/3;align-self:center;min-height:40px;font-size:.83rem}
+.update-banner.update-failed{background:#472831;border-color:#dc8f89;color:#ffe5e0}
+@media(max-width:500px){.update-banner{grid-template-columns:minmax(0,1fr);gap:4px;padding:10px 12px}.update-banner a{grid-column:1;grid-row:auto;min-height:32px}.update-banner span{font-size:.78rem}}

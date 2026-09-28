@@ -16,7 +16,8 @@ const fileManagerName = windowsPlatform ? 'File Explorer' : 'Finder';
 let state = null, role = '', csrf = '', online = false, source = null, lastSeen = 0;
 let playlist = null, devices = null;
 let playlistBusy = false, refreshing = false, renderedOrder = '', playlistRefresh = false;
-let stageSettingsDirty = false, stageSettingsRevision = 0;
+let stageSettingsDirty = false, stageSettingsRevision = 0, stageSettingsBase = '', stageSettingsConflict = '';
+let stageBackgroundDraft = null, playlistRefreshPending = false;
 let controlSequence = 0;
 let seekGesture = null, seekSending = false, seekTarget = null, pendingTransport = null;
 let validationSignature = '', validationRefresh = false, validationRefreshPending = false;
@@ -26,7 +27,7 @@ let adminCapabilities = {}, chooseFilesBusy = false;
 let playlistFileBusy = false, playlistFileRevision = 0;
 let remoteLinks = [], selectedRemoteURL = '', remoteRefresh = false;
 let gateway = null, gatewayDirty = false, gatewayBusy = false, gatewayRefresh = false, gatewaySequence = 0;
-let updateStatus = null, updateBusy = false, updatePreparing = false;
+let updateStatus = null, updateBusy = false, updatePreparing = false, updatePollAt = 0;
 let updateRestartInstance = '', updateRestartComplete = false, updateRestartStarted = 0;
 const cueButtons = new Map(), playlistRows = new Map();
 const i18n = window.smartStageI18n;
@@ -261,7 +262,8 @@ function connection(connected) {
   renderRemoteStage();
   for (const [id, node] of cueButtons) {
     const cue = state?.cues.find(c => c.id === id);
-    node.disabled = !connected || updatePending() || !cue || sameForeground(pendingTransport) && pendingTransport.cueId === id || ![state?.activeCueId, state?.imageCueId].includes(id) && ['missing', 'unsupported', 'error'].includes(cue.validation);
+    const selected = cue?.background ? state?.backgroundOverrideCueId === id : [state?.activeCueId, state?.imageCueId].includes(id);
+    node.disabled = !connected || updatePending() || !cue || sameForeground(pendingTransport) && pendingTransport.cueId === id || !selected && ['missing', 'unsupported', 'error'].includes(cue.validation);
   }
   if (adminPage) { renderUpdateStatus(); renderEditAvailability(); }
   renderLanguageControls(); renderSeek();
@@ -422,6 +424,7 @@ function applyState(next) {
   if (updateRestartInstance && next.instanceId !== updateRestartInstance) {
     updatePreparing = false; updateRestartInstance = ''; updateRestartStarted = 0; updateRestartComplete = true;
   }
+  const updateReservationChanged = Boolean(state?.updatePending) !== Boolean(next.updatePending);
   state = next;
   renderRemoteStage(); renderSeek();
   const current = next.cues.find(c => c.id === next.activeCueId);
@@ -447,11 +450,8 @@ function applyState(next) {
       validationSignature = signature; void refreshValidationDetails();
     }
     renderStatusDetails(next);
-    if (playlist && playlist.playlistRevision !== next.playlistRevision && !playlistBusy && !playlistFileBusy && !playlistRefresh) {
-      if ($('playlist').contains(document.activeElement)) notify(() => t("The playlist changed in another tab. Finish or discard your edit, then Reload."), true);
-      else void loadPlaylist();
-    }
     renderEditAvailability(); renderUpdateStatus();
+    if (updateReservationChanged) void loadUpdateStatus();
   }
 }
 function renderStatusDetails(next) {
@@ -485,16 +485,16 @@ function renderCues() {
     else { node.style.removeProperty('--cue-fill'); node.style.removeProperty('--cue-ink'); }
     const foreground = state.activeCueId === cue.id && ['loading', 'playing', 'paused'].includes(state.state);
     const image = state.stageEnabled && state.imageCueId === cue.id;
-    const background = Boolean(cue.background && state.backgroundCueId === cue.id);
-    const active = foreground || image || background;
+    const background = Boolean(cue.background && state.backgroundOverrideCueId === cue.id);
+    const active = cue.background ? background : foreground || image;
     let action = cue.background ? t("Set background ↗") : cue.kind === 'image' ? t("Show image ↗") : t("Start cue ↗");
-    if (background) action = t("Background selected");
+    if (background) action = t(state.stage?.backgroundCueId ? "Restore default" : "Deselect background");
     if (!cue.background && image) action = t("Press again to stop");
     if (!cue.background && foreground) action = ['video', 'audio'].includes(cue.kind) ? t(playbackPaused() ? "Press again to resume" : "Press again to pause") : t(state.state);
     if (cue.validation !== 'ready' && !active) action = t(cue.validation);
     node.lastChild.replaceChildren(element('span', () => `${String(cue.position).padStart(2, '0')} · ${cue.background ? t("background ") : ''}${t(cue.kind || 'unchecked')}`), element('span', action));
-    node.classList.toggle('active', active); node.classList.toggle('paused', foreground && Boolean(state.paused)); node.setAttribute('aria-pressed', String(active));
-    node.disabled = !online || updatePending() || sameForeground(pendingTransport) && pendingTransport.cueId === cue.id || !(foreground || image) && ['missing', 'unsupported', 'error'].includes(cue.validation);
+    node.classList.toggle('active', active); node.classList.toggle('paused', !cue.background && foreground && Boolean(state.paused)); node.setAttribute('aria-pressed', String(active));
+    node.disabled = !online || updatePending() || sameForeground(pendingTransport) && pendingTransport.cueId === cue.id || !active && ['missing', 'unsupported', 'error'].includes(cue.validation);
     if (renderedOrder !== order) $('cue-grid').append(node);
   }
   renderedOrder = order; $('empty-cues').hidden = visible.length > 0;
@@ -748,6 +748,8 @@ function renderEditAvailability() {
   $('disable-stage').disabled = !online;
   const editingStage = !online || pending || playlistBusy || !playlist;
   for (const id of ['background-cue', 'background-audio', 'audio-fade-enabled', 'visual-fade-enabled', 'save-stage-settings']) $(id).disabled = editingStage;
+  $('reload-stage-settings').disabled = editingStage;
+  $('reload-stage-settings').hidden = !stageSettingsDirty;
   for (const kind of ['audio', 'visual']) $(`${kind}-fade-seconds`).disabled = editingStage || !$(`${kind}-fade-enabled`).checked;
   $('validate').disabled = pending || state.validationJob.running;
   for (const id of ['audio-output', 'display-output', 'allow-primary']) $(id).disabled = pending;
@@ -763,11 +765,18 @@ function renderEditAvailability() {
     const cue = playlist?.cues.find(c => c.id === id);
     const foreground = state.activeCueId === id && ['loading', 'playing', 'paused'].includes(state.state);
     const image = state.stageEnabled && state.imageCueId === id;
-    const selected = foreground || image || (cue?.background && state.backgroundCueId === id);
+    const background = Boolean(cue?.background && state.backgroundOverrideCueId === id);
+    const selected = cue?.background ? background : foreground || image;
     row.play.setAttribute('aria-pressed', String(Boolean(selected)));
-    localizedText(row.play, () => cue?.background ? t("Set background") : cue?.cache.media.kind === 'image' ? t(image ? "Hide image" : "Show image") : foreground && ['video', 'audio'].includes(cue?.cache.media.kind) ? t(playbackPaused() ? "Resume" : "Pause") : t("Play"));
+    localizedText(row.play, () => cue?.background ? t(background ? state.stage?.backgroundCueId ? "Restore default" : "Deselect background" : "Set background") : cue?.cache.media.kind === 'image' ? t(image ? "Hide image" : "Show image") : foreground && ['video', 'audio'].includes(cue?.cache.media.kind) ? t(playbackPaused() ? "Resume" : "Pause") : t("Play"));
     row.background.disabled = pending || playlistBusy || !['image', 'video'].includes(cue?.cache.media.kind);
     row.backgroundLabel.hidden = !['image', 'video'].includes(cue?.cache.media.kind) && !cue?.background;
+  }
+  // A newer host revision can arrive during our PUT. Recheck when its busy
+  // flag clears as well as on state events, even if no further event follows.
+  if (online && playlist && state.playlistRevision > playlist.playlistRevision && !playlistBusy && !playlistFileBusy && !playlistRefresh) {
+    if ($('playlist').contains(document.activeElement)) notify(() => t("The playlist changed in another tab. Finish or discard your edit, then Reload."), true);
+    else void loadPlaylist();
   }
 }
 function releaseLink(value) {
@@ -778,8 +787,31 @@ function releaseLink(value) {
   } catch { /* Only this project's release pages may be opened. */ }
   return '';
 }
+function renderUpdateBanner() {
+  const phase = updateStatus?.phase || 'idle';
+  const outcome = updateStatus?.lastUpdate;
+  const installing = ['downloading', 'restarting'].includes(phase) || updatePreparing || state?.updatePending && phase === 'available';
+  const failed = phase === 'error' || !installing && phase !== 'checking' && ['error', 'rolled_back'].includes(outcome?.status);
+  const checking = (phase === 'checking' || Boolean(state?.updatePending)) && !installing && !failed;
+  const banner = $('update-banner');
+  banner.hidden = !adminPage || !(failed || installing || checking);
+  banner.classList.toggle('update-failed', failed);
+  if (banner.hidden) return;
+  const version = updateStatus?.latestVersion;
+  localizedText($('update-banner-title'), () => failed ? t("Automatic update needs attention")
+    : checking ? t(state?.updatePending ? "Checking for automatic updates" : "Checking for updates…")
+    : phase === 'restarting' ? t("Restarting Smart Stage")
+    : version ? t("Smart Stage is updating to {0}", {0: version}) : t("Smart Stage is updating"));
+  localizedText($('update-banner-detail'), () => failed
+    ? `${i18n.diagnostic(phase === 'error' ? updateStatus?.message : outcome?.message) || t("The update could not be completed.")} ${t("Check the Updates section below and try again when connected.")}`
+    : checking ? t(state?.updatePending ? "Checking before playback starts. STOP remains available." : "Checking for a newer release.")
+    : phase === 'restarting' || !online && expectingUpdateRestart() ? t("The app is restarting. This page will reconnect automatically; keep it open.")
+    : phase === 'downloading' ? t("Downloading and verifying the update. The app will restart automatically. STOP remains available.")
+    : t("Preparing the automatic update. The app will restart automatically. STOP remains available."));
+}
 function renderUpdateStatus() {
   if (!adminPage) return;
+  renderUpdateBanner();
   const phase = updateStatus?.phase || 'idle';
   const busy = updateBusy || updatePending() || ['checking', 'downloading', 'restarting'].includes(phase);
   localizedText($('update-current'), () => updateStatus?.currentVersion || t("Loading…"));
@@ -815,16 +847,16 @@ function applyUpdateStatus(result) {
     updatePreparing = true; updateRestartInstance = state.instanceId; updateRestartStarted = Date.now();
   }
   if (result.phase === 'restarting' && updateRestartInstance && !updateRestartStarted) updateRestartStarted = Date.now();
-  if (result.phase === 'error' || result.phase === 'unsupported') {
+  if (['idle', 'available', 'error', 'unsupported'].includes(result.phase)) {
     updatePreparing = false; updateRestartInstance = ''; updateRestartStarted = 0;
   }
 }
 async function loadUpdateStatus() {
   if (!adminPage || role !== 'admin' || updateBusy || quitBusy || appClosed || reloadingAdmin) return;
-  updateBusy = true;
+  updateBusy = true; updatePollAt = Date.now();
   try { applyUpdateStatus(await api('GET', '/api/update')); }
   catch (error) {
-    if (!expectingUpdateRestart()) updateStatus = { ...updateStatus, phase: 'error', message: () => t("Update status unavailable. {0}", {0: errorText(error)}) };
+    if (!expectingUpdateRestart()) applyUpdateStatus({ ...updateStatus, phase: 'error', message: () => t("Update status unavailable. {0}", {0: errorText(error)}) });
   } finally { updateBusy = false; renderUpdateStatus(); renderEditAvailability(); }
 }
 async function updateAction(install) {
@@ -845,20 +877,69 @@ async function updateAction(install) {
 $('check-update').addEventListener('click', () => { void updateAction(false); });
 $('install-update').addEventListener('click', () => { void updateAction(true); });
 
+function savedStageSignature(settings) {
+  return JSON.stringify(Object.keys(settings || {}).sort().map(key => [key, settings[key]]));
+}
+function captureStageBackground() {
+  const id = $('background-cue').value;
+  stageBackgroundDraft = id ? { id, path: playlist?.cues.find(cue => cue.id === id)?.path } : null;
+}
+function beginStageDraft() {
+  if (stageSettingsDirty) return;
+  stageSettingsDirty = true;
+  stageSettingsRevision = playlist?.playlistRevision || 0;
+  stageSettingsBase = savedStageSignature(playlist?.stage);
+  captureStageBackground();
+}
+function stageSettingsMessage(message, error = false) {
+  localizedText($('stage-settings-message'), message);
+  $('stage-settings-message').classList.toggle('error', error);
+}
+function showStageConflict() {
+  stageSettingsMessage(() => t(stageSettingsConflict === 'background'
+    ? "The draft background was removed or replaced. Choose it again, or discard the draft and reload saved settings."
+    : "Saved stage settings changed in another session. Your draft is kept. Discard the draft and reload saved settings before editing again."), true);
+}
+function reconcileStageDraft(next) {
+  if (!stageSettingsDirty) return;
+  const previousConflict = stageSettingsConflict;
+  const selected = stageBackgroundDraft && next.cues.find(cue => cue.id === stageBackgroundDraft.id);
+  stageSettingsConflict = savedStageSignature(next.stage) !== stageSettingsBase ? 'settings'
+    : stageBackgroundDraft && (!selected || selected.path !== stageBackgroundDraft.path) ? 'background' : '';
+  if (!stageSettingsConflict) {
+    // Cue labels, visibility, order and new files do not change the saved
+    // Stage settings or the draft's selected source. Retain the draft while
+    // advancing its optimistic revision to this verified snapshot.
+    stageSettingsRevision = next.playlistRevision;
+    if (previousConflict) stageSettingsMessage(() => t("Unsaved changes."));
+  } else showStageConflict();
+}
+function acceptPlaylist(next) {
+  // A GET begun before a successful PUT may arrive afterwards. Revisions
+  // are monotonic within this host instance; instance changes reload Admin.
+  if (quitBusy || appClosed || reloadingAdmin || playlist && next.playlistRevision < playlist.playlistRevision) return false;
+  reconcileStageDraft(next);
+  playlist = next;
+  return true;
+}
 async function loadPlaylist(announceAdditions = true) {
-  if (playlistRefresh) return;
+  if (playlistRefresh) { playlistRefreshPending = true; return; }
   playlistRefresh = true;
   try {
-    const previous = playlist;
-    playlist = await api('GET', '/api/playlist'); renderPlaylist();
-    // Validation may have finished while this full playlist snapshot loaded.
-    // Refresh derived details after committing it, without rebuilding drafts.
-    void refreshValidationDetails();
-    if (announceAdditions && desktopAdmin && previous && previous.playlistRevision !== playlist.playlistRevision) {
-      const previousIDs = new Set(previous.cues.map(cue => cue.id));
-      const added = playlist.cues.filter(cue => !previousIDs.has(cue.id)).length;
-      if (added) fileDropMessage(() => t(added === 1 ? 'Added {0} file to the playlist. Originals stay in place.' : 'Added {0} files to the playlist. Originals stay in place.', {0: added}));
-    }
+    do {
+      playlistRefreshPending = false;
+      const previous = playlist;
+      const accepted = acceptPlaylist(await api('GET', '/api/playlist'));
+      if (accepted) renderPlaylist();
+      // Validation may have finished while this full playlist snapshot loaded.
+      // Refresh derived details after committing it, without rebuilding drafts.
+      void refreshValidationDetails();
+      if (accepted && announceAdditions && desktopAdmin && previous && previous.playlistRevision !== playlist.playlistRevision) {
+        const previousIDs = new Set(previous.cues.map(cue => cue.id));
+        const added = playlist.cues.filter(cue => !previousIDs.has(cue.id)).length;
+        if (added) fileDropMessage(() => t(added === 1 ? 'Added {0} file to the playlist. Originals stay in place.' : 'Added {0} files to the playlist. Originals stay in place.', {0: added}));
+      }
+    } while (!quitBusy && !appClosed && !reloadingAdmin && (playlistRefreshPending || state?.playlistRevision > playlist?.playlistRevision));
   }
   catch (error) { notify(() => errorText(error), true); }
   finally { playlistRefresh = false; }
@@ -895,7 +976,7 @@ async function savePlaylist(cues) {
   if (playlistBusy || playlistFileBusy) { notify(() => t("An edit is being saved. Wait before making another edit."), true); return false; }
   playlistBusy = true; renderEditAvailability();
   try {
-    playlist = await api('PUT', '/api/playlist', { expectedRevision: playlist.playlistRevision, cues });
+    acceptPlaylist(await api('PUT', '/api/playlist', { expectedRevision: playlist.playlistRevision, cues }));
     renderPlaylist(); notify(() => t("Playlist saved.")); await refreshState(); return true;
   } catch (error) { notify(() => t("{0} Your edit was not saved. Reload to use the host version.", {0: errorText(error)}), true); return false; }
   finally { playlistBusy = false; renderEditAvailability(); }
@@ -909,7 +990,7 @@ function playlistFileMessage(message, error = false) {
   $('playlist-file-message').classList.toggle('error', error);
 }
 function playlistLoaded() {
-  stageSettingsDirty = false;
+  stageSettingsDirty = false; stageSettingsConflict = ''; stageSettingsBase = ''; stageBackgroundDraft = null;
   localizedText($('stage-settings-message'), () => '');
   $('stage-settings-message').classList.remove('error');
 }
@@ -976,7 +1057,7 @@ $('playlist-file-input').addEventListener('change', async () => {
     try { fileDocument = JSON.parse(await file.text()); }
     catch { throw new Error('This file is not valid playlist JSON.'); }
     const loaded = await api('POST', '/api/playlist/import', { expectedRevision: playlistFileRevision, playlist: fileDocument });
-    playlistLoaded(); playlist = loaded; renderPlaylist(); await refreshState();
+    playlistLoaded(); acceptPlaylist(loaded); renderPlaylist(); await refreshState();
     playlistFileMessage(() => t("Playlist loaded. Media files stay at their original paths."));
   } catch (error) { playlistFileMessage(() => t("Could not load the playlist. {0}", {0: errorText(error)}), true); }
   finally { playlistFileBusy = false; renderEditAvailability(); }
@@ -1050,7 +1131,7 @@ function renderPlaylist() {
     localizedAttribute(background, 'aria-label', () => t("Use cue {0} as a background button", {0: index + 1}));
     background.addEventListener('change', () => { const edited = cueEdits(); edited[index].background = background.checked; void savePlaylist(edited); });
     backgroundLabel.append(background, localizedNode(() => t("Background button")));
-    localizedAttribute(backgroundLabel, 'title', () => t("Pressing this button changes the stage background and keeps music playing."));
+    localizedAttribute(backgroundLabel, 'title', () => t("Pressing this button changes the stage background and keeps music playing. Press it again to restore the saved default, or black."));
     options.append(hiddenLabel, backgroundLabel); info.append(options);
     if (counts.get(cue.label) > 1) info.append(element('p', () => t("Duplicate label — use cue position to distinguish."), 'hint'));
     const tools = element('div', undefined, 'cue-tools');
@@ -1095,13 +1176,17 @@ function renderStageSettings() {
   renderBackgroundStatus();
 }
 for (const id of ['background-cue', 'background-audio', 'audio-fade-enabled', 'audio-fade-seconds', 'visual-fade-enabled', 'visual-fade-seconds']) $(id).addEventListener('input', () => {
-  if (!stageSettingsDirty) stageSettingsRevision = playlist?.playlistRevision || 0;
-  stageSettingsDirty = true; localizedText($('stage-settings-message'), () => t("Unsaved changes."));
-  $('stage-settings-message').classList.remove('error'); renderEditAvailability();
+  beginStageDraft();
+  if (id === 'background-cue') captureStageBackground();
+  reconcileStageDraft(playlist);
+  if (!stageSettingsConflict) stageSettingsMessage(() => t("Unsaved changes."));
+  renderEditAvailability();
 });
 $('stage-settings-form').addEventListener('submit', async event => {
   event.preventDefault();
   if (!online || !playlist || playlistBusy || playlistFileBusy || updatePending()) return;
+  beginStageDraft(); reconcileStageDraft(playlist);
+  if (stageSettingsConflict) { showStageConflict(); renderEditAvailability(); return; }
   const audioFadeSeconds = Number($('audio-fade-seconds').value);
   const visualFadeSeconds = Number($('visual-fade-seconds').value);
   for (const [kind, seconds] of [['audio', audioFadeSeconds], ['visual', visualFadeSeconds]]) {
@@ -1120,16 +1205,37 @@ $('stage-settings-form').addEventListener('submit', async event => {
   };
   playlistBusy = true; renderEditAvailability();
   try {
-    playlist = await api('PUT', '/api/stage-settings', { expectedRevision: stageSettingsRevision || playlist.playlistRevision, settings });
-    stageSettingsDirty = false; renderPlaylist();
+    const saved = await api('PUT', '/api/stage-settings', { expectedRevision: stageSettingsRevision || playlist.playlistRevision, settings });
+    playlistLoaded(); acceptPlaylist(saved); renderPlaylist();
     localizedText($('stage-settings-message'), () => t("Stage and sound settings saved."));
     $('stage-settings-message').classList.remove('error'); await refreshState();
   } catch (error) {
-    localizedText($('stage-settings-message'), () => t("{0} Settings were not saved. Reload the playlist before trying again.", {0: errorText(error)}));
-    $('stage-settings-message').classList.add('error');
+    stageSettingsMessage(() => t("{0} Settings were not saved. Your draft is kept; retry or discard it and reload saved settings.", {0: errorText(error)}), true);
+    if (error.code === 'revision_conflict') {
+      try {
+        acceptPlaylist(await api('GET', '/api/playlist')); renderPlaylist();
+        if (stageSettingsConflict) showStageConflict();
+        else stageSettingsMessage(() => t("The playlist was refreshed. Your stage changes are kept. Save again to apply them."));
+      } catch { /* A failed refresh must retain the draft and its old revision. */ }
+    }
   } finally { playlistBusy = false; renderEditAvailability(); }
 });
-$('reload-playlist').addEventListener('click', () => { stageSettingsDirty = false; localizedText($('stage-settings-message'), () => ''); void loadPlaylist(); });
+async function reloadSavedPlaylist() {
+  if (!online || playlistBusy || playlistFileBusy || updatePending()) return;
+  playlistBusy = true; renderEditAvailability();
+  try {
+    const current = await api('GET', '/api/playlist');
+    if (quitBusy || appClosed || reloadingAdmin) return;
+    // Discard only after a successful read. A concurrent newer accepted
+    // snapshot remains authoritative if this response is older.
+    playlistLoaded(); acceptPlaylist(current); renderPlaylist();
+    stageSettingsMessage(() => t("Saved stage and sound settings reloaded."));
+  } catch (error) {
+    stageSettingsMessage(() => t("Could not reload saved settings. Your draft is kept. {0}", {0: errorText(error)}), true);
+  } finally { playlistBusy = false; renderEditAvailability(); }
+}
+$('reload-playlist').addEventListener('click', () => { void reloadSavedPlaylist(); });
+$('reload-stage-settings').addEventListener('click', () => { void reloadSavedPlaylist(); });
 $('validate').addEventListener('click', async () => {
   try { await api('POST', '/api/validate', {}); notify(() => t("Native validation started. STOP remains available.")); }
   catch (error) { notify(() => errorText(error), true); }
@@ -1190,7 +1296,10 @@ async function initializeSession() {
 setInterval(() => { if (Date.now() - lastSeen > 18000) connection(false); }, 2000);
 setInterval(() => { if (!document.hidden) void loadRemoteControl(); }, 10000);
 setInterval(() => { if (!document.hidden) void loadGateway(); }, 3000);
-setInterval(() => { if (!document.hidden) void loadUpdateStatus(); }, 5000);
+setInterval(() => {
+  const active = updatePending() || ['downloading', 'restarting'].includes(updateStatus?.phase);
+  if ((!document.hidden || active) && Date.now() - updatePollAt >= (active ? 1000 : 5000)) void loadUpdateStatus();
+}, 1000);
 setInterval(() => { if (online && !appClosed) void sendAdminPresence(); }, 5000);
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && appClosed) { void probeClosedAdmin(); return; }

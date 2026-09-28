@@ -217,18 +217,6 @@ func TestSceneSecondPressCancelsPendingVisualAndLatePreparation(t *testing.T) {
 	}
 }
 
-func TestSceneBackgroundButtonRemainsSelectedOnSecondPress(t *testing.T) {
-	s, f, _, paths := sceneSetup(t, model.StageSettings{BackgroundCueID: "background-video", AudioFadeSeconds: 1, VisualFadeSeconds: 1})
-	eventually(t, func() bool { return f.latest().BackgroundPath == paths["background-video"] })
-	before := s.Snapshot(true)
-	if _, err := play(s, "background-video", "reselect-background"); err != nil {
-		t.Fatal(err)
-	}
-	if state := s.Snapshot(true); state.BackgroundCueID != "background-video" || state.StopEpoch != before.StopEpoch || s.Playlist().Stage.BackgroundCueID != "background-video" {
-		t.Fatalf("second background press disabled or changed the saved background: %+v", state)
-	}
-}
-
 func TestSceneMusicPausesRegardlessOfLegacyToggleSetting(t *testing.T) {
 	for _, enabled := range []bool{false, true} {
 		t.Run(map[bool]string{false: "disabled", true: "enabled"}[enabled], func(t *testing.T) {

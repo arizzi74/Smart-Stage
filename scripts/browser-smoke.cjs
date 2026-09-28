@@ -16,7 +16,7 @@ const assert = require('node:assert/strict');
   const imageFixture = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
   let stateGets = 0, holdPlay = false, remoteGets = 0, links = [], sessionCounter = 0;
   let updateGets = 0, updateGetDelay = 0, failUpdateCheck = false, restarting = false;
-  let nativeChooserImports = [], playlistFailSave = false;
+  let nativeChooserImports = [], playlistFailSave = false, stageRevisionRace = false, playlistWriteGate = null;
   let playlistReadGate = null, transportGate = null, rejectTransport = false;
   let nativePlaylistStatus = { id: 0, phase: 'idle' }, nativePlaylistResult = { phase: 'complete' }, nativePlaylistMismatch = false;
   let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: false };
@@ -27,7 +27,7 @@ const assert = require('node:assert/strict');
   let update = { currentVersion: 'v0.1.0-preview.8', latestVersion: 'v0.1.0-preview.9', phase: 'available', available: true, canInstall: true, message: 'A new version is available.', releaseURL: 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', checkedAt: new Date().toISOString() };
   const labels = ['Opening music', 'Welcome video with a deliberately long label that must wrap clearly', "Café's interlude", '<img src=x onerror="window.__xss=true">'];
   const stageDefaults = { backgroundCueId: '', backgroundAudio: false, audioFadeEnabled: false, audioFadeSeconds: 1, visualFadeEnabled: false, visualFadeSeconds: 1, toggleAudio: false };
-  const state = { stage: { ...stageDefaults }, backgroundCueId: '', imageCueId: '', instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, transportRevision: 1, paused: false, seekPending: false, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
+  const state = { stage: { ...stageDefaults }, backgroundCueId: '', backgroundOverrideCueId: '', imageCueId: '', instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, transportRevision: 1, paused: false, seekPending: false, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
   const config = { stage: { ...stageDefaults }, schema: 1, playlistRevision: 1, outputs: state.outputs, cues: state.cues.map(c => ({ id: c.id, label: c.label, path: `/Host/Show/${c.id}.mp4`, cache: { status: 'ready', media: { kind: c.kind, duration: 3 } } })) };
   const broadcast = () => { for (const c of clients) c.write(`event: state\ndata: ${JSON.stringify(state)}\n\n`); };
   const exportedPlaylist = () => ({ format: 'smartstage-playlist', version: 1,
@@ -35,7 +35,7 @@ const assert = require('node:assert/strict');
   const importPlaylist = document => {
     const oldCues = config.cues, ids = new Map(document.cues.map((cue, index) => [cue.id, `loaded-${config.playlistRevision}-${index}`]));
     config.cues = document.cues.map(cue => ({ ...cue, id: ids.get(cue.id), cache: oldCues.find(old => old.path === cue.path)?.cache || { status: 'ready', media: { kind: 'audio', duration: 3 } } }));
-    config.stage = { ...document.stage, backgroundCueId: ids.get(document.stage.backgroundCueId) || '' }; state.stage = { ...config.stage }; state.backgroundCueId = config.stage.backgroundCueId;
+    config.stage = { ...document.stage, backgroundCueId: ids.get(document.stage.backgroundCueId) || '' }; state.stage = { ...config.stage }; state.backgroundOverrideCueId = ''; state.backgroundCueId = config.stage.backgroundCueId;
     config.playlistRevision++; state.playlistRevision = config.playlistRevision;
     state.cues = config.cues.map((cue, index) => ({ id: cue.id, label: cue.label, color: cue.color, hidden: cue.hidden, background: cue.background, position: index + 1, kind: cue.cache.media.kind, duration: 3, validation: 'ready' }));
     state.revision++; broadcast();
@@ -106,7 +106,13 @@ const assert = require('node:assert/strict');
       setTimeout(() => { restarting = true; for (const client of clients) client.end(); }, 25);
       return;
     }
-    if (url.pathname === '/api/events') { res.writeHead(200, { 'Content-Type': 'text/event-stream' }); clients.add(res); res.on('close', () => clients.delete(res)); broadcast(); return; }
+    if (url.pathname === '/api/events') {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream' }); clients.add(res);
+      // Match the real host heartbeat so read-only assertions and screenshots
+      // do not spuriously expire an otherwise healthy connection.
+      const heartbeat = setInterval(() => { res.write('event: heartbeat\ndata: {}\n\n'); }, 10000);
+      res.on('close', () => { clearInterval(heartbeat); clients.delete(res); }); broadcast(); return;
+    }
     if (url.pathname.startsWith('/api/update')) {
       if (role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
       if (url.pathname === '/api/update') {
@@ -193,18 +199,29 @@ const assert = require('node:assert/strict');
         config.playlistRevision++; state.playlistRevision = config.playlistRevision;
         state.cues = config.cues.map((cue, index) => ({ id: cue.id, label: cue.label, color: cue.color, hidden: cue.hidden, background: cue.background, position: index + 1, kind: cue.cache.media.kind, duration: 3, validation: 'ready' }));
         state.revision++; broadcast();
+        if (playlistWriteGate) {
+          const gate = playlistWriteGate; playlistWriteGate = null;
+          const snapshot = structuredClone(config);
+          gate.entered(); await gate.released;
+          reply(snapshot); return;
+        }
       }
       reply(config); return;
     }
     if (url.pathname === '/api/stage-settings') {
       assert.equal(req.method, 'PUT'); assert.equal(req.headers['x-csrf-token'], 'test-csrf');
-      if (body.expectedRevision !== config.playlistRevision) { reply({ error: { message: 'The playlist changed; reload before editing' } }, 409); return; }
+      if (stageRevisionRace) {
+        stageRevisionRace = false; config.playlistRevision++; state.playlistRevision = config.playlistRevision;
+      }
+      if (body.expectedRevision !== config.playlistRevision) { reply({ error: { code: 'revision_conflict', message: 'The playlist changed; reload before editing' } }, 409); return; }
       assert.equal(Boolean(state.updatePending), false);
       for (const kind of ['audio', 'visual']) {
         assert.equal(typeof body.settings[`${kind}FadeEnabled`], 'boolean');
         assert(body.settings[`${kind}FadeSeconds`] >= .1 && body.settings[`${kind}FadeSeconds`] <= 30);
       }
-      config.stage = { ...body.settings }; state.stage = { ...config.stage }; state.backgroundCueId = config.stage.backgroundCueId;
+      if (config.stage.backgroundCueId !== body.settings.backgroundCueId) state.backgroundOverrideCueId = '';
+      config.stage = { ...body.settings }; state.stage = { ...config.stage };
+      state.backgroundCueId = state.backgroundOverrideCueId || config.stage.backgroundCueId;
       config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast(); reply(config); return;
     }
     if (url.pathname === '/api/devices') { reply({ audio: [{ id: 'speaker', name: 'USB Audio', default: true }], displays: [{ id: 'screen', name: 'Stage display', width: 1920, height: 1080, primary: true, mirrored: false }] }); return; }
@@ -232,6 +249,13 @@ const assert = require('node:assert/strict');
         state.elapsed = body.position;
       } else { state.paused = body.action === 'pause'; state.state = state.paused ? 'paused' : 'playing'; }
       state.transportRevision++; state.revision++; broadcast();
+    }
+    if (url.pathname === '/api/play' && !body.action && state.cues.find(cue => cue.id === body.cueId)?.background) {
+      // Model only the public background-selection state contract. Native
+      // rendering and soundtrack arbitration remain separate OS checks.
+      state.backgroundOverrideCueId = state.backgroundOverrideCueId === body.cueId ? '' : body.cueId;
+      state.backgroundCueId = state.backgroundOverrideCueId || config.stage.backgroundCueId;
+      state.revision++; broadcast();
     }
     if (url.pathname === '/api/play' && holdPlay) { await new Promise(resolve => setTimeout(resolve, 600)); }
     if (url.pathname === '/api/stop') { state.revision++; state.stopEpoch++; state.activeCueId = ''; state.state = 'stopped'; state.paused = false; broadcast(); }
@@ -668,6 +692,72 @@ const assert = require('node:assert/strict');
     state.cues.push({ id: 'image-fixture', label: 'Sponsor image', position: config.cues.length, kind: 'image', duration: 0, validation: 'ready' });
     state.activeCueId = 'cue-0'; state.state = 'playing'; state.stageEnabled = true; state.revision++; broadcast();
     await admin.waitForFunction(() => document.querySelector('#background-cue option[value="image-fixture"]'));
+    const documentsBeforeStageDraft = adminDocumentLoads;
+    await admin.locator('#background-cue').selectOption('image-fixture');
+    await admin.locator('#audio-fade-seconds').fill('2.7');
+    await admin.locator('#visual-fade-seconds').fill('4.1');
+    await admin.waitForFunction(() => !playlistRefresh && !validationRefresh);
+    // An older playlist GET must not undo our successful hide edit or move
+    // the stage draft back to the revision from before that edit.
+    let enterDraftRead, releaseDraftRead;
+    const draftReadEntered = new Promise(resolve => { enterDraftRead = resolve; });
+    playlistReadGate = { entered: enterDraftRead, released: new Promise(resolve => { releaseDraftRead = resolve; }) };
+    const oldDraftRead = admin.evaluate(() => loadPlaylist());
+    await draftReadEntered;
+    const imagePosition = config.cues.findIndex(cue => cue.id === 'image-fixture') + 1;
+    const expectedHiddenRevision = config.playlistRevision + 1;
+    await admin.getByRole('checkbox', { name: `Hide remote button for cue ${imagePosition}`, exact: true }).check();
+    await page.locator('[data-cue-id="image-fixture"]').waitFor({ state: 'detached' });
+    await admin.waitForFunction(revision => playlist?.playlistRevision === revision && !playlistBusy, expectedHiddenRevision);
+    releaseDraftRead(); await oldDraftRead;
+    assert.equal(await admin.evaluate(() => playlist.playlistRevision), expectedHiddenRevision, 'late older GET cannot replace a saved playlist edit');
+    assert.equal(await admin.getByRole('checkbox', { name: `Hide remote button for cue ${imagePosition}`, exact: true }).isChecked(), true);
+    assert.equal(await admin.locator('#background-cue').inputValue(), 'image-fixture', 'hiding its remote button retains the draft default background');
+    state.elapsed = 1.25; state.revision++; broadcast();
+    await admin.locator('#language-mode').selectOption('it');
+    await admin.waitForFunction(() => document.documentElement.lang === 'it' && !document.getElementById('language-mode').disabled);
+    assert.equal(await admin.locator('#background-cue').inputValue(), 'image-fixture');
+    assert.equal(await admin.locator('#audio-fade-seconds').inputValue(), '2.7');
+    assert.equal(await admin.locator('#visual-fade-seconds').inputValue(), '4.1');
+    await admin.locator('#language-mode').selectOption('en');
+    await admin.waitForFunction(() => document.documentElement.lang === 'en' && !document.getElementById('language-mode').disabled);
+    await admin.locator('#save-stage-settings').click();
+    await admin.waitForFunction(() => document.getElementById('stage-settings-message').textContent === 'Stage and sound settings saved.');
+    assert.equal(requests.filter(r => r.path === '/api/stage-settings').at(-1).body.expectedRevision, expectedHiddenRevision);
+    assert.equal(config.stage.backgroundCueId, 'image-fixture');
+    assert.equal(config.stage.audioFadeSeconds, 2.7);
+    assert.equal(config.stage.visualFadeSeconds, 4.1);
+    assert.equal(config.cues.find(cue => cue.id === 'image-fixture').hidden, true, 'saving a default background preserves the hidden button');
+    assert.equal(state.activeCueId, 'cue-0', 'saving the hidden image background leaves music selected');
+    assert.equal(adminDocumentLoads, documentsBeforeStageDraft, 'draft save after hiding a button never restarts or reloads Admin');
+    await admin.locator('#background-cue').selectOption('cue-1');
+    await admin.locator('#audio-fade-seconds').fill('1.6');
+    await admin.locator('#visual-fade-seconds').fill('2.45');
+    // A newer SSE revision can arrive while an older successful PUT response
+    // is still in flight. Clearing busy must drain that revision without a
+    // further event and preserve the settings draft.
+    let enterDraftWrite, releaseDraftWrite;
+    const draftWriteEntered = new Promise(resolve => { enterDraftWrite = resolve; });
+    playlistWriteGate = { entered: enterDraftWrite, released: new Promise(resolve => { releaseDraftWrite = resolve; }) };
+    await admin.getByRole('checkbox', { name: `Hide remote button for cue ${imagePosition}`, exact: true }).uncheck();
+    await draftWriteEntered;
+    config.cues[2].label = 'Concurrent interlude label'; state.cues[2].label = config.cues[2].label;
+    config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
+    const latestAfterDraftWrite = config.playlistRevision;
+    await admin.waitForFunction(revision => playlistBusy && state.playlistRevision === revision, latestAfterDraftWrite);
+    await admin.locator('#audio-fade-seconds').focus();
+    const playlistReadsBeforeDrain = requests.filter(r => r.path === '/api/playlist' && !r.body.cues).length;
+    releaseDraftWrite();
+    await admin.waitForFunction(revision => !playlistBusy && !playlistRefresh && playlist.playlistRevision === revision, latestAfterDraftWrite);
+    assert.equal(await admin.getByRole('textbox', { name: 'Label for cue 3', exact: true }).inputValue(), 'Concurrent interlude label');
+    assert.equal(await admin.locator('#background-cue').inputValue(), 'cue-1');
+    assert.equal(await admin.locator('#audio-fade-seconds').inputValue(), '1.6');
+    assert.equal(await admin.locator('#visual-fade-seconds').inputValue(), '2.45');
+    const playlistReadsAfterDrain = requests.filter(r => r.path === '/api/playlist' && !r.body.cues).length;
+    assert(playlistReadsAfterDrain > playlistReadsBeforeDrain && playlistReadsAfterDrain <= playlistReadsBeforeDrain + 3, 'one outstanding revision drains a bounded number of playlist reads');
+    await page.locator('[data-cue-id="image-fixture"]').waitFor();
+    await admin.locator('#save-stage-settings').click();
+    await admin.waitForFunction(() => document.getElementById('stage-settings-message').textContent === 'Stage and sound settings saved.');
     await page.locator('[data-cue-id="image-fixture"]').click();
     assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.cueId, 'image-fixture');
     state.imageCueId = 'image-fixture'; state.revision++; broadcast();
@@ -705,24 +795,80 @@ const assert = require('node:assert/strict');
     assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.action, 'resume');
     await page.locator('#stop').click();
     await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-3"]').getAttribute('aria-pressed') === 'false');
+    state.activeCueId = 'cue-0'; state.state = 'playing'; state.paused = false; state.imageCueId = 'image-fixture';
+    state.backgroundOverrideCueId = ''; state.backgroundCueId = config.stage.backgroundCueId; state.stageEnabled = true; state.revision++; broadcast();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-1"]').getAttribute('aria-pressed') === 'false');
+    const musicDuringBackground = () => ({ cue: state.activeCueId, phase: state.state, paused: state.paused,
+      image: state.imageCueId, stage: state.stageEnabled, generation: state.generation,
+      transport: state.transportRevision, elapsed: state.elapsed, stopEpoch: state.stopEpoch });
+    const retainedMusicForBackground = musicDuringBackground();
+    assert.equal(state.backgroundCueId, 'cue-1', 'saved default may be effective without selecting its override button');
     await page.locator('[data-cue-id="cue-1"]').click();
     assert.equal(requests.filter(r => r.path === '/api/play').at(-1).body.cueId, 'cue-1');
-    state.imageCueId = ''; state.backgroundCueId = 'cue-1'; state.revision++; broadcast();
-    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-1"] .cue-meta').textContent.includes('Background selected'));
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-1"]').getAttribute('aria-pressed') === 'true');
+    assert.equal(state.backgroundOverrideCueId, 'cue-1');
+    assert.deepEqual(musicDuringBackground(), retainedMusicForBackground, 'selecting a background preserves music, image, stage and transport');
+    const firstBackgroundRequest = requests.filter(r => r.path === '/api/play').at(-1).body.requestId;
+    await page.locator('[data-cue-id="cue-1"]').click();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-1"]').getAttribute('aria-pressed') === 'false');
+    assert.equal(state.backgroundOverrideCueId, '');
+    assert.equal(state.backgroundCueId, 'cue-1', 'pressing selected background again restores the saved default');
+    assert.notEqual(requests.filter(r => r.path === '/api/play').at(-1).body.requestId, firstBackgroundRequest);
+    assert.deepEqual(musicDuringBackground(), retainedMusicForBackground);
+    await admin.locator('#background-cue').selectOption('');
+    await admin.locator('#save-stage-settings').click();
+    await admin.waitForFunction(() => document.getElementById('stage-settings-message').textContent === 'Stage and sound settings saved.');
+    await page.locator('[data-cue-id="cue-1"]').click();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-1"]').getAttribute('aria-pressed') === 'true');
+    await page.locator('[data-cue-id="cue-1"]').click();
+    await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-1"]').getAttribute('aria-pressed') === 'false');
+    assert.equal(state.backgroundOverrideCueId, '');
+    assert.equal(state.backgroundCueId, '', 'clearing an override with no saved default returns to black');
+    assert.deepEqual(musicDuringBackground(), retainedMusicForBackground, 'background toggle-off never becomes foreground STOP');
     await admin.locator('#background-cue').selectOption('image-fixture');
     await admin.locator('#save-stage-settings').click();
     await admin.waitForFunction(() => document.getElementById('stage-settings-message').textContent === 'Stage and sound settings saved.');
     assert.equal(config.stage.backgroundCueId, 'image-fixture', 'images can also be configured as the default background');
     await admin.locator('#audio-fade-seconds').fill('2.5');
     const staleRevision = config.playlistRevision;
-    config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
+    // A revision can change before the state event reaches this browser. A
+    // safe conflict refresh may rebase the draft, but must not retry the PUT.
+    stageRevisionRace = true;
+    const stageWritesBeforeRace = requests.filter(r => r.path === '/api/stage-settings').length;
     await admin.locator('#save-stage-settings').click();
-    await admin.waitForFunction(() => document.getElementById('stage-settings-message').textContent.includes('Settings were not saved'));
-    assert.equal(requests.filter(r => r.path === '/api/stage-settings').at(-1).body.expectedRevision, staleRevision, 'an unsaved settings draft keeps its original revision across incoming state');
-    assert.equal(config.stage.audioFadeSeconds, 1.6, 'stale settings cannot overwrite a newer saved show');
-    assert.equal(config.stage.visualFadeSeconds, 2.45, 'a stale edit preserves the visual duration too');
-    await admin.locator('#reload-playlist').click();
-    await admin.waitForFunction(() => document.getElementById('audio-fade-seconds').value === '1.6');
+    await admin.waitForFunction(revision => !playlistBusy && stageSettingsRevision === revision, staleRevision + 1);
+    assert.equal(requests.filter(r => r.path === '/api/stage-settings').length, stageWritesBeforeRace + 1, 'revision recovery never silently retries a write');
+    assert.equal(requests.filter(r => r.path === '/api/stage-settings').at(-1).body.expectedRevision, staleRevision);
+    assert.equal(await admin.locator('#audio-fade-seconds').inputValue(), '2.5');
+    assert.equal(config.stage.audioFadeSeconds, 1.6, 'rejected first save leaves persisted settings untouched');
+    await admin.locator('#save-stage-settings').click();
+    await admin.waitForFunction(() => document.getElementById('stage-settings-message').textContent === 'Stage and sound settings saved.');
+    assert.equal(config.stage.audioFadeSeconds, 2.5);
+    await admin.locator('#audio-fade-seconds').fill('1.6');
+    const externalStageWrites = requests.filter(r => r.path === '/api/stage-settings').length;
+    config.stage.visualFadeSeconds = 7.7; state.stage = { ...config.stage };
+    config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
+    await admin.waitForFunction(() => document.getElementById('stage-settings-message').textContent.includes('changed in another session') && !document.getElementById('reload-stage-settings').hidden);
+    await admin.locator('#save-stage-settings').click();
+    assert.equal(await admin.locator('#audio-fade-seconds').inputValue(), '1.6', 'genuine external settings changes preserve the local draft for inspection');
+    assert.equal(await admin.locator('#visual-fade-seconds').inputValue(), '2.45');
+    assert.equal(config.stage.audioFadeSeconds, 2.5);
+    assert.equal(config.stage.visualFadeSeconds, 7.7);
+    assert.equal(requests.filter(r => r.path === '/api/stage-settings').length, externalStageWrites, 'external stage changes never trigger a silent overwrite');
+    assert.match(await admin.locator('#stage-settings-message').textContent(), /changed|conflict/i);
+    await admin.locator('#stage-section').screenshot({ path: path.join(output, 'admin-stage-conflict.png') });
+    await admin.waitForFunction(() => online && !playlistBusy && !playlistRefresh && !validationRefresh && !document.getElementById('reload-stage-settings').disabled);
+    let enterFailedReload, releaseFailedReload;
+    const failedReloadEntered = new Promise(resolve => { enterFailedReload = resolve; });
+    playlistReadGate = { entered: enterFailedReload, released: new Promise(resolve => { releaseFailedReload = resolve; }), fail: true };
+    await admin.locator('#reload-stage-settings').click(); await failedReloadEntered; releaseFailedReload();
+    await admin.waitForFunction(() => !document.getElementById('reload-stage-settings').disabled && document.getElementById('stage-settings-message').classList.contains('error'));
+    assert.equal(await admin.locator('#audio-fade-seconds').inputValue(), '1.6', 'failed conflict recovery preserves the unsaved draft');
+    const documentsBeforeRecovery = adminDocumentLoads;
+    await admin.locator('#reload-stage-settings').click();
+    await admin.waitForFunction(() => document.getElementById('audio-fade-seconds').value === '2.5' && document.getElementById('visual-fade-seconds').value === '7.7');
+    assert.equal(await admin.locator('#save-stage-settings').isDisabled(), false);
+    assert.equal(adminDocumentLoads, documentsBeforeRecovery, 'in-section recovery does not restart or reload Admin');
     state.activeCueId = 'cue-0'; state.state = 'playing'; state.revision++; broadcast();
     await admin.waitForFunction(() => !document.getElementById('enable-stage').disabled);
     await admin.locator('#disable-stage').click();
@@ -742,7 +888,7 @@ const assert = require('node:assert/strict');
     await admin.waitForFunction(() => document.getElementById('play-state').textContent === 'stopped');
     assert.equal(requests.filter(r => r.path === '/api/emergency-stop').length, stageCommandsBeforeEscape + 1, 'Escape sends one atomic emergency stop from Admin');
     assert.equal(typeof requests.filter(r => r.path === '/api/emergency-stop').at(-1).body.requestId, 'string');
-    state.state = 'playing'; state.activeCueId = 'cue-1'; state.revision++; broadcast();
+    state.state = 'playing'; state.activeCueId = 'cue-0'; state.revision++; broadcast();
     await page.locator('.cue.active').waitFor();
     assert.equal(await admin.locator('#remote-url').textContent(), links[0].url);
     assert.equal(await admin.locator('#open-remote-url').getAttribute('href'), links[0].url);
@@ -777,8 +923,16 @@ const assert = require('node:assert/strict');
     assert.equal(await page.locator('#connection.live').isVisible(), true, 'opening Admin does not replace the remote session');
     assert.equal(requests.some(r => r.listenerRole === 'command' && r.path.startsWith('/api/remote-control')), false, 'remote UI never requests the private link or QR');
 
+    // Synthetic transitions wait for an older poll to finish before fetching
+    // the next phase; production deliberately coalesces concurrent refreshes.
+    const refreshUpdateFixture = async () => {
+      await admin.waitForFunction(() => !updateBusy);
+      await admin.evaluate(() => loadUpdateStatus());
+    };
     await admin.locator('#update-current').filter({ hasText: 'v0.1.0-preview.8' }).waitFor();
     assert.equal(await page.locator('#updates-section').isVisible(), false, 'updates are local Admin only');
+    assert.equal(await page.locator('#update-banner').isVisible(), false, 'remote controls do not claim to install the host update');
+    assert.equal(await admin.locator('#update-banner').isVisible(), false, 'an available release waiting for the next launch is not shown as an active update');
     assert.equal(requests.some(r => r.listenerRole === 'command' && r.path.startsWith('/api/update')), false, 'remote UI never requests update status');
     assert.equal(await admin.locator('#install-update').isDisabled(), true, 'update installation is unavailable during playback');
     assert.match(await admin.locator('#update-requirements').textContent(), /Stop playback and disable stage/);
@@ -786,8 +940,35 @@ const assert = require('node:assert/strict');
     assert.match(await admin.locator('#updates-section').textContent(), /Updates install automatically when Smart Stage starts/);
     state.state = 'stopped'; state.activeCueId = ''; state.updatePending = true; state.revision++; broadcast();
     update = { ...update, phase: 'checking', message: 'Checking for updates before starting…' };
-    await admin.evaluate(() => loadUpdateStatus());
+    await refreshUpdateFixture();
     await admin.waitForFunction(() => document.getElementById('update-requirements').textContent.includes('before starting'));
+    assert.equal(await admin.locator('#update-banner-title').textContent(), 'Checking for automatic updates');
+    assert.equal(await admin.locator('#update-banner').getAttribute('role'), 'status');
+    assert.equal(await admin.locator('#update-banner').getAttribute('aria-live'), 'polite');
+    for (const locale of ['en', 'it']) {
+      await admin.locator('#language-mode').selectOption(locale);
+      await admin.waitForFunction(expected => document.getElementById('update-banner-title').textContent === expected,
+        locale === 'en' ? 'Checking for automatic updates' : 'Ricerca di aggiornamenti automatici');
+      for (const [width, height] of [[320, 844], [844, 390], [1280, 900]]) {
+        await admin.setViewportSize({ width, height });
+        await admin.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+        const geometry = await admin.evaluate(() => {
+          const banner = document.getElementById('update-banner').getBoundingClientRect();
+          const stop = document.getElementById('stop'), rect = stop.getBoundingClientRect();
+          return { scrolled: scrollY > 0, overflow: document.documentElement.scrollWidth > innerWidth,
+            bannerVisible: banner.top >= 0 && banner.bottom <= innerHeight,
+            stopVisible: rect.top >= 0 && rect.bottom <= innerHeight,
+            stopAccessible: stop.contains(document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)) };
+        });
+        assert.equal(geometry.scrolled, true, 'the banner remains visible away from the Updates section');
+        assert.equal(geometry.overflow, false, `${locale} update notice fits ${width}x${height}`);
+        assert.equal(geometry.bannerVisible, true, `${locale} update notice stays visible while scrolled at ${width}x${height}`);
+        assert.equal(geometry.stopVisible && geometry.stopAccessible, true, `${locale} STOP remains visible and unobscured during automatic update at ${width}x${height}`);
+      }
+      await admin.screenshot({ path: path.join(output, `admin-update-checking-${locale}.png`) });
+    }
+    await admin.locator('#language-mode').selectOption('en');
+    await admin.waitForFunction(() => document.getElementById('update-banner-title').textContent === 'Checking for automatic updates');
     assert.equal(await admin.locator('.playlist-row input').first().isDisabled(), true, 'automatic startup check reserves show editing');
     assert.equal(await admin.locator('.cue-color-controls input[type=color]').first().isDisabled(), true, 'automatic updates reserve color edits too');
     assert.equal(await admin.locator('#save-stage-settings').isDisabled(), true, 'automatic updates reserve stage settings');
@@ -800,9 +981,24 @@ const assert = require('node:assert/strict');
     await page.locator('#remote-stage').click();
     await page.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'false');
     assert.equal(await page.locator('#remote-stage').isDisabled(), true, 'Stage on remains blocked during update preparation');
-    state.updatePending = false;
     update = { ...update, phase: 'available', message: 'A new version is available.' };
-    await admin.evaluate(() => loadUpdateStatus());
+    await refreshUpdateFixture();
+    assert.equal(await admin.locator('#update-banner-title').textContent(), 'Smart Stage is updating to v0.1.0-preview.9');
+    assert.match(await admin.locator('#update-banner-detail').textContent(), /Preparing the automatic update/);
+    update = { ...update, phase: 'error', message: 'Could not prepare the automatic update.' };
+    state.updatePending = false; state.revision++; broadcast();
+    await refreshUpdateFixture();
+    assert.equal(await admin.locator('#update-banner-title').textContent(), 'Automatic update needs attention');
+    assert.equal(await admin.locator('#update-banner.update-failed').isVisible(), true);
+    assert.doesNotMatch(await admin.locator('#update-banner').textContent(), /Smart Stage is updating|Preparing the automatic update/);
+    assert.equal(await admin.locator('#stop').isDisabled(), false, 'failed update preparation leaves STOP available');
+    update = { ...update, phase: 'idle', available: false, message: 'Smart Stage is up to date.' };
+    await refreshUpdateFixture();
+    assert.equal(await admin.locator('#update-banner').isVisible(), false, 'a completed check with no update clears the active notice');
+    state.updatePending = false;
+    update = { ...update, phase: 'available', available: true, message: 'A new version is available.' };
+    await refreshUpdateFixture();
+    assert.equal(await admin.locator('#update-banner').isVisible(), false, 'availability without an update reservation does not claim installation');
     state.state = 'stopped'; state.activeCueId = ''; state.stageEnabled = true; state.revision++; broadcast();
     await admin.waitForFunction(() => document.getElementById('stage-state').textContent.startsWith('Stage output enabled'));
     assert.equal(await admin.locator('#install-update').isDisabled(), true, 'a stopped but enabled black stage still blocks installation');
@@ -815,12 +1011,12 @@ const assert = require('node:assert/strict');
     updateGetDelay = 0;
     update.releaseURL = 'https://github.com.evil.invalid/arizzi74/Smart-Stage/releases/tag/v1';
     update.latestVersion = '<img src=x onerror="window.__xss=true">';
-    await admin.evaluate(() => loadUpdateStatus());
+    await refreshUpdateFixture();
     assert.equal(await admin.locator('#update-release').isVisible(), false, 'untrusted release URLs are not linked');
     assert.equal(await admin.locator('#update-latest img').count(), 0, 'version labels are rendered as text');
     assert.equal(await admin.evaluate(() => window.__xss), undefined);
     update.lastUpdate = { version: 'v0.1.0-preview.8', status: 'updated', message: 'Firewall approval was cancelled. Allow Smart Stage in Firewall Options. <img src=x>' };
-    await admin.evaluate(() => loadUpdateStatus());
+    await refreshUpdateFixture();
     assert.equal(await admin.locator('#update-outcome').isVisible(), true, 'last update warnings remain visible alongside the current check status');
     assert.match(await admin.locator('#update-outcome').textContent(), /Firewall approval was cancelled/);
     assert.equal(await admin.locator('#update-outcome img').count(), 0, 'update outcome is rendered as text');
@@ -831,14 +1027,27 @@ const assert = require('node:assert/strict');
     await admin.waitForFunction(() => document.getElementById('check-update').textContent === 'Checking…');
     assert.equal(await admin.locator('#check-update').isDisabled(), true);
     await admin.waitForFunction(() => document.getElementById('update-message').textContent.includes('GitHub is unavailable'), { timeout: 10000 });
+    assert.equal(await admin.locator('#update-banner-title').textContent(), 'Automatic update needs attention');
+    assert.match(await admin.locator('#update-banner-detail').textContent(), /GitHub is unavailable/);
+    assert.doesNotMatch(await admin.locator('#update-banner').textContent(), /Smart Stage is updating/);
     assert.equal(await admin.locator('#check-update').isDisabled(), false, 'failed checks can be retried');
     assert.equal(await admin.locator('#install-update').isDisabled(), true);
     failUpdateCheck = false;
     await admin.locator('#check-update').click();
     await admin.waitForFunction(() => !document.getElementById('install-update').disabled, { timeout: 10000 });
     assert.equal(await admin.locator('#update-release').getAttribute('href'), update.releaseURL);
+    assert.equal(await admin.locator('#update-banner').isVisible(), false, 'successful retry clears a stale update error');
     await admin.locator('#install-update').click();
     await admin.waitForFunction(() => document.getElementById('install-update').textContent === 'Downloading…');
+    assert.equal(await admin.locator('#update-banner-title').textContent(), 'Smart Stage is updating to v0.1.0-preview.9');
+    assert.match(await admin.locator('#update-banner-detail').textContent(), /Downloading and verifying/);
+    await admin.locator('#language-mode').selectOption('it');
+    await admin.waitForFunction(() => document.getElementById('update-banner-title').textContent === 'Smart Stage si sta aggiornando a v0.1.0-preview.9');
+    assert.match(await admin.locator('#update-banner-detail').textContent(), /Download e verifica/);
+    await admin.locator('#language-mode').selectOption('en');
+    await admin.waitForFunction(() => document.getElementById('update-banner-title').textContent === 'Smart Stage is updating to v0.1.0-preview.9');
+    await admin.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
+    await admin.screenshot({ path: path.join(output, 'admin-update-banner.png') });
     assert.equal(requests.filter(r => r.path === '/api/update/install').length, 1, 'one click starts exactly one install');
     assert.equal(await admin.locator('.playlist-row input').first().isDisabled(), true, 'playlist editing is disabled during preparation');
     assert.equal(await admin.locator('.cue-tools button').first().isDisabled(), true, 'Admin PLAY is disabled during preparation');
@@ -847,7 +1056,8 @@ const assert = require('node:assert/strict');
     assert.equal(await admin.locator('#choose-files').isDisabled(), true, 'native media import is disabled during update preparation');
     assert.equal(await admin.locator('#stop').isDisabled(), false, 'STOP remains available during update preparation');
     update = { ...update, phase: 'restarting', message: 'Restarting Smart Stage. Admin will reconnect automatically.' };
-    await admin.evaluate(() => loadUpdateStatus());
+    await refreshUpdateFixture();
+    assert.equal(await admin.locator('#update-banner-title').textContent(), 'Restarting Smart Stage');
     const beforeRestartSessions = requests.filter(r => r.path === '/api/local-session').length;
     const documentsBeforeUpdateRestart = adminDocumentLoads;
     const oldRemoteURL = await admin.locator('#remote-url').textContent();
@@ -855,6 +1065,9 @@ const assert = require('node:assert/strict');
     for (const client of clients) client.end();
     await admin.waitForFunction(() => document.getElementById('connection').textContent.includes('Restarting'));
     assert.equal(await admin.locator('#notice.error').count(), 0, 'expected restart is not presented as a connection failure');
+    assert.equal(await admin.locator('#update-banner').isVisible(), true, 'expected host disconnect preserves the active update notice');
+    assert.equal(await admin.locator('#update-banner-title').textContent(), 'Restarting Smart Stage');
+    assert.match(await admin.locator('#update-banner-detail').textContent(), /reconnect automatically/);
     sessions.clear(); token = '87654321';
     state.instanceId = 'browser-fixture-after-update'; state.revision = 1; state.updatePending = false;
     update = { ...update, currentVersion: 'v0.1.0-preview.9', phase: 'idle', available: false, message: 'Smart Stage is up to date.' };
@@ -865,6 +1078,7 @@ const assert = require('node:assert/strict');
     assert.notEqual(await admin.locator('#remote-url').textContent(), oldRemoteURL, 'Admin replaces the obsolete phone link');
     assert.equal(await admin.locator('#remote-url').textContent(), links[0].url);
     await admin.waitForFunction(() => document.getElementById('update-current').textContent === 'v0.1.0-preview.9');
+    assert.equal(await admin.locator('#update-banner').isVisible(), false, 'the new host clears the finished update notice');
     assert.equal(await admin.locator('.playlist-row input').first().isDisabled(), false, 'edits become available after the new host starts');
     assert.equal(await admin.locator('#install-update').isDisabled(), true, 'installed version is no longer offered');
     assert.equal(requests.filter(r => r.path === '/api/update/install').length, 1, 'reconnection does not repeat installation');
@@ -1352,7 +1566,7 @@ const assert = require('node:assert/strict');
     Object.assign(state, beforeSeekFixture); state.revision++; broadcast();
     await italianRemoteContext.close();
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }

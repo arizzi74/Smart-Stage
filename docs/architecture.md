@@ -65,7 +65,9 @@ hours. Startup alone can install automatically: the coordinator reserves stopped
 playback and a disabled stage before the first check, temporarily rejecting PLAY
 and configuration changes. A ten-second metadata timeout releases the reservation
 when offline. Subsequent checks never automatically stop/restart a running
-session. Authenticated local Admin can explicitly request an idle update.
+session. Authenticated local Admin can explicitly request an idle update. Admin
+shows a prominent update notice for startup checks, download/verification and
+restart, including the target version when available. STOP remains accessible.
 
 The updater selects a newer release for the running OS/architecture and package
 type, verifies its SHA-256 checksum, and validates a bounded archive before
@@ -151,8 +153,12 @@ retaining its timeline and image overlay. Repeating a visible or preparing image
 clears it while preserving independent music; an underlying foreground video is
 also stopped to return to background/black. Image removal advances the stop epoch
 without changing an independent music source's generation. A retained image with
-Stage off can be selected again to show it. Background buttons replace only the
-session's background. The persisted legacy `toggleAudio` field has no effect.
+Stage off can be selected again to show it. Background buttons toggle a distinct
+session override. Clearing the selected override restores the saved default or
+black without altering foreground playback or stage visibility. Effective
+background identity and selected override identity are separate, so clearing an
+override equal to the default deselects the button while retaining the visual.
+The persisted legacy `toggleAudio` field has no effect.
 
 Pause/resume/seek share the authenticated `/api/play` route so existing gateways
 can relay them. Explicit transport actions require the current foreground
@@ -232,7 +238,17 @@ temporary file, then replace atomically (`rename` plus directory sync on Unix;
 Restart restores cues/preferences, including the saved background, fade settings
 and hidden/background button flags, but never playback or stage enablement.
 Selecting a background button overrides the current session's background; the
-saved default remains the next-launch selection.
+saved default remains the next-launch selection and the fallback when that
+button is deselected. Removing/replacing/unflagging the selected override,
+changing the saved default or loading a playlist clears the override.
+
+Admin retains a stage draft's saved settings and selected source identity. New
+playlist snapshots advance that draft's revision only when those values still
+match; unrelated label/visibility/order changes do not invalidate the draft.
+Older in-flight snapshots cannot replace a newer accepted playlist revision.
+Conflicting saved stage settings or changed/removed sources keep the draft and
+require explicit recovery. An in-section reload discards the draft only after a
+successful fetch; no restart is required. The server still checks revisions.
 
 Root restrictions resolve symlinks/junctions and compare relative paths and
 volumes, during browsing, source edits, inspection and each play preparation.

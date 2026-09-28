@@ -67,31 +67,32 @@ type ValidationJob struct {
 	Total     int  `json:"total"`
 }
 type State struct {
-	InstanceID        string              `json:"instanceId"`
-	Revision          uint64              `json:"revision"`
-	PlaylistRevision  uint64              `json:"playlistRevision"`
-	State             string              `json:"state"`
-	ActiveCueID       string              `json:"activeCueId"`
-	ActivePosition    int                 `json:"activePosition"`
-	Elapsed           float64             `json:"elapsed"`
-	Duration          float64             `json:"duration"`
-	LastError         string              `json:"lastError"`
-	Outputs           model.Outputs       `json:"outputs"`
-	Stage             model.StageSettings `json:"stage"`
-	BackgroundCueID   string              `json:"backgroundCueId"`
-	ImageCueID        string              `json:"imageCueId"`
-	BackgroundError   string              `json:"backgroundError"`
-	ResolvedAudioID   string              `json:"resolvedAudioId"`
-	StageEnabled      bool                `json:"stageEnabled"`
-	OutputFault       bool                `json:"outputFault"`
-	Generation        uint64              `json:"generation"`
-	StopEpoch         uint64              `json:"stopEpoch"`
-	TransportRevision uint64              `json:"transportRevision"`
-	Paused            bool                `json:"paused"`
-	SeekPending       bool                `json:"seekPending"`
-	Cues              []CueView           `json:"cues"`
-	ValidationJob     ValidationJob       `json:"validationJob"`
-	UpdatePending     bool                `json:"updatePending"`
+	InstanceID              string              `json:"instanceId"`
+	Revision                uint64              `json:"revision"`
+	PlaylistRevision        uint64              `json:"playlistRevision"`
+	State                   string              `json:"state"`
+	ActiveCueID             string              `json:"activeCueId"`
+	ActivePosition          int                 `json:"activePosition"`
+	Elapsed                 float64             `json:"elapsed"`
+	Duration                float64             `json:"duration"`
+	LastError               string              `json:"lastError"`
+	Outputs                 model.Outputs       `json:"outputs"`
+	Stage                   model.StageSettings `json:"stage"`
+	BackgroundCueID         string              `json:"backgroundCueId"`
+	BackgroundOverrideCueID string              `json:"backgroundOverrideCueId"`
+	ImageCueID              string              `json:"imageCueId"`
+	BackgroundError         string              `json:"backgroundError"`
+	ResolvedAudioID         string              `json:"resolvedAudioId"`
+	StageEnabled            bool                `json:"stageEnabled"`
+	OutputFault             bool                `json:"outputFault"`
+	Generation              uint64              `json:"generation"`
+	StopEpoch               uint64              `json:"stopEpoch"`
+	TransportRevision       uint64              `json:"transportRevision"`
+	Paused                  bool                `json:"paused"`
+	SeekPending             bool                `json:"seekPending"`
+	Cues                    []CueView           `json:"cues"`
+	ValidationJob           ValidationJob       `json:"validationJob"`
+	UpdatePending           bool                `json:"updatePending"`
 }
 type cachedRequest struct {
 	fingerprint [32]byte
@@ -342,10 +343,19 @@ func (s *Service) Play(r PlayRequest) (Ack, error) {
 			return s.rememberLocked(r.RequestID, hash), nil
 		}
 	}
+	// A selected session override can always be cleared, even if subsequent
+	// validation found its source missing. A duplicate request was handled above
+	// and must never turn an accepted selection into this second-press toggle.
+	if cue.Background && cue.ID == s.state.BackgroundOverrideCueID {
+		s.clearBackgroundOverrideLocked()
+		s.changedLocked()
+		return s.rememberLocked(r.RequestID, hash), nil
+	}
 	if cue.Cache.Status == "missing" || cue.Cache.Status == "unsupported" || cue.Cache.Status == "error" {
 		return Ack{}, problem("cue_invalid", "Cue needs successful validation in Admin before playback")
 	}
 	if cue.Background {
+		s.state.BackgroundOverrideCueID = cue.ID
 		s.selectBackgroundLocked(cue.ID)
 		s.changedLocked()
 		return s.rememberLocked(r.RequestID, hash), nil

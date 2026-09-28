@@ -172,6 +172,11 @@ func (s *Service) selectBackgroundLocked(id string) {
 	s.state.BackgroundCueID = ""
 }
 
+func (s *Service) clearBackgroundOverrideLocked() {
+	s.state.BackgroundOverrideCueID = ""
+	s.selectBackgroundLocked(s.config.Stage.BackgroundCueID)
+}
+
 func resolveAudio(devices playback.Devices, preference string) (string, error) {
 	for _, d := range devices.Audio {
 		if d.ID == preference || preference == "default" && d.Default {
@@ -324,7 +329,7 @@ func (s *Service) ConfigureStage(ctx context.Context, edit StageEdit) (model.Con
 		return s.config.Clone(), nil
 	}
 	if old.BackgroundCueID != next.Stage.BackgroundCueID {
-		s.selectBackgroundLocked(next.Stage.BackgroundCueID)
+		s.clearBackgroundOverrideLocked()
 	} else if old.BackgroundAudio != next.Stage.BackgroundAudio {
 		s.selectBackgroundLocked(s.state.BackgroundCueID)
 	}

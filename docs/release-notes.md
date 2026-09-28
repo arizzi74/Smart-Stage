@@ -1,10 +1,9 @@
-Smart Stage 1.5.0 adds independent audio and video/image fade settings on Mac and Windows.
+Smart Stage 1.5.1 improves background buttons, saving stage settings and update visibility on Mac and Windows.
 
-- In Admin → Stage & sound, enable **Fade audio** and **Fade video and images** independently.
-- Set a separate duration for each, from 0.1 to 30 seconds. Each defaults to one second.
-- Audio fading includes music, video soundtracks and background-video sound. Visual fading controls only the picture.
-- Older saved settings and `.smartstage.json` playlist files keep their previous behavior: the original fade switch and duration migrate to both groups.
-- Video playback stays alive until both its picture and soundtrack fades have finished, even when they use different durations. Pause, seeking, STOP and emergency Escape remain available.
+- Press a selected **Background button** again to deselect it and return to the saved default background, or black if none is configured. Independent music keeps playing. If the button is also the default background, deselection leaves that default visible.
+- Saving stage settings after hiding or editing a playlist button preserves your draft without an unnecessary playlist revision error. Real conflicting changes remain protected, with recovery available inside Admin.
+- A prominent update notice makes startup checks, downloading/verifying and automatic restart visible in Admin, in English and Italian.
+- Your independent audio and video/image fade switches and durations remain available. Saved shows and playlist files keep their settings.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 

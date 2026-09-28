@@ -23,7 +23,8 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.5.0
   Native transport revisions reject stale events and commands, with STOP priority.
   Images retain their toggle behavior and preserve independent music; clearing
   an image stops a covered foreground video so it cannot reappear. Background
-  selector buttons keep their existing behavior. The legacy music-toggle setting
+  selector buttons toggle a session override and restore the default/black when
+  deselected, preserving independent music. The legacy music-toggle setting
   stays in saved files for compatibility but no longer changes cue behavior.
 - Audio and video/image fading have independent switches and durations, each
   initially disabled with a one-second duration (0.1–30 seconds). Audio includes
@@ -42,6 +43,9 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.5.0
   reuses ready validation only after a fresh allowed-file lookup and matching
   size/modification time; changed files are inspected again, and failures include
   their original diagnostic.
+- Stage drafts retain their selections across unrelated playlist edits, reject
+  stale snapshots and detect conflicting settings/source changes. Admin offers
+  explicit draft recovery without restarting the app.
 - Save/load versioned `.smartstage.json` playlist files from Admin with native
   Mac/Windows Save/Open dialogs or browser download/upload. Files preserve cue
   order, labels, colors, hidden/background flags and stage/sound settings while
@@ -119,6 +123,8 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.5.0
   playback, preserves the saved show, restarts without autoplay and rolls back
   failed startup. Periodic checks defer installation until the next launch;
   Admin also offers an update action while playback and stage output are stopped.
+  A prominent notice shows startup checking, installation and restart progress
+  while keeping STOP accessible.
 
 - Admin omits the Host files browser. Finder/Dock and Explorer drops, plus
   Choose Media, append original file references

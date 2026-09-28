@@ -384,8 +384,13 @@ function dedicatedWindowsAdmin(platform, release) {
     }, 'Native audio/image inspection did not validate scene fixtures', 90000);
     const backgroundIndex = saved.cues.findIndex(cue => cue.id === backgroundCue.id) + 1;
     const imageIndex = saved.cues.findIndex(cue => cue.id === imageCue.id) + 1;
+    await admin.locator(`#background-cue option[value="${backgroundCue.id}"]`).waitFor({ state: 'attached' });
+    // Start a stage draft before saving unrelated playlist flags. The draft
+    // must follow those successful revisions without losing its selected media.
+    await admin.locator('#background-cue').selectOption(backgroundCue.id);
     await edit(() => admin.getByRole('checkbox', { name: `Use cue ${backgroundIndex} as a background button`, exact: true }).check(), saved.playlistRevision + 1);
     await edit(() => admin.getByRole('checkbox', { name: `Hide remote button for cue ${backgroundIndex}`, exact: true }).check(), saved.playlistRevision + 1);
+    assert.equal(await admin.locator('#background-cue').inputValue(), backgroundCue.id);
     await command.locator(`[data-cue-id="${backgroundCue.id}"]`).waitFor({ state: 'detached' });
     assert.equal(await admin.locator('.playlist-row').count(), saved.cues.length, 'Hidden remote cues must remain in Admin');
     assert.equal(saved.cues.find(cue => cue.id === backgroundCue.id).background, true);
@@ -588,25 +593,70 @@ function dedicatedWindowsAdmin(platform, release) {
     await until(async () => (await snapshot()).backgroundCueId === imageCue.id, 'Image background button did not select the current background');
     const backgroundSwitched = await snapshot();
     assert.equal(backgroundSwitched.imageCueId, '');
+    assert.equal(backgroundSwitched.backgroundOverrideCueId, imageCue.id);
     assert.equal(backgroundSwitched.stage.backgroundCueId, backgroundCue.id, 'A session background button must not overwrite the saved default');
     if (audio) {
       assert.equal(backgroundSwitched.activeCueId, musicCue.id); assert.equal(backgroundSwitched.generation, backgroundMusic.generation);
       assert.equal(backgroundSwitched.state, 'playing');
     }
+    await until(async () => await imageButton.getAttribute('aria-pressed') === 'true', 'Selected background button did not become pressed');
+    await imageButton.tap();
+    await until(async () => {
+      const state = await snapshot();
+      return state.backgroundCueId === backgroundCue.id && state.backgroundOverrideCueId === '';
+    }, 'Second background press did not restore the saved default');
+    await until(async () => await imageButton.getAttribute('aria-pressed') === 'false', 'Restoring the default did not deselect the override button');
+    if (audio) {
+      const restored = await snapshot();
+      assert.equal(restored.activeCueId, musicCue.id); assert.equal(restored.generation, backgroundMusic.generation);
+      assert.equal(restored.state, 'playing');
+    }
+    await admin.locator('#background-cue').selectOption('');
+    await saveStageSettings();
+    await imageButton.tap();
+    await until(async () => (await snapshot()).backgroundOverrideCueId === imageCue.id, 'Background override did not select with no default');
+    await imageButton.tap();
+    await until(async () => {
+      const state = await snapshot();
+      return state.backgroundCueId === '' && state.backgroundOverrideCueId === '' && state.stageEnabled;
+    }, 'Second background press did not return to black with Stage still on');
+    if (audio) {
+      const cleared = await snapshot();
+      assert.equal(cleared.activeCueId, musicCue.id); assert.equal(cleared.generation, backgroundMusic.generation);
+      assert.equal(cleared.state, 'playing');
+    }
     await command.locator('#stop').tap(); await waitState('stopped');
     await admin.locator('#background-cue').selectOption(imageCue.id);
     await admin.locator('#background-audio').uncheck();
+    // Reproduce hiding an image while its default-background selection is an
+    // unsaved draft. Saving must succeed in this same Admin document.
+    await edit(() => admin.getByRole('checkbox', { name: `Hide remote button for cue ${imageIndex}`, exact: true }).check(), saved.playlistRevision + 1);
     await saveStageSettings();
     assert.equal(saved.stage.backgroundCueId, imageCue.id);
     assert.equal(saved.cues.find(cue => cue.id === backgroundCue.id).hidden, true);
     assert.equal(saved.cues.find(cue => cue.id === imageCue.id).background, true);
+    assert.equal(saved.cues.find(cue => cue.id === imageCue.id).hidden, true);
+    const adminImagePlay = admin.locator('.playlist-row').nth(imageIndex - 1).getByRole('button', { name: 'Set background', exact: true });
+    await adminImagePlay.click();
+    await until(async () => (await snapshot()).backgroundOverrideCueId === imageCue.id, 'Default image did not become an explicit override');
+    const selectedAdminImagePlay = admin.locator('.playlist-row').nth(imageIndex - 1).locator('button[aria-pressed="true"]');
+    await selectedAdminImagePlay.click();
+    await until(async () => {
+      const state = await snapshot();
+      return state.backgroundOverrideCueId === '' && state.backgroundCueId === imageCue.id;
+    }, 'Deselecting a button equal to the default should preserve that default image');
+    await until(async () => await adminImagePlay.getAttribute('aria-pressed') === 'false', 'The default background button remained selected after its override cleared');
     record.sceneIntegration = { nativeImageInspected: true, savedVideoAndImageBackgrounds: true,
       hiddenBackgroundCueEditableInAdmin: true, persistedConfigReloaded: true,
       independentFadeSettingsPersisted: true, configuredAudioFadeSeconds: 1.2, configuredVisualFadeSeconds: 0.6,
+      stageDraftSurvivedPlaylistFlagSaves: true, hiddenImageDefaultSavedWithoutReload: true,
+      backgroundButtonRestoredDefault: true, backgroundButtonRestoredBlack: true,
+      defaultBackgroundButtonDeselected: true, backgroundTogglePreservedMusic: Boolean(audio),
       musicImageAndIndependentStage: Boolean(audio), backgroundSoundtrackEnabled: Boolean(audio),
       selectedMusicPauseKeepsImage: Boolean(audio), nativePausedVideoSeek: true, nativePausedAndPlayingMusicSeek: Boolean(audio), nativeAudioGainsMeasuredHere: false,
       audioUnavailableReason: audio ? '' : 'No enumerated native audio endpoint' };
     record.checks.push('Admin saved/reloaded fade and background soundtrack settings without a pause preference; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available');
+    record.checks.push('Stage drafts survived background/hidden flag saves in the same Admin document; selected background buttons toggled to default or black and deselected even when equal to the default; independent music generation was preserved when audio was available');
 
     await command.evaluate(() => scrollTo(0, document.body.scrollHeight));
     const bounds = await command.locator('#stop').boundingBox();
