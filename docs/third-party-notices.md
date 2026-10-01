@@ -1,6 +1,8 @@
 # Third-party notices
 
-Desktop binaries embed the full notices below, available through the local Admin `/licenses.txt` endpoint. The gateway embeds its transport notice, available with `smartstage-gateway --licenses`.
+Smart Stage’s own code is licensed under the [MIT License](../LICENSE). Third-party components retain the licenses reproduced below.
+
+Desktop binaries embed the project license and the full notices below, available through the local Admin `/licenses.txt` endpoint. The gateway embeds the project license and its transport notice, available with `smartstage-gateway --licenses`.
 
 Smart Stage third-party notices
 

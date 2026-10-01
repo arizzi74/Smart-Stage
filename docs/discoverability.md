@@ -36,29 +36,29 @@ publication manually, open [Publish Smart Stage website](https://github.com/ariz
 and select **Run workflow** on `main`. If the workflow graph keeps showing an old
 running timer, refresh it and check the individual job or the public site.
 
-GitHub rejected repository metadata writes with HTTP 403 using the current
-automation credential. A repository administrator can finish these account settings
-while signed in as `arizzi74`:
+The description, website and topics below were applied and verified on October 2,
+2026 using a credential with repository Administration write permission. File
+changes continue to use SSH.
 
-1. On the [repository home page](https://github.com/arizzi74/Smart-Stage), use the
-   gear beside **About** to set the description, website and topics below.
-2. In [repository settings](https://github.com/arizzi74/Smart-Stage/settings),
-   upload [`site/assets/social-preview.png`](site/assets/social-preview.png)
-   as the **Social preview** image.
+The repository social preview still requires a signed-in browser upload. In
+[repository settings](https://github.com/arizzi74/Smart-Stage/settings), upload
+[`site/assets/social-preview.png`](site/assets/social-preview.png) as the
+**Social preview** image. GitHub’s public repository settings APIs do not expose
+an image-upload field. The same image already serves as the website’s social preview.
 
 ## Repository metadata
 
 Description:
 
-> Live show control for macOS and Windows: play audio, video and image cues from your phone or tablet, with a dedicated stage display.
+> Audio, video and image cue playback for macOS and Windows, controlled from a phone or tablet.
 
 Website: `https://arizzi74.github.io/Smart-Stage/`
 
 Topics:
 
 ```text
-show-control live-performance cue-playback audio-playback video-playback
-stage-display remote-control macos windows golang self-hosted
+show-control cue-playback live-performance theatre audio-playback
+video-playback remote-control macos windows golang
 ```
 
 ## Build and preview
@@ -109,8 +109,10 @@ No project-level `robots.txt` is needed: crawlers read that file at the hostname
 root (`https://arizzi74.github.io/robots.txt`), not under `/Smart-Stage/`. A project
 file there would not control the host. This site has no indexing restrictions.
 
-No project license was selected as part of these changes. The site does not claim
-an open-source license. Any license grant should be an explicit owner decision.
+The owner selected the [MIT License](../LICENSE) on October 2, 2026. The README
+links to it, and subsequent desktop and gateway builds embed the full project
+license alongside the retained third-party notices. Existing release artifacts
+have not been rebuilt as part of this documentation update.
 
 References: [GitHub Pages workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages),
 [GitHub topics](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/classifying-your-repository-with-topics),

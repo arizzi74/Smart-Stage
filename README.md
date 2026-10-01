@@ -2,7 +2,7 @@
 
 Live show control for Mac and Windows: play music, video and image cues from your phone or tablet. Build your show in the desktop app, choose your speakers and stage display, then trigger colored cue buttons remotely. Media files stay on your computer.
 
-[Website](https://arizzi74.github.io/Smart-Stage/) · App in English and Italian, selected automatically from your system language.
+[Website](https://arizzi74.github.io/Smart-Stage/) · [MIT license](LICENSE) · App in English and Italian, selected automatically from your system language.
 
 | Desktop Admin | Phone / tablet remote |
 | --- | --- |
@@ -53,3 +53,7 @@ curl -fsSL https://github.com/arizzi74/Smart-Stage/releases/latest/download/inst
 The installer offers existing nginx HTTPS sites, or Caddy if nginx is absent, and provides the URL and token for Admin. [Gateway setup](docs/gateway-install.md).
 
 [User guide](docs/user-guide.md) · [Releases](https://github.com/arizzi74/Smart-Stage/releases) · [Known limits and verification](docs/release-verification.md)
+
+## License
+
+Smart Stage is licensed under the [MIT License](LICENSE). Third-party components retain their own licenses; see [third-party notices](docs/third-party-notices.md).
