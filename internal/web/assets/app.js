@@ -127,7 +127,7 @@ function renderMasterVolume() {
   range.setAttribute('aria-valuetext', `${range.value}%`);
 }
 async function sendMasterVolume() {
-  clearTimeout(masterVolumeTimer);
+  clearTimeout(masterVolumeTimer); masterVolumeTimer = null;
   if (masterVolumeSending || !masterVolumeTarget) return;
   if (!online || updatePending() || quitBusy || appClosed || reloadingAdmin) { masterVolumeTarget = null; renderMasterVolume(); return; }
   const target = masterVolumeTarget; masterVolumeTarget = null; masterVolumeSending = true;
@@ -150,11 +150,11 @@ $('master-volume').addEventListener('input', () => {
   if (!state || !online || updatePending()) return;
   masterVolumeTarget = { instanceId: state.instanceId, stopEpoch: state.stopEpoch, volume: Number($('master-volume').value) / 100 };
   renderMasterVolume();
-  if (!masterVolumeSending) { clearTimeout(masterVolumeTimer); masterVolumeTimer = setTimeout(() => { void sendMasterVolume(); }, 80); }
+  if (!masterVolumeSending && masterVolumeTimer === null) masterVolumeTimer = setTimeout(() => { void sendMasterVolume(); }, 80);
 });
 
 async function saveTrackVolume() {
-  clearTimeout(trackVolumeTimer);
+  clearTimeout(trackVolumeTimer); trackVolumeTimer = null;
   if (!pendingTrackVolumes.size || trackVolumeSending) return;
   if (!online || !playlist || quitBusy || appClosed || reloadingAdmin || updatePending() || playlistFileBusy) {
     pendingTrackVolumes.clear(); renderEditAvailability(); return;
@@ -1207,7 +1207,7 @@ function renderPlaylist() {
     volume.addEventListener('input', () => {
       volumeValue.value = `${volume.value}%`; volume.setAttribute('aria-valuetext', `${volume.value}%`);
       pendingTrackVolumes.set(cue.id, { volume: Number(volume.value) / 100, path: cue.path });
-      clearTimeout(trackVolumeTimer); trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, 120);
+      if (!trackVolumeSending && trackVolumeTimer === null) trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, 120);
     });
     volume.addEventListener('change', () => { void saveTrackVolume(); });
     const minus = element('span', '−', 'volume-direction'), plus = element('span', '+', 'volume-direction');
