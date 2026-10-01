@@ -227,6 +227,47 @@ def firewall_snapshot(shell):
     return psjson(shell, "@(Get-NetFirewallRule -PolicyStore ActiveStore | Select-Object Name,Enabled,Direction,Action,Profile | Sort-Object Name)")
 
 
+def initialize_windows_shell(programs):
+    """Initialize the fresh runner's Start component before the strict baseline.
+
+    Fresh runners acquired its outbound rule during earlier installation probes.
+    Never create, remove or exempt firewall rules; observe the system component
+    before installing Smart Stage and retain the full later comparison.
+    """
+    shell = 'powershell.exe'
+    family = psjson(shell, "Get-AppxPackage -Name Microsoft.StartExperiencesApp | Select-Object -ExpandProperty PackageFamilyName")
+    if not family:
+        return {'componentPresent': False, 'warmupRequired': False}
+    assert isinstance(family, str), 'Unexpected Windows Start package identity'
+
+    def rule_ready():
+        return psjson(shell, "@(Get-NetFirewallRule -PolicyStore ActiveStore | Where-Object { $_.Name.StartsWith(" + quote(family) + ") }).Count") > 0
+
+    if rule_ready():
+        return {'componentPresent': True, 'warmupRequired': False, 'componentRuleObservedBeforeInstall': True}
+    shortcut = Path(programs) / ('Windows shell probe ' + os.urandom(8).hex() + '.lnk')
+    assert not shortcut.exists(), 'Shell warmup shortcut already exists'
+    try:
+        code, out, err = powershell(shell,
+            '$shell = New-Object -ComObject WScript.Shell; $link = $shell.CreateShortcut(' + quote(shortcut) + '); '
+            "$link.TargetPath = Join-Path $env:SystemRoot 'System32\\notepad.exe'; $link.Save()")
+        assert code == 0, (out, err)
+        # This probe runs only on an isolated native test desktop. Opening Start
+        # also initializes the component when shortcut indexing is deferred.
+        user = ctypes.WinDLL('user32', use_last_error=True)
+        user.keybd_event.argtypes = [wintypes.BYTE, wintypes.BYTE, wintypes.DWORD, ctypes.c_size_t]
+        user.keybd_event(0x5B, 0, 1, 0)
+        user.keybd_event(0x5B, 0, 3, 0)
+        time.sleep(.5)
+        user.keybd_event(0x1B, 0, 0, 0)
+        user.keybd_event(0x1B, 0, 2, 0)
+        until(rule_ready, 'Windows Start component did not initialize before the firewall baseline', timeout=120)
+    finally:
+        shortcut.unlink(missing_ok=True)
+    return {'componentPresent': True, 'warmupRequired': True, 'warmupShortcutRemoved': not shortcut.exists(),
+            'componentRuleObservedBeforeInstall': True}
+
+
 def firewall_difference(before, after):
     """Retain duplicate rules and distinguish an ordering-only mismatch."""
     def entries(snapshot):
@@ -298,6 +339,7 @@ def main():
         report.update(bootstrapURL=bootstrap_url, bootstrapVerificationURL=bootstrap_verification_url,
                       bootstrapSHA256=digest(published), bootstrapFetchAttempts=attempt + 1,
                       publishedBootstrapMatchesCheckout=True)
+    report['windowsShellInitialization'] = initialize_windows_shell(paths['programs'])
     original_firewall = firewall_snapshot(args.powershell)
     report['firewallBefore'] = original_firewall
     args.output.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
