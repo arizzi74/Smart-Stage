@@ -1224,8 +1224,10 @@ static void completeSceneFade(void) {
     }
 }
 static BOOL audibleScenePlayer(SSScenePlayer *player) {
+    // Keep decoder/fade ownership independent of the user's volume. Muting
+    // must not discard a retiring source or change a later crossfade.
     return player && player.hasAudio && !player.ended && player.started &&
-        player.player.volume > 0.001f && player.player.timeControlStatus == AVPlayerTimeControlStatusPlaying;
+        player.fadeGain > 0.001f && player.player.timeControlStatus == AVPlayerTimeControlStatusPlaying;
 }
 static void retireScenePlayer(SSScenePlayer *player) {
     if (!player) return;

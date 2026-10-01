@@ -50,10 +50,13 @@ static BOOL probeVolumeLevels(void) {
         valid = valid && fabsf(player.player.volume - envelope * .2f) < .001f && player.fadeGain == envelope;
     }
     sceneMasterVolume = 0;
+    BOOL activeSound = NO;
     for (SSScenePlayer *player in players) {
+        BOOL wasActive = audibleScenePlayer(player); activeSound |= wasActive;
         float envelope = player.fadeGain; setSceneGain(player, envelope);
-        valid = valid && player.player.volume == 0 && player.fadeGain == envelope;
+        valid = valid && player.player.volume == 0 && player.fadeGain == envelope && audibleScenePlayer(player) == wasActive;
     }
+    valid = valid && activeSound;
     sceneMasterVolume = master;
     for (NSUInteger i = 0; i < players.count; ++i) {
         players[i].trackVolume = levels[i].floatValue; setSceneGain(players[i], players[i].fadeGain);
