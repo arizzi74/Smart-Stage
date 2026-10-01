@@ -29,6 +29,7 @@ typedef struct {
     int foreground_has_audio, background_audio, stage_enabled, hard_stop;
     int foreground_paused;
     double audio_fade_seconds, visual_fade_seconds, seek_seconds;
+    double master_volume, foreground_volume, background_volume;
 } ss_scene_request;
 /* Complete, latest-revision-wins scene. All pointed-to strings are copied.
  * Foreground events use foreground_id as generation; stopped uses generation.

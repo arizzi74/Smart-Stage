@@ -13,6 +13,7 @@ uint64_t probeRevision = 0, retainedToken = 0;
 double lastBackgroundTime = 0, retainedTime = 0;
 bool soundAvailable = true;
 bool passed = false, observedBackgroundCrossfade = false, observedCueCrossfade = false;
+bool volumeLevelsVerified = false;
 bool observedStopCrossfade = false, sawBackgroundError = false;
 bool imageBlendPixels = false, imageBlackPixels = false;
 bool movingTargetVideo = false, movingSourceVideo = false, movingBothVideos = false;
@@ -49,7 +50,10 @@ std::string probeFailure;
 void require(bool condition, const char *message) { if (!condition) throw std::string(message); }
 void next(unsigned value) { phase = value; phaseStart = GetTickCount64(); }
 void startVisualChecks() { desired = {}; next(200); }
-void apply() { desired.revision = ++probeRevision; ss_scene(&desired); }
+void apply() {
+    desired.master_volume = desired.foreground_volume = desired.background_volume = 1;
+    desired.revision = ++probeRevision; ss_scene(&desired);
+}
 double position(Playback *p) {
     MFTIME value = 0;
     if (!p || !p->clock || FAILED(p->clock->GetTime(&value))) return -1;
@@ -59,7 +63,25 @@ void checkGain(Playback *p) {
     require(p && p->streamVolume && !p->silence.empty(), "Missing actual per-stream volume service");
     std::vector<float> actual(p->silence.size());
     require(SUCCEEDED(p->streamVolume->GetAllVolumes((UINT32)actual.size(), actual.data())), "Cannot read actual native gain");
-    for (float gain : actual) require(std::abs(gain-(p->transportMuted ? 0.0f : p->gain)) < .02f, "Native stream gain differs from the configured fade");
+    for (float gain : actual) require(std::abs(gain-(p->transportMuted ? 0.0f : p->gain * p->trackVolume * scene.masterVolume)) < .02f, "Native stream gain differs from the configured fade and volume");
+}
+void checkVolumeLevels() {
+    float master = scene.masterVolume;
+    for (Playback *p : {sceneForeground.get(), sceneBackground.get(), sceneRetiring.get(), sceneVisualRetiring.get()}) {
+        if (!p || !p->hasAudio || !p->streamVolume) continue;
+        float track = p->trackVolume, envelope = p->gain;
+        ULONGLONG started = p->rampStarted; double seconds = p->rampSeconds;
+        uint64_t token = p->token, transport = p->transportRevision;
+        scene.masterVolume = .4f; p->trackVolume = .5f;
+        require(volume(*p, envelope), "Cannot set independent track/master levels"); checkGain(p);
+        scene.masterVolume = 0;
+        require(volume(*p, envelope), "Cannot mute master during crossfade"); checkGain(p);
+        scene.masterVolume = master; p->trackVolume = track;
+        require(volume(*p, envelope), "Cannot restore track/master levels"); checkGain(p);
+        require(p->gain == envelope && p->rampStarted == started && p->rampSeconds == seconds &&
+                p->token == token && p->transportRevision == transport, "Track/master volume changed fade or transport identity");
+    }
+    volumeLevelsVerified = true;
 }
 void checkRendererTargets() {
     std::vector<HWND> targets;
@@ -772,6 +794,7 @@ void CALLBACK probeTick(HWND, UINT, UINT_PTR timer, DWORD) {
             // a still-preparing foreground whose identity is unchanged.
             if (elapsed < 600) apply();
             if (sceneForeground && sceneForeground->gen == 10 && sceneForeground->playing) {
+                if (!volumeLevelsVerified && sceneForeground->gain > .05f && sceneForeground->gain < .95f) checkVolumeLevels();
                 checkGain(sceneForeground.get()); checkGain(sceneBackground.get());
                 if (sceneForeground->gain > .05f && sceneForeground->gain < .95f && sceneBackground->gain > .05f)
                     observedBackgroundCrossfade = true;
@@ -910,9 +933,10 @@ int main(int argc, char **argv) {
         fprintf(stderr, "%s\n", probeFailure.c_str()); return 5;
     }
     if (!soundAvailable) {
-        puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":false,\"audioFadesVerified\":false,\"audioPauseResumeSeekVerified\":false,\"independentVisualFadeSettingsVerified\":true,\"independentAudioFadeSettingsVerified\":false,\"differentFadeDurationsVerified\":false,\"stageOffDualAudioTailVerified\":false,\"audioUnavailableReason\":\"No active runner audio endpoint\",\"backgroundLoop\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesForeground\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR/current-thread GetCursor plus global GetCursorInfo after paused stage off; desktop capability is checked separately\",\"hardStopClearsScene\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"videoPauseClockAndFrameFreeze\":true,\"videoResumeContinuity\":true,\"seekPlayingAndPaused\":true,\"stageAndImagePreservePausedTransport\":true,\"rapidSeeksCoalesce\":true,\"stopDuringPendingSeek\":true,\"initialPauseAndSupersededResume\":true,\"seekNaturalEnd\":true,\"pausedSeekEndRetainsSelection\":true,\"terminalPauseRaceAcknowledged\":true,\"physicalOutputsVerified\":false}");
+        puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":false,\"trackAndMasterVolumeVerified\":false,\"audioFadesVerified\":false,\"audioPauseResumeSeekVerified\":false,\"independentVisualFadeSettingsVerified\":true,\"independentAudioFadeSettingsVerified\":false,\"differentFadeDurationsVerified\":false,\"stageOffDualAudioTailVerified\":false,\"audioUnavailableReason\":\"No active runner audio endpoint\",\"backgroundLoop\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesForeground\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR/current-thread GetCursor plus global GetCursorInfo after paused stage off; desktop capability is checked separately\",\"hardStopClearsScene\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"videoPauseClockAndFrameFreeze\":true,\"videoResumeContinuity\":true,\"seekPlayingAndPaused\":true,\"stageAndImagePreservePausedTransport\":true,\"rapidSeeksCoalesce\":true,\"stopDuringPendingSeek\":true,\"initialPauseAndSupersededResume\":true,\"seekNaturalEnd\":true,\"pausedSeekEndRetainsSelection\":true,\"terminalPauseRaceAcknowledged\":true,\"physicalOutputsVerified\":false}");
         return 0;
     }
-    puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":true,\"audioPauseResumeSeekVerified\":true,\"independentVisualFadeSettingsVerified\":true,\"independentAudioFadeSettingsVerified\":true,\"differentFadeDurationsVerified\":true,\"stageOffDualAudioTailVerified\":true,\"backgroundLoop\":true,\"backgroundToCueCrossfade\":true,\"cueToCueCrossfade\":true,\"stopToBackgroundCrossfade\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesMusic\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR/current-thread GetCursor plus global GetCursorInfo after paused stage off; desktop capability is checked separately\",\"startFromSilenceImmediate\":true,\"backgroundFailurePreservesMusic\":true,\"hardStopCancelsIncoming\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"videoPauseClockAndFrameFreeze\":true,\"videoResumeContinuity\":true,\"seekPlayingAndPaused\":true,\"stageAndImagePreservePausedTransport\":true,\"rapidSeeksCoalesce\":true,\"stopDuringPendingSeek\":true,\"initialPauseAndSupersededResume\":true,\"seekNaturalEnd\":true,\"pausedSeekEndRetainsSelection\":true,\"terminalPauseRaceAcknowledged\":true,\"physicalOutputsVerified\":false}");
+    if (!volumeLevelsVerified) { fprintf(stderr, "Track/master crossfade volume checks did not run\n"); return 7; }
+    puts("{\"status\":\"passed\",\"nativeStreamGainsReadBack\":true,\"trackAndMasterVolumeVerified\":true,\"audioPauseResumeSeekVerified\":true,\"independentVisualFadeSettingsVerified\":true,\"independentAudioFadeSettingsVerified\":true,\"differentFadeDurationsVerified\":true,\"stageOffDualAudioTailVerified\":true,\"backgroundLoop\":true,\"backgroundToCueCrossfade\":true,\"cueToCueCrossfade\":true,\"stopToBackgroundCrossfade\":true,\"stableForegroundAcrossSceneRevisions\":true,\"stageOffPreservesTimeline\":true,\"imagePreservesMusic\":true,\"imagePixelsRendered\":true,\"stageCursorMessageHandling\":true,\"cursorObservationScope\":\"Synthetic WM_SETCURSOR/current-thread GetCursor plus global GetCursorInfo after paused stage off; desktop capability is checked separately\",\"startFromSilenceImmediate\":true,\"backgroundFailurePreservesMusic\":true,\"hardStopCancelsIncoming\":true,\"visualCrossfadePixelsRendered\":true,\"imageFadeToBlackPixelsRendered\":true,\"videoTimelinesAdvanceDuringFade\":true,\"liveVideoFrameReadbackAdvances\":true,\"exclusiveRendererTargetOwnership\":true,\"zeroDurationVisualSwitchImmediate\":true,\"firstVisualImmediate\":true,\"rapidVisualReplacementBounded\":true,\"stageOffEscapeHardStopCancelVisualFade\":true,\"failedVisualReturnsToBackgroundOrBlack\":true,\"videoPauseClockAndFrameFreeze\":true,\"videoResumeContinuity\":true,\"seekPlayingAndPaused\":true,\"stageAndImagePreservePausedTransport\":true,\"rapidSeeksCoalesce\":true,\"stopDuringPendingSeek\":true,\"initialPauseAndSupersededResume\":true,\"seekNaturalEnd\":true,\"pausedSeekEndRetainsSelection\":true,\"terminalPauseRaceAcknowledged\":true,\"physicalOutputsVerified\":false}");
     return 0;
 }

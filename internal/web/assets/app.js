@@ -20,6 +20,9 @@ let stageSettingsDirty = false, stageSettingsRevision = 0, stageSettingsBase = '
 let stageBackgroundDraft = null, playlistRefreshPending = false;
 let controlSequence = 0;
 let seekGesture = null, seekSending = false, seekTarget = null, pendingTransport = null;
+let masterVolumeTarget = null, masterVolumeSending = false, masterVolumeGesture = false, masterVolumeTimer = null;
+let trackVolumeSending = false, trackVolumeTimer = null;
+const pendingTrackVolumes = new Map();
 let validationSignature = '', validationRefresh = false, validationRefreshPending = false;
 let localSessionBusy = false, localSessionRetry = null;
 let presenceBusy = false, quitBusy = false, appClosed = false, reloadingAdmin = false;
@@ -91,6 +94,7 @@ renderLanguageControls();
 document.body.classList.toggle('remote-page', !adminPage);
 document.body.classList.toggle('admin-page', adminPage);
 $('page-title').hidden = !adminPage;
+$('master-volume-control').hidden = adminPage;
 if (gatewayRoute) {
   localizedText($('pair-guidance'), () => t("Scan the current QR code or open the remote control link shown in Admin on the host computer. You can also paste the access key from that link below."));
   localizedText($('pair-key-label'), () => t("Access key"));
@@ -111,6 +115,70 @@ function button(text, action, className) {
 }
 function requestID() {
   return Array.from(crypto.getRandomValues(new Uint8Array(24)), b => b.toString(16).padStart(2, '0')).join('');
+}
+function volumePercent(value, fallback = 0.5) {
+  return Math.round(100 * (Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : fallback));
+}
+function renderMasterVolume() {
+  const range = $('master-volume');
+  range.disabled = !online || !csrf || quitBusy || appClosed || reloadingAdmin || updatePending();
+  if (!masterVolumeGesture && !masterVolumeTarget && !masterVolumeSending) range.value = volumePercent(state?.masterVolume, .75);
+  $('master-volume-value').value = `${range.value}%`;
+  range.setAttribute('aria-valuetext', `${range.value}%`);
+}
+async function sendMasterVolume() {
+  clearTimeout(masterVolumeTimer);
+  if (masterVolumeSending || !masterVolumeTarget) return;
+  if (!online || updatePending() || quitBusy || appClosed || reloadingAdmin) { masterVolumeTarget = null; renderMasterVolume(); return; }
+  const target = masterVolumeTarget; masterVolumeTarget = null; masterVolumeSending = true;
+  try {
+    await api('POST', '/api/play', { requestId: requestID(), instanceId: target.instanceId, stopEpoch: target.stopEpoch, action: 'volume', volume: target.volume });
+    await refreshState();
+  } catch (error) {
+    masterVolumeTarget = null; masterVolumeGesture = false;
+    notify(() => t("Volume change is unconfirmed. {0}", {0: errorText(error)}), true);
+    await refreshState();
+  } finally {
+    masterVolumeSending = false; renderMasterVolume();
+    if (masterVolumeTarget) masterVolumeTimer = setTimeout(() => { void sendMasterVolume(); }, 80);
+  }
+}
+$('master-volume').addEventListener('pointerdown', () => { masterVolumeGesture = true; });
+function endMasterVolumeGesture() { masterVolumeGesture = false; void sendMasterVolume(); renderMasterVolume(); }
+for (const event of ['pointerup', 'pointercancel', 'change', 'blur']) $('master-volume').addEventListener(event, endMasterVolumeGesture);
+$('master-volume').addEventListener('input', () => {
+  if (!state || !online || updatePending()) return;
+  masterVolumeTarget = { instanceId: state.instanceId, stopEpoch: state.stopEpoch, volume: Number($('master-volume').value) / 100 };
+  renderMasterVolume();
+  if (!masterVolumeSending) { clearTimeout(masterVolumeTimer); masterVolumeTimer = setTimeout(() => { void sendMasterVolume(); }, 80); }
+});
+
+async function saveTrackVolume() {
+  clearTimeout(trackVolumeTimer);
+  if (!pendingTrackVolumes.size || trackVolumeSending) return;
+  if (!online || !playlist || quitBusy || appClosed || reloadingAdmin || updatePending() || playlistFileBusy) {
+    pendingTrackVolumes.clear(); renderEditAvailability(); return;
+  }
+  if (playlistBusy) { trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, 120); return; }
+  const [id, target] = pendingTrackVolumes.entries().next().value;
+  pendingTrackVolumes.delete(id);
+  const cue = playlist.cues.find(item => item.id === id && item.path === target.path);
+  if (!cue) { void saveTrackVolume(); return; }
+  trackVolumeSending = true; playlistBusy = true; renderEditAvailability();
+  try {
+    acceptPlaylist(await api('PUT', '/api/playlist/volume', { expectedRevision: playlist.playlistRevision, cueId: id, volume: target.volume }));
+    localizedText($('playlist-revision'), () => t(playlist.cues.length === 1 ? '{0} cue · saved revision {1}' : '{0} cues · saved revision {1}', {0: playlist.cues.length, 1: playlist.playlistRevision}));
+    renderStageSettings(); await refreshState();
+  } catch (error) {
+    pendingTrackVolumes.clear();
+    notify(() => t("Track volume was not saved. {0}", {0: errorText(error)}), true);
+    try { acceptPlaylist(await api('GET', '/api/playlist')); } catch { /* Retain the last confirmed level. */ }
+    const row = playlistRows.get(id), saved = playlist?.cues.find(item => item.id === id);
+    if (row?.volume && saved) { row.volume.value = volumePercent(saved.volume); row.volumeValue.value = `${row.volume.value}%`; }
+  } finally {
+    trackVolumeSending = false; playlistBusy = false; renderEditAvailability();
+    if (pendingTrackVolumes.size) trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, 120);
+  }
 }
 function clock(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return '—';
@@ -266,7 +334,7 @@ function connection(connected) {
     node.disabled = !connected || updatePending() || !cue || sameForeground(pendingTransport) && pendingTransport.cueId === id || !selected && ['missing', 'unsupported', 'error'].includes(cue.validation);
   }
   if (adminPage) { renderUpdateStatus(); renderEditAvailability(); }
-  renderLanguageControls(); renderSeek();
+  renderLanguageControls(); renderSeek(); renderMasterVolume();
 }
 function showPair() {
   if (appClosed || quitBusy || reloadingAdmin) return;
@@ -345,7 +413,7 @@ function showAppClosed() {
   $('app-closed').hidden = false; $('stop').disabled = true; $('quit-app').disabled = true;
   localizedText($('connection'), () => t("Smart Stage is closed")); $('connection').className = '';
   localizedText($('play-state'), () => t("Closed")); localizedText($('current-cue'), () => t("No playback")); localizedText($('time'), () => '0:00');
-  cancelSeekGesture(); renderSeek();
+  cancelSeekGesture(); renderSeek(); renderMasterVolume();
   localSessionRetry = setTimeout(() => { void probeClosedAdmin(); }, 2000);
 }
 $('quit-app').addEventListener('click', async () => {
@@ -425,8 +493,11 @@ function applyState(next) {
     updatePreparing = false; updateRestartInstance = ''; updateRestartStarted = 0; updateRestartComplete = true;
   }
   const updateReservationChanged = Boolean(state?.updatePending) !== Boolean(next.updatePending);
+  if (masterVolumeTarget && (masterVolumeTarget.instanceId !== next.instanceId || masterVolumeTarget.stopEpoch !== next.stopEpoch)) {
+    masterVolumeTarget = null; masterVolumeGesture = false;
+  }
   state = next;
-  renderRemoteStage(); renderSeek();
+  renderRemoteStage(); renderSeek(); renderMasterVolume();
   const current = next.cues.find(c => c.id === next.activeCueId);
   localizedText($('play-state'), () => t(next.state));
   localizedText($('current-cue'), () => current ? `${current.position}. ${current.label}` : next.state === 'error' ? t("Operator attention needed") : t("Ready when you are"));
@@ -763,6 +834,11 @@ function renderEditAvailability() {
     row.resetColor.disabled = pending || !row.customColor;
     row.hidden.disabled = pending || playlistBusy;
     const cue = playlist?.cues.find(c => c.id === id);
+    row.volumeControls.hidden = !['audio', 'video'].includes(cue?.cache.media.kind);
+    row.volume.disabled = pending || !online || playlistBusy && !trackVolumeSending;
+    if (document.activeElement !== row.volume && !pendingTrackVolumes.has(id) && !trackVolumeSending) {
+      row.volume.value = volumePercent(cue?.volume); row.volumeValue.value = `${row.volume.value}%`;
+    }
     const foreground = state.activeCueId === id && ['loading', 'playing', 'paused'].includes(state.state);
     const image = state.stageEnabled && state.imageCueId === id;
     const background = Boolean(cue?.background && state.backgroundOverrideCueId === id);
@@ -970,7 +1046,7 @@ async function refreshValidationDetails() {
     } while (validationRefreshPending && !quitBusy && !appClosed && !reloadingAdmin);
   } finally { validationRefresh = false; renderStageSettings(); renderEditAvailability(); }
 }
-function cueEdits() { return playlist.cues.map(({ id, label, path, color, hidden, background }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background) })); }
+function cueEdits() { return playlist.cues.map(({ id, label, path, color, hidden, background, volume }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background), volume: Number.isFinite(volume) ? volume : .5 })); }
 async function savePlaylist(cues) {
   if (updatePending()) { notify(() => t("Smart Stage is preparing an update. Wait before editing the show.")); return false; }
   if (playlistBusy || playlistFileBusy) { notify(() => t("An edit is being saved. Wait before making another edit."), true); return false; }
@@ -1122,6 +1198,21 @@ function renderPlaylist() {
     const resetColor = button(() => t("Default"), () => { const edited = cueEdits(); edited[index].color = ''; void savePlaylist(edited); });
     localizedAttribute(resetColor, 'aria-label', () => t("Use default color for cue {0}", {0: index + 1}));
     colors.append(colorLabel, resetColor); info.append(colors);
+    const volumeControls = element('div', undefined, 'track-volume-control');
+    const volumeLabel = element('label', () => t("Track volume")), volume = element('input'), volumeValue = element('output');
+    volume.type = 'range'; volume.min = '0'; volume.max = '100'; volume.step = '1'; volume.value = volumePercent(cue.volume);
+    volume.id = `track-volume-${cue.id}`; volumeLabel.htmlFor = volume.id; volumeValue.htmlFor = volume.id; volumeValue.value = `${volume.value}%`;
+    localizedAttribute(volume, 'aria-label', () => t("Volume for cue {0}", {0: index + 1}));
+    localizedAttribute(volume, 'aria-valuetext', () => `${volume.value}%`);
+    volume.addEventListener('input', () => {
+      volumeValue.value = `${volume.value}%`; volume.setAttribute('aria-valuetext', `${volume.value}%`);
+      pendingTrackVolumes.set(cue.id, { volume: Number(volume.value) / 100, path: cue.path });
+      clearTimeout(trackVolumeTimer); trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, 120);
+    });
+    volume.addEventListener('change', () => { void saveTrackVolume(); });
+    const minus = element('span', '−', 'volume-direction'), plus = element('span', '+', 'volume-direction');
+    minus.setAttribute('aria-hidden', 'true'); plus.setAttribute('aria-hidden', 'true');
+    volumeControls.append(volumeLabel, minus, volume, plus, volumeValue); info.append(volumeControls);
     const options = element('div', undefined, 'cue-options');
     const hiddenLabel = element('label', undefined, 'check'), hidden = element('input'); hidden.type = 'checkbox'; hidden.checked = Boolean(cue.hidden);
     localizedAttribute(hidden, 'aria-label', () => t("Hide remote button for cue {0}", {0: index + 1}));
@@ -1143,7 +1234,7 @@ function renderPlaylist() {
     const play = button(() => t("Play"), () => trigger(cue.id));
     tools.append(play, up, down, remove);
     row.append(element('span', String(index + 1).padStart(2, '0'), 'position'), info, tools);
-    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, hidden, background, backgroundLabel, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
+    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, hidden, background, backgroundLabel, volume, volumeValue, volumeControls, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
   });
   renderStageSettings(); renderEditAvailability();
 }

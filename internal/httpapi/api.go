@@ -420,6 +420,17 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 202, ack)
 	case "GET /api/playlist":
 		writeJSON(w, 200, a.app.Playlist())
+	case "PUT /api/playlist/volume":
+		var body app.CueVolumeEdit
+		if !decode(w, r, &body) {
+			return
+		}
+		config, err := a.app.EditCueVolume(body)
+		if err != nil {
+			respondError(w, err)
+			return
+		}
+		writeJSON(w, 200, config)
 	case "GET /api/playlist/export", "POST /api/playlist/import", "GET /api/playlist/file", "POST /api/playlist/file":
 		a.playlistFileRequest(w, r)
 	case "POST /api/emergency-stop":

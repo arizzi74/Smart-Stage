@@ -9,6 +9,13 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.5.1
 
 ## Implemented
 
+- Audio/video cues have saved centered track-volume sliders in Admin. The remote
+  has a speaker/master slider at the top, starting at 75% per launch. Live level
+  changes scale native foreground, background and crossfade audio independently
+  of playback position, pause/seek intent and transition envelopes. Track levels
+  round-trip through playlist files and older shows default to 50%. The existing
+  gateway PLAY route carries master control with normal pairing/CSRF guards.
+
 - Compact Admin header, title and navigation; empty notices reserve no space.
   The original 256px remote QR sits beside connection instructions at the top of
   its panel and fits without scrolling in tested desktop windows down to 900 ×

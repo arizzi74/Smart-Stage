@@ -37,6 +37,7 @@ type PlayRequest struct {
 	Generation        uint64   `json:"generation,omitempty"`
 	TransportRevision uint64   `json:"transportRevision,omitempty"`
 	Position          *float64 `json:"position,omitempty"`
+	Volume            *float64 `json:"volume,omitempty"`
 }
 type StopRequest struct {
 	RequestID string `json:"requestId"`
@@ -60,6 +61,7 @@ type CueView struct {
 	Kind       string  `json:"kind"`
 	Duration   float64 `json:"duration"`
 	Validation string  `json:"validation"`
+	Volume     float64 `json:"volume"`
 }
 type ValidationJob struct {
 	Running   bool `json:"running"`
@@ -93,6 +95,7 @@ type State struct {
 	Cues                    []CueView           `json:"cues"`
 	ValidationJob           ValidationJob       `json:"validationJob"`
 	UpdatePending           bool                `json:"updatePending"`
+	MasterVolume            float64             `json:"masterVolume"`
 }
 type cachedRequest struct {
 	fingerprint [32]byte
@@ -154,7 +157,7 @@ func New(backend playback.Backend, browser *files.Browser, store Persistence, co
 	s := &Service{backend: backend, files: browser, store: store, config: config.Clone(), ctx: ctx, cancel: cancel,
 		loads: make(chan loadJob, 1), validation: make(chan struct{}, 1), requests: map[string]cachedRequest{},
 		subscribers: map[chan struct{}]struct{}{}, removing: map[string]bool{}, visualLoads: make(chan visualJob, 1), backgroundLoads: make(chan visualJob, 1)}
-	s.state = State{InstanceID: identity.New(), Revision: 1, State: "stopped", Generation: 1, StopEpoch: 1}
+	s.state = State{InstanceID: identity.New(), Revision: 1, State: "stopped", Generation: 1, StopEpoch: 1, MasterVolume: model.DefaultMasterVolume}
 	// Cached results never prove readiness in a new process.
 	for i := range s.config.Cues {
 		s.config.Cues[i].Cache.Status = "unchecked"
@@ -179,7 +182,7 @@ func (s *Service) Snapshot(admin bool) State {
 	out.Stage = s.config.Stage
 	out.Cues = make([]CueView, 0, len(s.config.Cues))
 	for i, c := range s.config.Cues {
-		out.Cues = append(out.Cues, CueView{ID: c.ID, Label: c.Label, Color: c.Color, Hidden: c.Hidden, Background: c.Background, Position: i + 1, Kind: c.Cache.Media.Kind, Duration: c.Cache.Media.Duration, Validation: c.Cache.Status})
+		out.Cues = append(out.Cues, CueView{ID: c.ID, Label: c.Label, Color: c.Color, Hidden: c.Hidden, Background: c.Background, Position: i + 1, Kind: c.Cache.Media.Kind, Duration: c.Cache.Media.Duration, Validation: c.Cache.Status, Volume: c.PlaybackVolume()})
 		if c.ID == out.ActiveCueID {
 			out.ActivePosition = i + 1
 		}
@@ -305,6 +308,20 @@ func (s *Service) Play(r PlayRequest) (Ack, error) {
 	}
 	if r.StopEpoch != s.state.StopEpoch {
 		return Ack{}, problem("stale_epoch", "STOP invalidated this PLAY; refresh state before an intentional new cue")
+	}
+	if r.Action == "volume" {
+		if r.Volume == nil || !model.ValidVolume(*r.Volume) || r.CueID != "" || r.Position != nil {
+			return Ack{}, problem("invalid_volume", "Master volume must be between 0 and 100 percent")
+		}
+		s.state.MasterVolume = *r.Volume
+		if err := s.applySceneLocked(false); err != nil {
+			return Ack{}, err
+		}
+		s.changedLocked()
+		return s.rememberLocked(r.RequestID, hash), nil
+	}
+	if r.Volume != nil {
+		return Ack{}, problem("invalid_volume", "Use the volume action to adjust master volume")
 	}
 	if s.configBusy || s.removing[r.CueID] {
 		return Ack{}, problem("busy", "Configuration is being saved; try again")

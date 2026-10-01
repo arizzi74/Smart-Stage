@@ -284,7 +284,7 @@ struct Playback {
     HWND target = nullptr;
     UINT imageWidth = 0, imageHeight = 0;
     std::vector<BYTE> pixels;
-    float gain = 0, rampFrom = 0, rampTo = 0;
+    float gain = 0, rampFrom = 0, rampTo = 0, trackVolume = 1;
     ULONGLONG rampStarted = 0;
     double rampSeconds = 0;
     bool looping = false, loopSeeking = false, loopPending = false, topologyReady = false, startRequested = false, nativeStarted = false;
@@ -481,6 +481,7 @@ struct Scene {
     std::string foregroundPath, foregroundKind, imagePath, backgroundPath, backgroundKind, audio, display;
     bool foregroundAudio = false, backgroundAudio = false, enabled = false, hardStop = false, foregroundPaused = false;
     double audioFade = 0, visualFade = 0, seekSeconds = 0;
+    float masterVolume = 1, foregroundVolume = 1, backgroundVolume = 1;
 };
 std::atomic<uint64_t> sceneRevision{0};
 std::mutex sceneMutex;
@@ -606,7 +607,8 @@ bool sceneCurrent() { return scene.revision == sceneRevision.load() && !quitting
 bool volume(Playback &p, float gain) {
     gain = std::clamp(gain, 0.0f, 1.0f);
     if (p.streamVolume && !p.silence.empty()) {
-        std::fill(p.silence.begin(), p.silence.end(), p.transportMuted ? 0.0f : gain);
+        float level = p.sceneRole ? p.trackVolume * scene.masterVolume : 1.0f;
+        std::fill(p.silence.begin(), p.silence.end(), p.transportMuted ? 0.0f : gain * level);
         if (FAILED(p.streamVolume->SetAllVolumes((UINT32)p.silence.size(), p.silence.data()))) return false;
     }
     p.gain = gain;
@@ -965,6 +967,13 @@ void processSceneCommand() {
     }
     silencePausedTails();
     backgroundGain(); sceneVisuals();
+    // Volume is separate from the fade envelope; keep transport and ramp clocks.
+    if (sceneForeground && sceneForeground->gen == scene.foregroundID) sceneForeground->trackVolume = scene.foregroundVolume;
+    if (sceneIncoming) sceneIncoming->trackVolume = scene.foregroundVolume;
+    if (sceneBackground) sceneBackground->trackVolume = scene.backgroundVolume;
+    for (Playback *p : {sceneForeground.get(), sceneIncoming.get(), sceneBackground.get(), sceneRetiring.get(), sceneVisualRetiring.get()}) {
+        if (p && !volume(*p, p->gain)) { sceneFatalError = "Cannot update native audio volume"; sceneFatalGeneration = scene.gen; }
+    }
 }
 void sceneReady(std::unique_ptr<Playback> p) {
     processSceneCommand();
@@ -977,6 +986,7 @@ void sceneReady(std::unique_ptr<Playback> p) {
         if (role == 1) clearScene(true); else sceneVisuals();
         emitScene(role == 1 ? failedGen : scene.gen, role == 1 ? "error" : "background-error", error, 0, 0, role == 1 ? scene.transportRevision : 0); return;
     }
+    p->trackVolume = p->sceneRole == 1 ? scene.foregroundVolume : scene.backgroundVolume;
     if (p->sceneRole == 1) { halt(sceneIncoming); sceneIncoming = std::move(p); }
     else if (p->sceneRole == 2) { retireWithFade(sceneBackground, scene.audioFade); p->looping = true; sceneBackground = std::move(p); }
     else { retireWithFade(sceneImage, scene.audioFade); sceneImage = std::move(p); }
@@ -1604,6 +1614,9 @@ extern "C" void ss_scene(const ss_scene_request *r) {
     s->enabled = r->stage_enabled != 0; s->hardStop = r->hard_stop != 0;
     s->audioFade = std::isfinite(r->audio_fade_seconds) ? std::clamp(r->audio_fade_seconds, 0.0, 30.0) : 0;
     s->visualFade = std::isfinite(r->visual_fade_seconds) ? std::clamp(r->visual_fade_seconds, 0.0, 30.0) : 0;
+    s->masterVolume = std::isfinite(r->master_volume) ? (float)std::clamp(r->master_volume, 0.0, 1.0) : 0;
+    s->foregroundVolume = std::isfinite(r->foreground_volume) ? (float)std::clamp(r->foreground_volume, 0.0, 1.0) : 0;
+    s->backgroundVolume = std::isfinite(r->background_volume) ? (float)std::clamp(r->background_volume, 0.0, 1.0) : 0;
     bool wake = false;
     { std::lock_guard<std::mutex> lock(sceneMutex);
       if (r->revision <= sceneRevision.load()) return;

@@ -126,6 +126,20 @@ it cannot hold the coordinator mutex or trap STOP behind it.
 
 ## Scenes, commands and stage presentation
 
+Cue levels are optional saved normalized values with a centered 0.5 default.
+The session master starts at 0.75 and is available to paired remotes through the
+existing PLAY route's `volume` action. A narrow Admin playlist-volume transaction
+persists one cue level under the existing revision/edit lock without scheduling
+native media inspection. The browser coalesces range input and keeps at most one
+volume write in flight; a rejected save retains the host's confirmed settings.
+
+Scenes carry master, foreground and background levels independently of the
+audio fade envelope. Mac stores the envelope separately from AVPlayer.volume;
+Windows scales each IMF stream's channel volumes without altering its envelope
+or ramp clock. Existing players and retiring audio use the current master level.
+Track edits retain foreground identity, timeline, pause state and visual fades.
+No system mixer setting is changed and the gateway route allowlist is unchanged.
+
 `SceneBackend.ApplyScene` supplies a complete desired scene: a foreground
 source/identity, independent image overlay, background image/video and audio
 opt-in, output IDs, stage visibility, fade duration and hard-stop flag. Native

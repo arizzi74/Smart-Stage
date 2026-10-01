@@ -2,6 +2,15 @@
 (() => {
   'use strict';
   const italian = {
+  "Master volume": "Volume generale",
+  "Track volume": "Volume traccia",
+  "Volume for cue {0}": "Volume dell’elemento {0}",
+  "Volume change is unconfirmed. {0}": "La modifica del volume non è confermata. {0}",
+  "Track volume was not saved. {0}": "Il volume della traccia non è stato salvato. {0}",
+  "Master volume must be between 0 and 100 percent": "Il volume generale deve essere tra 0 e 100 per cento",
+  "Track volume must be between 0 and 100 percent": "Il volume della traccia deve essere tra 0 e 100 per cento",
+  "Use the volume action to adjust master volume": "Usa il comando volume per regolare il volume generale",
+  "Images do not have a playback volume": "Le immagini non hanno un volume di riproduzione",
   "Playback position": "Posizione di riproduzione",
   "Press again to pause": "Premi ancora per mettere in pausa",
   "Press again to resume": "Premi ancora per riprendere",

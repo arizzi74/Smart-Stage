@@ -350,6 +350,30 @@ function dedicatedWindowsAdmin(platform, release) {
     await command.locator('.cue').filter({ hasText: 'Finale' }).tap();
     await waitState('playing');
     await command.waitForFunction(() => document.getElementById('remote-stage').getAttribute('aria-pressed') === 'true');
+    // Real native-host scene changes must retain the same video/transport while
+    // the new range controls adjust their levels. Native probes read mixer gain.
+    await command.locator('.cue').filter({ hasText: 'Finale' }).tap(); await waitState('paused');
+    const volumeState = await snapshot(), volumeCue = saved.cues.find(cue => cue.id === volumeState.activeCueId);
+    assert.equal(volumeState.masterVolume, .75);
+    const trackChanged = admin.waitForResponse(response => apiPath(response) === '/api/playlist/volume' && response.request().method() === 'PUT');
+    await admin.locator(`#track-volume-${volumeCue.id}`).fill('70');
+    const trackResponse = await trackChanged; assert.equal(trackResponse.status(), 200); saved = await trackResponse.json();
+    await admin.waitForFunction(() => !trackVolumeSending);
+    assert.equal(saved.cues.find(cue => cue.id === volumeCue.id).volume, .7);
+    for (const level of ['0', '100', '75']) {
+      const masterChanged = command.waitForResponse(response => apiPath(response) === '/api/play' && response.request().postDataJSON()?.action === 'volume');
+      await command.locator('#master-volume').fill(level); assert.equal((await masterChanged).status(), 202);
+      await command.waitForFunction(value => !masterVolumeSending && state.masterVolume === value, Number(level)/100);
+      const current = await snapshot();
+      assert.equal(current.generation, volumeState.generation); assert.equal(current.transportRevision, volumeState.transportRevision);
+      assert.equal(current.activeCueId, volumeState.activeCueId); assert.equal(current.state, 'paused');
+    }
+    const trackRestored = admin.waitForResponse(response => apiPath(response) === '/api/playlist/volume' && response.request().method() === 'PUT');
+    await admin.locator(`#track-volume-${volumeCue.id}`).fill('50');
+    const restoredResponse = await trackRestored; assert.equal(restoredResponse.status(), 200); saved = await restoredResponse.json();
+    await admin.waitForFunction(() => !trackVolumeSending);
+    await command.locator('.cue').filter({ hasText: 'Finale' }).tap(); await waitState('playing');
+    record.volumeControls = {liveTrackVolumePersisted: true, masterDefault75: true, masterMuteAndMaximumAccepted: true, playbackAndTransportPreserved: true, nativeAudioGainReadbackScope: 'Separate native scene probes; browser state alone does not measure audible output'};
     assert.equal(await command.locator('#remote-stage').isDisabled(), false, 'Stage off must remain available during playback');
     const stageOff = command.waitForResponse(response => apiPath(response) === '/api/stage-output' && response.request().method() === 'POST');
     await command.locator('#remote-stage').tap();

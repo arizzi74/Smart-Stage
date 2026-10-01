@@ -14,6 +14,7 @@ static void probeApplyFades(uint64_t revision, uint64_t foregroundID, NSString *
     NSString *image, NSString *background, NSString *backgroundKind, BOOL backgroundAudio,
     NSString *audio, NSString *display, BOOL stage, double audioFade, double visualFade, BOOL hard) {
     ss_scene_request request = {0};
+    request.master_volume = request.foreground_volume = request.background_volume = 1;
     request.revision = revision; request.generation = foregroundID ?: revision;
     request.foreground_id = foregroundID; request.foreground_path = foreground.UTF8String ?: "";
     request.foreground_kind = foreground.length ? ([foreground.pathExtension.lowercaseString isEqual:@"mp4"] ? "video" : "audio") : "";
@@ -34,6 +35,31 @@ static void probeApply(uint64_t revision, uint64_t foregroundID, NSString *foreg
     probeApplyFades(revision, foregroundID, foreground, image, background, backgroundKind,
         backgroundAudio, audio, display, stage, fade, fade, hard);
 }
+static BOOL probeVolumeLevels(void) {
+    float master = sceneMasterVolume;
+    NSArray<SSScenePlayer *> *players = scenePlayers();
+    NSMutableArray<NSNumber *> *levels = [NSMutableArray array];
+    double started = sceneFadeStarted, duration = sceneFadeDuration;
+    dispatch_source_t timer = sceneFadeTimer;
+    BOOL valid = YES;
+    sceneMasterVolume = .4f;
+    for (SSScenePlayer *player in players) {
+        [levels addObject:@(player.trackVolume)]; player.trackVolume = .5f;
+        float envelope = player.fadeGain;
+        setSceneGain(player, envelope);
+        valid = valid && fabsf(player.player.volume - envelope * .2f) < .001f && player.fadeGain == envelope;
+    }
+    sceneMasterVolume = 0;
+    for (SSScenePlayer *player in players) {
+        float envelope = player.fadeGain; setSceneGain(player, envelope);
+        valid = valid && player.player.volume == 0 && player.fadeGain == envelope;
+    }
+    sceneMasterVolume = master;
+    for (NSUInteger i = 0; i < players.count; ++i) {
+        players[i].trackVolume = levels[i].floatValue; setSceneGain(players[i], players[i].fadeGain);
+    }
+    return valid && sceneFadeTimer == timer && sceneFadeStarted == started && sceneFadeDuration == duration;
+}
 int main(void) {
     @autoreleasepool {
         // AppKit treats positional file paths as application open-file events.
@@ -52,6 +78,7 @@ int main(void) {
         if (failure) { fprintf(stderr, "%s\n", failure); ss_free(failure); return 3; }
         __block NSUInteger phase = 0;
         __block BOOL passed = NO, overlap = NO, stopOverlap = NO, sawLoop = NO, silenceFade = NO;
+        __block BOOL volumeLevelsVerified = NO;
         __block BOOL sawFirstPlaying = NO, sawSecondPlaying = NO, sawEnded = NO;
         __block double began = NSProcessInfo.processInfo.systemUptime, phaseBegan = began, before = 0, lastBackground = 0;
         __block AVPlayer *originalForeground;
@@ -107,6 +134,11 @@ int main(void) {
                         phase = 2; phaseBegan = now;
                     }
                 } else if (phase == 2) {
+                    if (!volumeLevelsVerified && sceneFadeTimer && sceneForeground.fadeGain > .05f && sceneForeground.fadeGain < .95f) {
+                        if (!probeVolumeLevels()) { fprintf(stderr, "Track/master gain changed a fade envelope or failed native mute\n"); ss_quit(); return; }
+                        volumeLevelsVerified = YES;
+                        [observations addObject:@{@"trackAndMasterVolumeScaleNativeCrossfadeWithoutRestart":@YES}];
+                    }
                     if (sceneForeground.player.volume > .05 && sceneForeground.player.volume < .95 && sceneBackground.player.volume > .05) overlap = YES;
                     if (sawFirstPlaying && sceneForeground.player.volume > .999 && sceneBackground.player.volume < .001) {
                         if (!overlap || sceneBackground != originalBackground || sceneBackground.layer.hidden) { fprintf(stderr, "No background-to-foreground crossfade or background visual\n"); ss_quit(); return; }

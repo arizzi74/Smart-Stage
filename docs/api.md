@@ -128,6 +128,37 @@ silence is immediate. Natural foreground completion also returns to background.
 `POST /api/emergency-stop`, native Escape and browser Escape immediately silence
 all media and disable the stage without a fade. Quit also stops immediately.
 
+## Volume
+
+Both roles can adjust the session master level through the existing gateway-safe
+PLAY route, without a cue ID, generation, or transport revision:
+
+```json
+POST /api/play
+{"requestId":"volume-client-id","instanceId":"current-instance","stopEpoch":1,"action":"volume","volume":0.75}
+```
+
+`volume` must be a finite number from 0 to 1. This action retains foreground
+identity, pause/seek state, stage, and fade envelopes. It shares PLAY's request
+idempotence, instance/STOP-epoch guards, session and CSRF rules. The master starts
+at 0.75 on each launch and is not exported as a playlist preference.
+
+Only Admin can persist a track level:
+
+```json
+PUT /api/playlist/volume
+{"expectedRevision":5,"cueId":"saved-id","volume":0.5}
+```
+
+The response is the saved configuration with its new playlist revision. The
+existing revision check protects concurrent edits. Changing only volume does
+not revalidate media or restart playback. Images do not offer this control.
+`Cue.volume` is optional in saved shows, edits and playlist files; omitted values
+use 0.5, and zero remains an explicit mute. General playlist edits preserve an
+existing level when it is omitted. Command state exposes cue levels and
+`masterVolume`, without source paths. Effective native amplitude is the fade
+envelope × track level × master level. System endpoint mixer settings are unchanged.
+
 ## State/events
 
 State contains `instanceId`, `revision`, `playlistRevision`, `state`

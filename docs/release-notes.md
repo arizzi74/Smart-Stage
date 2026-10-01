@@ -1,9 +1,10 @@
-Smart Stage 1.5.1 improves background buttons, saving stage settings and update visibility on Mac and Windows.
+Smart Stage 1.6.0 adds track and master volume controls on Mac and Windows.
 
-- Press a selected **Background button** again to deselect it and return to the saved default background, or black if none is configured. Independent music keeps playing. If the button is also the default background, deselection leaves that default visible.
-- Saving stage settings after hiding or editing a playlist button preserves your draft without an unnecessary playlist revision error. Real conflicting changes remain protected, with recovery available inside Admin.
-- A prominent update notice makes startup checks, downloading/verifying and automatic restart visible in Admin, in English and Italian.
-- Your independent audio and video/image fade switches and durations remain available. Saved shows and playlist files keep their settings.
+- Every audio/video cue has a **Track volume** slider in Admin. It starts in the center at 50%, with **− / +** directions for balancing tracks. Background video soundtracks use their cue's level too.
+- A speaker slider at the top of the remote adjusts **Master volume**, starting at 75% each launch. Set it to 0% to mute while playback continues, or raise it to 100%.
+- Live volume changes preserve playback position, pause state and independent audio/visual fades. The master also scales outgoing sound during crossfades without changing system volume.
+- Track levels are saved with your show and `.smartstage.json` playlist files. Existing shows and playlist files receive centered defaults.
+- Both controls work in English and Italian. Master control works through existing public gateways without a gateway upgrade.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 

@@ -70,6 +70,9 @@ type Scene struct {
 	AudioFadeSeconds   float64
 	VisualFadeSeconds  float64
 	HardStop           bool
+	MasterVolume       float64
+	ForegroundVolume   float64
+	BackgroundVolume   float64
 }
 
 // SceneBackend adds independent stage/background presentation and audio mixing.

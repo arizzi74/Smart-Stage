@@ -27,7 +27,22 @@ type Cue struct {
 	Color      string     `json:"color,omitempty"`
 	Hidden     bool       `json:"hidden,omitempty"`
 	Background bool       `json:"background,omitempty"`
+	Volume     *float64   `json:"volume,omitempty"`
 	Cache      Validation `json:"cache"`
+}
+
+const DefaultTrackVolume = 0.5
+const DefaultMasterVolume = 0.75
+
+func ValidVolume(volume float64) bool {
+	return !math.IsNaN(volume) && !math.IsInf(volume, 0) && volume >= 0 && volume <= 1
+}
+
+func (c Cue) PlaybackVolume() float64 {
+	if c.Volume == nil {
+		return DefaultTrackVolume
+	}
+	return *c.Volume
 }
 
 // ValidCueColor accepts the default appearance or a plain RGB color. Keeping
@@ -150,4 +165,13 @@ func DefaultConfig() Config {
 	return Config{Schema: SchemaVersion, PlaylistRevision: 1, Outputs: Outputs{AudioID: "default"}, Stage: StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1}, Cues: []Cue{}}
 }
 
-func (c Config) Clone() Config { c.Cues = append([]Cue{}, c.Cues...); return c }
+func (c Config) Clone() Config {
+	c.Cues = append([]Cue{}, c.Cues...)
+	for i := range c.Cues {
+		if c.Cues[i].Volume != nil {
+			volume := *c.Cues[i].Volume
+			c.Cues[i].Volume = &volume
+		}
+	}
+	return c
+}

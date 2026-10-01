@@ -254,6 +254,22 @@ acceptance testing.
    stops all sound and closes the stage, cancelling any transition. Stage off
    also hides the visuals immediately. **Disconnect** is in the top bar.
 
+## Volume
+
+Each audio and video cue in **Admin → Playlist** has a **Track volume** slider.
+It starts in the center at **50%**. Move left toward **−** to lower that track,
+or right toward **+** to raise it relative to the other tracks. **0%** mutes the
+track and **100%** is its maximum level. Changes apply during playback without
+restarting the cue or changing its position. Background videos use their own
+track level too. Track levels are saved with the show and `.smartstage.json`
+playlist files; older shows receive the centered default.
+
+The speaker slider at the very top of the remote controls **Master volume** for
+all Smart Stage sound, including background soundtracks and both sides of a
+crossfade. It starts at **75%** on each launch. Lower it to **0%** to mute without
+pausing, or raise it to **100%**. Your computer's system volume stays independent.
+The master scales each track's own level; it does not overwrite those settings.
+
 ## Save and load playlists
 
 In **Admin → Playlist**, choose **Save playlist…** to save a

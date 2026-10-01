@@ -31,7 +31,7 @@ const assert = require('node:assert/strict');
   const config = { stage: { ...stageDefaults }, schema: 1, playlistRevision: 1, outputs: state.outputs, cues: state.cues.map(c => ({ id: c.id, label: c.label, path: `/Host/Show/${c.id}.mp4`, cache: { status: 'ready', media: { kind: c.kind, duration: 3 } } })) };
   const broadcast = () => { for (const c of clients) c.write(`event: state\ndata: ${JSON.stringify(state)}\n\n`); };
   const exportedPlaylist = () => ({ format: 'smartstage-playlist', version: 1,
-    cues: config.cues.map(({ id, label, path, color, hidden, background }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background) })), stage: { ...config.stage } });
+    cues: config.cues.map(({ id, label, path, color, hidden, background, volume }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background), volume: volume ?? .5 })), stage: { ...config.stage } });
   const importPlaylist = document => {
     const oldCues = config.cues, ids = new Map(document.cues.map((cue, index) => [cue.id, `loaded-${config.playlistRevision}-${index}`]));
     config.cues = document.cues.map(cue => ({ ...cue, id: ids.get(cue.id), cache: oldCues.find(old => old.path === cue.path)?.cache || { status: 'ready', media: { kind: 'audio', duration: 3 } } }));
@@ -181,6 +181,16 @@ const assert = require('node:assert/strict');
       reply(gateway.mode === 'gateway' ? { mode: 'gateway', token: gateway.status === 'connected' ? gatewayRemoteToken : '', links: gateway.status === 'connected' ? [{ label: 'Public gateway', url: gateway.remoteURL, qrURL: '/api/remote-control/qr?index=0' }] : [] } : { mode: 'lan', links, token }); return;
     }
     if (url.pathname === '/api/remote-control/qr') { res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' }); res.end(imageFixture); return; }
+    if (url.pathname === '/api/playlist/volume') {
+      assert.equal(role, 'admin'); assert.equal(req.method, 'PUT'); assert.equal(req.headers['x-csrf-token'], 'test-csrf');
+      if (body.expectedRevision !== config.playlistRevision) { reply({error: {code: 'revision_conflict', message: 'The playlist changed in another tab; reload it before editing'}}, 409); return; }
+      assert(Number.isFinite(body.volume) && body.volume >= 0 && body.volume <= 1);
+      const cue = config.cues.find(cue => cue.id === body.cueId); assert(cue);
+      cue.volume = body.volume;
+      config.playlistRevision++; state.playlistRevision = config.playlistRevision;
+      const view = state.cues.find(cue => cue.id === body.cueId); if (view) view.volume = body.volume;
+      state.revision++; broadcast(); reply(config); return;
+    }
     if (url.pathname === '/api/playlist') {
       if (req.method === 'GET' && playlistReadGate) {
         const gate = playlistReadGate; playlistReadGate = null;
@@ -237,6 +247,11 @@ const assert = require('node:assert/strict');
     if (url.pathname === '/api/play' && body.action) {
       assert.equal(req.headers['x-csrf-token'], 'test-csrf');
       assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
+      if (body.action === 'volume') {
+        assert.equal(body.instanceId, state.instanceId); assert.equal(body.stopEpoch, state.stopEpoch);
+        assert(Number.isFinite(body.volume) && body.volume >= 0 && body.volume <= 1);
+        state.masterVolume = body.volume; state.revision++; broadcast(); reply({accepted: true}, 202); return;
+      }
       if (transportGate) await transportGate;
       if (rejectTransport) { reply({ error: { message: 'Seeking unavailable' } }, 409); return; }
       if (body.instanceId !== state.instanceId || body.stopEpoch !== state.stopEpoch || body.cueId !== state.activeCueId ||
@@ -1562,11 +1577,52 @@ const assert = require('node:assert/strict');
     const publicSeekRequest = requests.filter(item => item.body.action === 'seek').at(-1);
     assert.equal(publicSeekRequest.requestPath, publicPrefix + '/api/play', 'Gateway seek uses the deployed endpoint-relative PLAY route');
     assert.equal(publicSeekRequest.body.generation, state.generation);
+    // Volume uses the existing gateway PLAY route and does not change transport.
+    state.masterVolume = .75; state.revision++; broadcast();
+    await publicSeek.waitForFunction(() => document.getElementById('master-volume').value === '75');
+    const beforeVolume = {generation: state.generation, transportRevision: state.transportRevision, elapsed: state.elapsed, activeCueId: state.activeCueId, state: state.state};
+    await publicSeek.locator('#master-volume').fill('0');
+    await publicSeek.waitForFunction(() => state.masterVolume === 0 && !masterVolumeSending);
+    assert.deepEqual({generation: state.generation, transportRevision: state.transportRevision, elapsed: state.elapsed, activeCueId: state.activeCueId, state: state.state}, beforeVolume, 'Master mute preserves playback/transport');
+    await publicSeek.evaluate(() => {
+      const range = document.getElementById('master-volume');
+      for (let value = 10; value <= 77; ++value) { range.value = value; range.dispatchEvent(new Event('input', {bubbles:true})); }
+      range.dispatchEvent(new Event('change', {bubbles:true}));
+    });
+    await publicSeek.waitForFunction(() => state.masterVolume === .77 && !masterVolumeSending && !masterVolumeTarget);
+    assert.equal(requests.filter(item => item.body.action === 'volume').at(-1).requestPath, publicPrefix + '/api/play');
+    assert(requests.filter(item => item.body.action === 'volume').length <= 4, 'Rapid volume input is coalesced');
+    const topVolume = await publicSeek.locator('#master-volume-control').boundingBox(), identity = await publicSeek.locator('.identity').boundingBox();
+    assert(topVolume.y < identity.y && topVolume.x >= 0 && topVolume.x + topVolume.width <= 391, 'Master speaker slider is above the remote header and fits the phone');
+    await publicSeek.locator('#language-mode').selectOption('it');
+    assert.equal(await publicSeek.locator('#master-volume').getAttribute('aria-valuetext'), '77%');
+    assert.equal(await publicSeek.getByText('Volume generale', {exact:true}).count(), 1);
+    await publicSeek.locator('#master-volume').fill('75');
+    await publicSeek.waitForFunction(() => state.masterVolume === .75 && !masterVolumeSending);
+
+    const volumeAdmin = await browser.newPage(); volumeAdmin.on('pageerror', e => errors.push(e.message));
+    await volumeAdmin.goto(adminBase + '/admin'); await volumeAdmin.locator('#connection.live').waitFor();
+    const audioVolumeCue = config.cues.find(cue => ['audio', 'video'].includes(cue.cache.media.kind));
+    const trackRange = volumeAdmin.locator(`#track-volume-${audioVolumeCue.id}`);
+    await trackRange.waitFor(); assert.equal(await trackRange.inputValue(), String(Math.round(100 * (audioVolumeCue.volume ?? .5))));
+    await trackRange.fill('23');
+    await volumeAdmin.waitForFunction(id => playlist.cues.find(cue => cue.id === id)?.volume === .23 && !trackVolumeSending, audioVolumeCue.id);
+    assert.equal(config.cues.find(cue => cue.id === audioVolumeCue.id).volume, .23);
+    const exported = await volumeAdmin.evaluate(() => api('GET', '/api/playlist/export'));
+    assert.equal(exported.cues.find(cue => cue.id === audioVolumeCue.id).volume, .23, 'Playlist export keeps track volume');
+    await volumeAdmin.reload(); await volumeAdmin.locator('#connection.live').waitFor();
+    assert.equal(await volumeAdmin.locator(`#track-volume-${audioVolumeCue.id}`).inputValue(), '23', 'Track volume survives reloading Admin');
+    for (const cue of config.cues.filter(cue => cue.cache.media.kind === 'image')) {
+      assert.equal(await volumeAdmin.locator(`#track-volume-${cue.id}`).isVisible(), false, 'Images have no volume slider');
+    }
+    await volumeAdmin.locator(`#track-volume-${audioVolumeCue.id}`).fill('50');
+    await volumeAdmin.waitForFunction(id => playlist.cues.find(cue => cue.id === id)?.volume === .5 && !trackVolumeSending, audioVolumeCue.id);
+    await volumeAdmin.close();
     await publicSeekContext.close(); await seekContext.close();
     Object.assign(state, beforeSeekFixture); state.revision++; broadcast();
     await italianRemoteContext.close();
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, trackVolumeLiveAndPlaylistPersistence: true, masterVolumeDefaultMuteAndGatewayControl: true, volumeControlsEnglishItalianAndResponsive: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }

@@ -12,12 +12,13 @@ import (
 )
 
 type CueEdit struct {
-	ID         string  `json:"id"`
-	Label      string  `json:"label"`
-	Path       string  `json:"path"`
-	Color      *string `json:"color,omitempty"`
-	Hidden     *bool   `json:"hidden,omitempty"`
-	Background *bool   `json:"background,omitempty"`
+	ID         string   `json:"id"`
+	Label      string   `json:"label"`
+	Path       string   `json:"path"`
+	Color      *string  `json:"color,omitempty"`
+	Hidden     *bool    `json:"hidden,omitempty"`
+	Background *bool    `json:"background,omitempty"`
+	Volume     *float64 `json:"volume,omitempty"`
 }
 type PlaylistEdit struct {
 	ExpectedRevision uint64    `json:"expectedRevision"`
@@ -34,6 +35,10 @@ func (s *Service) EditPlaylist(edit PlaylistEdit) (model.Config, error) {
 // transaction with browser edits so an append cannot overwrite a concurrent
 // rename, reorder, color change or completed persistence operation.
 func (s *Service) editPlaylistLocked(edit PlaylistEdit) (model.Config, error) {
+	return s.editPlaylistTransactionLocked(edit, true)
+}
+
+func (s *Service) editPlaylistTransactionLocked(edit PlaylistEdit, validate bool) (model.Config, error) {
 	if len(edit.Cues) > model.MaxCues {
 		return model.Config{}, problem("too_many_cues", "A show may contain at most 500 cues")
 	}
@@ -91,6 +96,14 @@ func (s *Service) editPlaylistLocked(edit PlaylistEdit) (model.Config, error) {
 			return model.Config{}, problem("invalid_color", "Cue colors must be empty for the default or use #RRGGBB")
 		}
 		hidden, background := previous.Hidden, previous.Background
+		volume := previous.Volume
+		if item.Volume != nil {
+			if !model.ValidVolume(*item.Volume) {
+				return model.Config{}, problem("invalid_volume", "Track volume must be between 0 and 100 percent")
+			}
+			value := *item.Volume
+			volume = &value
+		}
 		if item.Hidden != nil {
 			hidden = *item.Hidden
 		}
@@ -100,7 +113,7 @@ func (s *Service) editPlaylistLocked(edit PlaylistEdit) (model.Config, error) {
 		if background && cache.Status == "ready" && cache.Media.Kind != "image" && cache.Media.Kind != "video" {
 			return model.Config{}, problem("invalid_background", "Only image and video cues can act as background buttons")
 		}
-		next.Cues = append(next.Cues, model.Cue{ID: id, Label: label, Path: path, Color: color, Hidden: hidden, Background: background, Cache: cache})
+		next.Cues = append(next.Cues, model.Cue{ID: id, Label: label, Path: path, Color: color, Hidden: hidden, Background: background, Volume: volume, Cache: cache})
 	}
 	removing := map[string]bool{}
 	for id, c := range old {
@@ -146,6 +159,12 @@ func (s *Service) editPlaylistLocked(edit PlaylistEdit) (model.Config, error) {
 		}
 	}
 	defaultChanged := s.config.Stage.BackgroundCueID != next.Stage.BackgroundCueID
+	volumeChanged := false
+	for _, cue := range next.Cues {
+		if previous, ok := old[cue.ID]; ok && previous.PlaybackVolume() != cue.PlaybackVolume() {
+			volumeChanged = true
+		}
+	}
 	s.config = next
 	validOverride := false
 	for _, cue := range next.Cues {
@@ -157,10 +176,17 @@ func (s *Service) editPlaylistLocked(edit PlaylistEdit) (model.Config, error) {
 	if defaultChanged || s.state.BackgroundOverrideCueID != "" && !validOverride || removing[s.state.BackgroundCueID] {
 		s.clearBackgroundOverrideLocked()
 	}
+	if volumeChanged && !s.closed && s.sceneRevision != 0 {
+		if err := s.applySceneLocked(false); err != nil {
+			s.failLocked(err.Error())
+		}
+	}
 	s.changedLocked()
 	result := s.config.Clone()
 	s.mu.Unlock()
-	s.queueValidation()
+	if validate {
+		s.queueValidation()
+	}
 	return result, nil
 }
 

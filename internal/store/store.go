@@ -88,6 +88,9 @@ func validate(c model.Config) error {
 		if !model.ValidCueColor(cue.Color) {
 			return errors.New("invalid cue color; use empty or #RRGGBB")
 		}
+		if cue.Volume != nil && !model.ValidVolume(*cue.Volume) {
+			return errors.New("invalid track volume; use a value between 0 and 1")
+		}
 		ids[cue.ID] = true
 	}
 	if c.Stage.BackgroundCueID != "" && !ids[c.Stage.BackgroundCueID] {

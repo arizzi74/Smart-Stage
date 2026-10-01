@@ -57,6 +57,7 @@ def scene_checks(devices):
         assert len(reports) == 1 and reports[0]["status"] == "passed", result.stdout
         observations = {key for observation in reports[0]["observations"] for key, value in observation.items() if value is True}
         required = {
+            "trackAndMasterVolumeScaleNativeCrossfadeWithoutRestart",
             "audioPauseFreezesNativeClockAndRetainsDecoder",
             "audioResumeContinuesSameNativeDecoderAndClock",
             "pausedAudioSeekUsesRequestedNativePositionWithoutPlayback",

@@ -68,6 +68,7 @@ func (s *Service) applySceneLocked(hard bool) error {
 		BackgroundAudio: s.config.Stage.BackgroundAudio && s.background.hasAudio,
 		AudioID:         audio, DisplayID: s.config.Outputs.DisplayID,
 		StageEnabled: s.stageDesired, AudioFadeSeconds: audioFade, VisualFadeSeconds: visualFade, HardStop: hard,
+		MasterVolume: s.state.MasterVolume, ForegroundVolume: s.trackVolumeLocked(s.foreground.cueID), BackgroundVolume: s.trackVolumeLocked(s.background.cueID),
 	}
 	if scene.ForegroundID == 0 {
 		scene.TransportRevision = s.state.TransportRevision
@@ -96,6 +97,15 @@ func (s *Service) applySceneLocked(hard bool) error {
 	}
 	s.legacyForegroundID = s.foreground.id
 	return nil
+}
+
+func (s *Service) trackVolumeLocked(id string) float64 {
+	for _, cue := range s.config.Cues {
+		if cue.ID == id {
+			return cue.PlaybackVolume()
+		}
+	}
+	return model.DefaultTrackVolume
 }
 
 func (s *Service) clearImageLocked() {

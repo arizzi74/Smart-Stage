@@ -144,3 +144,16 @@
 .update-banner a{grid-column:2;grid-row:1/3;align-self:center;min-height:40px;font-size:.83rem}
 .update-banner.update-failed{background:#472831;border-color:#dc8f89;color:#ffe5e0}
 @media(max-width:500px){.update-banner{grid-template-columns:minmax(0,1fr);gap:4px;padding:10px 12px}.update-banner a{grid-column:1;grid-row:auto;min-height:32px}.update-banner span{font-size:.78rem}}
+
+.master-volume-control{grid-column:1/-1;display:grid;grid-template-columns:28px minmax(0,1fr) 42px;align-items:center;gap:10px;margin-bottom:2px}
+.master-volume-control label{margin:0;display:flex;align-items:center;justify-content:center}
+.speaker-icon{width:24px;height:24px;fill:none;stroke:var(--accent);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.master-volume-control output,.track-volume-control output{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.track-volume-control{display:grid;grid-template-columns:auto 12px minmax(80px,180px) 12px 40px;align-items:center;gap:7px;margin-top:9px;max-width:400px}
+.track-volume-control label{margin:0;font-size:.76rem;color:var(--muted)}
+.volume-direction{color:var(--muted);text-align:center;font-size:1rem}
+.master-volume-control input[type=range],.track-volume-control input[type=range]{width:100%;height:32px;min-height:32px;padding:0;border:0;background:transparent;accent-color:var(--accent);cursor:pointer;touch-action:pan-y}
+.master-volume-control input:disabled,.track-volume-control input:disabled{opacity:.45;cursor:default}
+.remote-page .transport>.identity,.remote-page .transport>.now,.remote-page .transport>.transport-actions{grid-row:2}
+@media(max-width:800px){.remote-page .transport>.now{grid-column:1;grid-row:3}.remote-page .transport>.transport-actions{grid-column:2;grid-row:2/4}.track-volume-control{grid-template-columns:12px minmax(80px,1fr) 12px 40px}.track-volume-control label{grid-column:1/-1}.master-volume-control{gap:8px}}
+@media(max-height:500px) and (orientation:landscape){.remote-page .transport>.now{grid-column:2;grid-row:2}.remote-page .transport>.transport-actions{grid-column:3;grid-row:2}}

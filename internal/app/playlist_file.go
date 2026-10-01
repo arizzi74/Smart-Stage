@@ -28,12 +28,13 @@ type PlaylistFile struct {
 }
 
 type PlaylistFileCue struct {
-	ID         string `json:"id"`
-	Label      string `json:"label"`
-	Path       string `json:"path"`
-	Color      string `json:"color,omitempty"`
-	Hidden     bool   `json:"hidden,omitempty"`
-	Background bool   `json:"background,omitempty"`
+	ID         string   `json:"id"`
+	Label      string   `json:"label"`
+	Path       string   `json:"path"`
+	Color      string   `json:"color,omitempty"`
+	Hidden     bool     `json:"hidden,omitempty"`
+	Background bool     `json:"background,omitempty"`
+	Volume     *float64 `json:"volume,omitempty"`
 }
 
 type PlaylistLoad struct {
@@ -96,6 +97,9 @@ func validatePlaylistFile(playlist PlaylistFile) error {
 		if !model.ValidCueColor(cue.Color) {
 			return problem("invalid_color", "Cue colors must be empty for the default or use #RRGGBB")
 		}
+		if cue.Volume != nil && !model.ValidVolume(*cue.Volume) {
+			return problem("invalid_volume", "Track volume must be between 0 and 100 percent")
+		}
 	}
 	if playlist.Stage.BackgroundCueID != "" && !ids[playlist.Stage.BackgroundCueID] {
 		return problem("invalid_background", "The stage background must refer to a cue in the playlist file")
@@ -113,7 +117,8 @@ func (s *Service) ExportPlaylist() (PlaylistFile, error) {
 	}
 	file := PlaylistFile{Format: playlistFileFormat, Version: playlistFileVersion, Stage: s.config.Stage, Cues: make([]PlaylistFileCue, 0, len(s.config.Cues))}
 	for _, cue := range s.config.Cues {
-		file.Cues = append(file.Cues, PlaylistFileCue{ID: cue.ID, Label: cue.Label, Path: cue.Path, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background})
+		volume := cue.PlaybackVolume()
+		file.Cues = append(file.Cues, PlaylistFileCue{ID: cue.ID, Label: cue.Label, Path: cue.Path, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background, Volume: &volume})
 	}
 	return file, nil
 }
@@ -158,7 +163,12 @@ func (s *Service) LoadPlaylist(load PlaylistLoad) (model.Config, error) {
 		}
 		id := identity.New()
 		ids[cue.ID] = id
-		next.Cues = append(next.Cues, model.Cue{ID: id, Label: cue.Label, Path: resolved, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background, Cache: model.Validation{Status: "unchecked"}})
+		volume := cue.Volume
+		if volume != nil {
+			value := *volume
+			volume = &value
+		}
+		next.Cues = append(next.Cues, model.Cue{ID: id, Label: cue.Label, Path: resolved, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background, Volume: volume, Cache: model.Validation{Status: "unchecked"}})
 	}
 	next.Stage = load.Playlist.Stage
 	next.Stage.BackgroundCueID = ids[load.Playlist.Stage.BackgroundCueID]

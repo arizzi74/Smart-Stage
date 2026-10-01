@@ -1105,6 +1105,7 @@ static _Atomic(bool) sceneEmergencyPending;
 static uint64_t appliedSceneRevision, sceneGeneration, sceneEndedForegroundID, sceneTransportRevision;
 static BOOL sceneBackgroundAudio, sceneStoppedPending, sceneApplying;
 static double sceneAudioFadeSeconds, sceneVisualFadeSeconds, sceneFadeStarted, sceneFadeDuration;
+static float sceneMasterVolume = 1;
 static dispatch_source_t sceneFadeTimer;
 static NSOperationQueue *sceneImageQueue;
 
@@ -1118,6 +1119,7 @@ static NSOperationQueue *sceneImageQueue;
 @property(nonatomic) uint64_t transportRevision, seekRevision, completedSeekRevision, seekSerial;
 @property(nonatomic) double seekSeconds;
 @property(nonatomic) float fadeFrom, fadeTo;
+@property(nonatomic) float fadeGain, trackVolume;
 @property(nonatomic, strong) AVURLAsset *asset;
 @property(nonatomic, strong) AVPlayerItem *item;
 @property(nonatomic, strong) AVPlayer *player;
@@ -1183,6 +1185,10 @@ static NSArray<SSScenePlayer *> *scenePlayers(void) {
         if ([owner isKindOfClass:SSScenePlayer.class] && ![players containsObject:owner]) [players addObject:owner];
     return players;
 }
+static void setSceneGain(SSScenePlayer *player, float gain) {
+    player.fadeGain = MAX(0, MIN(1, gain));
+    player.player.volume = player.fadeGain * player.trackVolume * sceneMasterVolume;
+}
 static CALayer *sceneVisualLayer(id owner) {
     if ([owner isKindOfClass:SSScenePlayer.class]) return ((SSScenePlayer *)owner).layer;
     if ([owner isKindOfClass:SSSceneImage.class]) return ((SSSceneImage *)owner).layer;
@@ -1209,7 +1215,7 @@ static void cancelSceneFade(void) {
 }
 static void completeSceneFade(void) {
     cancelSceneFade();
-    if (sceneRetiring && sceneRetiring.player.volume <= 0.001f) {
+    if (sceneRetiring && sceneRetiring.fadeGain <= 0.001f) {
         SSScenePlayer *old = sceneRetiring; sceneRetiring = nil; releaseSceneOwner(old);
     }
     if (sceneStoppedPending && !sceneForeground && !audibleScenePlayer(sceneRetiring) && currentScene()) {
@@ -1255,9 +1261,9 @@ static void mixScene(void) {
     // Starting from silence is immediate. Only replace/fade audible output.
     sceneFadeDuration = audible ? sceneAudioFadeSeconds : 0;
     for (SSScenePlayer *player in players) {
-        player.fadeFrom = player.player.volume;
+        player.fadeFrom = player.fadeGain;
         player.fadeTo = player == owner ? 1.0f : 0.0f;
-        if (sceneFadeDuration <= 0) player.player.volume = player.fadeTo;
+        if (sceneFadeDuration <= 0) setSceneGain(player, player.fadeTo);
     }
     if (sceneFadeDuration <= 0) { completeSceneFade(); return; }
     sceneFadeTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
@@ -1267,7 +1273,7 @@ static void mixScene(void) {
             if (!currentScene()) return; // A queued newer scene will retarget from current volumes.
             double progress = MIN(1.0, (NSProcessInfo.processInfo.systemUptime - sceneFadeStarted) / sceneFadeDuration);
             for (SSScenePlayer *player in scenePlayers())
-                player.player.volume = player.fadeFrom + (player.fadeTo - player.fadeFrom) * progress;
+                setSceneGain(player, player.fadeFrom + (player.fadeTo - player.fadeFrom) * progress);
             if (progress >= 1) completeSceneFade();
         }
     });
@@ -1414,7 +1420,7 @@ static BOOL finishSceneForeground(SSScenePlayer *source) {
         self.player.muted = YES; [self.player pause];
         for (SSScenePlayer *tail in scenePlayers()) if (tail != self && !tail.background) {
             tail.silenced = YES; tail.player.muted = YES;
-            tail.player.volume = 0; tail.fadeFrom = 0; tail.fadeTo = 0;
+            setSceneGain(tail, 0); tail.fadeFrom = 0; tail.fadeTo = 0;
         }
     }
 }
@@ -1689,20 +1695,25 @@ static void sceneCheckDevices(void) {
     }
     emitScene(sceneGeneration, @"devices", nil, 0, 0);
 }
-static SSScenePlayer *newScenePlayer(uint64_t identifier, NSString *path, NSString *kind, NSString *audio, BOOL hasAudio, BOOL background) {
+static SSScenePlayer *newScenePlayer(uint64_t identifier, NSString *path, NSString *kind, NSString *audio, BOOL hasAudio, BOOL background, float trackVolume) {
     SSScenePlayer *player = [[SSScenePlayer alloc] init];
     player.identifier = identifier; player.path = path; player.video = [kind isEqualToString:@"video"];
     player.audioID = audio; player.hasAudio = hasAudio; player.background = background;
+    player.trackVolume = trackVolume;
     return player;
 }
 static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregroundID, NSString *foregroundPath,
     NSString *foregroundKind, BOOL foregroundAudio, NSString *imagePath, NSString *backgroundPath,
     NSString *backgroundKind, BOOL backgroundAudio, NSString *audio, NSString *display, BOOL stage,
-    double audioFade, double visualFade, BOOL hardStop, BOOL paused, uint64_t transportRevision, uint64_t seekRevision, double seekSeconds) {
+    double audioFade, double visualFade, BOOL hardStop, BOOL paused, uint64_t transportRevision, uint64_t seekRevision, double seekSeconds,
+    double masterVolume, double foregroundVolume, double backgroundVolume) {
     if (revision != atomic_load(&requestedSceneRevision) || atomic_load(&shuttingDown) || atomic_load(&sceneEmergencyPending)) return;
     if (!sceneMode) { stopCurrent(); sceneMode = YES; }
     appliedSceneRevision = revision; sceneGeneration = generation; sceneTransportRevision = transportRevision;
     sceneBackgroundAudio = backgroundAudio;
+    sceneMasterVolume = isfinite(masterVolume) ? MAX(0, MIN(1, masterVolume)) : 0;
+    foregroundVolume = isfinite(foregroundVolume) ? MAX(0, MIN(1, foregroundVolume)) : 0;
+    backgroundVolume = isfinite(backgroundVolume) ? MAX(0, MIN(1, backgroundVolume)) : 0;
     sceneAudioFadeSeconds = isfinite(audioFade) ? MAX(0, MIN(30, audioFade)) : 0;
     sceneVisualFadeSeconds = isfinite(visualFade) ? MAX(0, MIN(30, visualFade)) : 0;
     sceneStoppedPending = !foregroundID || !foregroundPath.length;
@@ -1724,22 +1735,24 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
         SSScenePlayer *old = sceneForeground; sceneForeground = nil;
         retireScenePlayer(old);
         if (foregroundID && foregroundPath.length && foregroundID != sceneEndedForegroundID) {
-            sceneForeground = newScenePlayer(foregroundID, foregroundPath, foregroundKind, audio, foregroundAudio, NO);
+            sceneForeground = newScenePlayer(foregroundID, foregroundPath, foregroundKind, audio, foregroundAudio, NO, foregroundVolume);
             [sceneForeground prepare];
         }
     }
+    sceneForeground.trackVolume = foregroundVolume;
     [sceneForeground transportPaused:paused revision:transportRevision seekRevision:seekRevision seconds:seekSeconds];
     BOOL backgroundVideo = [backgroundKind isEqualToString:@"video"] && backgroundPath.length;
     BOOL sameBackground = sceneBackground && backgroundVideo && [backgroundPath isEqual:sceneBackground.path] && (!backgroundAudio || [audio isEqual:sceneBackground.audioID]);
     if (!sameBackground) {
         SSScenePlayer *old = sceneBackground; sceneBackground = nil; retireScenePlayer(old);
         if (backgroundVideo) {
-            sceneBackground = newScenePlayer(0, backgroundPath, backgroundKind, audio, NO, YES);
+            sceneBackground = newScenePlayer(0, backgroundPath, backgroundKind, audio, NO, YES, backgroundVolume);
             [sceneBackground prepare];
         }
     }
+    sceneBackground.trackVolume = backgroundVolume;
     if (sceneBackground) {
-        if (!stage) { sceneBackground.player.volume = 0; sceneBackground.fadeTo = 0; [sceneBackground.player pause]; }
+        if (!stage) { setSceneGain(sceneBackground, 0); sceneBackground.fadeTo = 0; [sceneBackground.player pause]; }
         else if (sceneBackground.started) [sceneBackground.player play];
         else [sceneBackground ready];
     }
@@ -1766,6 +1779,9 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
             [stageWindow.contentView.layer insertSublayer:image.layer below:blackOverlay];
         }
     sceneApplying = NO;
+    // Level changes scale the current envelopes, including retiring sound,
+    // without restarting the decoder, clock, or an in-progress crossfade.
+    for (SSScenePlayer *player in scenePlayers()) setSceneGain(player, player.fadeGain);
     renderScene();
     [sceneForeground ready]; [sceneBackground ready];
     mixScene();
@@ -1788,13 +1804,14 @@ void ss_scene(const ss_scene_request *request) {
         uint64_t transportRevision = request->transport_revision, seekRevision = request->seek_revision;
         double seekSeconds = request->seek_seconds;
         double audioFade = request->audio_fade_seconds, visualFade = request->visual_fade_seconds;
+        double masterVolume = request->master_volume, foregroundVolume = request->foreground_volume, backgroundVolume = request->background_volume;
         pthread_mutex_lock(&commandMutex);
         if (revision <= atomic_load(&requestedSceneRevision)) { pthread_mutex_unlock(&commandMutex); return; }
         atomic_store(&requestedSceneRevision, revision);
         atomic_store(&sceneEmergencyPending, false);
         latestCommand = [^{ applyScene(revision, generation, foregroundID, foreground, kind, hasAudio, image,
             background, backgroundKind, backgroundAudio, audio, display, stage, audioFade, visualFade, hardStop,
-            paused, transportRevision, seekRevision, seekSeconds); } copy];
+            paused, transportRevision, seekRevision, seekSeconds, masterVolume, foregroundVolume, backgroundVolume); } copy];
         BOOL wake = !commandScheduled; commandScheduled = YES;
         pthread_mutex_unlock(&commandMutex);
         if (wake) onMain(^{
