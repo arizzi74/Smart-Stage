@@ -29,6 +29,10 @@ jobs:
           - runner: macos-15-intel
             arch: amd64
     runs-on: ${{ matrix.runner }}
+    # Serialize repeated distribution probes for each native architecture.
+    concurrency:
+      group: smartstage-public-installer-macos-${{ matrix.arch }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Install the published app, clear only its quarantine, and launch Admin

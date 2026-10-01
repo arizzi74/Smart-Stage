@@ -48,6 +48,10 @@ jobs:
             os: windows
             arch: arm64
     runs-on: ${{ matrix.runner }}
+    # Avoid overlapping public release checks for the same native target.
+    concurrency:
+      group: smartstage-public-updater-${{ matrix.os }}-${{ matrix.arch }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093

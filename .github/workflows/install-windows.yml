@@ -29,6 +29,10 @@ jobs:
           - runner: windows-11-arm
             arch: arm64
     runs-on: ${{ matrix.runner }}
+    # Serialize repeated distribution probes for each native architecture.
+    concurrency:
+      group: smartstage-public-installer-windows-${{ matrix.arch }}
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Install the published app using built-in Windows PowerShell
