@@ -1,0 +1,43 @@
+{
+  "defaultVersionUsed": true,
+  "productionDownloads": true,
+  "publishedBootstrapMatchesCheckout": true,
+  "publicIRMEntryPointVerified": true,
+  "rejectedCorruptArchiveTraversalAndWrongArchitecture": true,
+  "rollbackRestoredPreviousBinaryAndShortcuts": true,
+  "rollbackRemovedFailedCandidateAndWorkDirectory": true,
+  "reinstallIsIdempotent": true,
+  "unsignedWebView2InstallerRejectedWithoutExecution": true,
+  "installedLocationSupportsAutomaticUpdates": true,
+  "nativeEscapeReachedEmergencyStop": true,
+  "nativeEscapeStageDisabled": true,
+  "runningAppRefusedWithoutReplacement": true,
+  "shortcutRelaunchReusesRunningApp": true,
+  "adminQuitWaitedForNativeProcessExit": true,
+  "testInstallationAndConfigRemoved": true,
+  "release": "v1.6.0",
+  "source": "1414716a184de4d76c52daf2e6c97ac9169d5186",
+  "run": 36935531313,
+  "jobID": 110614770086,
+  "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36935531313/job/110614770086",
+  "artifactID": 11198346690,
+  "rawReportSHA256": "3a754aedf2f6f3accc9b40dc3ae893e03b4e8097161739a3dab12b59eabbe04d",
+  "artifactSHA256": "75487f9b06b40b95f0f48261f3ff45bf532ede214948819883334597f0a4db1c",
+  "beforeCount": 494,
+  "afterCount": 495,
+  "firewallDifference": {
+    "removed": [],
+    "added": [
+      {
+        "Action": 2,
+        "Direction": 2,
+        "Enabled": 1,
+        "Name": "Microsoft.StartExperiencesApp_8wekyb3d8bbwe<SID>Out-Allow-AllCapabilities",
+        "Profile": 7
+      }
+    ],
+    "sameRulesDifferentOrder": false
+  },
+  "failureCategory": "Strict global firewall comparison observed one added Microsoft.StartExperiencesApp rule; creator unproven",
+  "smartStageNamedRuleChangesObserved": false
+}

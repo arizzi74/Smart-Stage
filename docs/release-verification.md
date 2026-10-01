@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.5.1 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.6.0 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,19 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.6.0: saved track levels and remote master volume
+
+Source `ead28280b1f9ac5a6a9a296a37fb1d291becaa5f` passed all seven [candidate gates](verification/release-v1.6.0/candidate-workflow.json) before tagging and all eight [publication gates](verification/release-v1.6.0/tag-workflow.json).
+[Native/browser evidence](verification/release-v1.6.0/native-volume-evidence.json) verifies saved track changes, the 75% master default, mute/maximum changes and transport preservation on all four desktop targets. Native gain readback and mute/crossfade ownership are verified on both Mac architectures. Windows runners had no audio endpoints; their native audio gain and audible output checks are explicitly unavailable.
+
+[Browser fixtures](verification/release-v1.6.0/browser-checks.json) cover saved/exported levels, gateway master routing, rapid input, English/Italian labels and responsive placement. The [remote screenshot](verification/release-v1.6.0/remote-volume.png) uses synthetic fixture data.
+
+All [50 assets/eight checksum pairs](verification/release-v1.6.0/assets.json) and [six executable vulnerability scans](verification/release-v1.6.0/security-scans.json) passed. The [tagged post-publication record](verification/release-v1.6.0/postpublication-status.json) contains 15 passing jobs and one [Mac ARM64 updater quota failure](verification/release-v1.6.0/original-tagged-updater-failure.json). The [first separate updater run](verification/release-v1.6.0/first-supplemental-auto-update-evidence.json) also encountered a Mac ARM64 release-discovery rate limit. Both failed attempts are retained. A [subsequent four-target actual updater run](verification/release-v1.6.0/supplemental-auto-update-evidence.json) passed discovery, public-byte replacement and restart using the original tagged fixtures and unchanged published binaries.
+
+Two earlier Windows ARM64 default-installer attempts ([first](verification/release-v1.6.0/earlier-default-installer-failure.json), [repeat](verification/release-v1.6.0/repeated-default-installer-failure.json)) each observed one added `Microsoft.StartExperiencesApp` firewall rule. No removed or Smart Stage-named rule changed; its creator is unproven. All four [latest default-installer jobs](verification/release-v1.6.0/default-installer-workflows.json) passed with the strict comparison retained. The revised Windows verifier initializes the Start component before capturing its baseline; [native reports](verification/release-v1.6.0/windows-installer-evidence.json) retain observed setup and full-comparison outcomes for both PowerShell versions. [Public installer defaults](verification/release-v1.6.0/installer-defaults.json) match `1414716a184de4d76c52daf2e6c97ac9169d5186` and select v1.6.0. Windows verifier source is `460368a2e2e5a8a76a0dc058e9e40c7a56352a11`; installer bytes remain unchanged. The Start component rule already existed before the passing ARM64 probe, so the active warmup branch was not exercised and causation of earlier additions remains unproven. CI serializes repeated distribution probes per native target.
+
+See [scope and limits](verification/release-v1.6.0/README.md). Physical speaker/projector output and Windows 10 hardware were not verified. No production gateway changes were required.
 
 ### Version 1.5.1: background toggles, stage draft recovery and update notice
 

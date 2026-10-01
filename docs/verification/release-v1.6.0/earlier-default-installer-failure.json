@@ -1,0 +1,48 @@
+{
+  "defaultVersionUsed": true,
+  "productionDownloads": true,
+  "bootstrapFetchAttempts": 1,
+  "publishedBootstrapMatchesCheckout": true,
+  "publicIRMEntryPointVerified": true,
+  "rejectedCorruptArchiveTraversalAndWrongArchitecture": true,
+  "rollbackRestoredPreviousBinaryAndShortcuts": true,
+  "rollbackRemovedFailedCandidateAndWorkDirectory": true,
+  "reinstallIsIdempotent": true,
+  "unsignedWebView2InstallerRejectedWithoutExecution": true,
+  "installedLocationSupportsAutomaticUpdates": true,
+  "nativeEscapeReachedEmergencyStop": true,
+  "nativeEscapeStopEpochBefore": 2,
+  "nativeEscapeStopEpochAfter": 3,
+  "nativeEscapeStageDisabled": true,
+  "runningAppRefusedWithoutReplacement": true,
+  "shortcutRelaunchReusesRunningApp": true,
+  "adminQuitWaitedForNativeProcessExit": true,
+  "testInstallationAndConfigRemoved": true,
+  "status": "incomplete",
+  "firewallDifference": {
+    "removed": [],
+    "added": [
+      {
+        "Action": 2,
+        "Direction": 2,
+        "Enabled": 1,
+        "Name": "Microsoft.StartExperiencesApp_8wekyb3d8bbwe<SID>Out-Allow-AllCapabilities",
+        "Profile": 7
+      }
+    ],
+    "sameRulesDifferentOrder": false
+  },
+  "beforeCount": 494,
+  "afterCount": 495,
+  "rawReportSHA256": "32d9112d56c5d42601861706e7bfe0d8f5c9e3e14d63ab935516a0764d6d4738",
+  "artifactSHA256": "c19fae3b63c719bf3c4006abe9c24a9a72e7cd8a2c2bf306673a062653e3b1ce",
+  "release": "v1.6.0",
+  "source": "42b5dac57a48ade6f0f547435d39468b69fabf63",
+  "run": 36934569867,
+  "jobID": 110611691892,
+  "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36934569867/job/110611691892",
+  "artifactID": 11197546261,
+  "failureCategory": "Strict global firewall comparison observed one added Microsoft.StartExperiencesApp rule; creator unproven",
+  "smartStageNamedRuleChangesObserved": false,
+  "scope": "Failed default-installer attempt retained; installation and lifecycle checks reached cleanup. No removed or Smart Stage-named rule changed. Raw evidence stays private; account SID removed from rule name."
+}

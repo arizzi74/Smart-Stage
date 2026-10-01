@@ -1,0 +1,82 @@
+{
+  "release": "v1.6.0",
+  "source": "1414716a184de4d76c52daf2e6c97ac9169d5186",
+  "observedAt": "2026-10-01T22:42:22.612202+00:00",
+  "expectedWorkflows": [
+    ".github/workflows/install-macos.yml",
+    ".github/workflows/install-windows.yml"
+  ],
+  "expectedJobs": 4,
+  "workflows": [
+    {
+      "run": 36935531244,
+      "path": ".github/workflows/install-macos.yml",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36935531244",
+      "jobs": [
+        {
+          "id": 110614769823,
+          "name": "install (macos-15-intel, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36935531244/job/110614769823",
+          "activeStep": null,
+          "failedSteps": [],
+          "startedAt": "2026-10-01T22:31:05Z",
+          "completedAt": "2026-10-01T22:32:03Z"
+        },
+        {
+          "id": 110614770230,
+          "name": "install (macos-15, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36935531244/job/110614770230",
+          "activeStep": null,
+          "failedSteps": [],
+          "startedAt": "2026-10-01T22:31:10Z",
+          "completedAt": "2026-10-01T22:31:40Z"
+        }
+      ]
+    },
+    {
+      "run": 36935531313,
+      "path": ".github/workflows/install-windows.yml",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36935531313",
+      "jobs": [
+        {
+          "id": 110614770086,
+          "name": "install (windows-11-arm, arm64)",
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36935531313/job/110614770086",
+          "activeStep": null,
+          "failedSteps": [
+            "Install the published app using built-in Windows PowerShell"
+          ],
+          "startedAt": "2026-10-01T22:31:03Z",
+          "completedAt": "2026-10-01T22:37:42Z"
+        },
+        {
+          "id": 110614770257,
+          "name": "install (windows-2025, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36935531313/job/110614770257",
+          "activeStep": null,
+          "failedSteps": [],
+          "startedAt": "2026-10-01T22:31:03Z",
+          "completedAt": "2026-10-01T22:32:33Z"
+        }
+      ]
+    }
+  ],
+  "missingWorkflows": [],
+  "observedJobs": 4,
+  "counts": {
+    "success": 3,
+    "failure": 1
+  }
+}

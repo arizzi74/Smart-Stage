@@ -1,0 +1,143 @@
+{
+  "release": "v1.6.0",
+  "releaseSource": "ead28280b1f9ac5a6a9a296a37fb1d291becaa5f",
+  "installerDefaultsSource": "1414716a184de4d76c52daf2e6c97ac9169d5186",
+  "windowsVerifierSource": "460368a2e2e5a8a76a0dc058e9e40c7a56352a11",
+  "run": 36936946597,
+  "runURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36936946597",
+  "collectedAt": "2026-10-01T22:55:48.809728+00:00",
+  "allFourShellArchitectureRunsPassed": true,
+  "scope": "Public default installer invoked in built-in Windows PowerShell and PowerShell 7 on both native architectures. Full global firewall snapshots remain exactly equal after shell initialization and before/after installation. System component setup is recorded separately; no firewall-rule exemptions or edits are used. Raw paths, account SIDs and logs are retained privately. No physical audio/display check is claimed.",
+  "reports": [
+    {
+      "artifactID": 11198318796,
+      "artifactName": "windows-app-install-amd64",
+      "artifactArchiveSHA256": "5f5c9774a92ed5825ea2fdf0999d0f828cb26900725e144d98c83fd34ffafea5",
+      "artifactGitHubDigestVerified": true,
+      "artifactSourceCommit": "460368a2e2e5a8a76a0dc058e9e40c7a56352a11",
+      "artifactRun": 36936946597,
+      "sourceMember": "result.json",
+      "sourceMemberSHA256": "de6c483eceb6cd59c29cffb6f045f1573e5368aefd8d9b5cc85d08574785a9b8",
+      "architecture": "amd64",
+      "shell": "Windows PowerShell",
+      "status": "passed",
+      "defaultVersionUsed": true,
+      "publicIRMEntryPointVerified": true,
+      "actualPublishedExecutableSHA256": "101d53d189c717837a73005303a75cbf7b16cbfa45553818fb72b473cecb48ed",
+      "publicBinaryHashMatched": true,
+      "firewallBeforeCount": 348,
+      "firewallAfterCount": 348,
+      "strictGlobalFirewallComparisonPassed": true,
+      "firewallDifference": {
+        "removed": [],
+        "added": [],
+        "sameRulesDifferentOrder": false
+      },
+      "windowsShellInitialization": {
+        "componentPresent": false,
+        "warmupRequired": false
+      },
+      "noElevationRequested": true,
+      "adminQuitClosedServer": true,
+      "testInstallationAndConfigRemoved": true
+    },
+    {
+      "artifactID": 11198318796,
+      "artifactName": "windows-app-install-amd64",
+      "artifactArchiveSHA256": "5f5c9774a92ed5825ea2fdf0999d0f828cb26900725e144d98c83fd34ffafea5",
+      "artifactGitHubDigestVerified": true,
+      "artifactSourceCommit": "460368a2e2e5a8a76a0dc058e9e40c7a56352a11",
+      "artifactRun": 36936946597,
+      "sourceMember": "powershell7.json",
+      "sourceMemberSHA256": "3993270289b699ac01d168a2ebb735caaf2af3e9aefb722278880ca328164df6",
+      "architecture": "amd64",
+      "shell": "PowerShell 7",
+      "status": "passed",
+      "defaultVersionUsed": true,
+      "publicIRMEntryPointVerified": true,
+      "actualPublishedExecutableSHA256": "101d53d189c717837a73005303a75cbf7b16cbfa45553818fb72b473cecb48ed",
+      "publicBinaryHashMatched": true,
+      "firewallBeforeCount": 348,
+      "firewallAfterCount": 348,
+      "strictGlobalFirewallComparisonPassed": true,
+      "firewallDifference": {
+        "removed": [],
+        "added": [],
+        "sameRulesDifferentOrder": false
+      },
+      "windowsShellInitialization": {
+        "componentPresent": false,
+        "warmupRequired": false
+      },
+      "noElevationRequested": true,
+      "adminQuitClosedServer": true,
+      "testInstallationAndConfigRemoved": true
+    },
+    {
+      "artifactID": 11198573215,
+      "artifactName": "windows-app-install-arm64",
+      "artifactArchiveSHA256": "d7708d1cf2d9316b5d40ea965076a0af6bd2e5922b323457ae2ec1b87914bc25",
+      "artifactGitHubDigestVerified": true,
+      "artifactSourceCommit": "460368a2e2e5a8a76a0dc058e9e40c7a56352a11",
+      "artifactRun": 36936946597,
+      "sourceMember": "result.json",
+      "sourceMemberSHA256": "1e0c41bf1af9aaf40d817c5e31db035fc9e61736e58a06dc380e7670c2e50283",
+      "architecture": "arm64",
+      "shell": "Windows PowerShell",
+      "status": "passed",
+      "defaultVersionUsed": true,
+      "publicIRMEntryPointVerified": true,
+      "actualPublishedExecutableSHA256": "d7d4a9d67b85d04fedb344ea7a37bbc5f7541e20ce302540011a8d0723292232",
+      "publicBinaryHashMatched": true,
+      "firewallBeforeCount": 495,
+      "firewallAfterCount": 495,
+      "strictGlobalFirewallComparisonPassed": true,
+      "firewallDifference": {
+        "removed": [],
+        "added": [],
+        "sameRulesDifferentOrder": false
+      },
+      "windowsShellInitialization": {
+        "componentPresent": true,
+        "warmupRequired": false,
+        "componentRuleObservedBeforeInstall": true
+      },
+      "noElevationRequested": true,
+      "adminQuitClosedServer": true,
+      "testInstallationAndConfigRemoved": true
+    },
+    {
+      "artifactID": 11198573215,
+      "artifactName": "windows-app-install-arm64",
+      "artifactArchiveSHA256": "d7708d1cf2d9316b5d40ea965076a0af6bd2e5922b323457ae2ec1b87914bc25",
+      "artifactGitHubDigestVerified": true,
+      "artifactSourceCommit": "460368a2e2e5a8a76a0dc058e9e40c7a56352a11",
+      "artifactRun": 36936946597,
+      "sourceMember": "powershell7.json",
+      "sourceMemberSHA256": "d4bf4f0bc732bdb308704ecef4c5bc51c516abb0112098b5140e997deb10a6c1",
+      "architecture": "arm64",
+      "shell": "PowerShell 7",
+      "status": "passed",
+      "defaultVersionUsed": true,
+      "publicIRMEntryPointVerified": true,
+      "actualPublishedExecutableSHA256": "d7d4a9d67b85d04fedb344ea7a37bbc5f7541e20ce302540011a8d0723292232",
+      "publicBinaryHashMatched": true,
+      "firewallBeforeCount": 495,
+      "firewallAfterCount": 495,
+      "strictGlobalFirewallComparisonPassed": true,
+      "firewallDifference": {
+        "removed": [],
+        "added": [],
+        "sameRulesDifferentOrder": false
+      },
+      "windowsShellInitialization": {
+        "componentPresent": true,
+        "warmupRequired": false,
+        "componentRuleObservedBeforeInstall": true
+      },
+      "noElevationRequested": true,
+      "adminQuitClosedServer": true,
+      "testInstallationAndConfigRemoved": true
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "release": "v1.6.0",
+  "source": "ead28280b1f9ac5a6a9a296a37fb1d291becaa5f",
+  "run": 36932837679,
+  "job": {
+    "id": 110610998391,
+    "name": "verify-update / update (macos-15, darwin, arm64)",
+    "status": "completed",
+    "conclusion": "failure",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/36932837679/job/110610998391",
+    "activeStep": null,
+    "failedSteps": [
+      "Exercise real automatic discovery, replacement and restart"
+    ],
+    "startedAt": "2026-10-01T22:19:39Z",
+    "completedAt": "2026-10-01T22:19:51Z"
+  },
+  "report": {
+    "status": "failed",
+    "target": "darwin/arm64",
+    "release": "v1.6.0",
+    "fixtureSourceReported": true,
+    "expectedFixtureSource": "ead28280b1f9ac5a6a9a296a37fb1d291becaa5f",
+    "physicalPlaybackVerified": false,
+    "startupUpdatePending": false,
+    "testDirectoryRemoved": true,
+    "testProcessCleanupPassed": true,
+    "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+    "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (ead28280b1f9), go1.26.8, darwin/arm64",
+    "initialUpdatePhase": "error",
+    "initialVersion": "v0.0.0-preview.1",
+    "publishedDownload": {
+      "release": "v1.6.0",
+      "target": "darwin/arm64",
+      "status": "passed",
+      "archiveSHA256": "7eef918811e32c9df0ca9993e3c9039f007a5443ad7fdd6b4bbb739eb8cc5a24",
+      "executableSHA256": "70e8f8ad9b57b8d4c9e2e8f1d31f07c37a4ee60cfb6bf57cd503acdf4820ac22"
+    },
+    "failureStatusSource": "initialUpdateStatus",
+    "lastUpdatePhase": "error",
+    "failureCategory": "GitHub release-discovery rate limit; no replacement or restart completed",
+    "retryAfterUTC": "2026-10-01T22:44:50Z",
+    "artifactID": 11196734718,
+    "artifactName": "auto-update-darwin-arm64",
+    "artifactArchiveSHA256": "2c0da7a9ba1e05c46508ccda337455bc50a0714832bd98c378ebe47debd9d660"
+  },
+  "rawReportSHA256": "8009bd15fbf0e3fd9bb8e66e65e4564194a2686574c55d0eb36deca14c207d36",
+  "scope": "Original tagged updater attempt retained. GitHub release-discovery rate limiting ended startup checking before replacement or restart."
+}
