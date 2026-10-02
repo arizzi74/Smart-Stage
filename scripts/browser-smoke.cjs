@@ -18,6 +18,7 @@ const assert = require('node:assert/strict');
   let updateGets = 0, updateGetDelay = 0, failUpdateCheck = false, restarting = false;
   let nativeChooserImports = [], playlistFailSave = false, stageRevisionRace = false, playlistWriteGate = null;
   let playlistReadGate = null, transportGate = null, rejectTransport = false;
+  let volumePostGate = null, stopPostGate = null, stateReadGate = null, rejectVolume = false, rejectTrackVolume = false;
   let nativePlaylistStatus = { id: 0, phase: 'idle' }, nativePlaylistResult = { phase: 'complete' }, nativePlaylistMismatch = false;
   let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: false };
   let gateway = { mode: 'lan', url: '', hasToken: false, status: 'disabled', message: '', remoteURL: '' };
@@ -29,7 +30,16 @@ const assert = require('node:assert/strict');
   const stageDefaults = { backgroundCueId: '', backgroundAudio: false, audioFadeEnabled: false, audioFadeSeconds: 1, visualFadeEnabled: false, visualFadeSeconds: 1, toggleAudio: false };
   const state = { stage: { ...stageDefaults }, backgroundCueId: '', backgroundOverrideCueId: '', imageCueId: '', instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, transportRevision: 1, paused: false, seekPending: false, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
   const config = { stage: { ...stageDefaults }, schema: 1, playlistRevision: 1, outputs: state.outputs, cues: state.cues.map(c => ({ id: c.id, label: c.label, path: `/Host/Show/${c.id}.mp4`, cache: { status: 'ready', media: { kind: c.kind, duration: 3 } } })) };
-  const broadcast = () => { for (const c of clients) c.write(`event: state\ndata: ${JSON.stringify(state)}\n\n`); };
+  const broadcast = (snapshot = state) => { for (const c of clients) c.write(`event: state\ndata: ${JSON.stringify(snapshot)}\n\n`); };
+  // Delays capture the accepted host state before waiting, so releasing an old
+  // HTTP response or SSE snapshot cannot silently substitute a newer state.
+  const responseGates = new Set();
+  const responseGate = (options = {}) => {
+    let entered, release;
+    const gate = { ...options, received: new Promise(resolve => { entered = resolve; }), released: new Promise(resolve => { release = resolve; }) };
+    gate.entered = entered; gate.release = () => { responseGates.delete(gate); release(); };
+    responseGates.add(gate); return gate;
+  };
   const exportedPlaylist = () => ({ format: 'smartstage-playlist', version: 1,
     cues: config.cues.map(({ id, label, path, color, hidden, background, volume }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background), volume: volume ?? .5 })), stage: { ...config.stage } });
   const importPlaylist = document => {
@@ -56,7 +66,7 @@ const assert = require('node:assert/strict');
     }
     let raw = ''; for await (const chunk of req) raw += chunk;
     const body = raw ? JSON.parse(raw) : {};
-    requests.push({ listenerRole, path: url.pathname, requestPath: req.url, query: url.search, body, origin: req.headers.origin, csrf: req.headers['x-csrf-token'] });
+    requests.push({ listenerRole, path: url.pathname, requestPath: req.url, query: url.search, method: req.method, receivedAt: Date.now(), body, origin: req.headers.origin, csrf: req.headers['x-csrf-token'] });
     if (restarting) { reply({ error: { message: 'Host restarting' } }, 503); return; }
     const cookieName = `smartstage_${listenerRole}_session`;
     const sessionID = (req.headers.cookie || '').split(';').map(part => part.trim()).find(part => part.startsWith(cookieName + '='))?.slice(cookieName.length + 1);
@@ -84,7 +94,15 @@ const assert = require('node:assert/strict');
       }
       reply(language); return;
     }
-    if (url.pathname === '/api/state') { stateGets++; reply({ role, csrfToken: 'test-csrf', state, ...(role === 'admin' ? { capabilities: adminCapabilities, language } : {}) }); return; }
+    if (url.pathname === '/api/state') {
+      stateGets++;
+      const snapshot = structuredClone(state);
+      if (stateReadGate && (!stateReadGate.requestPath || stateReadGate.requestPath === req.url)) {
+        const gate = stateReadGate; stateReadGate = null;
+        gate.snapshot = snapshot; gate.entered(); await gate.released;
+      }
+      reply({ role, csrfToken: 'test-csrf', state: snapshot, ...(role === 'admin' ? { capabilities: adminCapabilities, language } : {}) }); return;
+    }
     if (['/api/admin-presence', '/api/quit', '/api/choose-files'].includes(url.pathname)) {
       if (role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
       assert.equal(req.headers['x-csrf-token'], 'test-csrf');
@@ -183,6 +201,7 @@ const assert = require('node:assert/strict');
     if (url.pathname === '/api/remote-control/qr') { res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' }); res.end(imageFixture); return; }
     if (url.pathname === '/api/playlist/volume') {
       assert.equal(role, 'admin'); assert.equal(req.method, 'PUT'); assert.equal(req.headers['x-csrf-token'], 'test-csrf');
+      if (rejectTrackVolume) { reply({error: {message: 'The track level could not be saved'}}, 503); return; }
       if (body.expectedRevision !== config.playlistRevision) { reply({error: {code: 'revision_conflict', message: 'The playlist changed in another tab; reload it before editing'}}, 409); return; }
       assert(Number.isFinite(body.volume) && body.volume >= 0 && body.volume <= 1);
       const cue = config.cues.find(cue => cue.id === body.cueId); assert(cue);
@@ -243,14 +262,28 @@ const assert = require('node:assert/strict');
       if (body.enabled) assert.equal(Boolean(state.updatePending), false);
       state.stageEnabled = body.enabled; state.revision++; broadcast();
     }
-    if (url.pathname === '/api/emergency-stop') { assert.equal(req.headers['x-csrf-token'], 'test-csrf'); state.state = 'stopped'; state.paused = false; state.activeCueId = ''; state.imageCueId = ''; state.stageEnabled = false; state.stopEpoch++; state.revision++; broadcast(); }
+    if (['/api/stop', '/api/emergency-stop'].includes(url.pathname)) {
+      assert.equal(req.headers['x-csrf-token'], 'test-csrf');
+      state.state = 'stopped'; state.paused = false; state.activeCueId = ''; state.stopEpoch++; state.revision++;
+      if (url.pathname === '/api/emergency-stop') { state.imageCueId = ''; state.stageEnabled = false; }
+      const snapshot = structuredClone(state), gate = stopPostGate; stopPostGate = null;
+      if (!gate || gate.broadcast !== false) broadcast(snapshot);
+      if (gate) { gate.snapshot = snapshot; gate.entered(); await gate.released; }
+      reply({accepted:true}, 202); return;
+    }
     if (url.pathname === '/api/play' && body.action) {
       assert.equal(req.headers['x-csrf-token'], 'test-csrf');
       assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
       if (body.action === 'volume') {
         assert.equal(body.instanceId, state.instanceId); assert.equal(body.stopEpoch, state.stopEpoch);
         assert(Number.isFinite(body.volume) && body.volume >= 0 && body.volume <= 1);
-        state.masterVolume = body.volume; state.revision++; broadcast(); reply({accepted: true}, 202); return;
+        if (rejectVolume) { reply({error: {message: 'The master level could not be changed'}}, 503); return; }
+        state.masterVolume = body.volume; state.revision++;
+        const snapshot = structuredClone(state), accepted = {accepted: true, instanceId: state.instanceId, stopEpoch: state.stopEpoch, revision: state.revision};
+        const gate = volumePostGate; volumePostGate = null;
+        if (!gate || gate.broadcast !== false) broadcast(snapshot);
+        if (gate) { gate.snapshot = snapshot; gate.accepted = accepted; gate.entered(); await gate.released; }
+        reply(accepted, 202); return;
       }
       if (transportGate) await transportGate;
       if (rejectTransport) { reply({ error: { message: 'Seeking unavailable' } }, 409); return; }
@@ -273,7 +306,6 @@ const assert = require('node:assert/strict');
       state.revision++; broadcast();
     }
     if (url.pathname === '/api/play' && holdPlay) { await new Promise(resolve => setTimeout(resolve, 600)); }
-    if (url.pathname === '/api/stop') { state.revision++; state.stopEpoch++; state.activeCueId = ''; state.state = 'stopped'; state.paused = false; broadcast(); }
     reply({ accepted: true }, 202);
   });
   const adminServer = createServer('admin'), commandServer = createServer('command'), publicServer = createServer('command', publicPrefix);
@@ -1569,7 +1601,7 @@ const assert = require('node:assert/strict');
         assert(geometry.seekBottom <= geometry.height + 1 && geometry.stopBottom <= geometry.height + 1 && geometry.stopTop >= 0, `${locale} seek and STOP stay visible at ${width}x${height}`);
       }
     }
-    const publicSeekContext = await browser.newContext({viewport: {width: 390, height: 844}});
+    const publicSeekContext = await browser.newContext({viewport: {width: 390, height: 844}, hasTouch:true});
     const publicSeek = await publicSeekContext.newPage(); publicSeek.on('pageerror', e => errors.push(e.message));
     await publicSeek.goto(publicBase + publicPrefix + '/command#token=' + gatewayRemoteToken);
     await publicSeek.locator('#connection.live').waitFor(); await seekReady(publicSeek);
@@ -1577,53 +1609,253 @@ const assert = require('node:assert/strict');
     const publicSeekRequest = requests.filter(item => item.body.action === 'seek').at(-1);
     assert.equal(publicSeekRequest.requestPath, publicPrefix + '/api/play', 'Gateway seek uses the deployed endpoint-relative PLAY route');
     assert.equal(publicSeekRequest.body.generation, state.generation);
-    // Volume uses the existing gateway PLAY route and does not change transport.
+    // The synthetic host controls HTTP/SSE ordering; these checks verify the
+    // browser queue and visible levels without claiming native audio execution.
     state.masterVolume = .75; state.revision++; broadcast();
     await publicSeek.waitForFunction(() => document.getElementById('master-volume').value === '75');
+    const masterRequests = () => requests.filter(item => item.requestPath === publicPrefix + '/api/play' && item.body.action === 'volume');
+    const masterResponse = value => publicSeek.waitForResponse(response => response.url() === publicBase + publicPrefix + '/api/play' && response.request().postDataJSON()?.action === 'volume' && response.request().postDataJSON()?.volume === value);
+    const inputMaster = value => publicSeek.evaluate(value => {
+      const range = document.getElementById('master-volume'); range.value = String(value);
+      range.dispatchEvent(new Event('input', {bubbles:true}));
+    }, value);
+    const releaseMaster = event => publicSeek.evaluate(event => document.getElementById('master-volume').dispatchEvent(new Event(event, {bubbles:true})), event);
+    const waitForMaster = value => publicSeek.waitForFunction(value => {
+      const range = document.getElementById('master-volume');
+      return range.value === String(value) && range.getAttribute('aria-valuetext') === `${value}%` && document.getElementById('master-volume-value').value === `${value}%`;
+    }, value);
     const beforeVolume = {generation: state.generation, transportRevision: state.transportRevision, elapsed: state.elapsed, activeCueId: state.activeCueId, state: state.state};
-    await publicSeek.locator('#master-volume').fill('0');
-    await publicSeek.waitForFunction(() => state.masterVolume === 0 && !masterVolumeSending);
+    let acceptedMaster = masterResponse(0); await publicSeek.locator('#master-volume').fill('0'); await acceptedMaster; await waitForMaster(0);
+    assert.equal(state.masterVolume, 0);
     assert.deepEqual({generation: state.generation, transportRevision: state.transportRevision, elapsed: state.elapsed, activeCueId: state.activeCueId, state: state.state}, beforeVolume, 'Master mute preserves playback/transport');
+
+    // Movement spans more than 200ms, but each new value arrives before the
+    // previous value has been stable for 200ms. Only the final value may send.
+    let volumeBefore = masterRequests().length;
+    const finalInputAt = await publicSeek.evaluate(async () => {
+      const range = document.getElementById('master-volume');
+      for (const value of [10, 20, 30, 40, 50, 60]) {
+        if (value !== 10) await new Promise(resolve => setTimeout(resolve, 70));
+        range.value = String(value); range.dispatchEvent(new Event('input', {bubbles:true}));
+      }
+      return Date.now();
+    });
+    assert.equal(masterRequests().length, volumeBefore, 'Continuous input cannot send before the final value becomes stable');
+    acceptedMaster = masterResponse(.6); await publicSeek.waitForTimeout(100);
+    assert.equal(masterRequests().length, volumeBefore, 'The last input must remain stable for the full debounce interval');
+    await acceptedMaster; await waitForMaster(60); await publicSeek.waitForTimeout(220);
+    assert.equal(masterRequests().length, volumeBefore + 1, 'A stable burst sends exactly one final volume');
+    assert.equal(masterRequests().at(-1).body.volume, .6);
+    assert(masterRequests().at(-1).receivedAt - finalInputAt >= 185, 'The debounce interval starts at the last input');
+
+    // Use Chromium's real keyboard range events to verify release flushing.
+    const keyboardGate = responseGate(); volumePostGate = keyboardGate;
+    volumeBefore = masterRequests().length; await publicSeek.locator('#master-volume').focus();
+    await publicSeek.keyboard.down('ArrowRight'); assert.equal(await publicSeek.locator('#master-volume').inputValue(), '61');
+    assert.equal(masterRequests().length, volumeBefore, 'Keydown previews without an immediate POST');
+    const keyReleasedAt = Date.now(); await publicSeek.keyboard.up('ArrowRight'); await keyboardGate.received;
+    assert(masterRequests().at(-1).receivedAt - keyReleasedAt < 180, 'Key release flushes before the 200ms debounce expires');
+    acceptedMaster = masterResponse(.61); keyboardGate.release(); await acceptedMaster; await waitForMaster(61);
     await publicSeek.evaluate(() => {
       const range = document.getElementById('master-volume');
-      for (let value = 10; value <= 77; ++value) { range.value = value; range.dispatchEvent(new Event('input', {bubbles:true})); }
-      range.dispatchEvent(new Event('change', {bubbles:true}));
+      for (const type of ['pointerup', 'change', 'blur', 'input', 'change']) range.dispatchEvent(new Event(type, {bubbles:true}));
     });
-    await publicSeek.waitForFunction(() => state.masterVolume === .77 && !masterVolumeSending && !masterVolumeTarget);
-    assert.equal(requests.filter(item => item.body.action === 'volume').at(-1).requestPath, publicPrefix + '/api/play');
-    assert(requests.filter(item => item.body.action === 'volume').length <= 4, 'Rapid volume input is coalesced');
+    await publicSeek.waitForTimeout(250);
+    assert.equal(masterRequests().length, volumeBefore + 1, 'Unchanged input and overlapping release events never duplicate an accepted value');
+
+    const pointerGate = responseGate(); volumePostGate = pointerGate;
+    volumeBefore = masterRequests().length;
+    const masterBox = await publicSeek.locator('#master-volume').boundingBox();
+    await publicSeek.mouse.move(masterBox.x + masterBox.width * .25, masterBox.y + masterBox.height / 2); await publicSeek.mouse.down();
+    await publicSeek.mouse.move(masterBox.x + masterBox.width * .55, masterBox.y + masterBox.height / 2, {steps:3});
+    await publicSeek.mouse.move(masterBox.x + masterBox.width * .55, masterBox.y + masterBox.height + 40);
+    const pointerValue = Number(await publicSeek.locator('#master-volume').inputValue());
+    assert.equal(masterRequests().length, volumeBefore, 'A short pointer drag previews before release');
+    const pointerReleasedAt = Date.now(); await publicSeek.mouse.up(); await pointerGate.received;
+    assert(masterRequests().at(-1).receivedAt - pointerReleasedAt < 180, 'Pointer release outside the slider flushes the captured final value');
+    assert.equal(masterRequests().at(-1).body.volume, pointerValue / 100);
+    acceptedMaster = masterResponse(pointerValue / 100); pointerGate.release(); await acceptedMaster; await waitForMaster(pointerValue);
+    await publicSeek.waitForTimeout(220); assert.equal(masterRequests().length, volumeBefore + 1, 'Pointerup and native change together send only once');
+
+    const masterTouch = await publicSeekContext.newCDPSession(publicSeek), touchVolumeGate = responseGate(); volumePostGate = touchVolumeGate;
+    volumeBefore = masterRequests().length;
+    await masterTouch.send('Input.dispatchTouchEvent', {type:'touchStart', touchPoints:[{x:masterBox.x + masterBox.width * .25, y:masterBox.y + masterBox.height / 2, id:3}]});
+    await masterTouch.send('Input.dispatchTouchEvent', {type:'touchMove', touchPoints:[{x:masterBox.x + masterBox.width * .75, y:masterBox.y + masterBox.height / 2, id:3}]});
+    const touchVolumeValue = Number(await publicSeek.locator('#master-volume').inputValue());
+    assert(touchVolumeValue > 60 && touchVolumeValue < 90, 'Native touch movement previews its final slider value');
+    assert.equal(masterRequests().length, volumeBefore, 'A short touch drag previews before release');
+    const touchReleasedAt = Date.now(); await masterTouch.send('Input.dispatchTouchEvent', {type:'touchEnd', touchPoints:[]}); await touchVolumeGate.received;
+    assert(masterRequests().at(-1).receivedAt - touchReleasedAt < 180, 'Touch release flushes before the debounce expires');
+    assert.equal(masterRequests().at(-1).body.volume, touchVolumeValue / 100);
+    acceptedMaster = masterResponse(touchVolumeValue / 100); touchVolumeGate.release(); await acceptedMaster; await waitForMaster(touchVolumeValue);
+    await publicSeek.waitForTimeout(220); assert.equal(masterRequests().length, volumeBefore + 1, 'Touch release and native change together send only once');
+
+    const firstVolume = responseGate({broadcast:false}); volumePostGate = firstVolume;
+    volumeBefore = masterRequests().length; await inputMaster(30); await releaseMaster('change'); await firstVolume.received;
+    for (const value of [44, 65, 82]) { await inputMaster(value); await publicSeek.waitForTimeout(70); }
+    await releaseMaster('change'); await publicSeek.waitForTimeout(220);
+    assert.equal(masterRequests().length, volumeBefore + 1, 'Only one volume POST can be in flight');
+    assert.equal(await publicSeek.locator('#master-volume').isDisabled(), false, 'The slider stays editable while an earlier POST waits');
+    broadcast(firstVolume.snapshot); await publicSeek.waitForTimeout(60); await waitForMaster(82);
+    const nextVolume = responseGate({broadcast:false}), prohibitedRead = responseGate({requestPath:publicPrefix + '/api/state'});
+    volumePostGate = nextVolume; stateReadGate = prohibitedRead;
+    const beforeFirstAck = requests.length, firstAckAt = Date.now(); firstVolume.release();
+    await Promise.race([nextVolume.received, publicSeek.waitForTimeout(1200).then(() => { throw new Error('The newest pending master volume did not drain immediately after acknowledgement'); })]);
+    assert.equal(masterRequests().length, volumeBefore + 2);
+    assert.equal(masterRequests().at(-1).body.volume, .82, 'Acknowledgement drains only the newest queued value');
+    assert(masterRequests().at(-1).receivedAt - firstAckAt < 180, 'An acknowledged request does not restart the debounce for an already stable/released target');
+    assert.equal(requests.slice(beforeFirstAck).some(item => item.requestPath === publicPrefix + '/api/state'), false, 'A successful volume POST does not wait for a redundant state GET before draining');
+    stateReadGate = null; prohibitedRead.release();
+    await inputMaster(82); await releaseMaster('pointerup'); await releaseMaster('change'); await releaseMaster('blur');
+    acceptedMaster = masterResponse(.82); nextVolume.release(); await acceptedMaster;
+    broadcast(firstVolume.snapshot); await publicSeek.waitForTimeout(250); await waitForMaster(82);
+    assert.equal(masterRequests().length, volumeBefore + 2, 'Releasing the same in-flight value cannot queue a duplicate');
+    broadcast(nextVolume.snapshot); await waitForMaster(82);
+
+    // A second controller can change the host while our old acknowledgement
+    // waits. Repeating our first target is then a fresh user intent, not a duplicate.
+    const competingVolume = responseGate({broadcast:false}); volumePostGate = competingVolume;
+    volumeBefore = masterRequests().length; await inputMaster(50); await releaseMaster('change'); await competingVolume.received;
+    broadcast(competingVolume.snapshot); state.masterVolume = .4; state.revision++; broadcast(); await publicSeek.waitForTimeout(60);
+    await inputMaster(50); await releaseMaster('change');
+    const restoreIntent = responseGate(); volumePostGate = restoreIntent; competingVolume.release();
+    await Promise.race([restoreIntent.received, publicSeek.waitForTimeout(1200).then(() => { throw new Error('A newer controller state incorrectly deduplicated the final user volume intent'); })]);
+    assert.equal(masterRequests().length, volumeBefore + 2); assert.equal(masterRequests().at(-1).body.volume, .5);
+    acceptedMaster = masterResponse(.5); restoreIntent.release(); await acceptedMaster; await waitForMaster(50);
+
+    // An old GET can finish after a newer accepted POST when no fresh SSE has
+    // arrived. The acknowledged slider level must remain visible.
+    const oldStateRead = responseGate({requestPath:publicPrefix + '/api/state'}); stateReadGate = oldStateRead;
+    const delayedRead = publicSeek.evaluate(() => refreshState()); await oldStateRead.received;
+    const newerVolume = responseGate({broadcast:false}); volumePostGate = newerVolume;
+    await inputMaster(88); await releaseMaster('change'); await newerVolume.received;
+    acceptedMaster = masterResponse(.88); newerVolume.release(); await acceptedMaster;
+    oldStateRead.release(); await delayedRead; await publicSeek.waitForTimeout(80); await waitForMaster(88);
+    broadcast(newerVolume.snapshot); await waitForMaster(88);
+
+    rejectVolume = true; acceptedMaster = masterResponse(.2); await inputMaster(20); await releaseMaster('change');
+    assert.equal((await acceptedMaster).status(), 503);
+    await publicSeek.waitForFunction(() => document.getElementById('notice').textContent.includes('Volume change is unconfirmed'));
+    await waitForMaster(88); assert.equal(state.masterVolume, .88, 'A rejected master level restores the last host value'); rejectVolume = false;
+
+    const stoppedVolume = responseGate({broadcast:false}); volumePostGate = stoppedVolume;
+    volumeBefore = masterRequests().length; await inputMaster(40); await releaseMaster('change'); await stoppedVolume.received;
+    await inputMaster(90); await releaseMaster('change');
+    assert.equal(await publicSeek.locator('#stop').isDisabled(), false, 'STOP stays available while volume HTTP acknowledgement waits');
+    await publicSeek.locator('#stop').click(); await publicSeek.waitForFunction(() => document.getElementById('play-state').textContent === 'stopped'); await waitForMaster(40);
+    acceptedMaster = masterResponse(.4); stoppedVolume.release(); await acceptedMaster; broadcast(stoppedVolume.snapshot);
+    await publicSeek.waitForTimeout(250); await waitForMaster(40);
+    assert.equal(masterRequests().length, volumeBefore + 1, 'STOP discards queued targets from the previous stop epoch, including after late HTTP/SSE');
+
+    const confirmedVolume = responseGate({broadcast:false}); volumePostGate = confirmedVolume;
+    await inputMaster(67); await releaseMaster('change'); await confirmedVolume.received;
+    acceptedMaster = masterResponse(.67); confirmedVolume.release(); await acceptedMaster; await publicSeek.waitForTimeout(40); await waitForMaster(67);
+    assert.equal(await publicSeek.evaluate(() => state.masterVolume), .4, 'The accepted level is visible before its full-state SSE arrives');
+    const waitingStop = responseGate({broadcast:false}); stopPostGate = waitingStop;
+    await publicSeek.locator('#stop').click(); await waitingStop.received;
+    assert.equal(await publicSeek.locator('#master-volume').isDisabled(), true, 'A pending local STOP prevents fresh volume targets');
+    await waitForMaster(67);
+    assert.equal(await publicSeek.evaluate(() => state.masterVolume), .4, 'STOP preserves the acknowledged level while its authoritative state is delayed');
+    broadcast(waitingStop.snapshot); await waitForMaster(67);
+    const stopResponse = publicSeek.waitForResponse(response => response.url() === publicBase + publicPrefix + '/api/stop');
+    waitingStop.release(); await stopResponse; await publicSeek.waitForFunction(() => !document.getElementById('master-volume').disabled);
+
+    const escapedVolume = responseGate({broadcast:false}); volumePostGate = escapedVolume;
+    volumeBefore = masterRequests().length; await inputMaster(43); await releaseMaster('change'); await escapedVolume.received;
+    await inputMaster(90); await releaseMaster('change'); await publicSeek.locator('#language-mode').focus();
+    const waitingEscape = responseGate({broadcast:false}); stopPostGate = waitingEscape;
+    const emergencyBefore = requests.filter(item => item.requestPath === publicPrefix + '/api/emergency-stop').length;
+    await publicSeek.keyboard.press('Escape'); await waitingEscape.received;
+    assert.equal(requests.filter(item => item.requestPath === publicPrefix + '/api/emergency-stop').length, emergencyBefore + 1, 'Escape from another focused control sends emergency STOP');
+    assert.equal(await publicSeek.locator('#master-volume').isDisabled(), true, 'Emergency STOP reserves the volume control before its state arrives');
+    acceptedMaster = masterResponse(.43); escapedVolume.release(); await acceptedMaster; await publicSeek.waitForTimeout(80); await waitForMaster(67);
+    assert.equal(masterRequests().length, volumeBefore + 1, 'Escape immediately cancels the queued target and old acknowledgement before stop-epoch SSE');
+    broadcast(waitingEscape.snapshot); await waitForMaster(43);
+    const emergencyResponse = publicSeek.waitForResponse(response => response.url() === publicBase + publicPrefix + '/api/emergency-stop');
+    waitingEscape.release(); await emergencyResponse; await publicSeek.waitForFunction(() => !document.getElementById('master-volume').disabled);
+    broadcast(escapedVolume.snapshot); await publicSeek.waitForTimeout(250); await waitForMaster(43);
+    assert.equal(masterRequests().length, volumeBefore + 1, 'Late emergency-stop-era HTTP/SSE cannot revive the cancelled volume target');
+
+    const oldInstanceVolume = responseGate({broadcast:false}); volumePostGate = oldInstanceVolume;
+    volumeBefore = masterRequests().length; await inputMaster(45); await releaseMaster('change'); await oldInstanceVolume.received;
+    await inputMaster(95); await releaseMaster('change');
+    state.instanceId = 'browser-fixture-volume-restart'; state.revision = 1; state.masterVolume = .65; broadcast();
+    await waitForMaster(65); acceptedMaster = masterResponse(.45); oldInstanceVolume.release(); await acceptedMaster;
+    await publicSeek.waitForTimeout(250); await waitForMaster(65);
+    assert.equal(masterRequests().length, volumeBefore + 1, 'A new host instance clears the old target and ignores its late acknowledgement');
+
+    acceptedMaster = masterResponse(.75); await publicSeek.locator('#master-volume').fill('75'); await acceptedMaster; await waitForMaster(75);
+    assert.equal(masterRequests().at(-1).requestPath, publicPrefix + '/api/play', 'Gateway volume uses the deployed endpoint-relative PLAY route');
     const topVolume = await publicSeek.locator('#master-volume-control').boundingBox(), identity = await publicSeek.locator('.identity').boundingBox();
     assert(topVolume.y < identity.y && topVolume.x >= 0 && topVolume.x + topVolume.width <= 391, 'Master speaker slider is above the remote header and fits the phone');
     await publicSeek.locator('#language-mode').selectOption('it');
-    assert.equal(await publicSeek.locator('#master-volume').getAttribute('aria-valuetext'), '77%');
+    assert.equal(await publicSeek.locator('#master-volume').getAttribute('aria-valuetext'), '75%');
     assert.equal(await publicSeek.getByText('Volume generale', {exact:true}).count(), 1);
-    await publicSeek.locator('#master-volume').fill('75');
-    await publicSeek.waitForFunction(() => state.masterVolume === .75 && !masterVolumeSending);
 
     const volumeAdmin = await browser.newPage(); volumeAdmin.on('pageerror', e => errors.push(e.message));
     await volumeAdmin.goto(adminBase + '/admin'); await volumeAdmin.locator('#connection.live').waitFor();
     const audioVolumeCue = config.cues.find(cue => ['audio', 'video'].includes(cue.cache.media.kind));
     const trackRange = volumeAdmin.locator(`#track-volume-${audioVolumeCue.id}`);
+    const trackOutput = volumeAdmin.locator('.track-volume-control').filter({has:trackRange}).locator('output');
+    const trackResponse = value => volumeAdmin.waitForResponse(response => response.url() === adminBase + '/api/playlist/volume' && response.request().postDataJSON()?.cueId === audioVolumeCue.id && response.request().postDataJSON()?.volume === value);
+    const trackLabel = async label => {
+      await volumeAdmin.waitForFunction(({id, label}) => {
+        const range = document.getElementById(id); return range.getAttribute('aria-valuetext') === label && range.closest('.track-volume-control').querySelector('output').value === label;
+      }, {id:`track-volume-${audioVolumeCue.id}`, label});
+      assert.equal(await trackOutput.textContent(), label, 'The signed track level is visible as well as exposed to assistive technology');
+    };
     await trackRange.waitFor(); assert.equal(await trackRange.inputValue(), String(Math.round(100 * (audioVolumeCue.volume ?? .5))));
-    await trackRange.fill('23');
-    await volumeAdmin.waitForFunction(id => playlist.cues.find(cue => cue.id === id)?.volume === .23 && !trackVolumeSending, audioVolumeCue.id);
+    assert.equal(await trackRange.getAttribute('min'), '0'); assert.equal(await trackRange.getAttribute('max'), '100');
+    let acceptedTrack = trackResponse(.5); await trackRange.fill('50'); await acceptedTrack; await trackLabel('0%');
+    assert.equal(await trackRange.inputValue(), '50', 'The center remains native normalized volume .5');
+    for (const [raw, label] of [[0, '-100%'], [25, '-50%'], [75, '+50%'], [100, '+100%'], [23, '-54%']]) {
+      acceptedTrack = trackResponse(raw / 100); await trackRange.fill(String(raw)); await acceptedTrack; await trackLabel(label);
+      assert.equal(config.cues.find(cue => cue.id === audioVolumeCue.id).volume, raw / 100, 'Signed track labels retain the normalized native gain');
+    }
     assert.equal(config.cues.find(cue => cue.id === audioVolumeCue.id).volume, .23);
     const exported = await volumeAdmin.evaluate(() => api('GET', '/api/playlist/export'));
     assert.equal(exported.cues.find(cue => cue.id === audioVolumeCue.id).volume, .23, 'Playlist export keeps track volume');
     await volumeAdmin.reload(); await volumeAdmin.locator('#connection.live').waitFor();
     assert.equal(await volumeAdmin.locator(`#track-volume-${audioVolumeCue.id}`).inputValue(), '23', 'Track volume survives reloading Admin');
+    await trackLabel('-54%');
     for (const cue of config.cues.filter(cue => cue.cache.media.kind === 'image')) {
       assert.equal(await volumeAdmin.locator(`#track-volume-${cue.id}`).isVisible(), false, 'Images have no volume slider');
     }
-    await volumeAdmin.locator(`#track-volume-${audioVolumeCue.id}`).fill('50');
-    await volumeAdmin.waitForFunction(id => playlist.cues.find(cue => cue.id === id)?.volume === .5 && !trackVolumeSending, audioVolumeCue.id);
+    rejectTrackVolume = true; acceptedTrack = trackResponse(.75); await trackRange.fill('75');
+    assert.equal((await acceptedTrack).status(), 503);
+    await volumeAdmin.waitForFunction(() => document.getElementById('notice').textContent.includes('Track volume was not saved'));
+    await trackLabel('-54%'); assert.equal(await trackRange.inputValue(), '23');
+    assert.equal(config.cues.find(cue => cue.id === audioVolumeCue.id).volume, .23, 'A failed save restores the visible and accessible confirmed level'); rejectTrackVolume = false;
+    for (const locale of ['en', 'it']) {
+      await volumeAdmin.locator('#language-mode').selectOption(locale); await publicSeek.locator('#language-mode').selectOption(locale);
+      await trackLabel('-54%'); await waitForMaster(75);
+      for (const [width, height] of [[320, 844], [390, 844], [844, 390], [1280, 800]]) {
+        await volumeAdmin.setViewportSize({width, height}); await publicSeek.setViewportSize({width, height});
+        await trackRange.scrollIntoViewIfNeeded();
+        const geometry = await volumeAdmin.evaluate(id => {
+          const range = document.getElementById(id), output = range.closest('.track-volume-control').querySelector('output');
+          return {overflow: document.documentElement.scrollWidth > innerWidth, range: range.getBoundingClientRect().toJSON(), output:output.getBoundingClientRect().toJSON()};
+        }, `track-volume-${audioVolumeCue.id}`);
+        assert.equal(geometry.overflow, false, `${locale} Admin volume fits ${width}`);
+        assert(geometry.range.width > 40 && geometry.range.left >= 0 && geometry.range.right <= width + 1 && geometry.output.left >= 0 && geometry.output.right <= width + 1, `${locale} signed track level and slider remain visible at ${width}`);
+        const remoteGeometry = await publicSeek.evaluate(() => {
+          const master = document.getElementById('master-volume-control').getBoundingClientRect(), stop = document.getElementById('stop').getBoundingClientRect();
+          return {overflow:document.documentElement.scrollWidth > innerWidth, master:master.toJSON(), stop:stop.toJSON()};
+        });
+        assert.equal(remoteGeometry.overflow, false, `${locale} Remote volume fits ${width}`);
+        assert(remoteGeometry.master.left >= 0 && remoteGeometry.master.right <= width + 1 && remoteGeometry.stop.top >= 0 && remoteGeometry.stop.bottom <= height + 1, `${locale} master volume and STOP remain accessible at ${width}x${height}`);
+      }
+    }
+    await volumeAdmin.setViewportSize({width:390, height:844}); await trackRange.scrollIntoViewIfNeeded();
+    await volumeAdmin.screenshot({path:path.join(output, 'admin-track-volume-signed-phone.png')});
+    acceptedTrack = trackResponse(.5); await trackRange.fill('50'); await acceptedTrack; await trackLabel('0%');
     await volumeAdmin.close();
     await publicSeekContext.close(); await seekContext.close();
     Object.assign(state, beforeSeekFixture); state.revision++; broadcast();
     await italianRemoteContext.close();
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, trackVolumeLiveAndPlaylistPersistence: true, masterVolumeDefaultMuteAndGatewayControl: true, volumeControlsEnglishItalianAndResponsive: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, trackVolumeLiveAndPlaylistPersistence: true, trackVolumeSignedLabelsAndNormalizedEndpoints: true, trackVolumeSignedFailureRollbackAndReload: true, masterVolumeDefaultMuteAndGatewayControl: true, masterVolumeTrailing200msAndImmediateRelease: true, masterVolumeSingleFlightLatestPendingWithoutStateGet: true, masterVolumeSameValueDeduplicationAndCompetingControllerIntent: true, masterVolumeDelayedStateSSEAndAcknowledgementProtection: true, masterVolumeStopEpochAndInstanceCancellation: true, masterVolumeGlobalEscapeCancellationAndStopConfirmation: true, volumeControlsEnglishItalianAndResponsive: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
-  } finally { await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }
+  } finally { for (const gate of responseGates) gate.release(); await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }
 })().catch(e => { console.error(e); process.exit(1); });

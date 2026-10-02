@@ -1,10 +1,9 @@
-Smart Stage 1.6.0 adds track and master volume controls on Mac and Windows.
+Smart Stage 1.6.1 improves remote volume response and makes track adjustments easier to read on Mac and Windows.
 
-- Every audio/video cue has a **Track volume** slider in Admin. It starts in the center at 50%, with **− / +** directions for balancing tracks. Background video soundtracks use their cue's level too.
-- A speaker slider at the top of the remote adjusts **Master volume**, starting at 75% each launch. Set it to 0% to mute while playback continues, or raise it to 100%.
-- Live volume changes preserve playback position, pause state and independent audio/visual fades. The master also scales outgoing sound during crossfades without changing system volume.
-- Track levels are saved with your show and `.smartstage.json` playlist files. Existing shows and playlist files receive centered defaults.
-- Both controls work in English and Italian. Master control works through existing public gateways without a gateway upgrade.
+- Remote master volume sends the latest value after the slider has stayed still for **200 ms**, or immediately when you release it. Pending changes replace earlier values, and successful adjustments no longer wait for an extra status request.
+- Track volume displays **0%** in the center, negative percentages to the left and positive percentages to the right. Halfway left is **−50%**; halfway right is **+50%**. These are adjustments relative to the centered level.
+- Existing saved track levels and playlist files retain the same playback volume. The remote master remains an absolute percentage, starting at **75%** each launch.
+- Playback position, pause state and independent audio/visual fades are preserved. Both interfaces support English and Italian.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 

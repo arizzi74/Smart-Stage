@@ -21,6 +21,10 @@ let stageBackgroundDraft = null, playlistRefreshPending = false;
 let controlSequence = 0;
 let seekGesture = null, seekSending = false, seekTarget = null, pendingTransport = null;
 let masterVolumeTarget = null, masterVolumeSending = false, masterVolumeGesture = false, masterVolumeTimer = null;
+let masterVolumeRequest = null, masterVolumeConfirmation = null, masterVolumePointerId = null, masterVolumeSequence = 0;
+let masterVolumeStopPending = 0;
+const masterVolumeKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'];
+const masterVolumeHeldKeys = new Set();
 let trackVolumeSending = false, trackVolumeTimer = null;
 const pendingTrackVolumes = new Map();
 let validationSignature = '', validationRefresh = false, validationRefreshPending = false;
@@ -119,38 +123,135 @@ function requestID() {
 function volumePercent(value, fallback = 0.5) {
   return Math.round(100 * (Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : fallback));
 }
+function trackVolumeText(range) {
+  const relative = 2 * (Number(range.value) - 50);
+  return `${relative > 0 ? '+' : ''}${relative}%`;
+}
+function renderTrackVolume(range, output) {
+  const text = trackVolumeText(range);
+  output.value = text; range.setAttribute('aria-valuetext', text);
+}
+function masterVolumeAvailable() {
+  return Boolean(state && online && csrf && !masterVolumeStopPending &&
+    !quitBusy && !appClosed && !reloadingAdmin && !updatePending());
+}
+function currentMasterVolumeTarget(target) {
+  return Boolean(target && state && target.sequence === masterVolumeSequence &&
+    target.instanceId === state.instanceId && target.stopEpoch === state.stopEpoch);
+}
+function releaseMasterVolumePointer() {
+  const pointerId = masterVolumePointerId; masterVolumePointerId = null;
+  const range = $('master-volume');
+  if (pointerId !== null && range.hasPointerCapture?.(pointerId)) range.releasePointerCapture(pointerId);
+}
+function cancelMasterVolume(preserveConfirmation = false) {
+  ++masterVolumeSequence;
+  clearTimeout(masterVolumeTimer); masterVolumeTimer = null;
+  masterVolumeTarget = null; masterVolumeGesture = false;
+  if (!preserveConfirmation) masterVolumeConfirmation = null;
+  masterVolumeHeldKeys.clear();
+  releaseMasterVolumePointer();
+}
 function renderMasterVolume() {
   const range = $('master-volume');
-  range.disabled = !online || !csrf || quitBusy || appClosed || reloadingAdmin || updatePending();
-  if (!masterVolumeGesture && !masterVolumeTarget && !masterVolumeSending) range.value = volumePercent(state?.masterVolume, .75);
+  const available = masterVolumeAvailable();
+  const preserveConfirmation = Boolean(masterVolumeStopPending && state && online && csrf &&
+    !quitBusy && !appClosed && !reloadingAdmin && !updatePending());
+  if (!available && (masterVolumeTarget || !preserveConfirmation && masterVolumeConfirmation || masterVolumeGesture || masterVolumeHeldKeys.size || currentMasterVolumeTarget(masterVolumeRequest))) cancelMasterVolume(preserveConfirmation);
+  range.disabled = !available;
+  if (!masterVolumeGesture && !masterVolumeHeldKeys.size && !masterVolumeTarget && !currentMasterVolumeTarget(masterVolumeRequest)) {
+    range.value = volumePercent(masterVolumeConfirmation?.volume ?? state?.masterVolume, .75);
+  }
   $('master-volume-value').value = `${range.value}%`;
   range.setAttribute('aria-valuetext', `${range.value}%`);
+}
+function scheduleMasterVolume() {
+  clearTimeout(masterVolumeTimer); masterVolumeTimer = null;
+  if (!masterVolumeTarget || masterVolumeSending) return;
+  const delay = masterVolumeTarget.readyAt - Date.now();
+  if (delay <= 0) { void sendMasterVolume(); return; }
+  masterVolumeTimer = setTimeout(() => { void sendMasterVolume(); }, delay);
 }
 async function sendMasterVolume() {
   clearTimeout(masterVolumeTimer); masterVolumeTimer = null;
   if (masterVolumeSending || !masterVolumeTarget) return;
-  if (!online || updatePending() || quitBusy || appClosed || reloadingAdmin) { masterVolumeTarget = null; renderMasterVolume(); return; }
+  if (!masterVolumeAvailable() || !currentMasterVolumeTarget(masterVolumeTarget)) { cancelMasterVolume(); renderMasterVolume(); return; }
+  if (masterVolumeTarget.readyAt > Date.now()) { scheduleMasterVolume(); return; }
+  const confirmedVolume = masterVolumeConfirmation?.volume ?? state.masterVolume;
+  if (volumePercent(masterVolumeTarget.volume) === volumePercent(confirmedVolume, .75)) {
+    masterVolumeTarget = null; renderMasterVolume(); return;
+  }
   const target = masterVolumeTarget; masterVolumeTarget = null; masterVolumeSending = true;
+  masterVolumeRequest = target;
   try {
-    await api('POST', '/api/play', { requestId: requestID(), instanceId: target.instanceId, stopEpoch: target.stopEpoch, action: 'volume', volume: target.volume });
-    await refreshState();
+    const ack = await api('POST', '/api/play', { requestId: requestID(), instanceId: target.instanceId, stopEpoch: target.stopEpoch, action: 'volume', volume: target.volume });
+    if (!currentMasterVolumeTarget(target) || !masterVolumeAvailable()) return;
+    if (ack.accepted !== true || ack.instanceId !== target.instanceId || ack.stopEpoch !== target.stopEpoch || !Number.isSafeInteger(ack.revision)) {
+      throw new Error('The host did not acknowledge the volume change.');
+    }
+    // The acknowledgement confirms only volume. Keep the full state revision
+    // intact so delayed SSE still supplies transport, STOP, and update fields.
+    masterVolumeConfirmation = state.revision < ack.revision ? { ...target, revision: ack.revision } : null;
   } catch (error) {
-    masterVolumeTarget = null; masterVolumeGesture = false;
-    notify(() => t("Volume change is unconfirmed. {0}", {0: errorText(error)}), true);
+    if (currentMasterVolumeTarget(target)) {
+      if (['stale_instance', 'stale_epoch', 'updating'].includes(error.code)) cancelMasterVolume();
+      else masterVolumeConfirmation = null;
+      notify(() => t("Volume change is unconfirmed. {0}", {0: errorText(error)}), true);
+    }
     await refreshState();
   } finally {
+    if (masterVolumeRequest === target) masterVolumeRequest = null;
     masterVolumeSending = false; renderMasterVolume();
-    if (masterVolumeTarget) masterVolumeTimer = setTimeout(() => { void sendMasterVolume(); }, 80);
+    scheduleMasterVolume();
   }
 }
-$('master-volume').addEventListener('pointerdown', () => { masterVolumeGesture = true; });
-function endMasterVolumeGesture() { masterVolumeGesture = false; void sendMasterVolume(); renderMasterVolume(); }
-for (const event of ['pointerup', 'pointercancel', 'change', 'blur']) $('master-volume').addEventListener(event, endMasterVolumeGesture);
+$('master-volume').addEventListener('pointerdown', event => {
+  if (!masterVolumeAvailable()) return;
+  masterVolumeGesture = true; masterVolumePointerId = event.pointerId;
+  try { $('master-volume').setPointerCapture?.(event.pointerId); } catch { /* Document release handlers cover native range tracking. */ }
+});
+function endMasterVolumeGesture() {
+  masterVolumeGesture = false; masterVolumeHeldKeys.clear(); releaseMasterVolumePointer();
+  if (masterVolumeTarget) masterVolumeTarget.readyAt = 0;
+  scheduleMasterVolume(); renderMasterVolume();
+}
+for (const event of ['pointerup', 'pointercancel', 'blur']) $('master-volume').addEventListener(event, endMasterVolumeGesture);
+$('master-volume').addEventListener('change', () => {
+  // Native ranges can emit change on every keydown, before the key is released.
+  if (!masterVolumeHeldKeys.size) endMasterVolumeGesture();
+});
+$('master-volume').addEventListener('lostpointercapture', () => { if (masterVolumeGesture) endMasterVolumeGesture(); });
+for (const event of ['pointerup', 'pointercancel']) document.addEventListener(event, pointer => {
+  if (masterVolumeGesture && pointer.pointerId === masterVolumePointerId) endMasterVolumeGesture();
+});
+$('master-volume').addEventListener('keydown', event => {
+  if (event.key === 'Escape') { cancelMasterVolume(true); renderMasterVolume(); return; }
+  if (masterVolumeKeys.includes(event.key) && masterVolumeAvailable()) masterVolumeHeldKeys.add(event.key);
+});
+$('master-volume').addEventListener('keyup', event => {
+  if (!masterVolumeKeys.includes(event.key)) return;
+  masterVolumeHeldKeys.delete(event.key);
+  if (!masterVolumeHeldKeys.size) endMasterVolumeGesture();
+});
+document.addEventListener('keyup', event => {
+  if (!masterVolumeHeldKeys.has(event.key)) return;
+  masterVolumeHeldKeys.delete(event.key);
+  if (!masterVolumeHeldKeys.size) endMasterVolumeGesture();
+});
+window.addEventListener('blur', () => { if (masterVolumeGesture || masterVolumeHeldKeys.size || masterVolumeTarget) endMasterVolumeGesture(); });
 $('master-volume').addEventListener('input', () => {
-  if (!state || !online || updatePending()) return;
-  masterVolumeTarget = { instanceId: state.instanceId, stopEpoch: state.stopEpoch, volume: Number($('master-volume').value) / 100 };
-  renderMasterVolume();
-  if (!masterVolumeSending && masterVolumeTimer === null) masterVolumeTimer = setTimeout(() => { void sendMasterVolume(); }, 80);
+  if (!masterVolumeAvailable()) { renderMasterVolume(); return; }
+  const volume = Number($('master-volume').value) / 100;
+  if (masterVolumeTarget && volumePercent(masterVolumeTarget.volume) === volumePercent(volume)) return;
+  const pendingRequest = currentMasterVolumeTarget(masterVolumeRequest) ? masterVolumeRequest : null;
+  const confirmedVolume = masterVolumeConfirmation?.volume ?? state.masterVolume;
+  // Keep the latest intent until an in-flight acknowledgement arrives: another
+  // controller may have changed that level since our earlier request applied.
+  masterVolumeTarget = !pendingRequest && volumePercent(confirmedVolume, .75) === volumePercent(volume) ? null : {
+    instanceId: state.instanceId, stopEpoch: state.stopEpoch, sequence: masterVolumeSequence,
+    volume, readyAt: Date.now() + 200
+  };
+  renderMasterVolume(); scheduleMasterVolume();
 });
 
 async function saveTrackVolume() {
@@ -174,7 +275,7 @@ async function saveTrackVolume() {
     notify(() => t("Track volume was not saved. {0}", {0: errorText(error)}), true);
     try { acceptPlaylist(await api('GET', '/api/playlist')); } catch { /* Retain the last confirmed level. */ }
     const row = playlistRows.get(id), saved = playlist?.cues.find(item => item.id === id);
-    if (row?.volume && saved) { row.volume.value = volumePercent(saved.volume); row.volumeValue.value = `${row.volume.value}%`; }
+    if (row?.volume && saved) { row.volume.value = volumePercent(saved.volume); renderTrackVolume(row.volume, row.volumeValue); }
   } finally {
     trackVolumeSending = false; playlistBusy = false; renderEditAvailability();
     if (pendingTrackVolumes.size) trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, 120);
@@ -493,9 +594,8 @@ function applyState(next) {
     updatePreparing = false; updateRestartInstance = ''; updateRestartStarted = 0; updateRestartComplete = true;
   }
   const updateReservationChanged = Boolean(state?.updatePending) !== Boolean(next.updatePending);
-  if (masterVolumeTarget && (masterVolumeTarget.instanceId !== next.instanceId || masterVolumeTarget.stopEpoch !== next.stopEpoch)) {
-    masterVolumeTarget = null; masterVolumeGesture = false;
-  }
+  if (state && (state.instanceId !== next.instanceId || state.stopEpoch !== next.stopEpoch)) cancelMasterVolume();
+  if (masterVolumeConfirmation && next.revision >= masterVolumeConfirmation.revision) masterVolumeConfirmation = null;
   state = next;
   renderRemoteStage(); renderSeek(); renderMasterVolume();
   const current = next.cues.find(c => c.id === next.activeCueId);
@@ -606,12 +706,14 @@ async function trigger(cueId) {
   }
 }
 $('stop').addEventListener('click', async () => {
-  cancelSeekGesture(); renderSeek();
+  cancelSeekGesture(); renderSeek(); cancelMasterVolume(true); renderMasterVolume();
   if (!csrf) { showPair(); return; }
+  ++masterVolumeStopPending; renderMasterVolume();
   const sequence = ++controlSequence;
   notify(() => t("Sending STOP…"));
   try { await api('POST', '/api/stop', { requestId: requestID() }); if (sequence === controlSequence) notify(() => t("STOP accepted by host. Check the playback status for native completion.")); await refreshState(); }
   catch (error) { if (sequence === controlSequence) notify(() => t("STOP is unconfirmed. {0}", {0: errorText(error)}), true); }
+  finally { --masterVolumeStopPending; renderMasterVolume(); }
 });
 $('pairing').addEventListener('cancel', event => event.preventDefault());
 $('pair-form').addEventListener('submit', async event => {
@@ -837,8 +939,9 @@ function renderEditAvailability() {
     row.volumeControls.hidden = !['audio', 'video'].includes(cue?.cache.media.kind);
     row.volume.disabled = pending || !online || playlistBusy && !trackVolumeSending;
     if (document.activeElement !== row.volume && !pendingTrackVolumes.has(id) && !trackVolumeSending) {
-      row.volume.value = volumePercent(cue?.volume); row.volumeValue.value = `${row.volume.value}%`;
+      row.volume.value = volumePercent(cue?.volume);
     }
+    renderTrackVolume(row.volume, row.volumeValue);
     const foreground = state.activeCueId === id && ['loading', 'playing', 'paused'].includes(state.state);
     const image = state.stageEnabled && state.imageCueId === id;
     const background = Boolean(cue?.background && state.backgroundOverrideCueId === id);
@@ -1201,11 +1304,11 @@ function renderPlaylist() {
     const volumeControls = element('div', undefined, 'track-volume-control');
     const volumeLabel = element('label', () => t("Track volume")), volume = element('input'), volumeValue = element('output');
     volume.type = 'range'; volume.min = '0'; volume.max = '100'; volume.step = '1'; volume.value = volumePercent(cue.volume);
-    volume.id = `track-volume-${cue.id}`; volumeLabel.htmlFor = volume.id; volumeValue.htmlFor = volume.id; volumeValue.value = `${volume.value}%`;
+    volume.id = `track-volume-${cue.id}`; volumeLabel.htmlFor = volume.id; volumeValue.htmlFor = volume.id; renderTrackVolume(volume, volumeValue);
     localizedAttribute(volume, 'aria-label', () => t("Volume for cue {0}", {0: index + 1}));
-    localizedAttribute(volume, 'aria-valuetext', () => `${volume.value}%`);
+    localizedAttribute(volume, 'aria-valuetext', () => trackVolumeText(volume));
     volume.addEventListener('input', () => {
-      volumeValue.value = `${volume.value}%`; volume.setAttribute('aria-valuetext', `${volume.value}%`);
+      renderTrackVolume(volume, volumeValue);
       pendingTrackVolumes.set(cue.id, { volume: Number(volume.value) / 100, path: cue.path });
       if (!trackVolumeSending && trackVolumeTimer === null) trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, 120);
     });
@@ -1366,12 +1469,14 @@ for (const [id, enabled] of [['enable-stage', true], ['disable-stage', false]]) 
 $('remote-stage').addEventListener('click', () => { void setStageOutput(!state?.stageEnabled); });
 document.addEventListener('keydown', event => {
   if (event.key !== 'Escape' || event.repeat || !csrf || !online || $('pairing').open || $('playlist-load-confirm').open) return;
-  event.preventDefault(); cancelSeekGesture(); renderSeek();
+  event.preventDefault(); cancelSeekGesture(); renderSeek(); cancelMasterVolume(true);
+  ++masterVolumeStopPending; renderMasterVolume();
   const sequence = ++controlSequence;
   void api('POST', '/api/emergency-stop', { requestId: requestID() }).then(async () => {
     if (sequence === controlSequence) notify(() => t("Emergency stop accepted. All sound stops and the stage closes."));
     await refreshState();
-  }).catch(error => { if (sequence === controlSequence) notify(() => t("Emergency stop is unconfirmed. {0}", {0: errorText(error)}), true); });
+  }).catch(error => { if (sequence === controlSequence) notify(() => t("Emergency stop is unconfirmed. {0}", {0: errorText(error)}), true); })
+    .finally(() => { --masterVolumeStopPending; renderMasterVolume(); });
 });
 async function initializeSession() {
   if (!await refreshState()) return false;

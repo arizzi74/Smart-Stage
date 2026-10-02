@@ -257,10 +257,11 @@ acceptance testing.
 ## Volume
 
 Each audio and video cue in **Admin → Playlist** has a **Track volume** slider.
-It starts in the center at **50%**. Move left toward **−** to lower that track,
-or right toward **+** to raise it relative to the other tracks. **0%** mutes the
-track and **100%** is its maximum level. Changes apply during playback without
-restarting the cue or changing its position. Background videos use their own
+It starts in the center at **0% adjustment**. Move left toward **−** to lower that track,
+or right toward **+** to raise it relative to the other tracks. **−100%** mutes the
+track; **+100%** doubles the centered level. Halfway left is **−50%**, and halfway
+right is **+50%**. Existing saved levels keep the same playback volume. Changes
+apply during playback without restarting the cue or changing its position. Background videos use their own
 track level too. Track levels are saved with the show and `.smartstage.json`
 playlist files; older shows receive the centered default.
 
@@ -269,6 +270,9 @@ all Smart Stage sound, including background soundtracks and both sides of a
 crossfade. It starts at **75%** on each launch. Lower it to **0%** to mute without
 pausing, or raise it to **100%**. Your computer's system volume stays independent.
 The master scales each track's own level; it does not overwrite those settings.
+While dragging, the remote sends the latest value after it stays still for
+200 milliseconds. Releasing the slider sends immediately; unchanged values
+do not send another request. Internet latency still affects gateway control.
 
 ## Save and load playlists
 
