@@ -1,0 +1,184 @@
+{
+  "collectedAt": "2026-10-02T01:52:03.884836+00:00",
+  "classification": "Unresolved initial native WebView observation timeout on a later main build; cause unproven.",
+  "release": "v1.6.1",
+  "publishedReleaseSourceCommit": "43f024d504e05f357447e39b894952a1ba2a1d72",
+  "mainSourceCommit": "4caec450162c11ce48670d54d6fbdef665d3b34d",
+  "productSourceUnchangedSinceRelease": true,
+  "changedRepositoryPathsSinceRelease": [
+    ".github/workflows/update.yml",
+    "install-gateway.sh",
+    "install.ps1",
+    "install.sh",
+    "scripts/verify-windows-install.py"
+  ],
+  "unchangedSourceFiles": {
+    "scripts/native-admin-windows.cpp": {
+      "releaseSHA256": "8dd56e797b87ac11542ccc13fdabcaa2e5734f3e7d09f7a1485eb16cb7f55b5e",
+      "mainSHA256": "8dd56e797b87ac11542ccc13fdabcaa2e5734f3e7d09f7a1485eb16cb7f55b5e",
+      "unchanged": true
+    },
+    "scripts/native_admin_windows_checks.py": {
+      "releaseSHA256": "aac41f9493ea48d92b598e93ee5db9a64ab8b2eb9f2072013efa648a5288de92",
+      "mainSHA256": "aac41f9493ea48d92b598e93ee5db9a64ab8b2eb9f2072013efa648a5288de92",
+      "unchanged": true
+    },
+    "internal/platform/desktop_windows.cpp": {
+      "releaseSHA256": "f8c9564c48e8aa44bc6222c98eb9870d10b6789a32ace76c6ef9a3e5bba37493",
+      "mainSHA256": "f8c9564c48e8aa44bc6222c98eb9870d10b6789a32ace76c6ef9a3e5bba37493",
+      "unchanged": true
+    },
+    "scripts/build.sh": {
+      "releaseSHA256": "f1401fee405f88620093beff50ce10e9a6b399cb42e34737b1c2ea8575c1fdfb",
+      "mainSHA256": "f1401fee405f88620093beff50ce10e9a6b399cb42e34737b1c2ea8575c1fdfb",
+      "unchanged": true
+    },
+    ".github/workflows/build.yml": {
+      "releaseSHA256": "55143d6b5bd7e2b5225d3d1b6a2e53e1214b1b8fd907b4094126fb19efad2031",
+      "mainSHA256": "55143d6b5bd7e2b5225d3d1b6a2e53e1214b1b8fd907b4094126fb19efad2031",
+      "unchanged": true
+    },
+    "internal/web/assets/app.js": {
+      "releaseSHA256": "6cd14c9d6a0182e8d3083ea8dbbbe8e4b59f7fab9eefc449fe6d79ca57f16b49",
+      "mainSHA256": "6cd14c9d6a0182e8d3083ea8dbbbe8e4b59f7fab9eefc449fe6d79ca57f16b49",
+      "unchanged": true
+    },
+    "internal/web/assets/style.css": {
+      "releaseSHA256": "2180b2c2ab448ca1bd06a5e2d30e167b99abd890b6b0e1dd9ae124e0b47e6fac",
+      "mainSHA256": "2180b2c2ab448ca1bd06a5e2d30e167b99abd890b6b0e1dd9ae124e0b47e6fac",
+      "unchanged": true
+    }
+  },
+  "failedMainProbe": {
+    "workflowRunID": 36951758761,
+    "jobID": 110666018538,
+    "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/36951758761/job/110666018538",
+    "target": "windows/amd64",
+    "jobConclusion": "failure",
+    "step": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+    "stepConclusion": "failure",
+    "stepStartedAt": "2026-10-02T01:38:55Z",
+    "stepCompletedAt": "2026-10-02T01:39:25Z",
+    "phase": "--shutdown-confirmation helper; initial authenticated Admin/session/CSRF/EventSource readiness wait, before opening a quit confirmation.",
+    "observationError": "WebView script did not finish",
+    "observationTimeoutSeconds": 10,
+    "timeoutLocation": {
+      "file": "scripts/native-admin-windows.cpp",
+      "line": 27
+    },
+    "readinessWaitLocation": {
+      "file": "scripts/native-admin-windows.cpp",
+      "line": 363
+    },
+    "webView2RuntimeVersion": "153.0.4234.48",
+    "diagnosticArtifact": {
+      "id": 11203962789,
+      "name": "windows-admin-checks-amd64",
+      "sha256": "0bda72ac5e8cdeaf82c3ece84b7899996d88ff465feecc40e902a485f6371041",
+      "githubDigestVerified": true
+    },
+    "reportMember": "smartstage-windows-amd64.exe.native-admin.json",
+    "reportSHA256": "b848b41b022ff2e0c4e30a368bdf204c4d53642808b721f9b631e66cb89f6903",
+    "sourceExecutableSHA256": "57e270e6b366f573a4e7e1548efbde86c2f32ad509e0842ec58e095f42b21e09",
+    "retainedExecutableDigestMatchesReport": true,
+    "nativeWindowCreatedAndShown": true,
+    "quitConfirmationNotYetOpen": true,
+    "fullAdminChooserAndDropProbeNotRun": true,
+    "laterNativeBrowserVolumeStepSkipped": true,
+    "cleanup": {
+      "nativeShutdownCompleted": true,
+      "nativeWebViewClosed": true,
+      "privateWebViewProfileRemoved": true
+    },
+    "causeLimit": "The queued observation promise did not complete within ten seconds. Retained diagnostics cannot distinguish delayed UI-queue dispatch, WebView startup/navigation delay, or a stalled WebView callback. No causal attribution to product changes or the hosted environment is established."
+  },
+  "independentPassingEvidence": {
+    "candidateWindowsAMD64": {
+      "workflowRunID": 36947250000,
+      "jobID": 110652062184,
+      "sourceCommit": "43f024d504e05f357447e39b894952a1ba2a1d72",
+      "jobConclusion": "success",
+      "artifact": {
+        "id": 11202367324,
+        "name": "native-windows-amd64",
+        "size": 15292959,
+        "sha256": "c7b140cac0717c5beedf62d16a5d708cffff4d1733720a028d4ed1a35c751cc1",
+        "githubDigestVerified": true
+      },
+      "reportMember": "smartstage-windows-amd64.exe.native-admin.json",
+      "reportSHA256": "1152e3a3cb8258c4d69238cbbbd21a18e78741e89f1116b4713bb675b96f5828",
+      "reportStatus": "passed",
+      "sourceExecutableSHA256": "8643fa5bf6e4b236ed791249ca9bcf1bbf0c4aac99d77535ba390bf7f3beb6cf",
+      "initialAdminAssetsAndSessionAndSSEPassed": true,
+      "shutdownWithOpenQuitConfirmationPassed": true,
+      "nativeFileChooserAndOriginalDropPassed": true
+    },
+    "taggedWindowsAMD64": {
+      "workflowRunID": 36948723398,
+      "jobID": 110656644199,
+      "sourceCommit": "43f024d504e05f357447e39b894952a1ba2a1d72",
+      "jobConclusion": "success",
+      "publishedReportAsset": {
+        "id": 604496518,
+        "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.1/smartstage-windows-amd64.exe.native-admin.json",
+        "sha256": "ead6d6e628988a0ffdb01757417ac2b5ad6de2b80410f17d33273d9736ebc817",
+        "githubDigestVerified": true
+      },
+      "reportStatus": "passed",
+      "sourceExecutableSHA256": "09bea755e555eba1d21f27ba29162057a534c4289ae0ec2851954dd55015e9cf",
+      "initialAdminAssetsAndSessionAndSSEPassed": true,
+      "shutdownWithOpenQuitConfirmationPassed": true,
+      "nativeFileChooserAndOriginalDropPassed": true
+    },
+    "sameJobInstalledAppLifecycle": {
+      "workflowRunID": 36951758761,
+      "jobID": 110666018538,
+      "sourceCommit": "4caec450162c11ce48670d54d6fbdef665d3b34d",
+      "step": "Exercise current-user Windows installation and native app lifecycle",
+      "stepConclusion": "success",
+      "artifact": {
+        "id": 11204795636,
+        "name": "native-windows-amd64",
+        "sha256": "f4120560ed4afda419aebe8f9d05f5efec53edbb75bb10331f612cd0dbbfae09",
+        "githubDigestVerified": true
+      },
+      "reportMember": "windows-install-amd64.json",
+      "reportSHA256": "d16fc84355976bf24b8bfc750629abdf831998dbfffe9ad3d492fdb82fb704c7",
+      "sourceExecutableSHA256": "57e270e6b366f573a4e7e1548efbde86c2f32ad509e0842ec58e095f42b21e09",
+      "reportStatus": "passed",
+      "nativeAdminWindowObserved": true,
+      "webView2ChildProcessObserved": true,
+      "nativeEscapeReachedEmergencyStop": true,
+      "shortcutRelaunchReusesRunningApp": true,
+      "adminQuitWaitedForNativeProcessExit": true,
+      "firewallRulesUnchanged": true,
+      "adminQuitClosedServer": true,
+      "testInstallationAndConfigRemoved": true,
+      "scope": "This installed-app lifecycle check does not repeat the failed helper or establish that its native script-observation timeout was transient."
+    },
+    "sameRunWindowsARM64Probe": {
+      "workflowRunID": 36951758761,
+      "jobID": 110666018471,
+      "sourceCommit": "4caec450162c11ce48670d54d6fbdef665d3b34d",
+      "step": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+      "stepConclusion": "success",
+      "jobStatusAtCollection": "in_progress",
+      "jobConclusionAtCollection": null,
+      "artifact": {
+        "id": 11204587284,
+        "name": "windows-admin-checks-arm64",
+        "sha256": "d1045e0c7218184e8655506b42d902e4b0624a32b8e3cd3516f428a9c196f63c",
+        "githubDigestVerified": true
+      },
+      "reportMember": "smartstage-windows-arm64.exe.native-admin.json",
+      "reportSHA256": "a8966f45c6305971f267e8e61f056064c38400d3f0e3a05ca7363682b8217f8f",
+      "reportStatus": "passed",
+      "sourceExecutableSHA256": "12abcca0fc91fe8cef5728aef39041d3cca63ef2987d250565f29af468e346f1",
+      "initialAdminAssetsAndSessionAndSSEPassed": true,
+      "shutdownWithOpenQuitConfirmationPassed": true,
+      "nativeFileChooserAndOriginalDropPassed": true
+    }
+  },
+  "scope": "The later main-run failure remains recorded separately from the successful candidate/tagged publication evidence. The evidence supports a bounded initial startup-observation failure, not a demonstrated regression or established environmental cause. No rerun, probe change, product change, or physical hardware verification was performed for this audit.",
+  "sanitization": "Selected status, provenance, hashes, source-relative paths and check outcomes only. No raw logs, host paths, device identifiers, window handles, process IDs, cookies, session values or credentials."
+}

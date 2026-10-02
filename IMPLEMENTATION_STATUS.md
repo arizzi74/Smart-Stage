@@ -1,11 +1,11 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.6.0**.
+The desktop application and Linux gateway are released as **Smart Stage 1.6.1**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.0
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.1
 
 ## Implemented
 
@@ -172,6 +172,29 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.0
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.6.1 is source `43f024d504e05f357447e39b894952a1ba2a1d72`. The remote
+volume queue and centered track readouts passed Go race/vet, JavaScript and browser
+checks. Seven candidate gates and eight publication gates passed; all 50 public
+assets, eight checksum pairs and six executable vulnerability scans passed.
+Fourteen tagged post-publication jobs passed. Both Mac updater attempts failed
+on GitHub release-discovery rate limits before replacement or restart; their
+reports and reset times remain recorded. A separate four-target updater run
+passed actual discovery, public-byte replacement and restart using the original
+tagged fixtures. Native/browser checks cover volume
+controls on all four targets; Mac native gain/fade checks passed, while both
+Windows runners lacked audio endpoints. See [verification details](docs/verification/release-v1.6.1/README.md).
+All four latest default-installer jobs passed, including both PowerShell versions
+on Windows. An earlier Windows ARM64 strict firewall-snapshot failure remains
+recorded. The verifier now scopes Start-component preparation to the current user;
+installer bytes and the full comparison remain unchanged. The passing ARM64
+reports already had the component rule, so active warmup was not exercised.
+A later main Windows AMD64 native probe timed out during its initial WebView
+observation. Its sources are unchanged from the passing release probes. The
+failed attempt and independent passing evidence are retained; its cause remains
+unproven.
+Physical speaker/projector acceptance remains incomplete. No production gateway,
+nginx or firewall changes were made.
 
 Version 1.5.1 is source `beccb506dbf3eaecebfc5123a76de9b69e13929b`. Background override toggles,
 stage draft/revision recovery and prominent automatic-update notices passed

@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.6.0 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.6.1 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,22 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.6.1: responsive master volume and centered track readouts
+
+Source `43f024d504e05f357447e39b894952a1ba2a1d72` passed all seven [candidate gates](verification/release-v1.6.1/candidate-workflow.json) before tagging and all eight [publication gates](verification/release-v1.6.1/tag-workflow.json). Remote master changes use a 200ms trailing debounce, flush on release and retain one latest pending value while a request is active. Successful acknowledgements no longer wait for a state GET. Revision-scoped confirmations protect the displayed level from delayed state responses; STOP, Escape and host replacement cancel pending changes.
+
+Track readouts display a centered 0%, with negative/positive adjustments and matching accessibility values. Stored levels and native gains retain their existing meaning. [Browser fixtures](verification/release-v1.6.1/browser-checks.json) cover actual mouse/touch/keyboard release, continuous movement, queue draining, repeated values, competing controllers, delayed acknowledgements/state, STOP/Escape priority, signed labels, persistence and failed-save rollback in English and Italian. The [phone Admin screenshot](verification/release-v1.6.1/admin-track-volume-signed-phone.png) uses synthetic fixture data. [Local checks](verification/release-v1.6.1/local-checks.json) include Go race tests, vet and JavaScript tests.
+
+[Native/browser evidence](verification/release-v1.6.1/native-volume-evidence.json) verifies saved levels and signed controls on all four desktop targets. Both Mac runners verify native gain and audio fade ownership. Neither Windows runner has an audio endpoint, so its native audio gain and audible output checks remain unavailable. Physical speaker/projector acceptance is incomplete.
+
+The public audit verified all [50 assets/eight checksum pairs](verification/release-v1.6.1/assets.json) and [six executable vulnerability scans](verification/release-v1.6.1/security-scans.json). The [tagged post-publication record](verification/release-v1.6.1/postpublication-status.json) contains 14 passing jobs and the two Mac updater failures. The [original tagged updater reports](verification/release-v1.6.1/original-tagged-auto-update-evidence.json) contain two passing Windows updates and GitHub release-discovery quota failures on [Mac Intel](verification/release-v1.6.1/original-tagged-updater-darwin-amd64-failure.json) and [Apple Silicon](verification/release-v1.6.1/original-tagged-updater-darwin-arm64-failure.json). Those attempts did not complete replacement or restart; their reset times and original failures are retained. A [separate four-target updater run](verification/release-v1.6.1/supplemental-auto-update-evidence.json) passed discovery, public-byte replacement and restart using the original tagged fixtures and unchanged published binaries.
+
+An [earlier Windows ARM64 default-installer check](verification/release-v1.6.1/earlier-default-installer-failure.json) failed the strict global firewall comparison after one outbound `Microsoft.StartExperiencesApp` rule appeared for the current Windows user. No removed or Smart Stage-named rule changed; its creator is unproven. The verifier's setup had not initialized that user's Start component. The revised verifier reads installed package identities across users when necessary and waits for the current user's component rule before taking its baseline. It retains the full strict comparison without directly editing rules or excluding them from the comparison.
+
+All four [latest default-installer jobs](verification/release-v1.6.1/default-installer-workflows.json) passed. [Windows reports](verification/release-v1.6.1/windows-installer-evidence.json) verify both architectures under PowerShell 5 and 7, including exact published executable hashes and unchanged full firewall snapshots. [Mac reports](verification/release-v1.6.1/mac-installer-evidence.json) verify both default app installations. [Public installer scripts](verification/release-v1.6.1/installer-defaults.json) match `feee6c475b3e5b97ec01c20d4e5b481f0d871123` and select v1.6.1. Windows verifier source is `4caec450162c11ce48670d54d6fbdef665d3b34d`; installer bytes are unchanged. Passing ARM64 reports already had the current user's component rule, so successful AllUsers discovery and active warmup were not exercised. The passing run does not establish the earlier rule's creator.
+
+A [later main-branch Windows AMD64 native probe](verification/release-v1.6.1/main-webview-probe-timeout.json) timed out after ten seconds while observing initial authenticated Admin/SSE readiness. That helper did not reach confirmation, chooser, drop or volume assertions. Product, native probe and build sources are unchanged from the release source. The same probe passed in candidate/tagged AMD64 jobs and the later main ARM64 job; the affected job's installed-app lifecycle check also passed. Cleanup succeeded. The cause is unproven, and the initial observation timeout remains unresolved; these independent passes do not turn that failed attempt into a pass.
 
 ### Version 1.6.0: saved track levels and remote master volume
 

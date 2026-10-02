@@ -1,0 +1,29 @@
+{
+  "status": "failed",
+  "target": "darwin/amd64",
+  "release": "v1.6.1",
+  "fixtureSourceReported": true,
+  "expectedFixtureSource": "43f024d504e05f357447e39b894952a1ba2a1d72",
+  "physicalPlaybackVerified": false,
+  "startupUpdatePending": false,
+  "testDirectoryRemoved": true,
+  "testProcessCleanupPassed": true,
+  "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+  "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (43f024d504e0), go1.26.8, darwin/amd64",
+  "initialUpdatePhase": "error",
+  "initialVersion": "v0.0.0-preview.1",
+  "publishedDownload": {
+    "release": "v1.6.1",
+    "target": "darwin/amd64",
+    "status": "passed",
+    "archiveSHA256": "c1fd61fee835b54634cb0797e9daf313706c904ac3037fc6c32bc1f0b256923d",
+    "executableSHA256": "b8d2f458ec6a4b3daaa3e5eac4cc56b83e7f6968f600e0b68e3ef2c8fbaaea69"
+  },
+  "failureStatusSource": "initialUpdateStatus",
+  "lastUpdatePhase": "error",
+  "failureCategory": "GitHub release-discovery rate limit; no replacement or restart completed",
+  "retryAfterUTC": "2026-10-02T01:35:06Z",
+  "artifactID": 11203890251,
+  "artifactName": "auto-update-darwin-amd64",
+  "artifactArchiveSHA256": "bee8d3816ead9f18fa21d3aa8641ad007f8a3f86aab68a830cc40d2daac34cd5"
+}

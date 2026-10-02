@@ -1,0 +1,8 @@
+{
+  "source": "43f024d504e05f357447e39b894952a1ba2a1d72",
+  "goRaceAllPassed": true,
+  "goVetPassed": true,
+  "javaScriptUnitTestsPassed": 11,
+  "browserSmokePassed": true,
+  "physicalOutputVerified": false
+}

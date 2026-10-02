@@ -1,0 +1,36 @@
+{
+  "release": "v1.6.1",
+  "source": "feee6c475b3e5b97ec01c20d4e5b481f0d871123",
+  "run": 36950250137,
+  "job": 110661386969,
+  "jobConclusion": "failure",
+  "failedStep": "Install the published app using built-in Windows PowerShell",
+  "reportStatus": "incomplete",
+  "powerShell7Status": "skipped",
+  "artifactID": 11203509597,
+  "artifactArchiveSHA256": "8083f39cb563df588aabb5a223652678341c6c4258c960369566ea7fda3ece00",
+  "rawReportSHA256": "2515ce88189570f8b3910ea3e67e2a934c7683ba350f4c001524391dff9898af",
+  "windowsShellInitialization": {
+    "componentPresent": false,
+    "warmupRequired": false
+  },
+  "firewallBeforeRuleCount": 494,
+  "firewallAfterRuleCount": 495,
+  "firewallStrictSnapshotsEqual": false,
+  "firewallDifference": {
+    "added": [
+      {
+        "Action": 2,
+        "Direction": 2,
+        "Enabled": 1,
+        "Profile": 7,
+        "Name": "Microsoft.StartExperiencesApp_8wekyb3d8bbweS-1-5-21-<redacted>-500-Out-Allow-AllCapabilities"
+      }
+    ],
+    "removedRuleCount": 0,
+    "sameRulesDifferentOrder": false
+  },
+  "machineSpecificSIDRedacted": true,
+  "exactOriginalRetainedPrivately": true,
+  "causalAttribution": "Not established by captured rule fields"
+}
