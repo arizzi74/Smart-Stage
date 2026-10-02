@@ -1,8 +1,8 @@
-Smart Stage 1.6.1 improves remote volume response and makes track adjustments easier to read on Mac and Windows.
+Smart Stage 1.6.2 reduces repeated playlist saves while adjusting track volume on Mac and Windows.
 
-- Remote master volume sends the latest value after the slider has stayed still for **200 ms**, or immediately when you release it. Pending changes replace earlier values, and successful adjustments no longer wait for an extra status request.
-- Track volume displays **0%** in the center, negative percentages to the left and positive percentages to the right. Halfway left is **−50%**; halfway right is **+50%**. These are adjustments relative to the centered level.
-- Existing saved track levels and playlist files retain the same playback volume. The remote master remains an absolute percentage, starting at **75%** each launch.
+- Playlist track sliders save the latest value after it has stayed still for **200 ms**, or immediately when you release the slider. Continuous dragging no longer saves intermediate levels every 120 ms.
+- Each track keeps its own save deadline. A pending save retains the latest adjustment, and returning to an unchanged saved level does not create another revision.
+- Track volume still displays **0%** in the center, with negative/positive percentages; existing saved levels and playlist files retain the same playback volume. The remote master keeps its existing 200 ms behavior and **75%** launch default.
 - Playback position, pause state and independent audio/visual fades are preserved. Both interfaces support English and Italian.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.

@@ -357,10 +357,26 @@ function dedicatedWindowsAdmin(platform, release) {
     assert.equal(volumeState.masterVolume, .75);
     assert.equal(await admin.locator(`#track-volume-${volumeCue.id}`).getAttribute('aria-valuetext'), '0%');
     assert.equal(await admin.locator(`#track-volume-${volumeCue.id}`).locator('..').locator('output').textContent(), '0%');
-    const trackChanged = admin.waitForResponse(response => apiPath(response) === '/api/playlist/volume' && response.request().method() === 'PUT');
-    await admin.locator(`#track-volume-${volumeCue.id}`).fill('70');
+    const trackWriteCount = () => adminRequests.filter(path => path === '/api/playlist/volume').length;
+    const trackWritesBefore = trackWriteCount();
+    const trackChanged = admin.waitForResponse(response => apiPath(response) === '/api/playlist/volume' && response.request().method() === 'PUT' && response.request().postDataJSON()?.volume === .7);
+    // Move continuously for longer than the debounce interval without emitting
+    // release/change. The real saved-show transaction must see only the final
+    // level once movement ends, not several intermediate playlist revisions.
+    await admin.locator(`#track-volume-${volumeCue.id}`).evaluate(async range => {
+      range.focus();
+      const values = [54, 58, 62, 66, 70];
+      for (let index = 0; index < values.length; ++index) {
+        range.value = String(values[index]);
+        range.dispatchEvent(new Event('input', {bubbles: true}));
+        if (index + 1 < values.length) await new Promise(resolve => setTimeout(resolve, 70));
+      }
+    });
+    assert.equal(trackWriteCount(), trackWritesBefore, 'Continuous track movement must not write intermediate revisions');
     const trackResponse = await trackChanged; assert.equal(trackResponse.status(), 200); saved = await trackResponse.json();
     await admin.waitForFunction(() => !trackVolumeSending);
+    assert.equal(trackWriteCount(), trackWritesBefore + 1, 'One stable final track value creates one saved-show write');
+    assert.equal(saved.playlistRevision, volumeState.playlistRevision + 1, 'Continuous track adjustment advances the saved revision only once');
     assert.equal(saved.cues.find(cue => cue.id === volumeCue.id).volume, .7);
     assert.equal(await admin.locator(`#track-volume-${volumeCue.id}`).getAttribute('aria-valuetext'), '+40%');
     assert.equal(await admin.locator(`#track-volume-${volumeCue.id}`).locator('..').locator('output').textContent(), '+40%');
@@ -378,7 +394,7 @@ function dedicatedWindowsAdmin(platform, release) {
     await admin.waitForFunction(() => !trackVolumeSending);
     assert.equal(await admin.locator(`#track-volume-${volumeCue.id}`).getAttribute('aria-valuetext'), '0%');
     await command.locator('.cue').filter({ hasText: 'Finale' }).tap(); await waitState('playing');
-    record.volumeControls = {liveTrackVolumePersisted: true, centeredTrackAdjustmentReadouts: true, masterDefault75: true, masterMuteAndMaximumAccepted: true, playbackAndTransportPreserved: true, nativeAudioGainReadbackScope: 'Separate native scene probes; browser state alone does not measure audible output'};
+    record.volumeControls = {liveTrackVolumePersisted: true, trackTrailing200msSingleSavedRevision: true, centeredTrackAdjustmentReadouts: true, masterDefault75: true, masterMuteAndMaximumAccepted: true, playbackAndTransportPreserved: true, nativeAudioGainReadbackScope: 'Separate native scene probes; browser state alone does not measure audible output'};
     assert.equal(await command.locator('#remote-stage').isDisabled(), false, 'Stage off must remain available during playback');
     const stageOff = command.waitForResponse(response => apiPath(response) === '/api/stage-output' && response.request().method() === 'POST');
     await command.locator('#remote-stage').tap();

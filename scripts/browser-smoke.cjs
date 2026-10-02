@@ -18,7 +18,7 @@ const assert = require('node:assert/strict');
   let updateGets = 0, updateGetDelay = 0, failUpdateCheck = false, restarting = false;
   let nativeChooserImports = [], playlistFailSave = false, stageRevisionRace = false, playlistWriteGate = null;
   let playlistReadGate = null, transportGate = null, rejectTransport = false;
-  let volumePostGate = null, stopPostGate = null, stateReadGate = null, rejectVolume = false, rejectTrackVolume = false;
+  let volumePostGate = null, trackVolumeWriteGate = null, stopPostGate = null, stateReadGate = null, rejectVolume = false, rejectTrackVolume = false;
   let nativePlaylistStatus = { id: 0, phase: 'idle' }, nativePlaylistResult = { phase: 'complete' }, nativePlaylistMismatch = false;
   let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: false };
   let gateway = { mode: 'lan', url: '', hasToken: false, status: 'disabled', message: '', remoteURL: '' };
@@ -208,7 +208,15 @@ const assert = require('node:assert/strict');
       cue.volume = body.volume;
       config.playlistRevision++; state.playlistRevision = config.playlistRevision;
       const view = state.cues.find(cue => cue.id === body.cueId); if (view) view.volume = body.volume;
-      state.revision++; broadcast(); reply(config); return;
+      state.revision++;
+      const snapshot = structuredClone(config), stateSnapshot = structuredClone(state);
+      const gate = trackVolumeWriteGate; trackVolumeWriteGate = null;
+      if (!gate || gate.broadcast !== false) broadcast(stateSnapshot);
+      if (gate) {
+        gate.snapshot = snapshot; gate.stateSnapshot = stateSnapshot;
+        gate.entered(); await gate.released;
+      }
+      reply(snapshot); return;
     }
     if (url.pathname === '/api/playlist') {
       if (req.method === 'GET' && playlistReadGate) {
@@ -1792,12 +1800,32 @@ const assert = require('node:assert/strict');
     assert.equal(await publicSeek.locator('#master-volume').getAttribute('aria-valuetext'), '75%');
     assert.equal(await publicSeek.getByText('Volume generale', {exact:true}).count(), 1);
 
-    const volumeAdmin = await browser.newPage(); volumeAdmin.on('pageerror', e => errors.push(e.message));
+    const volumeAdminContext = await browser.newContext({viewport:{width:1280, height:900}, hasTouch:true});
+    const volumeAdmin = await volumeAdminContext.newPage(); volumeAdmin.on('pageerror', e => errors.push(e.message));
     await volumeAdmin.goto(adminBase + '/admin'); await volumeAdmin.locator('#connection.live').waitFor();
     const audioVolumeCue = config.cues.find(cue => ['audio', 'video'].includes(cue.cache.media.kind));
     const trackRange = volumeAdmin.locator(`#track-volume-${audioVolumeCue.id}`);
     const trackOutput = volumeAdmin.locator('.track-volume-control').filter({has:trackRange}).locator('output');
-    const trackResponse = value => volumeAdmin.waitForResponse(response => response.url() === adminBase + '/api/playlist/volume' && response.request().postDataJSON()?.cueId === audioVolumeCue.id && response.request().postDataJSON()?.volume === value);
+    const trackResponse = (value, cueId = audioVolumeCue.id) => volumeAdmin.waitForResponse(response => response.url() === adminBase + '/api/playlist/volume' && response.request().postDataJSON()?.cueId === cueId && response.request().postDataJSON()?.volume === value);
+    const trackRequests = () => requests.filter(item => item.listenerRole === 'admin' && item.path === '/api/playlist/volume');
+    const trackCheckpoint = () => ({count:trackRequests().length, revision:config.playlistRevision});
+    const assertTrackWrites = (before, count, message) => {
+      assert.equal(trackRequests().length, before.count + count, message);
+      assert.equal(config.playlistRevision, before.revision + count, `${message}: each meaningful save advances the playlist revision once`);
+      assert.equal(state.playlistRevision, config.playlistRevision);
+    };
+    const inputTrack = (raw, cueId = audioVolumeCue.id) => volumeAdmin.evaluate(({raw, cueId}) => {
+      const range = document.getElementById(`track-volume-${cueId}`); range.value = String(raw);
+      range.dispatchEvent(new Event('input', {bubbles:true})); return Date.now();
+    }, {raw, cueId});
+    const releaseTrack = (type = 'change', cueId = audioVolumeCue.id) => volumeAdmin.evaluate(({type, cueId}) => {
+      document.getElementById(`track-volume-${cueId}`).dispatchEvent(new Event(type, {bubbles:true}));
+    }, {type, cueId});
+    const waitTrackGate = gate => Promise.race([gate.received, volumeAdmin.waitForTimeout(1500).then(() => { throw new Error('Track save did not reach its controlled response gate'); })]);
+    const acceptTrackGate = async (gate, value, cueId = audioVolumeCue.id) => {
+      const response = trackResponse(value, cueId); gate.release();
+      assert.equal((await response).status(), 200); await volumeAdmin.waitForTimeout(30);
+    };
     const trackLabel = async label => {
       await volumeAdmin.waitForFunction(({id, label}) => {
         const range = document.getElementById(id); return range.getAttribute('aria-valuetext') === label && range.closest('.track-volume-control').querySelector('output').value === label;
@@ -1806,8 +1834,212 @@ const assert = require('node:assert/strict');
     };
     await trackRange.waitFor(); assert.equal(await trackRange.inputValue(), String(Math.round(100 * (audioVolumeCue.volume ?? .5))));
     assert.equal(await trackRange.getAttribute('min'), '0'); assert.equal(await trackRange.getAttribute('max'), '100');
-    let acceptedTrack = trackResponse(.5); await trackRange.fill('50'); await acceptedTrack; await trackLabel('0%');
+    let acceptedTrack;
+    if (Number(await trackRange.inputValue()) !== 50) {
+      acceptedTrack = trackResponse(.5); await trackRange.fill('50'); await acceptedTrack;
+    }
+    await trackLabel('0%');
     assert.equal(await trackRange.inputValue(), '50', 'The center remains native normalized volume .5');
+
+    // Continuous movement lasts longer than 200ms. No accepted write or
+    // playlist revision may occur until the final value has been quiet 200ms.
+    let trackBefore = trackCheckpoint();
+    const trackFinalInputAt = await volumeAdmin.evaluate(async id => {
+      const range = document.getElementById(id);
+      for (const raw of [10, 20, 30, 40, 55, 65]) {
+        if (raw !== 10) await new Promise(resolve => setTimeout(resolve, 70));
+        range.value = String(raw); range.dispatchEvent(new Event('input', {bubbles:true}));
+      }
+      return Date.now();
+    }, `track-volume-${audioVolumeCue.id}`);
+    assertTrackWrites(trackBefore, 0, 'Continuous track movement cannot persist intermediate values');
+    acceptedTrack = trackResponse(.65); await volumeAdmin.waitForTimeout(100);
+    assertTrackWrites(trackBefore, 0, 'The track deadline starts at its final input');
+    assert.equal((await acceptedTrack).status(), 200); await trackLabel('+30%'); await volumeAdmin.waitForTimeout(220);
+    assertTrackWrites(trackBefore, 1, 'A stable track burst persists only its final value');
+    assert(trackRequests().at(-1).receivedAt - trackFinalInputAt >= 185, 'Track saving requires 200ms of quiet after the latest value');
+
+    trackBefore = trackCheckpoint(); await inputTrack(65);
+    for (const type of ['pointerup', 'change', 'blur', 'change']) await releaseTrack(type);
+    await volumeAdmin.waitForTimeout(230);
+    await inputTrack(40); await volumeAdmin.waitForTimeout(70); await inputTrack(65); await volumeAdmin.waitForTimeout(230);
+    await releaseTrack(); await volumeAdmin.waitForTimeout(30);
+    assertTrackWrites(trackBefore, 0, 'Unchanged values and returning to the saved level do not write a playlist');
+
+    // Chromium emits input AND change on range keydown. Neither may flush
+    // while the adjustment key is held; the real keyup must flush immediately.
+    const trackKeyboardGate = responseGate(); trackVolumeWriteGate = trackKeyboardGate;
+    trackBefore = trackCheckpoint(); await trackRange.focus(); await volumeAdmin.keyboard.down('ArrowRight');
+    assert.equal(await trackRange.inputValue(), '66');
+    assertTrackWrites(trackBefore, 0, 'Native track keydown previews without saving through its change event');
+    const trackKeyReleasedAt = Date.now(); await volumeAdmin.keyboard.up('ArrowRight'); await waitTrackGate(trackKeyboardGate);
+    assert(trackRequests().at(-1).receivedAt - trackKeyReleasedAt < 180, 'Track key release flushes before the debounce interval');
+    assertTrackWrites(trackBefore, 1, 'Track keyboard release accepts one save');
+    await acceptTrackGate(trackKeyboardGate, .66); await trackLabel('+32%');
+
+    const trackBlurGate = responseGate(); trackVolumeWriteGate = trackBlurGate;
+    trackBefore = trackCheckpoint(); await trackRange.focus(); await inputTrack(79);
+    assertTrackWrites(trackBefore, 0, 'An enabled focused track previews until user release');
+    const trackBlurAt = Date.now(); await volumeAdmin.locator('#language-mode').focus(); await waitTrackGate(trackBlurGate);
+    assert(trackRequests().at(-1).receivedAt - trackBlurAt < 180, 'Moving focus away from an enabled track flushes immediately');
+    await acceptTrackGate(trackBlurGate, .79); await volumeAdmin.waitForTimeout(220);
+    assertTrackWrites(trackBefore, 1, 'Enabled blur persists exactly one track value');
+
+    // Real pointer capture must deliver a release even after the mouse leaves
+    // the input. A touch end must flush the selected level just as promptly.
+    await trackRange.scrollIntoViewIfNeeded();
+    let trackBox = await trackRange.boundingBox();
+    const trackMouseGate = responseGate(); trackVolumeWriteGate = trackMouseGate; trackBefore = trackCheckpoint();
+    await volumeAdmin.mouse.move(trackBox.x + trackBox.width * .25, trackBox.y + trackBox.height / 2);
+    await volumeAdmin.mouse.down(); await volumeAdmin.mouse.move(trackBox.x + trackBox.width * .55, trackBox.y + trackBox.height / 2, {steps:3});
+    await volumeAdmin.mouse.move(trackBox.x + trackBox.width * .55, trackBox.y + trackBox.height + 35);
+    const trackMouseRaw = Number(await trackRange.inputValue());
+    assert(trackMouseRaw >= 45 && trackMouseRaw <= 65, 'Real track dragging changes the native range');
+    assertTrackWrites(trackBefore, 0, 'Track dragging previews before release');
+    const trackMouseReleasedAt = Date.now(); await volumeAdmin.mouse.up(); await waitTrackGate(trackMouseGate);
+    assert(trackRequests().at(-1).receivedAt - trackMouseReleasedAt < 180, 'Mouse release outside the track range flushes immediately');
+    assert.equal(trackRequests().at(-1).body.volume, trackMouseRaw / 100);
+    await acceptTrackGate(trackMouseGate, trackMouseRaw / 100); await volumeAdmin.waitForTimeout(220);
+    assertTrackWrites(trackBefore, 1, 'Mouse release and its native change event persist one track value');
+
+    const trackTouch = await volumeAdminContext.newCDPSession(volumeAdmin);
+    trackBox = await trackRange.boundingBox();
+    const trackTouchGate = responseGate(); trackVolumeWriteGate = trackTouchGate; trackBefore = trackCheckpoint();
+    await trackTouch.send('Input.dispatchTouchEvent', {type:'touchStart', touchPoints:[{x:trackBox.x + trackBox.width * .25, y:trackBox.y + trackBox.height / 2}]});
+    await trackTouch.send('Input.dispatchTouchEvent', {type:'touchMove', touchPoints:[{x:trackBox.x + trackBox.width * .75, y:trackBox.y + trackBox.height / 2}]});
+    const trackTouchRaw = Number(await trackRange.inputValue());
+    assert(trackTouchRaw >= 60 && trackTouchRaw <= 90, 'A real touch gesture changes track volume');
+    assertTrackWrites(trackBefore, 0, 'Track touch movement previews before release');
+    const trackTouchReleasedAt = Date.now(); await trackTouch.send('Input.dispatchTouchEvent', {type:'touchEnd', touchPoints:[]}); await waitTrackGate(trackTouchGate);
+    assert(trackRequests().at(-1).receivedAt - trackTouchReleasedAt < 180, 'Touch release flushes track volume immediately');
+    assert.equal(trackRequests().at(-1).body.volume, trackTouchRaw / 100);
+    await acceptTrackGate(trackTouchGate, trackTouchRaw / 100); await volumeAdmin.waitForTimeout(220);
+    assertTrackWrites(trackBefore, 1, 'Touch release persists one track value'); await trackTouch.detach();
+
+    // Delay the full-playlist acknowledgement and its SSE independently. The
+    // input remains editable and only the newest ready target follows the ACK.
+    const firstTrackSave = responseGate({broadcast:false}); trackVolumeWriteGate = firstTrackSave;
+    trackBefore = trackCheckpoint(); await inputTrack(30); await releaseTrack(); await waitTrackGate(firstTrackSave);
+    assert.equal(await trackRange.isDisabled(), false, 'Track sliders remain editable during a pending save');
+    for (const raw of [40, 65, 82]) { await inputTrack(raw); await volumeAdmin.waitForTimeout(70); }
+    await releaseTrack(); await volumeAdmin.waitForTimeout(220);
+    assertTrackWrites(trackBefore, 1, 'A held track acknowledgement permits only one in-flight write');
+    broadcast(firstTrackSave.stateSnapshot); await trackLabel('+64%');
+    assert.equal(await trackRange.inputValue(), '82', 'An older accepted SSE does not snap the newer track draft');
+    const latestTrackSave = responseGate(); trackVolumeWriteGate = latestTrackSave;
+    const heldTrackStateRead = responseGate();
+    const holdTrackState = async route => { heldTrackStateRead.entered(); await heldTrackStateRead.released; await route.continue(); };
+    await volumeAdmin.route(adminBase + '/api/state', holdTrackState);
+    const firstTrackAckAt = Date.now(); await acceptTrackGate(firstTrackSave, .30); await waitTrackGate(latestTrackSave);
+    assert(trackRequests().at(-1).receivedAt - firstTrackAckAt < 180, 'A ready track target drains immediately after the accepted playlist');
+    heldTrackStateRead.release(); await volumeAdmin.unrouteAll({behavior:'wait'});
+    assert.equal(trackRequests().at(-1).body.volume, .82);
+    assert.equal(trackRequests().at(-1).body.expectedRevision, trackBefore.revision + 1, 'A queued track target uses the acknowledged revision');
+    assertTrackWrites(trackBefore, 2, 'Only the newest queued track target is persisted');
+    await inputTrack(82); await releaseTrack(); await acceptTrackGate(latestTrackSave, .82);
+    await volumeAdmin.waitForTimeout(230); await trackLabel('+64%');
+    assertTrackWrites(trackBefore, 2, 'Returning to the in-flight accepted value does not write it again');
+
+    const movingTrackSave = responseGate(); trackVolumeWriteGate = movingTrackSave;
+    trackBefore = trackCheckpoint(); await inputTrack(24); await releaseTrack(); await waitTrackGate(movingTrackSave);
+    const movingTrackFinalAt = await inputTrack(68); acceptedTrack = trackResponse(.68);
+    await volumeAdmin.waitForTimeout(50); await acceptTrackGate(movingTrackSave, .24); await volumeAdmin.waitForTimeout(70);
+    assertTrackWrites(trackBefore, 1, 'An ACK does not flush a newer track value that is still inside its quiet interval');
+    assert.equal((await acceptedTrack).status(), 200);
+    assert(trackRequests().at(-1).receivedAt - movingTrackFinalAt >= 185, 'A pending track value retains its original final-input deadline');
+    await volumeAdmin.waitForTimeout(30); assertTrackWrites(trackBefore, 2, 'A delayed save then a stable newer target advances two revisions');
+
+    const awayFromSavedTrack = responseGate({broadcast:false}); trackVolumeWriteGate = awayFromSavedTrack;
+    trackBefore = trackCheckpoint(); await inputTrack(24); await releaseTrack(); await waitTrackGate(awayFromSavedTrack);
+    await inputTrack(68); await releaseTrack();
+    assertTrackWrites(trackBefore, 1, 'Returning to the previous saved level waits for the earlier write');
+    const restorePreviousTrack = responseGate(); trackVolumeWriteGate = restorePreviousTrack;
+    await acceptTrackGate(awayFromSavedTrack, .24); await waitTrackGate(restorePreviousTrack);
+    assert.equal(trackRequests().at(-1).body.volume, .68, 'A different in-flight save cannot erase the intent to restore the previous level');
+    assert.equal(trackRequests().at(-1).body.expectedRevision, trackBefore.revision + 1);
+    await acceptTrackGate(restorePreviousTrack, .68); await volumeAdmin.waitForTimeout(230); await trackLabel('+36%');
+    assertTrackWrites(trackBefore, 2, 'Moving back during a save persists the earlier write and exactly one restoration');
+
+    const secondVolumeCue = config.cues.find(cue => cue.id !== audioVolumeCue.id && ['audio', 'video'].includes(cue.cache.media.kind));
+    assert(secondVolumeCue, 'The fixture provides two independently adjustable tracks');
+    const secondSavedRaw = Math.round(100 * (secondVolumeCue.volume ?? .5));
+    // Editing A, then B, then A again must let B's earlier quiet deadline win.
+    trackBefore = trackCheckpoint(); await inputTrack(20); await volumeAdmin.waitForTimeout(70);
+    const secondFinalAt = await inputTrack(75, secondVolumeCue.id); await volumeAdmin.waitForTimeout(70);
+    const firstFinalAt = await inputTrack(25); const secondAccepted = trackResponse(.75, secondVolumeCue.id), firstAccepted = trackResponse(.25);
+    await volumeAdmin.waitForTimeout(70); assertTrackWrites(trackBefore, 0, 'Neither track saves during interleaved movement');
+    assert.equal((await secondAccepted).status(), 200);
+    const firstIndependentWrite = trackRequests()[trackBefore.count];
+    assert.equal(firstIndependentWrite.body.cueId, secondVolumeCue.id, 'Each track keeps its own deadline instead of sharing a restarted timer');
+    assert(firstIndependentWrite.receivedAt - secondFinalAt >= 185 && firstIndependentWrite.receivedAt - firstFinalAt < 185, 'The earlier stable track saves while the re-edited track still waits');
+    assert.equal((await firstAccepted).status(), 200);
+    assert(trackRequests().at(-1).receivedAt - firstFinalAt >= 185);
+    await volumeAdmin.waitForTimeout(30); assertTrackWrites(trackBefore, 2, 'Independent stable tracks each advance one revision');
+
+    // Releasing A marks only A ready. B must still finish its own quiet period.
+    trackBefore = trackCheckpoint(); const unreleasedTrackAt = await inputTrack(63, secondVolumeCue.id); await volumeAdmin.waitForTimeout(70);
+    const releasedTrackSave = responseGate(); trackVolumeWriteGate = releasedTrackSave;
+    await inputTrack(35); const releasedTrackAt = Date.now(); await releaseTrack(); await waitTrackGate(releasedTrackSave);
+    assert.equal(trackRequests().at(-1).body.cueId, audioVolumeCue.id);
+    assert(trackRequests().at(-1).receivedAt - releasedTrackAt < 180);
+    assertTrackWrites(trackBefore, 1, 'Release saves only the released track');
+    acceptedTrack = trackResponse(.63, secondVolumeCue.id); await acceptTrackGate(releasedTrackSave, .35); await volumeAdmin.waitForTimeout(40);
+    assertTrackWrites(trackBefore, 1, 'Releasing another cue cannot prematurely flush a moving track');
+    assert.equal((await acceptedTrack).status(), 200);
+    assert(trackRequests().at(-1).receivedAt - unreleasedTrackAt >= 185);
+    await volumeAdmin.waitForTimeout(30); assertTrackWrites(trackBefore, 2, 'The other track saves once its own deadline expires');
+
+    acceptedTrack = trackResponse(secondSavedRaw / 100, secondVolumeCue.id);
+    await volumeAdmin.locator(`#track-volume-${secondVolumeCue.id}`).fill(String(secondSavedRaw)); await acceptedTrack;
+    acceptedTrack = trackResponse(.5); await trackRange.fill('50'); await acceptedTrack; await trackLabel('0%');
+
+    // A structural host edit must rebuild rows even with a focused slider.
+    // Preserve the valid cue draft/deadline and reject callbacks from old DOM.
+    await trackRange.focus(); const oldTrackControl = await trackRange.elementHandle();
+    await oldTrackControl.evaluate(node => {
+      window.__trackReorderEvents = [];
+      for (const type of ['blur', 'change', 'lostpointercapture']) node.addEventListener(type, () => {
+        window.__trackReorderEvents.push({type, at:Date.now(), disabled:node.disabled, connected:node.isConnected});
+      });
+    });
+    const reorderedTrackSave = responseGate({broadcast:false}); trackVolumeWriteGate = reorderedTrackSave;
+    const reorderInputAt = await inputTrack(27);
+    const originalCueOrder = config.cues.map(cue => cue.id), firstTrackIndex = config.cues.findIndex(cue => cue.id === audioVolumeCue.id), secondTrackIndex = config.cues.findIndex(cue => cue.id === secondVolumeCue.id);
+    [config.cues[firstTrackIndex], config.cues[secondTrackIndex]] = [config.cues[secondTrackIndex], config.cues[firstTrackIndex]];
+    state.cues = config.cues.map((cue, index) => ({...state.cues.find(item => item.id === cue.id), position:index + 1}));
+    config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
+    trackBefore = trackCheckpoint();
+    const reorderedTracks = volumeAdmin.waitForResponse(response => response.url() === adminBase + '/api/playlist' && response.request().method() === 'GET');
+    await volumeAdmin.locator('#reload-playlist').dispatchEvent('click'); await reorderedTracks;
+    await volumeAdmin.waitForFunction(node => !node.isConnected, oldTrackControl);
+    assert.equal(await trackRange.inputValue(), '27', 'Reordering tracks preserves the draft on its cue ID');
+    await oldTrackControl.evaluate(node => {
+      node.value = '91'; node.dispatchEvent(new Event('input', {bubbles:true}));
+      for (const type of ['change', 'pointerup', 'blur']) node.dispatchEvent(new Event(type, {bubbles:true}));
+      node.dispatchEvent(new KeyboardEvent('keyup', {key:'ArrowRight', bubbles:true}));
+    });
+    await waitTrackGate(reorderedTrackSave);
+    assert.equal(trackRequests().at(-1).body.cueId, audioVolumeCue.id); assert.equal(trackRequests().at(-1).body.volume, .27);
+    const reorderSaveDelay = trackRequests().at(-1).receivedAt - reorderInputAt;
+    assert(reorderSaveDelay >= 185, `Rebuilding focused rows cannot flush a still-moving track draft (${reorderSaveDelay}ms; events ${JSON.stringify(await volumeAdmin.evaluate(() => window.__trackReorderEvents))})`);
+    assertTrackWrites(trackBefore, 1, 'Detached track callbacks cannot replace or duplicate the preserved target');
+    await acceptTrackGate(reorderedTrackSave, .27); await trackLabel('-46%'); await oldTrackControl.dispose();
+    const originalTrackLabel = config.cues.find(cue => cue.id === audioVolumeCue.id).label;
+    const secondTrackLabel = config.cues.find(cue => cue.id === secondVolumeCue.id).label;
+    const reorderedTrackLabel = volumeAdmin.locator('.playlist-row').filter({has:trackRange}).locator('input[maxlength="512"]');
+    let reorderedLabelSave = volumeAdmin.waitForResponse(response => response.url() === adminBase + '/api/playlist' && response.request().method() === 'PUT');
+    await reorderedTrackLabel.fill(originalTrackLabel + ' reorder check'); await reorderedTrackLabel.press('Tab'); await reorderedLabelSave;
+    assert.equal(config.cues.find(cue => cue.id === audioVolumeCue.id).label, originalTrackLabel + ' reorder check', 'The displayed track label edits its own cue after a reorder');
+    assert.equal(config.cues.find(cue => cue.id === secondVolumeCue.id).label, secondTrackLabel, 'A stale row index cannot rename the other cue');
+    reorderedLabelSave = volumeAdmin.waitForResponse(response => response.url() === adminBase + '/api/playlist' && response.request().method() === 'PUT');
+    await reorderedTrackLabel.fill(originalTrackLabel); await reorderedTrackLabel.press('Tab'); await reorderedLabelSave;
+    config.cues.sort((a, b) => originalCueOrder.indexOf(a.id) - originalCueOrder.indexOf(b.id));
+    state.cues = config.cues.map((cue, index) => ({...state.cues.find(item => item.id === cue.id), position:index + 1}));
+    config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
+    const originalTracks = volumeAdmin.waitForResponse(response => response.url() === adminBase + '/api/playlist' && response.request().method() === 'GET');
+    await volumeAdmin.locator('#reload-playlist').dispatchEvent('click'); await originalTracks;
+    acceptedTrack = trackResponse(.5); await trackRange.fill('50'); await acceptedTrack; await trackLabel('0%');
+
     for (const [raw, label] of [[0, '-100%'], [25, '-50%'], [75, '+50%'], [100, '+100%'], [23, '-54%']]) {
       acceptedTrack = trackResponse(raw / 100); await trackRange.fill(String(raw)); await acceptedTrack; await trackLabel(label);
       assert.equal(config.cues.find(cue => cue.id === audioVolumeCue.id).volume, raw / 100, 'Signed track labels retain the normalized native gain');
@@ -1821,11 +2053,13 @@ const assert = require('node:assert/strict');
     for (const cue of config.cues.filter(cue => cue.cache.media.kind === 'image')) {
       assert.equal(await volumeAdmin.locator(`#track-volume-${cue.id}`).isVisible(), false, 'Images have no volume slider');
     }
+    const failedTrackRevision = config.playlistRevision;
     rejectTrackVolume = true; acceptedTrack = trackResponse(.75); await trackRange.fill('75');
     assert.equal((await acceptedTrack).status(), 503);
     await volumeAdmin.waitForFunction(() => document.getElementById('notice').textContent.includes('Track volume was not saved'));
     await trackLabel('-54%'); assert.equal(await trackRange.inputValue(), '23');
-    assert.equal(config.cues.find(cue => cue.id === audioVolumeCue.id).volume, .23, 'A failed save restores the visible and accessible confirmed level'); rejectTrackVolume = false;
+    assert.equal(config.cues.find(cue => cue.id === audioVolumeCue.id).volume, .23, 'A failed save restores the visible and accessible confirmed level');
+    assert.equal(config.playlistRevision, failedTrackRevision, 'A rejected track save never advances the saved playlist revision'); rejectTrackVolume = false;
     for (const locale of ['en', 'it']) {
       await volumeAdmin.locator('#language-mode').selectOption(locale); await publicSeek.locator('#language-mode').selectOption(locale);
       await trackLabel('-54%'); await waitForMaster(75);
@@ -1849,12 +2083,12 @@ const assert = require('node:assert/strict');
     await volumeAdmin.setViewportSize({width:390, height:844}); await trackRange.scrollIntoViewIfNeeded();
     await volumeAdmin.screenshot({path:path.join(output, 'admin-track-volume-signed-phone.png')});
     acceptedTrack = trackResponse(.5); await trackRange.fill('50'); await acceptedTrack; await trackLabel('0%');
-    await volumeAdmin.close();
+    await volumeAdminContext.close();
     await publicSeekContext.close(); await seekContext.close();
     Object.assign(state, beforeSeekFixture); state.revision++; broadcast();
     await italianRemoteContext.close();
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, trackVolumeLiveAndPlaylistPersistence: true, trackVolumeSignedLabelsAndNormalizedEndpoints: true, trackVolumeSignedFailureRollbackAndReload: true, masterVolumeDefaultMuteAndGatewayControl: true, masterVolumeTrailing200msAndImmediateRelease: true, masterVolumeSingleFlightLatestPendingWithoutStateGet: true, masterVolumeSameValueDeduplicationAndCompetingControllerIntent: true, masterVolumeDelayedStateSSEAndAcknowledgementProtection: true, masterVolumeStopEpochAndInstanceCancellation: true, masterVolumeGlobalEscapeCancellationAndStopConfirmation: true, volumeControlsEnglishItalianAndResponsive: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, trackVolumeLiveAndPlaylistPersistence: true, trackVolumeTrailing200msAndMouseTouchKeyboardRelease: true, trackVolumeUnchangedValueDeduplicationAndExactRevisions: true, trackVolumeDelayedLatestPendingAndIndependentCueDeadlines: true, trackVolumeReadyTargetsDrainWithoutStateRefresh: true, trackVolumeStructuralRefreshPreservesDeadlineAndCueIdentity: true, trackVolumeSignedLabelsAndNormalizedEndpoints: true, trackVolumeSignedFailureRollbackAndReload: true, masterVolumeDefaultMuteAndGatewayControl: true, masterVolumeTrailing200msAndImmediateRelease: true, masterVolumeSingleFlightLatestPendingWithoutStateGet: true, masterVolumeSameValueDeduplicationAndCompetingControllerIntent: true, masterVolumeDelayedStateSSEAndAcknowledgementProtection: true, masterVolumeStopEpochAndInstanceCancellation: true, masterVolumeGlobalEscapeCancellationAndStopConfirmation: true, volumeControlsEnglishItalianAndResponsive: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } finally { for (const gate of responseGates) gate.release(); await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }

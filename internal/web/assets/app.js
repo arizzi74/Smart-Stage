@@ -27,6 +27,8 @@ const masterVolumeKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Pa
 const masterVolumeHeldKeys = new Set();
 let trackVolumeSending = false, trackVolumeTimer = null;
 const pendingTrackVolumes = new Map();
+let trackVolumeRequest = null, trackVolumeSequence = 0, trackPlaylistRenderPending = false;
+const trackVolumeGestures = new Map();
 let validationSignature = '', validationRefresh = false, validationRefreshPending = false;
 let localSessionBusy = false, localSessionRetry = null;
 let presenceBusy = false, quitBusy = false, appClosed = false, reloadingAdmin = false;
@@ -254,33 +256,163 @@ $('master-volume').addEventListener('input', () => {
   renderMasterVolume(); scheduleMasterVolume();
 });
 
+function trackVolumeAvailable() {
+  return Boolean(adminPage && role === 'admin' && online && csrf && playlist &&
+    !quitBusy && !appClosed && !reloadingAdmin && !updatePending() && !playlistFileBusy);
+}
+function trackVolumeCue(id, path) {
+  return playlist?.cues.find(cue => cue.id === id && cue.path === path && ['audio', 'video'].includes(cue.cache?.media?.kind));
+}
+function currentTrackVolumeControl(gesture) {
+  const row = playlistRows.get(gesture.id);
+  return Boolean(row?.volume === gesture.range && row.volumePath === gesture.path && trackVolumeCue(gesture.id, gesture.path));
+}
+function currentTrackVolumeRequest(id, path) {
+  return Boolean(trackVolumeRequest?.sequence === trackVolumeSequence && trackVolumeRequest.id === id &&
+    trackVolumeRequest.path === path && trackVolumeCue(id, path));
+}
+function cancelTrackVolumeGesture(gesture) {
+  if (trackVolumeGestures.get(gesture.id) === gesture) trackVolumeGestures.delete(gesture.id);
+  gesture.heldKeys.clear();
+  const pointerId = gesture.pointerId; gesture.pointerId = null;
+  if (pointerId !== null && gesture.range.hasPointerCapture?.(pointerId)) gesture.range.releasePointerCapture(pointerId);
+}
+function cancelTrackVolumes() {
+  ++trackVolumeSequence;
+  clearTimeout(trackVolumeTimer); trackVolumeTimer = null;
+  pendingTrackVolumes.clear();
+  for (const gesture of [...trackVolumeGestures.values()]) cancelTrackVolumeGesture(gesture);
+}
+function pruneTrackVolumes() {
+  for (const [id, target] of pendingTrackVolumes) {
+    if (target.sequence !== trackVolumeSequence || !trackVolumeCue(id, target.path)) pendingTrackVolumes.delete(id);
+  }
+  for (const gesture of [...trackVolumeGestures.values()]) {
+    if (!currentTrackVolumeControl(gesture)) cancelTrackVolumeGesture(gesture);
+  }
+}
+function scheduleTrackVolumes() {
+  clearTimeout(trackVolumeTimer); trackVolumeTimer = null;
+  if (!pendingTrackVolumes.size || trackVolumeSending) return;
+  if (!trackVolumeAvailable()) { cancelTrackVolumes(); return; }
+  pruneTrackVolumes();
+  if (!pendingTrackVolumes.size) return;
+  const delay = Math.max(0, Math.min(...[...pendingTrackVolumes.values()].map(target => target.readyAt)) - Date.now());
+  if (playlistBusy || delay > 0) {
+    trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, playlistBusy ? Math.max(120, delay) : delay);
+  } else void saveTrackVolume();
+}
 async function saveTrackVolume() {
   clearTimeout(trackVolumeTimer); trackVolumeTimer = null;
   if (!pendingTrackVolumes.size || trackVolumeSending) return;
-  if (!online || !playlist || quitBusy || appClosed || reloadingAdmin || updatePending() || playlistFileBusy) {
-    pendingTrackVolumes.clear(); renderEditAvailability(); return;
-  }
-  if (playlistBusy) { trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, 120); return; }
-  const [id, target] = pendingTrackVolumes.entries().next().value;
-  pendingTrackVolumes.delete(id);
-  const cue = playlist.cues.find(item => item.id === id && item.path === target.path);
-  if (!cue) { void saveTrackVolume(); return; }
-  trackVolumeSending = true; playlistBusy = true; renderEditAvailability();
+  if (!trackVolumeAvailable()) { cancelTrackVolumes(); renderEditAvailability(); return; }
+  pruneTrackVolumes();
+  const ready = [...pendingTrackVolumes].filter(([, target]) => target.readyAt <= Date.now()).sort((a, b) => a[1].readyAt - b[1].readyAt);
+  if (playlistBusy || !ready.length) { scheduleTrackVolumes(); return; }
+  const [id, target] = ready[0]; pendingTrackVolumes.delete(id);
+  const cue = trackVolumeCue(id, target.path);
+  if (!cue || volumePercent(cue.volume) === volumePercent(target.volume)) { renderEditAvailability(); scheduleTrackVolumes(); return; }
+  const request = { ...target, id };
+  trackVolumeRequest = request; trackVolumeSending = true; playlistBusy = true; renderEditAvailability();
   try {
-    acceptPlaylist(await api('PUT', '/api/playlist/volume', { expectedRevision: playlist.playlistRevision, cueId: id, volume: target.volume }));
+    const confirmed = await api('PUT', '/api/playlist/volume', { expectedRevision: playlist.playlistRevision, cueId: id, volume: target.volume });
+    if (request.sequence !== trackVolumeSequence) return;
+    if (!trackVolumeAvailable()) { cancelTrackVolumes(); return; }
+    acceptPlaylist(confirmed);
     localizedText($('playlist-revision'), () => t(playlist.cues.length === 1 ? '{0} cue · saved revision {1}' : '{0} cues · saved revision {1}', {0: playlist.cues.length, 1: playlist.playlistRevision}));
-    renderStageSettings(); await refreshState();
+    // The PUT already confirms the complete playlist. State/SSE refresh may
+    // continue independently while the next ready cue uses that saved revision.
+    renderStageSettings(); void refreshState();
   } catch (error) {
-    pendingTrackVolumes.clear();
+    if (request.sequence !== trackVolumeSequence || !trackVolumeAvailable()) return;
+    const discarded = new Map(pendingTrackVolumes);
+    for (const gesture of trackVolumeGestures.values()) discarded.set(gesture.id, gesture);
+    discarded.set(id, target); cancelTrackVolumes();
+    const recoverySequence = trackVolumeSequence;
     notify(() => t("Track volume was not saved. {0}", {0: errorText(error)}), true);
-    try { acceptPlaylist(await api('GET', '/api/playlist')); } catch { /* Retain the last confirmed level. */ }
-    const row = playlistRows.get(id), saved = playlist?.cues.find(item => item.id === id);
-    if (row?.volume && saved) { row.volume.value = volumePercent(saved.volume); renderTrackVolume(row.volume, row.volumeValue); }
+    try {
+      const current = await api('GET', '/api/playlist');
+      if (recoverySequence === trackVolumeSequence && trackVolumeAvailable()) acceptPlaylist(current);
+    } catch { /* Retain the last confirmed level. */ }
+    if (recoverySequence === trackVolumeSequence && trackVolumeAvailable()) {
+      for (const [cueId, previous] of discarded) {
+        const row = playlistRows.get(cueId), saved = trackVolumeCue(cueId, previous.path);
+        if (row?.volumePath === previous.path && saved && !pendingTrackVolumes.has(cueId) && !trackVolumeGestures.has(cueId)) {
+          row.volume.value = volumePercent(saved.volume); renderTrackVolume(row.volume, row.volumeValue);
+        }
+      }
+    }
   } finally {
-    trackVolumeSending = false; playlistBusy = false; renderEditAvailability();
-    if (pendingTrackVolumes.size) trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, 120);
+    if (trackVolumeRequest === request) trackVolumeRequest = null;
+    trackVolumeSending = false; playlistBusy = false; renderEditAvailability(); scheduleTrackVolumes();
   }
 }
+function flushTrackPlaylistRender() {
+  if (trackPlaylistRenderPending && !trackVolumeGestures.size && !$('playlist').contains(document.activeElement)) renderPlaylist();
+}
+function endTrackVolumeGesture(gesture) {
+  const current = currentTrackVolumeControl(gesture);
+  cancelTrackVolumeGesture(gesture);
+  const target = pendingTrackVolumes.get(gesture.id);
+  if (current && !gesture.range.disabled && target?.path === gesture.path) target.readyAt = 0;
+  scheduleTrackVolumes(); renderEditAvailability();
+  setTimeout(flushTrackPlaylistRender, 0);
+}
+function bindTrackVolumeControl(id, path, range, output) {
+  const gesture = { id, path, range, pointerId: null, heldKeys: new Set() };
+  range.addEventListener('pointerdown', event => {
+    if (!trackVolumeAvailable() || playlistBusy && !trackVolumeSending || !currentTrackVolumeControl(gesture)) return;
+    gesture.pointerId = event.pointerId; trackVolumeGestures.set(id, gesture);
+    try { range.setPointerCapture?.(event.pointerId); } catch { /* Document release also covers native range tracking. */ }
+  });
+  for (const event of ['pointerup', 'pointercancel']) range.addEventListener(event, () => { if (currentTrackVolumeControl(gesture)) endTrackVolumeGesture(gesture); });
+  range.addEventListener('blur', () => {
+    if (!currentTrackVolumeControl(gesture)) return;
+    // Temporarily disabling edits during another playlist operation can blur
+    // the range. Preserve its quiet deadline until that operation finishes.
+    if (range.disabled) cancelTrackVolumeGesture(gesture);
+    else endTrackVolumeGesture(gesture);
+  });
+  range.addEventListener('lostpointercapture', () => { if (trackVolumeGestures.get(id) === gesture && gesture.pointerId !== null) endTrackVolumeGesture(gesture); });
+  range.addEventListener('keydown', event => {
+    if (!masterVolumeKeys.includes(event.key) || !trackVolumeAvailable() || playlistBusy && !trackVolumeSending || !currentTrackVolumeControl(gesture)) return;
+    gesture.heldKeys.add(event.key); trackVolumeGestures.set(id, gesture);
+  });
+  range.addEventListener('keyup', event => {
+    if (!masterVolumeKeys.includes(event.key) || !currentTrackVolumeControl(gesture)) return;
+    gesture.heldKeys.delete(event.key);
+    if (!gesture.heldKeys.size) endTrackVolumeGesture(gesture);
+  });
+  range.addEventListener('change', () => { if (!gesture.heldKeys.size && currentTrackVolumeControl(gesture)) endTrackVolumeGesture(gesture); });
+  range.addEventListener('input', () => {
+    if (!currentTrackVolumeControl(gesture)) return;
+    const cue = trackVolumeCue(id, path);
+    if (!trackVolumeAvailable() || playlistBusy && !trackVolumeSending) { range.value = volumePercent(cue.volume); renderTrackVolume(range, output); return; }
+    renderTrackVolume(range, output);
+    const volume = Number(range.value) / 100, previous = pendingTrackVolumes.get(id);
+    if (previous && volumePercent(previous.volume) === volumePercent(volume)) return;
+    if (!trackVolumeSending && volumePercent(cue.volume) === volumePercent(volume)) pendingTrackVolumes.delete(id);
+    else pendingTrackVolumes.set(id, { path, volume, sequence: trackVolumeSequence, readyAt: Date.now() + 200 });
+    scheduleTrackVolumes();
+  });
+  return gesture;
+}
+for (const event of ['pointerup', 'pointercancel']) document.addEventListener(event, pointer => {
+  for (const gesture of [...trackVolumeGestures.values()]) {
+    if (gesture.pointerId === pointer.pointerId) endTrackVolumeGesture(gesture);
+  }
+});
+document.addEventListener('keyup', event => {
+  for (const gesture of [...trackVolumeGestures.values()]) {
+    if (!gesture.heldKeys.delete(event.key)) continue;
+    if (!gesture.heldKeys.size) endTrackVolumeGesture(gesture);
+  }
+});
+window.addEventListener('blur', () => {
+  for (const gesture of [...trackVolumeGestures.values()]) endTrackVolumeGesture(gesture);
+  for (const row of playlistRows.values()) if (row.volume === document.activeElement) endTrackVolumeGesture(row.volumeGesture);
+});
+$('playlist').addEventListener('focusout', () => { setTimeout(flushTrackPlaylistRender, 0); });
 function clock(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) return '—';
   const whole = Math.floor(seconds); return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
@@ -901,6 +1033,9 @@ function expectingUpdateRestart() {
 }
 function renderEditAvailability() {
   if (!adminPage || !state) return;
+  const trackAvailable = trackVolumeAvailable();
+  if (!trackAvailable && (pendingTrackVolumes.size || trackVolumeGestures.size || trackVolumeRequest?.sequence === trackVolumeSequence)) cancelTrackVolumes();
+  pruneTrackVolumes();
   renderGateway();
   $('quit-app').disabled = !online || role !== 'admin' || quitBusy || appClosed || reloadingAdmin;
   $('choose-files').hidden = adminCapabilities.chooseFiles !== true;
@@ -937,8 +1072,8 @@ function renderEditAvailability() {
     row.hidden.disabled = pending || playlistBusy;
     const cue = playlist?.cues.find(c => c.id === id);
     row.volumeControls.hidden = !['audio', 'video'].includes(cue?.cache.media.kind);
-    row.volume.disabled = pending || !online || playlistBusy && !trackVolumeSending;
-    if (document.activeElement !== row.volume && !pendingTrackVolumes.has(id) && !trackVolumeSending) {
+    row.volume.disabled = !trackAvailable || !trackVolumeCue(id, row.volumePath) || playlistBusy && !trackVolumeSending;
+    if (!trackAvailable || document.activeElement !== row.volume && !trackVolumeGestures.has(id) && !pendingTrackVolumes.has(id) && !currentTrackVolumeRequest(id, row.volumePath)) {
       row.volume.value = volumePercent(cue?.volume);
     }
     renderTrackVolume(row.volume, row.volumeValue);
@@ -954,9 +1089,10 @@ function renderEditAvailability() {
   // A newer host revision can arrive during our PUT. Recheck when its busy
   // flag clears as well as on state events, even if no further event follows.
   if (online && playlist && state.playlistRevision > playlist.playlistRevision && !playlistBusy && !playlistFileBusy && !playlistRefresh) {
-    if ($('playlist').contains(document.activeElement)) notify(() => t("The playlist changed in another tab. Finish or discard your edit, then Reload."), true);
+    if ($('playlist').contains(document.activeElement) || trackVolumeGestures.size || pendingTrackVolumes.size) notify(() => t("The playlist changed in another tab. Finish or discard your edit, then Reload."), true);
     else void loadPlaylist();
   }
+  if (!trackVolumeSending && !playlistBusy && pendingTrackVolumes.size) scheduleTrackVolumes();
 }
 function releaseLink(value) {
   try {
@@ -1099,6 +1235,7 @@ function acceptPlaylist(next) {
   if (quitBusy || appClosed || reloadingAdmin || playlist && next.playlistRevision < playlist.playlistRevision) return false;
   reconcileStageDraft(next);
   playlist = next;
+  pruneTrackVolumes();
   return true;
 }
 async function loadPlaylist(announceAdditions = true) {
@@ -1283,7 +1420,15 @@ if (adminPage) {
   });
 }
 function renderPlaylist() {
-  $('playlist').replaceChildren(); playlistRows.clear();
+  pruneTrackVolumes();
+  const rows = [...playlistRows];
+  const sameLayout = rows.length === playlist.cues.length && playlist.cues.every((cue, index) => rows[index][0] === cue.id && rows[index][1].volumePath === cue.path);
+  if (sameLayout && (trackVolumeGestures.size || rows.some(([, row]) => row.volume === document.activeElement && currentTrackVolumeControl(row.volumeGesture)))) {
+    trackPlaylistRenderPending = true; renderStageSettings(); renderEditAvailability(); return;
+  }
+  trackPlaylistRenderPending = false;
+  for (const gesture of [...trackVolumeGestures.values()]) cancelTrackVolumeGesture(gesture);
+  playlistRows.clear(); $('playlist').replaceChildren();
   localizedText($('playlist-revision'), () => t(playlist.cues.length === 1 ? '{0} cue · saved revision {1}' : '{0} cues · saved revision {1}', {0: playlist.cues.length, 1: playlist.playlistRevision}));
   if (!playlist.cues.length) $('playlist').append(element('p', () => t("Add audio, videos, or images to build your show."), 'empty'));
   const counts = new Map(); for (const c of playlist.cues) counts.set(c.label, (counts.get(c.label) || 0) + 1);
@@ -1303,16 +1448,13 @@ function renderPlaylist() {
     colors.append(colorLabel, resetColor); info.append(colors);
     const volumeControls = element('div', undefined, 'track-volume-control');
     const volumeLabel = element('label', () => t("Track volume")), volume = element('input'), volumeValue = element('output');
-    volume.type = 'range'; volume.min = '0'; volume.max = '100'; volume.step = '1'; volume.value = volumePercent(cue.volume);
+    const pendingVolume = pendingTrackVolumes.get(cue.id);
+    const draftVolume = pendingVolume?.path === cue.path ? pendingVolume.volume : currentTrackVolumeRequest(cue.id, cue.path) ? trackVolumeRequest.volume : cue.volume;
+    volume.type = 'range'; volume.min = '0'; volume.max = '100'; volume.step = '1'; volume.value = volumePercent(draftVolume);
     volume.id = `track-volume-${cue.id}`; volumeLabel.htmlFor = volume.id; volumeValue.htmlFor = volume.id; renderTrackVolume(volume, volumeValue);
     localizedAttribute(volume, 'aria-label', () => t("Volume for cue {0}", {0: index + 1}));
     localizedAttribute(volume, 'aria-valuetext', () => trackVolumeText(volume));
-    volume.addEventListener('input', () => {
-      renderTrackVolume(volume, volumeValue);
-      pendingTrackVolumes.set(cue.id, { volume: Number(volume.value) / 100, path: cue.path });
-      if (!trackVolumeSending && trackVolumeTimer === null) trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, 120);
-    });
-    volume.addEventListener('change', () => { void saveTrackVolume(); });
+    const volumeGesture = bindTrackVolumeControl(cue.id, cue.path, volume, volumeValue);
     const minus = element('span', '−', 'volume-direction'), plus = element('span', '+', 'volume-direction');
     minus.setAttribute('aria-hidden', 'true'); plus.setAttribute('aria-hidden', 'true');
     volumeControls.append(volumeLabel, minus, volume, plus, volumeValue); info.append(volumeControls);
@@ -1337,7 +1479,7 @@ function renderPlaylist() {
     const play = button(() => t("Play"), () => trigger(cue.id));
     tools.append(play, up, down, remove);
     row.append(element('span', String(index + 1).padStart(2, '0'), 'position'), info, tools);
-    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, hidden, background, backgroundLabel, volume, volumeValue, volumeControls, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
+    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, hidden, background, backgroundLabel, volume, volumeValue, volumeControls, volumeGesture, volumePath: cue.path, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
   });
   renderStageSettings(); renderEditAvailability();
 }
