@@ -466,8 +466,13 @@ const assert = require('node:assert/strict');
       assert.equal(fixtureTrackRequests().length, queueBefore.count + 2, 'The first cue and earlier released second cue each save once');
       assert.equal(config.playlistRevision, queueBefore.revision + 2);
       assert.equal(await otherRange.inputValue(), '60');
+      await page.mouse.move(otherX(60), otherBox.y + otherBox.height / 2); await page.mouse.down({button:'right'});
+      await page.mouse.move(otherX(15), otherBox.y + otherBox.height / 2, {steps:4}); await page.waitForTimeout(260);
+      await page.mouse.up({button:'right'});
+      assert.equal(await otherRange.inputValue(), '60', 'A secondary mouse button cannot adjust the track slider');
+      assert.equal(fixtureTrackRequests().length, queueBefore.count + 2, 'A secondary mouse button cannot save track volume');
       assert.deepEqual(errors, []);
-      fs.writeFileSync(path.join(output, `track-drag-${browserName}.json`), JSON.stringify({passed:true, browser:browserName, browserVersion:await browser.version(), mouseDrags:trackDragObservations, heldDragAndStationaryHoldDoNotSave:true, insideAndOutsideReleaseSaveOnce:true, hoverAfterReleaseDoesNotChangeValue:true, releasedPointerCapture:false, stateAndPlaylistRefreshPreserveDOMFocusAndDraft:true, earlierAcknowledgementPreservesHeldDraft:true, latestReleasedTargetUsesAcknowledgedRevision:true, unchangedReleaseChangeBlurDoNotWriteAgain:true, heldKeyboardAdjustmentSavesOnRelease:true, cancelledNativeDragRestoresSavedValueWithoutDelayedWrite:true, cancelledNewGesturePreservesEarlierReleasedCueTarget:true, nativeMacWebViewVerified:false}, null, 2));
+      fs.writeFileSync(path.join(output, `track-drag-${browserName}.json`), JSON.stringify({passed:true, browser:browserName, browserVersion:await browser.version(), mouseDrags:trackDragObservations, heldDragAndStationaryHoldDoNotSave:true, insideAndOutsideReleaseSaveOnce:true, hoverAfterReleaseDoesNotChangeValue:true, releasedPointerCapture:false, stateAndPlaylistRefreshPreserveDOMFocusAndDraft:true, earlierAcknowledgementPreservesHeldDraft:true, latestReleasedTargetUsesAcknowledgedRevision:true, unchangedReleaseChangeBlurDoNotWriteAgain:true, heldKeyboardAdjustmentSavesOnRelease:true, cancelledNativeDragRestoresSavedValueWithoutDelayedWrite:true, cancelledNewGesturePreservesEarlierReleasedCueTarget:true, secondaryMouseButtonDoesNotAdjustOrSave:true, nativeMacWebViewVerified:false}, null, 2));
       console.log(`${browserName} track mouse drag checks passed: held drag, stationary hold, release inside/outside, hover, capture, DOM and focus.`);
       await context.close(); return;
     }

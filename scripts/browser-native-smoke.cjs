@@ -247,6 +247,8 @@ function dedicatedWindowsAdmin(platform, release) {
       }
       await admin.waitForTimeout(300);
       let raw = Number(await range.inputValue());
+      const observation = {releaseOutside:outside, heldPreviewRaw:raw, heldWrites:trackWriteCount() - before.count, heldRevisionDelta:(await snapshot()).playlistRevision - before.revision, heldCapture:await node.evaluate(range => window.__nativeTrackPointerIds.some(id => range.hasPointerCapture(id)))};
+      (record.trackMouseDrags ||= []).push(observation);
       assert(Math.abs(raw - target) <= 6, 'Actual mouse dragging previews the selected track level');
       assert.equal(trackWriteCount(), before.count, 'A stationary held track cannot save after the former debounce');
       assert.equal((await snapshot()).playlistRevision, before.revision, 'A held track does not change the saved-show revision');
@@ -270,6 +272,7 @@ function dedicatedWindowsAdmin(platform, release) {
       await admin.waitForTimeout(280);
       assert.equal(Number(await range.inputValue()), raw, 'Hover after release cannot move the track slider');
       assert.equal(trackWriteCount(), before.count + 1, 'Hover after release cannot create another saved-show write');
+      Object.assign(observation, {releasedRaw:raw, releasedWrites:trackWriteCount() - before.count, releasedRevisionDelta:confirmed.playlistRevision - before.revision, expectedRevision:response.request().postDataJSON().expectedRevision, releasedCapture:false, hoverChangedValue:false});
       await node.dispose(); return confirmed;
     }
     const initial = await (await admin.request.get(adminBase + '/api/playlist')).json();
