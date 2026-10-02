@@ -1,0 +1,131 @@
+{
+  "release": "v1.6.2",
+  "sourceCommit": "9b29965af368b1b7775c3dae691436ed201364e3",
+  "workflowRunID": 37028545081,
+  "collectedAt": "2026-10-02T15:56:27.091654+00:00",
+  "scanner": {
+    "name": "govulncheck",
+    "version": "v1.8.0",
+    "goRuntime": "go1.26.8",
+    "database": "https://vuln.go.dev",
+    "versionReport": "govulncheck-version.txt"
+  },
+  "scope": "Independent package-level Go vulnerability scan of all six exact public desktop/gateway executables, after GitHub asset digest, release SHA256 sidecar, archive extraction and Go runtime verification. No native codec/library or application-logic vulnerability coverage is implied by a clean Go package scan.",
+  "allSixPassed": true,
+  "scans": [
+    {
+      "target": "darwin-amd64",
+      "releaseAsset": "smartstage-darwin-amd64.zip",
+      "releaseAssetURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.2/smartstage-darwin-amd64.zip",
+      "executableSHA256": "798342c8deac382996eb2624d26bef78f7e7a330c55e08c08fbf81f7a391d47a",
+      "matchesAuditedPublicBytes": true,
+      "goRuntime": "go1.26.8",
+      "command": [
+        "govulncheck",
+        "-mode=binary",
+        "-scan=package",
+        "smartstage-darwin-amd64.zip executable"
+      ],
+      "startedAt": "2026-10-02T15:56:25.893946+00:00",
+      "completedAt": "2026-10-02T15:56:26.237037+00:00",
+      "exitCode": 0,
+      "noKnownVulnerabilities": true,
+      "report": "govulncheck-darwin-amd64.txt"
+    },
+    {
+      "target": "darwin-arm64",
+      "releaseAsset": "smartstage-darwin-arm64.zip",
+      "releaseAssetURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.2/smartstage-darwin-arm64.zip",
+      "executableSHA256": "b1d0305e5b3fec8344373108d0b9a60c83ac7fad8344388854a520b36096756a",
+      "matchesAuditedPublicBytes": true,
+      "goRuntime": "go1.26.8",
+      "command": [
+        "govulncheck",
+        "-mode=binary",
+        "-scan=package",
+        "smartstage-darwin-arm64.zip executable"
+      ],
+      "startedAt": "2026-10-02T15:56:25.892857+00:00",
+      "completedAt": "2026-10-02T15:56:26.207346+00:00",
+      "exitCode": 0,
+      "noKnownVulnerabilities": true,
+      "report": "govulncheck-darwin-arm64.txt"
+    },
+    {
+      "target": "windows-amd64",
+      "releaseAsset": "smartstage-windows-amd64.zip",
+      "releaseAssetURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.2/smartstage-windows-amd64.zip",
+      "executableSHA256": "2df579316b9b0fa8f657431c1a557885aafa596ce8d166160c24c3fc66efcb80",
+      "matchesAuditedPublicBytes": true,
+      "goRuntime": "go1.26.8",
+      "command": [
+        "govulncheck",
+        "-mode=binary",
+        "-scan=package",
+        "smartstage-windows-amd64.zip executable"
+      ],
+      "startedAt": "2026-10-02T15:56:26.218390+00:00",
+      "completedAt": "2026-10-02T15:56:26.682408+00:00",
+      "exitCode": 0,
+      "noKnownVulnerabilities": true,
+      "report": "govulncheck-windows-amd64.txt"
+    },
+    {
+      "target": "windows-arm64",
+      "releaseAsset": "smartstage-windows-arm64.zip",
+      "releaseAssetURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.2/smartstage-windows-arm64.zip",
+      "executableSHA256": "38c4a0bee620afa3fe337d9b5b3c90b7f11fc91e68446fc048cd36c6aae83175",
+      "matchesAuditedPublicBytes": true,
+      "goRuntime": "go1.26.8",
+      "command": [
+        "govulncheck",
+        "-mode=binary",
+        "-scan=package",
+        "smartstage-windows-arm64.zip executable"
+      ],
+      "startedAt": "2026-10-02T15:56:26.246953+00:00",
+      "completedAt": "2026-10-02T15:56:26.581947+00:00",
+      "exitCode": 0,
+      "noKnownVulnerabilities": true,
+      "report": "govulncheck-windows-arm64.txt"
+    },
+    {
+      "target": "gateway-linux-amd64",
+      "releaseAsset": "smartstage-gateway-linux-amd64",
+      "releaseAssetURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.2/smartstage-gateway-linux-amd64",
+      "executableSHA256": "a109f280e67259235578357dcdbb4cc365cf19429c6225c60567e75c80e0da77",
+      "matchesAuditedPublicBytes": true,
+      "goRuntime": "go1.26.8",
+      "command": [
+        "govulncheck",
+        "-mode=binary",
+        "-scan=package",
+        "smartstage-gateway-linux-amd64 executable"
+      ],
+      "startedAt": "2026-10-02T15:56:26.587596+00:00",
+      "completedAt": "2026-10-02T15:56:26.921689+00:00",
+      "exitCode": 0,
+      "noKnownVulnerabilities": true,
+      "report": "govulncheck-gateway-linux-amd64.txt"
+    },
+    {
+      "target": "gateway-linux-arm64",
+      "releaseAsset": "smartstage-gateway-linux-arm64",
+      "releaseAssetURL": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.2/smartstage-gateway-linux-arm64",
+      "executableSHA256": "de75e1c9409309898c735a928cd4c4f8547f189f49f93c21848b7b5d3ca1d350",
+      "matchesAuditedPublicBytes": true,
+      "goRuntime": "go1.26.8",
+      "command": [
+        "govulncheck",
+        "-mode=binary",
+        "-scan=package",
+        "smartstage-gateway-linux-arm64 executable"
+      ],
+      "startedAt": "2026-10-02T15:56:26.689723+00:00",
+      "completedAt": "2026-10-02T15:56:27.091384+00:00",
+      "exitCode": 0,
+      "noKnownVulnerabilities": true,
+      "report": "govulncheck-gateway-linux-arm64.txt"
+    }
+  ]
+}

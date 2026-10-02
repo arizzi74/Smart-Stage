@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.6.1 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.6.2 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,20 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.6.2: save track volume after a quiet period
+
+Source `9b29965af368b1b7775c3dae691436ed201364e3` passed all seven [candidate gates](verification/release-v1.6.2/candidate-workflow.json) before tagging and all eight [publication gates](verification/release-v1.6.2/tag-workflow.json). Track sliders now save after 200ms without a value change, or immediately on enabled release/focus loss. Each cue retains its own deadline, queued saves retain the latest target, and unchanged accepted levels do not create another revision. Successful saves drain without waiting for a state GET. Existing revision counts are not reset.
+
+[Browser fixtures](verification/release-v1.6.2/browser-checks.json) cover continuous mouse/touch/keyboard adjustment, outside release, exact accepted revision counts, independent cues, delayed acknowledgements/state, return-to-saved deduplication, focused playlist reordering, failed-save rollback and export/reload. Disabled blur during administrative work preserves the pending deadline. Signed labels, saved normalized levels and the remote master's existing 200ms behavior remain unchanged. The [phone Admin screenshot](verification/release-v1.6.2/admin-track-volume-signed-phone.png) uses synthetic fixture data. [Local checks](verification/release-v1.6.2/local-checks.json) include Go race tests, vet and JavaScript tests.
+
+[Real browser/native-host evidence](verification/release-v1.6.2/native-volume-evidence.json) confirms exactly one final volume request and one saved playlist revision after continuous dragging on all four desktop targets. Both Mac runners verify native gain and independent audio fades. Neither Windows runner has an audio endpoint, so native audio gain and audible output remain unavailable. Physical speaker/projector acceptance is incomplete.
+
+The public audit verified all [50 assets/eight checksum pairs](verification/release-v1.6.2/assets.json) and [six exact executable vulnerability scans](verification/release-v1.6.2/security-scans.json). All four [tagged automatic-updater reports](verification/release-v1.6.2/tagged-auto-update-evidence.json) passed public discovery, verified replacement and restart without a manual install request. Fixtures use the exact release source with older version metadata; they do not cover every historical executable. Saved shows and host media are preserved, and restart does not begin playback. A [separate four-target check](verification/release-v1.6.2/supplemental-auto-update-evidence.json) passed with the current updater workflow defaults at `bb1383b4e6e95f74ad3fb1c522c1e67567fcda84` and the original tagged fixtures; tagged attempts remain recorded separately.
+
+All 16 [tagged post-publication checks](verification/release-v1.6.2/postpublication-status.json) passed: four public downloads, four browser/native-host checks, four automatic updates and both architectures of each desktop installer. All four [default-installer jobs](verification/release-v1.6.2/default-installer-workflows.json) passed. [Public installer scripts](verification/release-v1.6.2/installer-defaults.json) match `653489fd78bc7a41723193770172798b4a3fefc3` and select v1.6.2.
+
+All 12 [tagged/default native installer reports](verification/release-v1.6.2/native-installer-evidence.json) passed, including both Windows architectures under PowerShell 5.1 and 7. The [installer integrity audit](verification/release-v1.6.2/installer-integrity.json) verified exact bootstrap/installed-byte hashes, all eight strict Windows firewall-snapshot comparisons, and Mac default/global/unrelated firewall checks. Tagged Windows ARM64 PowerShell 5.1 exercised AllUsers package discovery and current-user Start-component warmup before taking its baseline. Default ARM64 PowerShell 5.1 found the current user's rule ready; both ARM64 PowerShell 7 reports used current-user discovery without warmup. AMD64 had no component, so warmup was unavailable. Raw rules and machine identifiers remain private; comparisons retain no exemptions.
 
 ### Version 1.6.1: responsive master volume and centered track readouts
 

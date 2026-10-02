@@ -1,0 +1,85 @@
+{
+  "release": "v1.6.2",
+  "source": "653489fd78bc7a41723193770172798b4a3fefc3",
+  "observedAt": "2026-10-02T16:18:02.796914+00:00",
+  "expectedWorkflows": [
+    ".github/workflows/install-macos.yml",
+    ".github/workflows/install-windows.yml"
+  ],
+  "expectedJobs": 4,
+  "workflows": [
+    {
+      "run": 37030586323,
+      "path": ".github/workflows/install-macos.yml",
+      "sourceCommit": "653489fd78bc7a41723193770172798b4a3fefc3",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/37030586323",
+      "jobs": [
+        {
+          "id": 110916098918,
+          "name": "install (macos-15-intel, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/37030586323/job/110916098918",
+          "activeStep": null,
+          "failedSteps": [],
+          "startedAt": "2026-10-02T15:57:46Z",
+          "completedAt": "2026-10-02T15:58:35Z"
+        },
+        {
+          "id": 110916099030,
+          "name": "install (macos-15, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/37030586323/job/110916099030",
+          "activeStep": null,
+          "failedSteps": [],
+          "startedAt": "2026-10-02T15:57:28Z",
+          "completedAt": "2026-10-02T15:57:56Z"
+        }
+      ]
+    },
+    {
+      "run": 37030586167,
+      "path": ".github/workflows/install-windows.yml",
+      "sourceCommit": "653489fd78bc7a41723193770172798b4a3fefc3",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/37030586167",
+      "jobs": [
+        {
+          "id": 110916098522,
+          "name": "install (windows-2025, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/37030586167/job/110916098522",
+          "activeStep": null,
+          "failedSteps": [],
+          "startedAt": "2026-10-02T15:57:24Z",
+          "completedAt": "2026-10-02T15:58:42Z"
+        },
+        {
+          "id": 110916098691,
+          "name": "install (windows-11-arm, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/37030586167/job/110916098691",
+          "activeStep": null,
+          "failedSteps": [],
+          "startedAt": "2026-10-02T16:07:11Z",
+          "completedAt": "2026-10-02T16:17:09Z"
+        }
+      ]
+    }
+  ],
+  "workflowSources": {
+    ".github/workflows/install-macos.yml": "653489fd78bc7a41723193770172798b4a3fefc3",
+    ".github/workflows/install-windows.yml": "653489fd78bc7a41723193770172798b4a3fefc3"
+  },
+  "missingWorkflows": [],
+  "observedJobs": 4,
+  "counts": {
+    "success": 4
+  }
+}

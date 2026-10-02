@@ -1,0 +1,43 @@
+{
+  "release": "v1.6.2",
+  "defaultInstallerSource": "653489fd78bc7a41723193770172798b4a3fefc3",
+  "collectedAt": "2026-10-02T16:00:17.103068+00:00",
+  "allThreePublicScriptsMatchExactSource": true,
+  "shellSyntaxVerified": true,
+  "scripts": [
+    {
+      "path": "install.sh",
+      "publicURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+      "exactSourceURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/653489fd78bc7a41723193770172798b4a3fefc3/install.sh",
+      "sourceCommit": "653489fd78bc7a41723193770172798b4a3fefc3",
+      "bytesMatchExactCommit": true,
+      "defaultVersion": "v1.6.2",
+      "size": 17505,
+      "sha256": "1552e616225c2b61010cc1f21500115966f934d7bba2b086ecb58434d9a1694d",
+      "downloadAttempts": 1
+    },
+    {
+      "path": "install.ps1",
+      "publicURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1",
+      "exactSourceURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/653489fd78bc7a41723193770172798b4a3fefc3/install.ps1",
+      "sourceCommit": "653489fd78bc7a41723193770172798b4a3fefc3",
+      "bytesMatchExactCommit": true,
+      "defaultVersion": "v1.6.2",
+      "size": 16629,
+      "sha256": "25b5b6fcbc7b29c63364296aba310794ca4687ac451872addbf33822575ff495",
+      "downloadAttempts": 1
+    },
+    {
+      "path": "install-gateway.sh",
+      "publicURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install-gateway.sh",
+      "exactSourceURL": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/653489fd78bc7a41723193770172798b4a3fefc3/install-gateway.sh",
+      "sourceCommit": "653489fd78bc7a41723193770172798b4a3fefc3",
+      "bytesMatchExactCommit": true,
+      "defaultVersion": "v1.6.2",
+      "size": 2206,
+      "sha256": "0ce1c1bbd63022c545da376ff52b864910d0d292253eea9712939d72465419ba",
+      "downloadAttempts": 1
+    }
+  ],
+  "scope": "Read-only unauthenticated public main installer downloads compared byte-for-byte against the full exact defaults commit; default release pins verified without execution. Pin parsing corrected against retained bytes without downloading or retrying installation."
+}

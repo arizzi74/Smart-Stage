@@ -1,11 +1,11 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.6.1**.
+The desktop application and Linux gateway are released as **Smart Stage 1.6.2**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.1
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.2
 
 ## Implemented
 
@@ -175,6 +175,23 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.1
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.6.2 is source `9b29965af368b1b7775c3dae691436ed201364e3`. Track-volume
+saves now wait for 200ms without a change and flush on enabled release/focus loss.
+Per-cue deadlines, latest queued targets, unchanged-value deduplication and safe
+focused playlist reordering passed browser checks. Local Go race/vet and all
+JavaScript tests passed. Real browser/native-host checks verified one final
+request and one saved revision after continuous dragging on all four targets.
+Seven candidate gates, eight publication gates and all 16 tagged post-publication
+jobs passed. All 50 public assets, eight checksum pairs and six exact executable
+vulnerability scans passed. Both tagged and current-default updater workflows
+passed actual public discovery, replacement and restart on all four targets,
+using exact release-source fixtures with older version metadata. All four
+default-installer jobs passed, including both PowerShell versions on Windows.
+Native Mac gain/fade checks passed; neither Windows runner had an audio endpoint.
+Physical speaker/projector acceptance remains incomplete. See
+[verification details](docs/verification/release-v1.6.2/README.md).
+No production gateway, nginx, firewall or system mixer changes were made.
 
 Version 1.6.1 is source `43f024d504e05f357447e39b894952a1ba2a1d72`. The remote
 volume queue and centered track readouts passed Go race/vet, JavaScript and browser
