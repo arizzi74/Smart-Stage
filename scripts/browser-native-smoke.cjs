@@ -237,9 +237,30 @@ function dedicatedWindowsAdmin(platform, release) {
       const node = await range.elementHandle(), box = await range.boundingBox();
       await node.evaluate(range => {
         window.__nativeTrackPointerIds = [];
-        range.addEventListener('pointerdown', event => window.__nativeTrackPointerIds.push(event.pointerId));
+        window.__nativeTrackEvents = [];
+        const types = ['pointerdown', 'mousedown', 'pointermove', 'mousemove', 'pointerup', 'mouseup', 'pointercancel', 'lostpointercapture', 'blur', 'focus', 'input', 'change'];
+        if (range.__nativeTrackProbe) for (const type of types) range.removeEventListener(type, range.__nativeTrackProbe, true);
+        range.__nativeTrackProbe = event => {
+          if (event.type === 'pointerdown') window.__nativeTrackPointerIds.push(event.pointerId);
+          if (window.__nativeTrackEvents.length >= 100) return;
+          window.__nativeTrackEvents.push({type:event.type, value:Number(range.value), button:event.button ?? null, buttons:event.buttons ?? null,
+            pointerId:event.pointerId ?? null, pointerType:event.pointerType ?? null, primary:event.isPrimary ?? null,
+            targetIsRange:event.target === range, targetTag:event.target?.tagName || '', active:document.activeElement === range,
+            documentFocused:document.hasFocus(), disabled:range.disabled, connected:range.isConnected, trusted:event.isTrusted,
+            x:event.clientX ?? null, y:event.clientY ?? null});
+        };
+        for (const type of types) range.addEventListener(type, range.__nativeTrackProbe, true);
       });
       const x = raw => box.x + 8 + (box.width - 16) * raw / 100, start = Number(await range.inputValue());
+      const observation = {releaseOutside:outside, startRaw:start, targetRaw:target, boundingBox:box,
+        ...await node.evaluate((range, point) => {
+          const style = getComputedStyle(range), hit = document.elementFromPoint(point.x, point.y);
+          return {explicitTabIndex:range.getAttribute('tabindex'), activeBeforePointer:document.activeElement === range,
+            pointerStart:point, hitIsRange:hit === range, hitTag:hit?.tagName || '',
+            style:{cursor:style.cursor, appearance:style.appearance, webkitAppearance:style.webkitAppearance,
+              pointerEvents:style.pointerEvents, touchAction:style.touchAction, height:style.height, padding:style.padding, borderWidth:style.borderWidth}};
+        }, {x:x(start), y:box.y + box.height / 2})};
+      (record.trackMouseDrags ||= []).push(observation);
       await admin.mouse.move(x(start), box.y + box.height / 2); await admin.mouse.down();
       for (let step = 1; step <= 5; step++) {
         await admin.mouse.move(x(start + (target - start) * step / 5), box.y + box.height / 2, {steps:3}); await admin.waitForTimeout(70);
@@ -247,9 +268,11 @@ function dedicatedWindowsAdmin(platform, release) {
       }
       await admin.waitForTimeout(300);
       let raw = Number(await range.inputValue());
-      const observation = {releaseOutside:outside, heldPreviewRaw:raw, heldWrites:trackWriteCount() - before.count, heldRevisionDelta:(await snapshot()).playlistRevision - before.revision, heldCapture:await node.evaluate(range => window.__nativeTrackPointerIds.some(id => range.hasPointerCapture(id)))};
-      (record.trackMouseDrags ||= []).push(observation);
+      Object.assign(observation, {heldPreviewRaw:raw, heldWrites:trackWriteCount() - before.count, heldRevisionDelta:(await snapshot()).playlistRevision - before.revision,
+        ...await node.evaluate(range => ({heldCapture:window.__nativeTrackPointerIds.some(id => range.hasPointerCapture(id)), activeWhileHeld:document.activeElement === range, events:window.__nativeTrackEvents}))});
       assert(Math.abs(raw - target) <= 6, 'Actual mouse dragging previews the selected track level');
+      assert.equal(observation.hitIsRange, true, 'The actual mouse press hits the visible track range');
+      assert.equal(observation.explicitTabIndex, '0', 'Track ranges explicitly support mouse focus on Mac');
       assert.equal(trackWriteCount(), before.count, 'A stationary held track cannot save after the former debounce');
       assert.equal((await snapshot()).playlistRevision, before.revision, 'A held track does not change the saved-show revision');
       await admin.evaluate(() => refreshState());
@@ -272,7 +295,7 @@ function dedicatedWindowsAdmin(platform, release) {
       await admin.waitForTimeout(280);
       assert.equal(Number(await range.inputValue()), raw, 'Hover after release cannot move the track slider');
       assert.equal(trackWriteCount(), before.count + 1, 'Hover after release cannot create another saved-show write');
-      Object.assign(observation, {releasedRaw:raw, releasedWrites:trackWriteCount() - before.count, releasedRevisionDelta:confirmed.playlistRevision - before.revision, expectedRevision:response.request().postDataJSON().expectedRevision, releasedCapture:false, hoverChangedValue:false});
+      Object.assign(observation, {releasedRaw:raw, releasedWrites:trackWriteCount() - before.count, releasedRevisionDelta:confirmed.playlistRevision - before.revision, expectedRevision:response.request().postDataJSON().expectedRevision, releasedCapture:false, hoverChangedValue:false, events:await node.evaluate(() => window.__nativeTrackEvents)});
       await node.dispose(); return confirmed;
     }
     const initial = await (await admin.request.get(adminBase + '/api/playlist')).json();
@@ -853,6 +876,9 @@ function dedicatedWindowsAdmin(platform, release) {
     console.log(`Real browser/native checks passed: ${played} playable cues; audio endpoints=${devices.audio.length}. Physical routing remains unverified.`);
   } catch (error) {
     record.error = redact(error.stack || error);
+    if (admin && record.trackMouseDrags?.length) try {
+      record.trackMouseDrags.at(-1).events = await admin.evaluate(() => window.__nativeTrackEvents || []);
+    } catch {}
     if (admin) try {
       record.adminEditingState = await admin.evaluate(() => ({
         online, playlistBusy, playlistFileBusy, validationRefresh,

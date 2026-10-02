@@ -351,6 +351,7 @@ const assert = require('node:assert/strict');
     const observation = {releaseOutside:outside, heldPreviewRaw:raw, heldWrites:fixtureTrackRequests().length - before.count, heldRevisionDelta:config.playlistRevision - before.revision, heldCapture};
     trackDragObservations.push(observation);
     assert(descending ? raw >= 22 && raw <= 34 : raw >= 66 && raw <= 78, `Real mouse dragging previews the selected native range value (actual ${raw}, expected near ${descending ? 28 : 72}; saves while held ${fixtureTrackRequests().length - before.count}; capture ${heldCapture})`);
+    assert.equal(await range.getAttribute('tabindex'), '0', 'Track ranges explicitly support mouse focus on Mac');
     assert.equal(fixtureTrackRequests().length, before.count, 'A stationary held mouse never saves after the old 200ms deadline');
     assert.equal(config.playlistRevision, before.revision, 'A held drag does not advance the saved playlist revision');
     if (refreshWhileHeld) {

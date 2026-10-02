@@ -1500,6 +1500,9 @@ function renderPlaylist() {
     const pendingVolume = pendingTrackVolumes.get(cue.id);
     const draftVolume = pendingVolume?.path === cue.path ? pendingVolume.volume : currentTrackVolumeRequest(cue.id, cue.path) ? trackVolumeRequest.volume : cue.volume;
     volume.type = 'range'; volume.min = '0'; volume.max = '100'; volume.step = '1'; volume.value = volumePercent(draftVolume);
+    // Explicit tabindex keeps Mac WebKit's native mouse press focused on the
+    // range, rather than blurring it and canceling the thumb's new drag.
+    volume.tabIndex = 0;
     volume.id = `track-volume-${cue.id}`; volumeLabel.htmlFor = volume.id; volumeValue.htmlFor = volume.id; renderTrackVolume(volume, volumeValue);
     localizedAttribute(volume, 'aria-label', () => t("Volume for cue {0}", {0: index + 1}));
     localizedAttribute(volume, 'aria-valuetext', () => trackVolumeText(volume));
