@@ -236,15 +236,25 @@ def initialize_windows_shell(programs):
     """
     shell = 'powershell.exe'
     family = psjson(shell, "Get-AppxPackage -Name Microsoft.StartExperiencesApp | Select-Object -ExpandProperty PackageFamilyName")
+    discovery = 'current user'
+    if not family:
+        # A fresh runner may have registered Start only for its setup account.
+        # The installer probe runs as another account and needs its own rule.
+        family = psjson(shell, "Get-AppxPackage -AllUsers -Name Microsoft.StartExperiencesApp | Select-Object -ExpandProperty PackageFamilyName -Unique")
+        discovery = 'all users'
     if not family:
         return {'componentPresent': False, 'warmupRequired': False}
     assert isinstance(family, str), 'Unexpected Windows Start package identity'
+    sid = psjson(shell, "[Security.Principal.WindowsIdentity]::GetCurrent().User.Value")
+    assert isinstance(sid, str) and re.fullmatch(r'S-1-(?:\d+-)+\d+', sid), 'Unexpected current user SID'
+    component = {'componentPresent': True, 'packageDiscoveryScope': discovery,
+                 'componentRuleScope': 'current user SID'}
 
     def rule_ready():
-        return psjson(shell, "@(Get-NetFirewallRule -PolicyStore ActiveStore | Where-Object { $_.Name.StartsWith(" + quote(family) + ") }).Count") > 0
+        return psjson(shell, "@(Get-NetFirewallRule -PolicyStore ActiveStore | Where-Object { $_.Name.StartsWith(" + quote(family + sid + '-') + ") }).Count") > 0
 
     if rule_ready():
-        return {'componentPresent': True, 'warmupRequired': False, 'componentRuleObservedBeforeInstall': True}
+        return dict(component, warmupRequired=False, componentRuleObservedBeforeInstall=True)
     shortcut = Path(programs) / ('Windows shell probe ' + os.urandom(8).hex() + '.lnk')
     assert not shortcut.exists(), 'Shell warmup shortcut already exists'
     try:
@@ -264,8 +274,8 @@ def initialize_windows_shell(programs):
         until(rule_ready, 'Windows Start component did not initialize before the firewall baseline', timeout=120)
     finally:
         shortcut.unlink(missing_ok=True)
-    return {'componentPresent': True, 'warmupRequired': True, 'warmupShortcutRemoved': not shortcut.exists(),
-            'componentRuleObservedBeforeInstall': True}
+    return dict(component, warmupRequired=True, warmupShortcutRemoved=not shortcut.exists(),
+                componentRuleObservedBeforeInstall=True)
 
 
 def firewall_difference(before, after):
