@@ -271,11 +271,38 @@ function currentTrackVolumeRequest(id, path) {
   return Boolean(trackVolumeRequest?.sequence === trackVolumeSequence && trackVolumeRequest.id === id &&
     trackVolumeRequest.path === path && trackVolumeCue(id, path));
 }
-function cancelTrackVolumeGesture(gesture) {
-  if (trackVolumeGestures.get(gesture.id) === gesture) trackVolumeGestures.delete(gesture.id);
+function startTrackVolumeGesture(gesture) {
+  if (trackVolumeGestures.get(gesture.id) === gesture) return;
+  const target = pendingTrackVolumes.get(gesture.id);
+  gesture.previousTarget = target?.path === gesture.path && target.sequence === trackVolumeSequence && Number.isFinite(target.readyAt) ? { ...target } : null;
+  trackVolumeGestures.set(gesture.id, gesture);
+}
+function cancelTrackVolumeGesture(gesture, pointerReleased = false) {
+  const active = trackVolumeGestures.get(gesture.id) === gesture;
+  if (active) trackVolumeGestures.delete(gesture.id);
+  const previous = gesture.previousTarget; gesture.previousTarget = null;
   gesture.heldKeys.clear();
-  const pointerId = gesture.pointerId; gesture.pointerId = null;
-  if (pointerId !== null && gesture.range.hasPointerCapture?.(pointerId)) gesture.range.releasePointerCapture(pointerId);
+  const pointerId = gesture.pointerId; gesture.pointerId = null; gesture.pointerType = '';
+  try {
+    if (pointerId !== null && gesture.range.hasPointerCapture?.(pointerId)) gesture.range.releasePointerCapture(pointerId);
+  } catch { /* A disabled or detached native range may already have released capture. */ }
+  const target = pendingTrackVolumes.get(gesture.id);
+  if (active && !pointerReleased) {
+    if (target?.path === gesture.path && target.readyAt === null) pendingTrackVolumes.delete(gesture.id);
+    if (previous?.sequence === trackVolumeSequence && previous.path === gesture.path && currentTrackVolumeControl(gesture)) pendingTrackVolumes.set(gesture.id, previous);
+    const retained = pendingTrackVolumes.get(gesture.id);
+    const cue = trackVolumeCue(gesture.id, gesture.path);
+    gesture.range.value = volumePercent(retained?.path === gesture.path ? retained.volume : currentTrackVolumeRequest(gesture.id, gesture.path) ? trackVolumeRequest.volume : cue?.volume);
+    renderTrackVolume(gesture.range, gesture.output);
+  }
+  if (pointerId !== null && !pointerReleased) {
+    // The native thumb has its own drag state. Disabling stops that tracking
+    // when cancellation prevents its normal mouseup; availability rendering
+    // restores only controls that still belong to the current editable cue.
+    gesture.canceling = true;
+    gesture.range.disabled = true;
+    gesture.canceling = false;
+  }
 }
 function cancelTrackVolumes() {
   ++trackVolumeSequence;
@@ -296,8 +323,9 @@ function scheduleTrackVolumes() {
   if (!pendingTrackVolumes.size || trackVolumeSending) return;
   if (!trackVolumeAvailable()) { cancelTrackVolumes(); return; }
   pruneTrackVolumes();
-  if (!pendingTrackVolumes.size) return;
-  const delay = Math.max(0, Math.min(...[...pendingTrackVolumes.values()].map(target => target.readyAt)) - Date.now());
+  const targets = [...pendingTrackVolumes].filter(([id, target]) => target.readyAt !== null && !trackVolumeGestures.has(id));
+  if (!targets.length) return;
+  const delay = Math.max(0, Math.min(...targets.map(([, target]) => target.readyAt)) - Date.now());
   if (playlistBusy || delay > 0) {
     trackVolumeTimer = setTimeout(() => { void saveTrackVolume(); }, playlistBusy ? Math.max(120, delay) : delay);
   } else void saveTrackVolume();
@@ -307,7 +335,7 @@ async function saveTrackVolume() {
   if (!pendingTrackVolumes.size || trackVolumeSending) return;
   if (!trackVolumeAvailable()) { cancelTrackVolumes(); renderEditAvailability(); return; }
   pruneTrackVolumes();
-  const ready = [...pendingTrackVolumes].filter(([, target]) => target.readyAt <= Date.now()).sort((a, b) => a[1].readyAt - b[1].readyAt);
+  const ready = [...pendingTrackVolumes].filter(([id, target]) => target.readyAt !== null && !trackVolumeGestures.has(id) && target.readyAt <= Date.now()).sort((a, b) => a[1].readyAt - b[1].readyAt);
   if (playlistBusy || !ready.length) { scheduleTrackVolumes(); return; }
   const [id, target] = ready[0]; pendingTrackVolumes.delete(id);
   const cue = trackVolumeCue(id, target.path);
@@ -352,38 +380,41 @@ function flushTrackPlaylistRender() {
 }
 function endTrackVolumeGesture(gesture) {
   const current = currentTrackVolumeControl(gesture);
-  cancelTrackVolumeGesture(gesture);
   const target = pendingTrackVolumes.get(gesture.id);
   if (current && !gesture.range.disabled && target?.path === gesture.path) target.readyAt = 0;
+  cancelTrackVolumeGesture(gesture, true);
   scheduleTrackVolumes(); renderEditAvailability();
   setTimeout(flushTrackPlaylistRender, 0);
 }
 function bindTrackVolumeControl(id, path, range, output) {
-  const gesture = { id, path, range, pointerId: null, heldKeys: new Set() };
+  const gesture = { id, path, range, output, pointerId: null, pointerType: '', heldKeys: new Set(), previousTarget: null, canceling: false };
   range.addEventListener('pointerdown', event => {
-    if (!trackVolumeAvailable() || playlistBusy && !trackVolumeSending || !currentTrackVolumeControl(gesture)) return;
-    gesture.pointerId = event.pointerId; trackVolumeGestures.set(id, gesture);
-    try { range.setPointerCapture?.(event.pointerId); } catch { /* Document release also covers native range tracking. */ }
+    if (!event.isPrimary || event.button !== 0 || range.disabled || !trackVolumeAvailable() || playlistBusy && !trackVolumeSending || !currentTrackVolumeControl(gesture)) return;
+    gesture.pointerId = event.pointerId; gesture.pointerType = event.pointerType;
+    startTrackVolumeGesture(gesture);
+    // WebKit's native range owns thumb tracking. Explicit pointer capture can
+    // interrupt that drag and leave it following the mouse after release.
+    scheduleTrackVolumes();
   });
-  for (const event of ['pointerup', 'pointercancel']) range.addEventListener(event, () => { if (currentTrackVolumeControl(gesture)) endTrackVolumeGesture(gesture); });
   range.addEventListener('blur', () => {
-    if (!currentTrackVolumeControl(gesture)) return;
-    // Temporarily disabling edits during another playlist operation can blur
-    // the range. Preserve its quiet deadline until that operation finishes.
-    if (range.disabled) cancelTrackVolumeGesture(gesture);
+    if (gesture.canceling || !currentTrackVolumeControl(gesture)) return;
+    if (range.disabled || gesture.pointerId !== null) { cancelTrackVolumeGesture(gesture); scheduleTrackVolumes(); renderEditAvailability(); }
     else endTrackVolumeGesture(gesture);
   });
-  range.addEventListener('lostpointercapture', () => { if (trackVolumeGestures.get(id) === gesture && gesture.pointerId !== null) endTrackVolumeGesture(gesture); });
+  range.addEventListener('lostpointercapture', event => {
+    if (trackVolumeGestures.get(id) !== gesture || event.pointerId !== gesture.pointerId) return;
+    cancelTrackVolumeGesture(gesture); scheduleTrackVolumes(); renderEditAvailability();
+  });
   range.addEventListener('keydown', event => {
     if (!masterVolumeKeys.includes(event.key) || !trackVolumeAvailable() || playlistBusy && !trackVolumeSending || !currentTrackVolumeControl(gesture)) return;
-    gesture.heldKeys.add(event.key); trackVolumeGestures.set(id, gesture);
+    gesture.heldKeys.add(event.key); startTrackVolumeGesture(gesture);
   });
   range.addEventListener('keyup', event => {
     if (!masterVolumeKeys.includes(event.key) || !currentTrackVolumeControl(gesture)) return;
     gesture.heldKeys.delete(event.key);
-    if (!gesture.heldKeys.size) endTrackVolumeGesture(gesture);
+    if (gesture.pointerId === null && !gesture.heldKeys.size) endTrackVolumeGesture(gesture);
   });
-  range.addEventListener('change', () => { if (!gesture.heldKeys.size && currentTrackVolumeControl(gesture)) endTrackVolumeGesture(gesture); });
+  range.addEventListener('change', () => { if (gesture.pointerId === null && !gesture.heldKeys.size && currentTrackVolumeControl(gesture)) endTrackVolumeGesture(gesture); });
   range.addEventListener('input', () => {
     if (!currentTrackVolumeControl(gesture)) return;
     const cue = trackVolumeCue(id, path);
@@ -392,25 +423,39 @@ function bindTrackVolumeControl(id, path, range, output) {
     const volume = Number(range.value) / 100, previous = pendingTrackVolumes.get(id);
     if (previous && volumePercent(previous.volume) === volumePercent(volume)) return;
     if (!trackVolumeSending && volumePercent(cue.volume) === volumePercent(volume)) pendingTrackVolumes.delete(id);
-    else pendingTrackVolumes.set(id, { path, volume, sequence: trackVolumeSequence, readyAt: Date.now() + 200 });
+    else pendingTrackVolumes.set(id, { path, volume, sequence: trackVolumeSequence, readyAt: trackVolumeGestures.get(id) === gesture ? null : Date.now() + 200 });
     scheduleTrackVolumes();
   });
   return gesture;
 }
 for (const event of ['pointerup', 'pointercancel']) document.addEventListener(event, pointer => {
   for (const gesture of [...trackVolumeGestures.values()]) {
-    if (gesture.pointerId === pointer.pointerId) endTrackVolumeGesture(gesture);
+    if (gesture.pointerId !== pointer.pointerId) continue;
+    if (event === 'pointerup') endTrackVolumeGesture(gesture);
+    else { cancelTrackVolumeGesture(gesture); scheduleTrackVolumes(); renderEditAvailability(); }
   }
-});
+}, true);
+// Also observe native mouse release in case range tracking omits pointerup,
+// before target handlers can replace or disable rows.
+document.addEventListener('mouseup', event => {
+  if (event.button !== 0) return;
+  for (const gesture of [...trackVolumeGestures.values()]) {
+    if (gesture.pointerId !== null && gesture.pointerType === 'mouse') endTrackVolumeGesture(gesture);
+  }
+}, true);
 document.addEventListener('keyup', event => {
   for (const gesture of [...trackVolumeGestures.values()]) {
     if (!gesture.heldKeys.delete(event.key)) continue;
-    if (!gesture.heldKeys.size) endTrackVolumeGesture(gesture);
+    if (gesture.pointerId === null && !gesture.heldKeys.size) endTrackVolumeGesture(gesture);
   }
 });
 window.addEventListener('blur', () => {
-  for (const gesture of [...trackVolumeGestures.values()]) endTrackVolumeGesture(gesture);
+  for (const gesture of [...trackVolumeGestures.values()]) {
+    if (gesture.pointerId !== null) cancelTrackVolumeGesture(gesture);
+    else endTrackVolumeGesture(gesture);
+  }
   for (const row of playlistRows.values()) if (row.volume === document.activeElement) endTrackVolumeGesture(row.volumeGesture);
+  scheduleTrackVolumes(); renderEditAvailability();
 });
 $('playlist').addEventListener('focusout', () => { setTimeout(flushTrackPlaylistRender, 0); });
 function clock(seconds) {
@@ -1072,7 +1117,9 @@ function renderEditAvailability() {
     row.hidden.disabled = pending || playlistBusy;
     const cue = playlist?.cues.find(c => c.id === id);
     row.volumeControls.hidden = !['audio', 'video'].includes(cue?.cache.media.kind);
-    row.volume.disabled = !trackAvailable || !trackVolumeCue(id, row.volumePath) || playlistBusy && !trackVolumeSending;
+    const volumeDisabled = !trackAvailable || !trackVolumeCue(id, row.volumePath) || playlistBusy && !trackVolumeSending;
+    if (volumeDisabled && trackVolumeGestures.get(id) === row.volumeGesture) cancelTrackVolumeGesture(row.volumeGesture);
+    row.volume.disabled = volumeDisabled;
     if (!trackAvailable || document.activeElement !== row.volume && !trackVolumeGestures.has(id) && !pendingTrackVolumes.has(id) && !currentTrackVolumeRequest(id, row.volumePath)) {
       row.volume.value = volumePercent(cue?.volume);
     }
@@ -1428,7 +1475,9 @@ function renderPlaylist() {
   }
   trackPlaylistRenderPending = false;
   for (const gesture of [...trackVolumeGestures.values()]) cancelTrackVolumeGesture(gesture);
-  playlistRows.clear(); $('playlist').replaceChildren();
+  playlistRows.clear();
+  for (const [, row] of rows) row.volume.disabled = true;
+  $('playlist').replaceChildren();
   localizedText($('playlist-revision'), () => t(playlist.cues.length === 1 ? '{0} cue · saved revision {1}' : '{0} cues · saved revision {1}', {0: playlist.cues.length, 1: playlist.playlistRevision}));
   if (!playlist.cues.length) $('playlist').append(element('p', () => t("Add audio, videos, or images to build your show."), 'empty'));
   const counts = new Map(); for (const c of playlist.cues) counts.set(c.label, (counts.get(c.label) || 0) + 1);

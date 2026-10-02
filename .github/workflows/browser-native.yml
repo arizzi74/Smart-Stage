@@ -59,6 +59,15 @@ jobs:
           suffix=''
           if [[ '${{ matrix.os }}' == windows ]]; then suffix=.exe; fi
           node scripts/browser-native-smoke.cjs "$SMARTSTAGE_DOWNLOAD_DIR/smartstage$suffix"
+      - name: Verify released track dragging with WebKit on Mac
+        if: matrix.os == 'darwin'
+        shell: bash
+        env:
+          SMARTSTAGE_BROWSER: webkit
+          SMARTSTAGE_TRACK_DRAG_ONLY: '1'
+        run: |
+          node scripts/browser/node_modules/playwright/cli.js install webkit
+          node scripts/browser-native-smoke.cjs "$SMARTSTAGE_DOWNLOAD_DIR/smartstage"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:

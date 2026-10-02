@@ -15,10 +15,12 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.2
   of playback position, pause/seek intent and transition envelopes. Track levels
   round-trip through playlist files and older shows default to the centered level,
   displayed as 0% adjustment. Track readouts show negative/positive percentages
-  relative to that level; saved native gains remain unchanged. Track saves use
-  a 200ms trailing debounce per cue and flush on release, deduplicating unchanged
-  levels and retaining the latest pending adjustment during an active save.
-  Continuous dragging does not write intermediate saved revisions. Remote master
+  relative to that level; saved native gains remain unchanged. Track mouse/touch saves wait
+  for release, including stationary held drags and release outside the range.
+  Native range dragging uses no explicit DOM pointer capture; pointer aborts clear
+  native tracking. Keyboard adjustments save on key release, with a short fallback
+  for assistive input without a pointer/key gesture. Unchanged levels are skipped,
+  and active saves retain the latest released adjustment. Remote master
   requests use a 200ms trailing debounce, release flushing and one latest pending
   value, with no successful state GET blocking the next change. A revision-scoped
   volume acknowledgement keeps delayed state updates from snapping the slider

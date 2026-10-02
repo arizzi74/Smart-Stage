@@ -1,13 +1,13 @@
 // Browser-only checks against two explicitly synthetic HTTP listeners. Native
 // playback and real QR decoding are verified by the separate native/Go checks.
-const { chromium } = require('playwright');
+const { chromium, webkit } = require('playwright');
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
 
 (async () => {
-  const assets = path.resolve(__dirname, '../internal/web/assets');
+  const assets = process.env.SMARTSTAGE_BROWSER_ASSETS ? path.resolve(process.env.SMARTSTAGE_BROWSER_ASSETS) : path.resolve(__dirname, '../internal/web/assets');
   const output = path.resolve(__dirname, '../dist/browser-checks'); fs.mkdirSync(output, { recursive: true });
   const clients = new Set(), commands = [], errors = [], requests = [], sessions = new Map();
   let token = '12345678';
@@ -322,8 +322,155 @@ const assert = require('node:assert/strict');
   const publicBase = `http://127.0.0.1:${publicServer.address().port}`;
   const fixtureLink = (label, base, index) => ({ label, url: `${base}/command#token=${token}`, qrURL: `/api/remote-control/qr?index=${index}` });
   links = [fixtureLink('Wi-Fi', commandBase, 0), fixtureLink('Ethernet <img src=x onerror="window.__xss=true">', 'http://192.0.2.15:8788', 1)];
-  const browser = await chromium.launch({ headless: true });
+  const browserName = process.env.SMARTSTAGE_BROWSER || 'chromium';
+  assert(['chromium', 'webkit'].includes(browserName), 'SMARTSTAGE_BROWSER must be chromium or webkit');
+  const trackDragOnly = process.env.SMARTSTAGE_TRACK_DRAG_ONLY === '1';
+  assert(browserName === 'chromium' || trackDragOnly, 'WebKit uses the focused track-drag checks; the full fixture also exercises Chromium CDP touch controls');
+  const browser = await ({chromium, webkit})[browserName].launch({ headless: true });
+  const fixtureTrackRequests = () => requests.filter(item => item.listenerRole === 'admin' && item.path === '/api/playlist/volume');
+  const trackDragObservations = [];
+  const verifyMouseTrackDrag = async (page, range, {outside = false, refreshWhileHeld = false} = {}) => {
+    await range.scrollIntoViewIfNeeded(); await range.focus();
+    const node = await range.elementHandle(), box = await range.boundingBox();
+    const before = {count:fixtureTrackRequests().length, revision:config.playlistRevision};
+    await node.evaluate(range => {
+      window.__trackPointerIds = [];
+      range.addEventListener('pointerdown', event => window.__trackPointerIds.push(event.pointerId));
+    });
+    const gate = responseGate(); trackVolumeWriteGate = gate;
+    const x = raw => box.x + 8 + (box.width - 16) * raw / 100;
+    const descending = Number(await range.inputValue()) >= 60;
+    await page.mouse.move(x(Number(await range.inputValue())), box.y + box.height / 2); await page.mouse.down();
+    for (const raw of descending ? [65, 50, 35, 28] : [35, 50, 65, 72]) {
+      await page.mouse.move(x(raw), box.y + box.height / 2, {steps:3}); await page.waitForTimeout(80);
+      assert.equal(fixtureTrackRequests().length, before.count, 'A held mouse drag never saves an intermediate track value');
+    }
+    await page.waitForTimeout(300);
+    let raw = Number(await range.inputValue());
+    const heldCapture = await node.evaluate(range => window.__trackPointerIds.some(id => range.hasPointerCapture(id)));
+    const observation = {releaseOutside:outside, heldPreviewRaw:raw, heldWrites:fixtureTrackRequests().length - before.count, heldRevisionDelta:config.playlistRevision - before.revision, heldCapture};
+    trackDragObservations.push(observation);
+    assert(descending ? raw >= 22 && raw <= 34 : raw >= 66 && raw <= 78, `Real mouse dragging previews the selected native range value (actual ${raw}, expected near ${descending ? 28 : 72}; saves while held ${fixtureTrackRequests().length - before.count}; capture ${heldCapture})`);
+    assert.equal(fixtureTrackRequests().length, before.count, 'A stationary held mouse never saves after the old 200ms deadline');
+    assert.equal(config.playlistRevision, before.revision, 'A held drag does not advance the saved playlist revision');
+    if (refreshWhileHeld) {
+      state.revision++; broadcast();
+      await page.evaluate(async () => { await refreshState(); await loadPlaylist(); });
+      assert(await node.evaluate(range => range.isConnected && document.activeElement === range), 'State and playlist refresh preserve the active slider DOM and focus');
+      assert.equal(Number(await range.inputValue()), raw, 'State and playlist refresh preserve the held preview');
+      assert.equal(fixtureTrackRequests().length, before.count, 'Refreshing Admin cannot save a held drag');
+    }
+    if (outside) await page.mouse.move(x(descending ? 28 : 72), box.y + box.height + 35, {steps:3});
+    raw = Number(await range.inputValue());
+    const releasedAt = Date.now(); await page.mouse.up();
+    await Promise.race([gate.received, page.waitForTimeout(1500).then(() => { throw new Error('Mouse release did not save the final track value'); })]);
+    assert.equal(fixtureTrackRequests().length, before.count + 1, 'Mouse release sends exactly one track save');
+    assert.equal(config.playlistRevision, before.revision + 1, 'Mouse release advances the playlist revision once');
+    const write = fixtureTrackRequests().at(-1);
+    assert.equal(write.body.volume, raw / 100, 'Mouse release saves the final preview');
+    assert.equal(write.body.expectedRevision, before.revision, 'Mouse release uses the last confirmed playlist revision');
+    assert(write.receivedAt - releasedAt < 180, 'Mouse release saves immediately');
+    assert(await node.evaluate(range => window.__trackPointerIds.every(id => !range.hasPointerCapture(id))), 'Mouse release leaves no pointer capture on the slider');
+    assert.equal(await range.evaluate(range => getComputedStyle(range).cursor), 'default', 'Track sliders use the standard cursor');
+    const response = page.waitForResponse(response => response.url() === adminBase + '/api/playlist/volume' && response.request().postDataJSON()?.volume === raw / 100);
+    gate.release(); assert.equal((await response).status(), 200);
+    await page.waitForTimeout(40);
+    const releasedValue = await range.inputValue(), releasedLabel = await range.getAttribute('aria-valuetext');
+    for (const target of [10, 90, 25, 80]) await page.mouse.move(x(target), box.y + box.height / 2, {steps:3});
+    await page.waitForTimeout(280);
+    assert.equal(await range.inputValue(), releasedValue, 'Hover after release cannot continue the track drag');
+    assert.equal(await range.getAttribute('aria-valuetext'), releasedLabel, 'Hover after release cannot change the track readout');
+    assert.equal(fixtureTrackRequests().length, before.count + 1, 'Hover after release cannot send a second track save');
+    assert(await node.evaluate(range => window.__trackPointerIds.every(id => !range.hasPointerCapture(id))), 'Hover after release cannot revive pointer capture');
+    Object.assign(observation, {releasedRaw:raw, releasedWrites:fixtureTrackRequests().length - before.count, releasedRevisionDelta:config.playlistRevision - before.revision, expectedRevision:write.body.expectedRevision, releasedCapture:false, hoverChangedValue:false});
+    await node.dispose(); return raw;
+  };
   try {
+    if (trackDragOnly) {
+      const context = await browser.newContext({viewport:{width:1280, height:900}});
+      const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
+      await page.goto(adminBase + '/admin?desktop=macos'); await page.locator('#connection.live').waitFor();
+      const range = page.locator('#track-volume-cue-0'); await range.waitFor();
+      await verifyMouseTrackDrag(page, range, {refreshWhileHeld:true});
+      await verifyMouseTrackDrag(page, range, {outside:true, refreshWhileHeld:true});
+      // An older accepted save cannot release a newer pointer gesture or drain
+      // its draft. The queued value uses the acknowledged revision on release.
+      const firstSave = responseGate({broadcast:false}); trackVolumeWriteGate = firstSave;
+      const before = {count:fixtureTrackRequests().length, revision:config.playlistRevision};
+      await range.fill('40'); await firstSave.received;
+      assert.equal(await range.isDisabled(), false, 'A track remains adjustable while its previous save is pending');
+      const box = await range.boundingBox(), x = raw => box.x + 8 + (box.width - 16) * raw / 100;
+      await page.mouse.move(x(40), box.y + box.height / 2); await page.mouse.down();
+      await page.mouse.move(x(85), box.y + box.height / 2, {steps:5}); await page.waitForTimeout(300);
+      const finalRaw = Number(await range.inputValue());
+      const firstResponse = page.waitForResponse(response => response.url() === adminBase + '/api/playlist/volume' && response.request().postDataJSON()?.volume === .4);
+      firstSave.release(); await firstResponse; await page.waitForTimeout(280);
+      assert.equal(fixtureTrackRequests().length, before.count + 1, 'Acknowledging an earlier save does not flush a stationary held drag');
+      assert.equal(Number(await range.inputValue()), finalRaw, 'An older acknowledgement does not replace the held preview');
+      const finalSave = responseGate(); trackVolumeWriteGate = finalSave;
+      await page.mouse.up(); await finalSave.received;
+      assert.equal(fixtureTrackRequests().at(-1).body.volume, finalRaw / 100);
+      assert.equal(fixtureTrackRequests().at(-1).body.expectedRevision, before.revision + 1);
+      const finalResponse = page.waitForResponse(response => response.url() === adminBase + '/api/playlist/volume' && response.request().postDataJSON()?.volume === finalRaw / 100);
+      finalSave.release(); await finalResponse;
+      await range.dispatchEvent('change'); await page.locator('#language-mode').focus(); await page.waitForTimeout(280);
+      assert.equal(fixtureTrackRequests().length, before.count + 2, 'Release, native change and blur save the latest pending value once');
+      assert.equal(config.playlistRevision, before.revision + 2, 'Two meaningful accepted targets advance exactly two revisions');
+      await range.focus(); await page.keyboard.down('ArrowLeft'); await page.waitForTimeout(300);
+      assert.equal(fixtureTrackRequests().length, before.count + 2, 'A held keyboard adjustment does not save after 200ms');
+      const keyboardRaw = Number(await range.inputValue());
+      const keyboardResponse = page.waitForResponse(response => response.url() === adminBase + '/api/playlist/volume' && response.request().postDataJSON()?.volume === keyboardRaw / 100);
+      await page.keyboard.up('ArrowLeft'); assert.equal((await keyboardResponse).status(), 200);
+      await page.waitForTimeout(240);
+      assert.equal(fixtureTrackRequests().length, before.count + 3, 'Keyboard release remains accessible and saves once');
+      const savedRaw = await range.inputValue(), abortBefore = fixtureTrackRequests().length;
+      await range.scrollIntoViewIfNeeded();
+      const abortBox = await range.boundingBox(), abortX = raw => abortBox.x + 8 + (abortBox.width - 16) * raw / 100;
+      await page.mouse.move(abortX(Number(savedRaw)), abortBox.y + abortBox.height / 2); await page.mouse.down();
+      await page.mouse.move(abortX(20), abortBox.y + abortBox.height / 2, {steps:4});
+      assert.notEqual(await range.inputValue(), savedRaw, 'The cancelled gesture begins with a real native thumb drag');
+      await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+      await page.mouse.move(5, 5);
+      assert.equal(await range.inputValue(), savedRaw, 'An aborted native drag cannot keep moving while the physical mouse button is still held');
+      assert.equal(fixtureTrackRequests().length, abortBefore, 'Moving after cancellation cannot save the held gesture');
+      await page.mouse.up();
+      for (const target of [90, 10, 60]) await page.mouse.move(abortX(target), abortBox.y + abortBox.height / 2, {steps:4});
+      await page.waitForTimeout(300);
+      assert.equal(await range.inputValue(), savedRaw, 'Window blur cancels native range tracking and restores the saved level through release and hover');
+      assert.equal(fixtureTrackRequests().length, abortBefore, 'A cancelled native drag cannot create a delayed fallback save');
+      // A cancelled second gesture must keep an earlier released target that
+      // is waiting for another cue's acknowledged playlist revision.
+      const otherRange = page.locator('#track-volume-cue-1');
+      assert.notEqual(await otherRange.inputValue(), '60', 'The queued-cue fixture starts at a distinct saved level');
+      const queueBefore = {count:fixtureTrackRequests().length, revision:config.playlistRevision};
+      const queueFirst = responseGate({broadcast:false}); trackVolumeWriteGate = queueFirst;
+      await range.fill('40'); await queueFirst.received;
+      await otherRange.fill('60');
+      await otherRange.scrollIntoViewIfNeeded();
+      const otherBox = await otherRange.boundingBox(), otherX = raw => otherBox.x + 8 + (otherBox.width - 16) * raw / 100;
+      await page.mouse.move(otherX(60), otherBox.y + otherBox.height / 2); await page.mouse.down();
+      await page.mouse.move(otherX(80), otherBox.y + otherBox.height / 2, {steps:4});
+      assert(Number(await otherRange.inputValue()) >= 74, 'A second real gesture changes the earlier released preview');
+      await page.evaluate(() => window.dispatchEvent(new Event('blur')));
+      await page.mouse.move(5, 5); await page.mouse.up();
+      assert.equal(await otherRange.inputValue(), '60', 'Cancelling a newer gesture restores the earlier released target');
+      const queueSecond = responseGate(); trackVolumeWriteGate = queueSecond;
+      const queueFirstResponse = page.waitForResponse(response => response.url() === adminBase + '/api/playlist/volume' && response.request().postDataJSON()?.cueId === 'cue-0' && response.request().postDataJSON()?.volume === .4);
+      queueFirst.release(); await queueFirstResponse;
+      await Promise.race([queueSecond.received, page.waitForTimeout(1500).then(() => { throw new Error('The previously released cue target was lost during cancellation'); })]);
+      assert.equal(fixtureTrackRequests().at(-1).body.cueId, 'cue-1');
+      assert.equal(fixtureTrackRequests().at(-1).body.volume, .6, 'The earlier released level survives cancellation of a later drag');
+      assert.equal(fixtureTrackRequests().at(-1).body.expectedRevision, queueBefore.revision + 1);
+      const queueSecondResponse = page.waitForResponse(response => response.url() === adminBase + '/api/playlist/volume' && response.request().postDataJSON()?.cueId === 'cue-1' && response.request().postDataJSON()?.volume === .6);
+      queueSecond.release(); await queueSecondResponse; await page.waitForTimeout(280);
+      assert.equal(fixtureTrackRequests().length, queueBefore.count + 2, 'The first cue and earlier released second cue each save once');
+      assert.equal(config.playlistRevision, queueBefore.revision + 2);
+      assert.equal(await otherRange.inputValue(), '60');
+      assert.deepEqual(errors, []);
+      fs.writeFileSync(path.join(output, `track-drag-${browserName}.json`), JSON.stringify({passed:true, browser:browserName, browserVersion:await browser.version(), mouseDrags:trackDragObservations, heldDragAndStationaryHoldDoNotSave:true, insideAndOutsideReleaseSaveOnce:true, hoverAfterReleaseDoesNotChangeValue:true, releasedPointerCapture:false, stateAndPlaylistRefreshPreserveDOMFocusAndDraft:true, earlierAcknowledgementPreservesHeldDraft:true, latestReleasedTargetUsesAcknowledgedRevision:true, unchangedReleaseChangeBlurDoNotWriteAgain:true, heldKeyboardAdjustmentSavesOnRelease:true, cancelledNativeDragRestoresSavedValueWithoutDelayedWrite:true, cancelledNewGesturePreservesEarlierReleasedCueTarget:true, nativeMacWebViewVerified:false}, null, 2));
+      console.log(`${browserName} track mouse drag checks passed: held drag, stationary hold, release inside/outside, hover, capture, DOM and focus.`);
+      await context.close(); return;
+    }
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
     const page = await context.newPage(); page.on('pageerror', e => errors.push(e.message));
     await page.addInitScript(() => {
@@ -1871,6 +2018,7 @@ const assert = require('node:assert/strict');
     const trackKeyboardGate = responseGate(); trackVolumeWriteGate = trackKeyboardGate;
     trackBefore = trackCheckpoint(); await trackRange.focus(); await volumeAdmin.keyboard.down('ArrowRight');
     assert.equal(await trackRange.inputValue(), '66');
+    await volumeAdmin.waitForTimeout(300);
     assertTrackWrites(trackBefore, 0, 'Native track keydown previews without saving through its change event');
     const trackKeyReleasedAt = Date.now(); await volumeAdmin.keyboard.up('ArrowRight'); await waitTrackGate(trackKeyboardGate);
     assert(trackRequests().at(-1).receivedAt - trackKeyReleasedAt < 180, 'Track key release flushes before the debounce interval');
@@ -1885,30 +2033,19 @@ const assert = require('node:assert/strict');
     await acceptTrackGate(trackBlurGate, .79); await volumeAdmin.waitForTimeout(220);
     assertTrackWrites(trackBefore, 1, 'Enabled blur persists exactly one track value');
 
-    // Real pointer capture must deliver a release even after the mouse leaves
-    // the input. A touch end must flush the selected level just as promptly.
-    await trackRange.scrollIntoViewIfNeeded();
-    let trackBox = await trackRange.boundingBox();
-    const trackMouseGate = responseGate(); trackVolumeWriteGate = trackMouseGate; trackBefore = trackCheckpoint();
-    await volumeAdmin.mouse.move(trackBox.x + trackBox.width * .25, trackBox.y + trackBox.height / 2);
-    await volumeAdmin.mouse.down(); await volumeAdmin.mouse.move(trackBox.x + trackBox.width * .55, trackBox.y + trackBox.height / 2, {steps:3});
-    await volumeAdmin.mouse.move(trackBox.x + trackBox.width * .55, trackBox.y + trackBox.height + 35);
-    const trackMouseRaw = Number(await trackRange.inputValue());
-    assert(trackMouseRaw >= 45 && trackMouseRaw <= 65, 'Real track dragging changes the native range');
-    assertTrackWrites(trackBefore, 0, 'Track dragging previews before release');
-    const trackMouseReleasedAt = Date.now(); await volumeAdmin.mouse.up(); await waitTrackGate(trackMouseGate);
-    assert(trackRequests().at(-1).receivedAt - trackMouseReleasedAt < 180, 'Mouse release outside the track range flushes immediately');
-    assert.equal(trackRequests().at(-1).body.volume, trackMouseRaw / 100);
-    await acceptTrackGate(trackMouseGate, trackMouseRaw / 100); await volumeAdmin.waitForTimeout(220);
-    assertTrackWrites(trackBefore, 1, 'Mouse release and its native change event persist one track value');
+    // Use actual mouse input: movement and a stationary hold both outlast the
+    // former debounce. Native release inside/outside must end dragging fully.
+    await verifyMouseTrackDrag(volumeAdmin, trackRange, {refreshWhileHeld:true});
+    await verifyMouseTrackDrag(volumeAdmin, trackRange, {outside:true, refreshWhileHeld:true});
 
     const trackTouch = await volumeAdminContext.newCDPSession(volumeAdmin);
-    trackBox = await trackRange.boundingBox();
+    let trackBox = await trackRange.boundingBox();
     const trackTouchGate = responseGate(); trackVolumeWriteGate = trackTouchGate; trackBefore = trackCheckpoint();
     await trackTouch.send('Input.dispatchTouchEvent', {type:'touchStart', touchPoints:[{x:trackBox.x + trackBox.width * .25, y:trackBox.y + trackBox.height / 2}]});
     await trackTouch.send('Input.dispatchTouchEvent', {type:'touchMove', touchPoints:[{x:trackBox.x + trackBox.width * .75, y:trackBox.y + trackBox.height / 2}]});
     const trackTouchRaw = Number(await trackRange.inputValue());
     assert(trackTouchRaw >= 60 && trackTouchRaw <= 90, 'A real touch gesture changes track volume');
+    await volumeAdmin.waitForTimeout(300);
     assertTrackWrites(trackBefore, 0, 'Track touch movement previews before release');
     const trackTouchReleasedAt = Date.now(); await trackTouch.send('Input.dispatchTouchEvent', {type:'touchEnd', touchPoints:[]}); await waitTrackGate(trackTouchGate);
     assert(trackRequests().at(-1).receivedAt - trackTouchReleasedAt < 180, 'Touch release flushes track volume immediately');
@@ -2088,8 +2225,11 @@ const assert = require('node:assert/strict');
     Object.assign(state, beforeSeekFixture); state.revision++; broadcast();
     await italianRemoteContext.close();
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, trackVolumeLiveAndPlaylistPersistence: true, trackVolumeTrailing200msAndMouseTouchKeyboardRelease: true, trackVolumeUnchangedValueDeduplicationAndExactRevisions: true, trackVolumeDelayedLatestPendingAndIndependentCueDeadlines: true, trackVolumeReadyTargetsDrainWithoutStateRefresh: true, trackVolumeStructuralRefreshPreservesDeadlineAndCueIdentity: true, trackVolumeSignedLabelsAndNormalizedEndpoints: true, trackVolumeSignedFailureRollbackAndReload: true, masterVolumeDefaultMuteAndGatewayControl: true, masterVolumeTrailing200msAndImmediateRelease: true, masterVolumeSingleFlightLatestPendingWithoutStateGet: true, masterVolumeSameValueDeduplicationAndCompetingControllerIntent: true, masterVolumeDelayedStateSSEAndAcknowledgementProtection: true, masterVolumeStopEpochAndInstanceCancellation: true, masterVolumeGlobalEscapeCancellationAndStopConfirmation: true, volumeControlsEnglishItalianAndResponsive: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, trackVolumeLiveAndPlaylistPersistence: true, trackVolumeHeldMouseTouchKeyboardSaveOnlyOnRelease: true, trackVolumeHoverAfterReleaseAndPointerCaptureCleared: true, trackVolumeStateRefreshPreservesActiveDOMAndFocus: true, trackVolumeUntrackedInputTrailing200msFallback: true, trackVolumeUnchangedValueDeduplicationAndExactRevisions: true, trackVolumeDelayedLatestPendingAndIndependentCueDeadlines: true, trackVolumeReadyTargetsDrainWithoutStateRefresh: true, trackVolumeStructuralRefreshPreservesDeadlineAndCueIdentity: true, trackVolumeSignedLabelsAndNormalizedEndpoints: true, trackVolumeSignedFailureRollbackAndReload: true, masterVolumeDefaultMuteAndGatewayControl: true, masterVolumeTrailing200msAndImmediateRelease: true, masterVolumeSingleFlightLatestPendingWithoutStateGet: true, masterVolumeSameValueDeduplicationAndCompetingControllerIntent: true, masterVolumeDelayedStateSSEAndAcknowledgementProtection: true, masterVolumeStopEpochAndInstanceCancellation: true, masterVolumeGlobalEscapeCancellationAndStopConfirmation: true, volumeControlsEnglishItalianAndResponsive: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
+  } catch (error) {
+    if (trackDragOnly) fs.writeFileSync(path.join(output, `track-drag-${browserName}${process.env.SMARTSTAGE_BROWSER_ASSETS ? '-baseline' : ''}.json`), JSON.stringify({passed:false, browser:browserName, browserVersion:await browser.version(), error:error.message, mouseDrags:trackDragObservations, nativeMacWebViewVerified:false}, null, 2));
+    throw error;
   } finally { for (const gate of responseGates) gate.release(); await browser.close(); for (const c of clients) c.end(); await Promise.all([adminServer, commandServer, publicServer].map(server => new Promise(resolve => server.close(resolve)))); }
 })().catch(e => { console.error(e); process.exit(1); });

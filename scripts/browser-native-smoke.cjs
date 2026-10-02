@@ -8,7 +8,7 @@ const net = require('node:net');
 const readline = require('node:readline');
 const zlib = require('node:zlib');
 const { spawn, spawnSync } = require('node:child_process');
-const { chromium } = require('./browser/node_modules/playwright');
+const { chromium, webkit } = require('./browser/node_modules/playwright');
 
 const secrets = new Set();
 const redact = value => {
@@ -83,12 +83,15 @@ function dedicatedWindowsAdmin(platform, release) {
   const release = version.stdout.match(/^Smart Stage (\S+) \(/);
   assert(release, 'Expected Smart Stage release metadata');
   const nativeAdmin = dedicatedWindowsAdmin(target[1], release[1]);
+  const browserName = process.env.SMARTSTAGE_BROWSER || 'chromium';
+  assert(['chromium', 'webkit'].includes(browserName), 'SMARTSTAGE_BROWSER must be chromium or webkit');
+  const trackDragOnly = process.env.SMARTSTAGE_TRACK_DRAG_ONLY === '1';
   if (process.env.SMARTSTAGE_VERSION) assert(version.stdout.includes(`Smart Stage ${process.env.SMARTSTAGE_VERSION} (`));
-  const output = path.join(root, 'dist', 'browser-native', `${target[1]}-${target[2]}`);
+  const output = path.join(root, 'dist', 'browser-native', `${target[1]}-${target[2]}${browserName === 'chromium' ? '' : '-' + browserName}`);
   fs.mkdirSync(output, { recursive: true });
   const record = { passed: false, application: version.stdout.trim(), platform: target[1],
     architecture: target[2], node: process.version, nodeArchitecture: process.arch,
-    physicalRoutingVerified: false, checks: [] };
+    physicalRoutingVerified: false, desktopNativeWindowMouseForwardingVerified: false, checks: [] };
   const errors = [];
   let adminBase = '';
   let stderr = '', browser, admin, command;
@@ -122,7 +125,8 @@ function dedicatedWindowsAdmin(platform, release) {
       if (exited) throw new Error(`Native application exited during startup: ${redact(stderr)}`);
       return adminBase;
     }, 'Native application did not print the local Admin URL');
-    browser = await chromium.launch({ headless: true });
+    browser = await ({chromium, webkit})[browserName].launch({ headless: true });
+    record.browserEngine = browserName;
     record.browser = await browser.version();
     record.origin = 'Admin on 127.0.0.1; Command on an actual non-loopback host IPv4 address';
     const adminContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -225,9 +229,86 @@ function dedicatedWindowsAdmin(platform, release) {
         assert(saved.cues.some(cue => { const imported = fs.statSync(cue.path, { bigint: true }); return imported.dev === source.dev && imported.ino === source.ino; }), 'Imported fixture must reference the original file, including canonical Windows path aliases');
       }
     }
+    async function verifyNativeTrackDrag(cue, {target = 70, outside = true} = {}) {
+      const trackWriteCount = () => adminRequests.filter(path => path === '/api/playlist/volume').length;
+      const before = {count:trackWriteCount(), revision:(await snapshot()).playlistRevision};
+      const range = admin.locator(`#track-volume-${cue.id}`);
+      await range.scrollIntoViewIfNeeded(); await range.focus();
+      const node = await range.elementHandle(), box = await range.boundingBox();
+      await node.evaluate(range => {
+        window.__nativeTrackPointerIds = [];
+        range.addEventListener('pointerdown', event => window.__nativeTrackPointerIds.push(event.pointerId));
+      });
+      const x = raw => box.x + 8 + (box.width - 16) * raw / 100, start = Number(await range.inputValue());
+      await admin.mouse.move(x(start), box.y + box.height / 2); await admin.mouse.down();
+      for (let step = 1; step <= 5; step++) {
+        await admin.mouse.move(x(start + (target - start) * step / 5), box.y + box.height / 2, {steps:3}); await admin.waitForTimeout(70);
+        assert.equal(trackWriteCount(), before.count, 'A held native track drag cannot write intermediate revisions');
+      }
+      await admin.waitForTimeout(300);
+      let raw = Number(await range.inputValue());
+      assert(Math.abs(raw - target) <= 6, 'Actual mouse dragging previews the selected track level');
+      assert.equal(trackWriteCount(), before.count, 'A stationary held track cannot save after the former debounce');
+      assert.equal((await snapshot()).playlistRevision, before.revision, 'A held track does not change the saved-show revision');
+      await admin.evaluate(() => refreshState());
+      assert(await node.evaluate(range => range.isConnected && document.activeElement === range), 'Host updates preserve slider DOM and focus while dragging');
+      if (outside) await admin.mouse.move(x(target), box.y + box.height + 35, {steps:3});
+      raw = Number(await range.inputValue());
+      const changed = admin.waitForResponse(response => apiPath(response) === '/api/playlist/volume' && response.request().method() === 'PUT' && response.request().postDataJSON()?.volume === raw / 100);
+      await admin.mouse.up(); const response = await changed;
+      assert.equal(response.status(), 200); const confirmed = await response.json();
+      await admin.waitForFunction(() => !trackVolumeSending);
+      assert.equal(trackWriteCount(), before.count + 1, 'Mouse release creates one saved-show write');
+      assert.equal(confirmed.playlistRevision, before.revision + 1, 'One released track adjustment advances the saved revision once');
+      assert.equal(confirmed.cues.find(item => item.id === cue.id).volume, raw / 100);
+      const adjustment = 2 * raw - 100, label = `${adjustment > 0 ? '+' : ''}${adjustment}%`;
+      assert.equal(await range.getAttribute('aria-valuetext'), label);
+      assert.equal(await range.locator('..').locator('output').textContent(), label);
+      assert(await node.evaluate(range => window.__nativeTrackPointerIds.every(id => !range.hasPointerCapture(id))), 'Release clears track pointer capture');
+      assert.equal(await range.evaluate(range => getComputedStyle(range).cursor), 'default');
+      for (const hover of [20, 85, 35]) await admin.mouse.move(x(hover), box.y + box.height / 2, {steps:3});
+      await admin.waitForTimeout(280);
+      assert.equal(Number(await range.inputValue()), raw, 'Hover after release cannot move the track slider');
+      assert.equal(trackWriteCount(), before.count + 1, 'Hover after release cannot create another saved-show write');
+      await node.dispose(); return confirmed;
+    }
     const initial = await (await admin.request.get(adminBase + '/api/playlist')).json();
     await importMedia(filenames, initial.playlistRevision + 1);
     assert.equal(saved.cues.length, 4);
+    if (trackDragOnly) {
+      record.scope = 'Actual mouse controls in a Playwright browser against the native host; dedicated native window event forwarding is not exercised';
+      await until(async () => (await snapshot()).cues.every(cue => cue.validation === 'ready'), 'Native cue validation did not finish', 90000);
+      saved = await (await admin.request.get(adminBase + '/api/playlist')).json();
+      await admin.evaluate(() => loadPlaylist());
+      const cue = saved.cues.find(cue => ['audio', 'video'].includes(cue.cache?.media?.kind)); assert(cue);
+      saved = await verifyNativeTrackDrag(cue, {target:72, outside:false});
+      saved = await verifyNativeTrackDrag(cue, {target:28, outside:true});
+      const range = admin.locator(`#track-volume-${cue.id}`), savedRaw = await range.inputValue();
+      const beforeAbort = adminRequests.filter(path => path === '/api/playlist/volume').length;
+      const revisionBeforeAbort = saved.playlistRevision;
+      await range.scrollIntoViewIfNeeded(); await range.focus();
+      const box = await range.boundingBox(), x = raw => box.x + 8 + (box.width - 16) * raw / 100;
+      await admin.mouse.move(x(Number(savedRaw)), box.y + box.height / 2); await admin.mouse.down();
+      await admin.mouse.move(x(85), box.y + box.height / 2, {steps:4});
+      assert.notEqual(await range.inputValue(), savedRaw);
+      await admin.evaluate(() => window.dispatchEvent(new Event('blur')));
+      await admin.mouse.move(5, 5);
+      assert.equal(await range.inputValue(), savedRaw, 'A cancelled native drag stops while the physical mouse button remains held');
+      await admin.mouse.up();
+      for (const hover of [10, 75, 40]) await admin.mouse.move(x(hover), box.y + box.height / 2, {steps:4});
+      await admin.waitForTimeout(300);
+      assert.equal(await range.inputValue(), savedRaw, 'Native range cancellation prevents hover drift after release');
+      assert.equal(adminRequests.filter(path => path === '/api/playlist/volume').length, beforeAbort, 'Cancellation creates no fallback playlist write');
+      assert.equal((await snapshot()).playlistRevision, revisionBeforeAbort);
+      await admin.reload(); await admin.locator('#connection.live').waitFor();
+      assert.equal(await range.inputValue(), savedRaw, 'The released track level persists through Admin reload');
+      assert.deepEqual(errors, []);
+      await quitFromAdmin();
+      record.trackMouseControls = {heldDragAndStationaryHoldDoNotSave:true, insideAndOutsideReleaseSingleSavedRevision:true, hoverAfterReleaseDoesNotChangeValue:true, pointerCaptureCleared:true, stateRefreshPreservesDOMAndFocus:true, cancelledNativeDragRestoresSavedValueWithoutDelayedWrite:true, releasedTrackPersistsAfterReload:true, authenticatedQuitClosesBothListeners:true};
+      record.passed = true;
+      console.log(`${browserName} native-host track mouse checks passed; dedicated native window forwarding remains unverified.`);
+      return;
+    }
     const names = new Map([[filenames[0], 'Opening music'], [filenames[1], 'Finale'],
       [filenames[2], 'Interlude'], [filenames[3], 'Welcome video']]);
     for (let i = 0; i < saved.cues.length; ++i) {
@@ -357,29 +438,7 @@ function dedicatedWindowsAdmin(platform, release) {
     assert.equal(volumeState.masterVolume, .75);
     assert.equal(await admin.locator(`#track-volume-${volumeCue.id}`).getAttribute('aria-valuetext'), '0%');
     assert.equal(await admin.locator(`#track-volume-${volumeCue.id}`).locator('..').locator('output').textContent(), '0%');
-    const trackWriteCount = () => adminRequests.filter(path => path === '/api/playlist/volume').length;
-    const trackWritesBefore = trackWriteCount();
-    const trackChanged = admin.waitForResponse(response => apiPath(response) === '/api/playlist/volume' && response.request().method() === 'PUT' && response.request().postDataJSON()?.volume === .7);
-    // Move continuously for longer than the debounce interval without emitting
-    // release/change. The real saved-show transaction must see only the final
-    // level once movement ends, not several intermediate playlist revisions.
-    await admin.locator(`#track-volume-${volumeCue.id}`).evaluate(async range => {
-      range.focus();
-      const values = [54, 58, 62, 66, 70];
-      for (let index = 0; index < values.length; ++index) {
-        range.value = String(values[index]);
-        range.dispatchEvent(new Event('input', {bubbles: true}));
-        if (index + 1 < values.length) await new Promise(resolve => setTimeout(resolve, 70));
-      }
-    });
-    assert.equal(trackWriteCount(), trackWritesBefore, 'Continuous track movement must not write intermediate revisions');
-    const trackResponse = await trackChanged; assert.equal(trackResponse.status(), 200); saved = await trackResponse.json();
-    await admin.waitForFunction(() => !trackVolumeSending);
-    assert.equal(trackWriteCount(), trackWritesBefore + 1, 'One stable final track value creates one saved-show write');
-    assert.equal(saved.playlistRevision, volumeState.playlistRevision + 1, 'Continuous track adjustment advances the saved revision only once');
-    assert.equal(saved.cues.find(cue => cue.id === volumeCue.id).volume, .7);
-    assert.equal(await admin.locator(`#track-volume-${volumeCue.id}`).getAttribute('aria-valuetext'), '+40%');
-    assert.equal(await admin.locator(`#track-volume-${volumeCue.id}`).locator('..').locator('output').textContent(), '+40%');
+    saved = await verifyNativeTrackDrag(volumeCue);
     for (const level of ['0', '100', '75']) {
       const masterChanged = command.waitForResponse(response => apiPath(response) === '/api/play' && response.request().postDataJSON()?.action === 'volume');
       await command.locator('#master-volume').fill(level); assert.equal((await masterChanged).status(), 202);
@@ -394,7 +453,7 @@ function dedicatedWindowsAdmin(platform, release) {
     await admin.waitForFunction(() => !trackVolumeSending);
     assert.equal(await admin.locator(`#track-volume-${volumeCue.id}`).getAttribute('aria-valuetext'), '0%');
     await command.locator('.cue').filter({ hasText: 'Finale' }).tap(); await waitState('playing');
-    record.volumeControls = {liveTrackVolumePersisted: true, trackTrailing200msSingleSavedRevision: true, centeredTrackAdjustmentReadouts: true, masterDefault75: true, masterMuteAndMaximumAccepted: true, playbackAndTransportPreserved: true, nativeAudioGainReadbackScope: 'Separate native scene probes; browser state alone does not measure audible output'};
+    record.volumeControls = {liveTrackVolumePersisted: true, trackHeldMouseAndStationaryHoldDoNotSave: true, trackOutsideMouseReleaseSingleSavedRevision: true, trackHoverAfterReleaseDoesNotChangeValue: true, trackPointerCaptureCleared: true, dedicatedMacWebViewMouseForwardingVerified: false, centeredTrackAdjustmentReadouts: true, masterDefault75: true, masterMuteAndMaximumAccepted: true, playbackAndTransportPreserved: true, nativeAudioGainReadbackScope: 'Separate native scene probes; browser state alone does not measure audible output'};
     assert.equal(await command.locator('#remote-stage').isDisabled(), false, 'Stage off must remain available during playback');
     const stageOff = command.waitForResponse(response => apiPath(response) === '/api/stage-output' && response.request().method() === 'POST');
     await command.locator('#remote-stage').tap();
@@ -735,7 +794,7 @@ function dedicatedWindowsAdmin(platform, release) {
     const oldInstance = (await snapshot()).instanceId;
     const originalURL = admin.url();
     const originalAdminPort = new URL(adminBase).port;
-    async function quitFromAdmin() {
+    async function quitFromAdmin(adminPort = new URL(adminBase).port) {
       const accepted = admin.waitForResponse(response => apiPath(response) === '/api/quit');
       await admin.getByRole('button', { name: 'Quit Smart Stage', exact: true }).click();
       assert.equal((await accepted).status(), 202);
@@ -743,7 +802,7 @@ function dedicatedWindowsAdmin(platform, release) {
       await admin.locator('#app-closed').waitFor();
       await until(() => exited, 'Admin Quit did not shut down the native host', 15000);
       assert.equal(exitCode, 0, 'Admin Quit must exit cleanly');
-      for (const port of [originalAdminPort, remoteURL.port]) {
+      for (const port of [adminPort, remoteURL.port]) {
         const listening = await new Promise(resolve => {
           const socket = net.connect({ host: '127.0.0.1', port: Number(port) });
           const done = result => { socket.destroy(); resolve(result); };

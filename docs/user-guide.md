@@ -261,10 +261,10 @@ It starts in the center at **0% adjustment**. Move left toward **−** to lower 
 or right toward **+** to raise it relative to the other tracks. **−100%** mutes the
 track; **+100%** doubles the centered level. Halfway left is **−50%**, and halfway
 right is **+50%**. Existing saved levels keep the same playback volume. Track
-changes are saved and applied after the slider stays still for 200 milliseconds,
-or immediately when released. Continuous dragging keeps only the latest value
-instead of creating intermediate saved revisions; an unchanged level is not saved
-again. The displayed adjustment updates immediately while dragging.
+changes are saved and applied when you release the mouse or touch after dragging.
+Holding the slider still does not save; hovering after release does not move it.
+Keyboard adjustments save when you release the adjustment key. An unchanged level
+is not saved again. The displayed adjustment updates immediately while dragging.
 Changes apply during playback without restarting the cue or changing its position. Background videos use their own
 track level too. Track levels are saved with the show and `.smartstage.json`
 playlist files; older shows receive the centered default.

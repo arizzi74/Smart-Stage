@@ -188,6 +188,16 @@ jobs:
           suffix=''
           if [[ '${{ matrix.os }}' == windows ]]; then suffix=.exe; fi
           node scripts/browser-native-smoke.cjs "./dist/smartstage-${{ matrix.os }}-${{ matrix.arch }}$suffix"
+      - name: Verify track dragging with WebKit on Mac
+        if: ${{ !startsWith(github.ref, 'refs/tags/') && matrix.os == 'darwin' }}
+        timeout-minutes: 10
+        shell: bash
+        env:
+          SMARTSTAGE_BROWSER: webkit
+          SMARTSTAGE_TRACK_DRAG_ONLY: '1'
+        run: |
+          node scripts/browser/node_modules/playwright/cli.js install webkit
+          node scripts/browser-native-smoke.cjs "./dist/smartstage-darwin-${{ matrix.arch }}"
       - name: Build an isolated older-version fixture for automatic update verification
         if: startsWith(github.ref, 'refs/tags/')
         shell: bash

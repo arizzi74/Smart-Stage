@@ -1,9 +1,9 @@
-Smart Stage 1.6.2 reduces repeated playlist saves while adjusting track volume on Mac and Windows.
+Smart Stage 1.6.3 fixes playlist track-volume dragging on Mac and saves drag adjustments on release.
 
-- Playlist track sliders save the latest value after it has stayed still for **200 ms**, or immediately when you release the slider. Continuous dragging no longer saves intermediate levels every 120 ms.
-- Each track keeps its own save deadline. A pending save retains the latest adjustment, and returning to an unchanged saved level does not create another revision.
-- Track volume still displays **0%** in the center, with negative/positive percentages; existing saved levels and playlist files retain the same playback volume. The remote master keeps its existing 200 ms behavior and **75%** launch default.
-- Playback position, pause state and independent audio/visual fades are preserved. Both interfaces support English and Italian.
+- Click and drag a track-volume slider to preview its adjustment. Moving the pointer over it without pressing does not move it, and its cursor stays an arrow.
+- Mouse/touch adjustments save only when released, including a release outside the slider. A stationary held drag does not save intermediate revisions. Keyboard adjustments save on key release; unchanged levels are skipped.
+- Canceled drags clear the native slider's tracking state. Playlist updates and pending saves preserve the newest released adjustment.
+- The remote master keeps its existing 200 ms behavior and 75% launch default. Centered 0% track readouts and saved volume levels stay compatible.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 

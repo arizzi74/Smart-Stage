@@ -153,6 +153,7 @@
 .track-volume-control label{margin:0;font-size:.76rem;color:var(--muted)}
 .volume-direction{color:var(--muted);text-align:center;font-size:1rem}
 .master-volume-control input[type=range],.track-volume-control input[type=range]{width:100%;height:32px;min-height:32px;padding:0;border:0;background:transparent;accent-color:var(--accent);cursor:pointer;touch-action:pan-y}
+.track-volume-control input[type=range]{cursor:default}
 .master-volume-control input:disabled,.track-volume-control input:disabled{opacity:.45;cursor:default}
 .remote-page .transport>.identity,.remote-page .transport>.now,.remote-page .transport>.transport-actions{grid-row:2}
 @media(max-width:800px){.remote-page .transport>.now{grid-column:1;grid-row:3}.remote-page .transport>.transport-actions{grid-column:2;grid-row:2/4}.track-volume-control{grid-template-columns:12px minmax(80px,1fr) 12px 48px}.track-volume-control label{grid-column:1/-1}.master-volume-control{gap:8px}}
