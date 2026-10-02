@@ -1,4 +1,4 @@
-Smart Stage 1.6.3 fixes playlist track-volume dragging on Mac and saves drag adjustments on release.
+Smart Stage 1.6.4 fixes playlist track-volume dragging on Mac and saves drag adjustments on release.
 
 - Click and drag a track-volume slider to preview its adjustment. Moving the pointer over it without pressing does not move it, and its cursor stays an arrow.
 - Mouse/touch adjustments save only when released, including a release outside the slider. A stationary held drag does not save intermediate revisions. Keyboard adjustments save on key release; unchanged levels are skipped.

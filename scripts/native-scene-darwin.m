@@ -63,6 +63,16 @@ static BOOL probeVolumeLevels(void) {
     }
     return valid && sceneFadeTimer == timer && sceneFadeStarted == started && sceneFadeDuration == duration;
 }
+static void probeInitialPauseDiagnostic(const char *reason, double elapsed, NSSet<NSString *> *transportEvents) {
+    SSScenePlayer *foreground = sceneForeground;
+    AVPlayer *player = foreground.player;
+    fprintf(stderr, "%s: phaseSeconds=%.6f foreground=%d player=%d itemStatus=%ld paused=%d started=%d rate=%.6f muted=%d position=%.6f ready=%d hidden=%d seeking=%d primed=%d reported=%d pausedEvent=%d playingEvent=%d\n",
+        reason, elapsed, (int)(foreground != nil), (int)(player != nil), (long)foreground.item.status,
+        (int)foreground.paused, (int)foreground.started, player ? player.rate : 0, (int)player.muted,
+        player ? seconds(player.currentTime) : 0, (int)foreground.layer.readyForDisplay, (int)foreground.layer.hidden,
+        (int)foreground.seeking, (int)foreground.primed, (int)foreground.reported,
+        (int)[transportEvents containsObject:@"100:15:paused"], (int)[transportEvents containsObject:@"100:15:playing"]);
+}
 int main(void) {
     @autoreleasepool {
         // AppKit treats positional file paths as application open-file events.
@@ -93,6 +103,7 @@ int main(void) {
         __block BOOL visualOverlap = NO, movingOutgoing = NO, shortVisualFadeStarted = NO;
         __block BOOL seekRacePending = NO, stopSeekPending = NO, escapeSeekPending = NO, stageSeekPending = NO, pauseSeekPending = NO;
         __block double audioFadeBeforePause = 0, visualFadeBeforePause = 0;
+        __block double initialPauseReadyAt = 0;
         __block uint64_t observedSeekSerial = 0;
         __block NSMutableSet<NSString *> *transportEvents = [NSMutableSet set];
         __block NSMutableArray *observations = [NSMutableArray array];
@@ -104,7 +115,11 @@ int main(void) {
                 // must not repeat the final report or advance after a failure.
                 if (passed || atomic_load(&shuttingDown)) return;
                 double now = NSProcessInfo.processInfo.systemUptime;
-                if (now - began > 85) { fprintf(stderr, "Scene probe timed out at phase %lu\n", (unsigned long)phase); ss_quit(); return; }
+                if (now - began > 85) {
+                    if (phase == 55) probeInitialPauseDiagnostic("Scene probe timed out preparing initially paused video", now - phaseBegan, transportEvents);
+                    else fprintf(stderr, "Scene probe timed out at phase %lu\n", (unsigned long)phase);
+                    ss_quit(); return;
+                }
                 char *raw;
                 while ((raw = ss_poll())) {
                     NSDictionary *event = [NSJSONSerialization JSONObjectWithData:[[NSString stringWithUTF8String:raw] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
@@ -546,17 +561,40 @@ int main(void) {
                     probeTransport(YES, 15, 0, 0);
                     probeApply(56, 100, background, nil, nil, nil, NO, audio, display, YES, .8, NO);
                     phase = 55; phaseBegan = now;
-                } else if (phase == 55 && sceneForeground.layer.readyForDisplay && now - phaseBegan > .25) {
-                    if (sceneForeground.started || sceneForeground.player.rate != 0 || !sceneForeground.player.muted ||
-                        seconds(sceneForeground.player.currentTime) > .03 || sceneForeground.layer.hidden ||
-                        ![transportEvents containsObject:@"100:15:paused"] || [transportEvents containsObject:@"100:15:playing"]) {
-                        fprintf(stderr, "Initially paused video briefly played or failed to prepare its first frame\n"); ss_quit(); return;
+                } else if (phase == 55) {
+                    // Layer readiness can precede the queued prime-seek/KVO
+                    // completion that acknowledges pause and renders its frame.
+                    // Reject playback throughout that wait, then observe the
+                    // completed native pause for a stationary 250 ms interval.
+                    if (sceneForeground.started || sceneForeground.player.rate != 0 ||
+                        (sceneForeground.player && seconds(sceneForeground.player.currentTime) > .03) ||
+                        [transportEvents containsObject:@"100:15:playing"]) {
+                        probeInitialPauseDiagnostic("Initially paused video started playback", now - phaseBegan, transportEvents);
+                        ss_quit(); return;
                     }
-                    [observations addObject:@{@"pauseBeforeVideoReadyDecodesFirstFrameWithoutStartingClock":@YES}];
-                    originalForeground = sceneForeground.player;
-                    probeTransport(NO, 16, 0, 0);
-                    probeApply(57, 100, background, nil, nil, nil, NO, audio, display, YES, .8, NO);
-                    phase = 56; phaseBegan = now;
+                    if (now - phaseBegan > 10) {
+                        probeInitialPauseDiagnostic("Initially paused video preparation timed out", now - phaseBegan, transportEvents);
+                        ss_quit(); return;
+                    }
+                    BOOL prepared = sceneForeground.layer.readyForDisplay && !sceneForeground.seeking && sceneForeground.reported &&
+                        [transportEvents containsObject:@"100:15:paused"];
+                    if (!prepared) initialPauseReadyAt = 0;
+                    else if (initialPauseReadyAt == 0) initialPauseReadyAt = now;
+                    else if (now - initialPauseReadyAt > .25) {
+                        if (!sceneForeground.player.muted || sceneForeground.layer.hidden) {
+                            probeInitialPauseDiagnostic("Initially paused video failed to retain its visible muted frame", now - phaseBegan, transportEvents);
+                            ss_quit(); return;
+                        }
+                        [observations addObject:@{@"pauseBeforeVideoReadyDecodesFirstFrameWithoutStartingClock":@YES,
+                            @"initiallyPausedVideoPreparationSeconds":@(initialPauseReadyAt - phaseBegan),
+                            @"initiallyPausedVideoStationarySeconds":@(now - initialPauseReadyAt),
+                            @"initiallyPausedVideoNativePosition":@(seconds(sceneForeground.player.currentTime)),
+                            @"initiallyPausedVideoNativeRate":@(sceneForeground.player.rate)}];
+                        originalForeground = sceneForeground.player;
+                        probeTransport(NO, 16, 0, 0);
+                        probeApply(57, 100, background, nil, nil, nil, NO, audio, display, YES, .8, NO);
+                        phase = 56; phaseBegan = now;
+                    }
                 } else if (phase == 56 && sceneForeground.started && seconds(originalForeground.currentTime) > .15) {
                     probeTransport(NO, 17, 1, 2);
                     probeApply(58, 100, background, nil, nil, nil, NO, audio, display, YES, .8, NO);

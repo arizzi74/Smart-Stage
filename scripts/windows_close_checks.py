@@ -105,9 +105,26 @@ def shipped_close_confirmation_checks(executable, work, config, media, helpers, 
             state = admin.get("/api/state")["state"]
             expected = {key: state[key] for key in ("state", "stopEpoch", "stageEnabled", "activeCueId")}
             language("it")
-            helpers.wait_for(lambda: caption(original) == "Smart Stage — Amministrazione" and menu_label(101) == "Apri Admin",
-                             8, "the running app's Italian title and menu")
+            expected_labels = {"title": "Smart Stage — Amministrazione", "open": "Apri Admin",
+                               "quit": "Esci da Smart Stage\tCtrl+Q"}
+            readbacks = report["italianMenuRefreshReadbacks"] = []
+
+            def italian_menu_ready():
+                labels = {"title": caption(original), "open": menu_label(101), "quit": menu_label(103)}
+                if len(readbacks) < 32:
+                    readbacks.append(labels)
+                report["lastItalianMenuLabels"] = labels
+                return labels == expected_labels
+
+            # The language HTTP response posts work to the native UI thread.
+            # Caption and Open update before Quit; wait for every label that
+            # this probe asserts instead of treating that prefix as complete.
+            try:
+                helpers.wait_for(italian_menu_ready, 8, "the running app's complete Italian title and menu")
+            except AssertionError as error:
+                raise AssertionError(f"{error}; last native labels: {report.get('lastItalianMenuLabels')}") from error
             assert menu_label(103) == "Esci da Smart Stage\tCtrl+Q"
+            report["italianMenuRefreshCompletedBeforeQuitAssertion"] = True
             assert user.PostMessageW(original, 0x0111, 102, 0), "Could not open the native media chooser"
             chooser_title = "Scegli i file per Smart Stage — resteranno nelle cartelle originali"
             helpers.wait_for(lambda: windows("#32770", chooser_title, original), 10, "the Italian native chooser")
