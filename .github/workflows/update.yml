@@ -9,17 +9,17 @@ on:
         description: 'Published release to verify'
         required: true
         type: string
-        default: 'v1.6.2'
+        default: 'v1.6.4'
       fixture-run:
         description: 'Tagged build run containing the older-version fixtures'
         required: true
         type: string
-        default: '37028545081'
+        default: '37045398181'
       fixture-source:
         description: 'Expected source commit of the published release and fixtures'
         required: true
         type: string
-        default: '9b29965af368b1b7775c3dae691436ed201364e3'
+        default: '040774dc80900899787df31ab2ff7a13f7938cf3'
   workflow_call:
     inputs:
       version:
@@ -58,7 +58,7 @@ jobs:
         with:
           name: update-fixture-${{ matrix.os }}-${{ matrix.arch }}
           path: dist/update-fixture
-          run-id: ${{ inputs.fixture-run || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '37028545081') || github.run_id }}
+          run-id: ${{ inputs.fixture-run || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '37045398181') || github.run_id }}
           github-token: ${{ github.token }}
       - name: Ensure the Windows dedicated-window runtime
         if: matrix.os == 'windows'
@@ -67,8 +67,8 @@ jobs:
       - name: Exercise real automatic discovery, replacement and restart
         shell: bash
         env:
-          RELEASE_VERSION: ${{ inputs.version || 'v1.6.2' }}
-          FIXTURE_SOURCE: ${{ inputs.fixture-source || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '9b29965af368b1b7775c3dae691436ed201364e3') || github.sha }}
+          RELEASE_VERSION: ${{ inputs.version || 'v1.6.4' }}
+          FIXTURE_SOURCE: ${{ inputs.fixture-source || (github.event_name == 'push' && github.ref == 'refs/heads/main' && '040774dc80900899787df31ab2ff7a13f7938cf3') || github.sha }}
         run: |
           python3 scripts/verify-auto-update.py --version "$RELEASE_VERSION" \
             --os '${{ matrix.os }}' --arch '${{ matrix.arch }}' \
