@@ -1,0 +1,16 @@
+{
+  "passed": false,
+  "browser": "webkit",
+  "browserVersion": "26.6",
+  "error": "Real mouse dragging previews the selected native range value (actual 50, expected near 72; saves while held 0; capture true)",
+  "mouseDrags": [
+    {
+      "releaseOutside": false,
+      "heldPreviewRaw": 50,
+      "heldWrites": 0,
+      "heldRevisionDelta": 0,
+      "heldCapture": true
+    }
+  ],
+  "nativeMacWebViewVerified": false
+}

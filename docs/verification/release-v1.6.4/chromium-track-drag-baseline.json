@@ -1,0 +1,16 @@
+{
+  "passed": false,
+  "browser": "chromium",
+  "browserVersion": "153.0.8010.12",
+  "error": "A stationary held mouse never saves after the old 200ms deadline\n\n1 !== 0\n",
+  "mouseDrags": [
+    {
+      "releaseOutside": false,
+      "heldPreviewRaw": 72,
+      "heldWrites": 1,
+      "heldRevisionDelta": 1,
+      "heldCapture": false
+    }
+  ],
+  "nativeMacWebViewVerified": false
+}

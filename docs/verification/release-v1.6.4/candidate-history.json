@@ -1,0 +1,38 @@
+{
+  "failedCandidates": [
+    {
+      "workflowRunID": 37037859167,
+      "sourceCommit": "723242fcc0f30b38a211339a3add537d3ad72eb5",
+      "summary": "failed-candidate/37037859167/summary.json",
+      "status": "failed_not_retried_not_publishable"
+    },
+    {
+      "workflowRunID": 37038179684,
+      "sourceCommit": "1558fad73f90d4b52070e5c01fbf458afc82d6da",
+      "privateEvidenceDirectory": "failed-candidate/37038179684",
+      "status": "failed_not_retried_not_publishable"
+    }
+  ],
+  "failedTagRuns": [
+    {
+      "workflowRunID": 37041731128,
+      "sourceCommit": "94908416ecbb28dd87d74abf95edb39db2e7e772",
+      "tag": "v1.6.3",
+      "summary": "failed-tag/37041731128/summary.json",
+      "status": "failed_tag_not_publishable"
+    }
+  ],
+  "previousPassedCandidate": {
+    "workflowRunID": 37039452823,
+    "sourceCommit": "94908416ecbb28dd87d74abf95edb39db2e7e772",
+    "summary": "native-evidence/37039452823/summary.json"
+  },
+  "passedCandidate": {
+    "sourceCommit": "040774dc80900899787df31ab2ff7a13f7938cf3",
+    "workflowRunID": 37043150592,
+    "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/37043150592",
+    "status": "completed",
+    "conclusion": "success",
+    "allSevenGatesPassed": true
+  }
+}

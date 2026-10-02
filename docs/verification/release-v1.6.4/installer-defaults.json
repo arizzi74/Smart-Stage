@@ -1,0 +1,114 @@
+{
+  "release": "v1.6.4",
+  "releaseSource": "040774dc80900899787df31ab2ff7a13f7938cf3",
+  "defaultInstallerSource": "2085137b0315ba93a30ab1b73273acc7337e4248",
+  "latestStableTag": "v1.6.4",
+  "mainSourceBefore": "254597e2bb3c40a05ef357de49d5949092d99957",
+  "mainSourceAfter": "254597e2bb3c40a05ef357de49d5949092d99957",
+  "collectedAt": "2026-10-02T18:29:02.708441+00:00",
+  "bothDefaultInstallersPinRelease": true,
+  "bothPublicMainInstallersMatchExactCommit": true,
+  "allThreeDefaultInstallersPinRelease": true,
+  "allThreePublicMainInstallersMatchExactCommit": true,
+  "publicGatewayAssetMatchesDefaultAndMainBytes": true,
+  "installers": [
+    {
+      "name": "install.sh",
+      "origins": {
+        "tagged": {
+          "sourceCommit": "040774dc80900899787df31ab2ff7a13f7938cf3",
+          "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/040774dc80900899787df31ab2ff7a13f7938cf3/install.sh",
+          "sha256": "1552e616225c2b61010cc1f21500115966f934d7bba2b086ecb58434d9a1694d",
+          "size": 17505,
+          "gitBlobSHA": "5df9170a53aaf4fedbe06c22891905b5b5cf6bfc",
+          "publicBytesMatchGitCommit": true
+        },
+        "default": {
+          "sourceCommit": "2085137b0315ba93a30ab1b73273acc7337e4248",
+          "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/2085137b0315ba93a30ab1b73273acc7337e4248/install.sh",
+          "sha256": "85d9f0c5f78f6de0650b266f900436d40a6dba783edebdef7d2f6c7d1fb8d541",
+          "size": 17505,
+          "gitBlobSHA": "3062c23a305c6959364a7a70e3d19b45425980fc",
+          "publicBytesMatchGitCommit": true
+        },
+        "main": {
+          "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+          "sha256": "85d9f0c5f78f6de0650b266f900436d40a6dba783edebdef7d2f6c7d1fb8d541",
+          "size": 17505,
+          "attempts": 1,
+          "matchesDefaultCommitBytes": true,
+          "defaultVersion": "v1.6.4",
+          "shellSyntaxVerified": true
+        }
+      }
+    },
+    {
+      "name": "install.ps1",
+      "origins": {
+        "tagged": {
+          "sourceCommit": "040774dc80900899787df31ab2ff7a13f7938cf3",
+          "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/040774dc80900899787df31ab2ff7a13f7938cf3/install.ps1",
+          "sha256": "25b5b6fcbc7b29c63364296aba310794ca4687ac451872addbf33822575ff495",
+          "size": 16629,
+          "gitBlobSHA": "474c85b20da394d8f1dd9916002a9ecba84326b2",
+          "publicBytesMatchGitCommit": true
+        },
+        "default": {
+          "sourceCommit": "2085137b0315ba93a30ab1b73273acc7337e4248",
+          "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/2085137b0315ba93a30ab1b73273acc7337e4248/install.ps1",
+          "sha256": "003606532addaeffad164634993c3a64519e474bc54577c6dc99117a7c576ed6",
+          "size": 16629,
+          "gitBlobSHA": "1a75343a9702053f2a625a7e74b881247e9e306b",
+          "publicBytesMatchGitCommit": true
+        },
+        "main": {
+          "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1",
+          "sha256": "003606532addaeffad164634993c3a64519e474bc54577c6dc99117a7c576ed6",
+          "size": 16629,
+          "attempts": 1,
+          "matchesDefaultCommitBytes": true,
+          "defaultVersion": "v1.6.4"
+        }
+      }
+    },
+    {
+      "name": "install-gateway.sh",
+      "origins": {
+        "tagged": {
+          "sourceCommit": "040774dc80900899787df31ab2ff7a13f7938cf3",
+          "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/040774dc80900899787df31ab2ff7a13f7938cf3/install-gateway.sh",
+          "sha256": "0ce1c1bbd63022c545da376ff52b864910d0d292253eea9712939d72465419ba",
+          "size": 2206,
+          "gitBlobSHA": "d4e6e92398f8dce6a0dabe88bb96e840124bea6e",
+          "publicBytesMatchGitCommit": true
+        },
+        "default": {
+          "sourceCommit": "2085137b0315ba93a30ab1b73273acc7337e4248",
+          "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/2085137b0315ba93a30ab1b73273acc7337e4248/install-gateway.sh",
+          "sha256": "86cfa7c7862d4a18f959f6d97b6d150df17b6a68339dc3d181df68db1452aab5",
+          "size": 2206,
+          "gitBlobSHA": "00f55bb91bcc2863b0daeb969f788463d3ae4d10",
+          "publicBytesMatchGitCommit": true
+        },
+        "main": {
+          "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install-gateway.sh",
+          "sha256": "86cfa7c7862d4a18f959f6d97b6d150df17b6a68339dc3d181df68db1452aab5",
+          "size": 2206,
+          "attempts": 1,
+          "matchesDefaultCommitBytes": true,
+          "defaultVersion": "v1.6.4",
+          "shellSyntaxVerified": true
+        },
+        "published": {
+          "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.4/install-gateway.sh",
+          "sha256": "86cfa7c7862d4a18f959f6d97b6d150df17b6a68339dc3d181df68db1452aab5",
+          "size": 2206,
+          "matchesAuditedPublicAsset": true,
+          "matchesDefaultCommitAndMainBytes": true,
+          "defaultVersion": "v1.6.4"
+        }
+      }
+    }
+  ],
+  "scope": "Anonymous public raw installer downloads checked byte-for-byte against immutable Git commit contents. No installer is executed and no repository, workflow or production changes are made."
+}

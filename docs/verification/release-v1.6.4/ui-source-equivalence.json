@@ -1,0 +1,17 @@
+{
+  "release": "v1.6.4",
+  "releaseSource": "040774dc80900899787df31ab2ff7a13f7938cf3",
+  "localUIFixtureSource": "94908416ecbb28dd87d74abf95edb39db2e7e772",
+  "productionCodeUnchangedBetweenTheseSources": true,
+  "uiAssetsSHA256": {
+    "internal/web/assets/app.js": "93e0bf192ac6466b405c2794b63806f905b7c6d0c349157d491b5a4040ae33f6",
+    "internal/web/assets/style.css": "c4fe9353060051987f78c52856f873e65fc896f145dfa50a298071a04e7cff58"
+  },
+  "changedFiles": [
+    "docs/release-notes.md",
+    "scripts/native-scene-darwin.m",
+    "scripts/windows_close_checks.py"
+  ],
+  "localTestsRepeatedForVerifierOnlyChanges": false,
+  "nativeVerifierRuntimeRequiresNewCIGates": true
+}

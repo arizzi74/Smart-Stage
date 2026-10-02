@@ -1,0 +1,28 @@
+{
+  "sourceCommit": "1558fad73f90d4b52070e5c01fbf458afc82d6da",
+  "workflowRunID": 37038179684,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/37038179684",
+  "releaseTaggedFromThisAttempt": false,
+  "failure": "Both Mac focused Playwright WebKit tests failed actual mouse thumb preview; first drag stayed at50 with no explicit pointer capture, saves or revisions.",
+  "failedJobs": [
+    {
+      "name": "native (macos-15, darwin, arm64)",
+      "jobID": 110941445943,
+      "conclusion": "failure"
+    },
+    {
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "jobID": 110941446005,
+      "conclusion": "failure"
+    }
+  ],
+  "sourceReviewFinding": "Mac WebKit requires explicit tabindex for a form control to be mouse focusable. Mousedown can otherwise blur a programmatically focused range and invoke the drag cancellation handler. The next candidate adds explicit tabindex0 and keeps the same functional assertion.",
+  "findingIsSourceBasedInference": true,
+  "physicalMacEventSequenceRecorded": false,
+  "references": [
+    "https://github.com/WebKit/WebKit/blob/main/Source/WebCore/html/HTMLFormControlElement.cpp#L210-L220",
+    "https://github.com/WebKit/WebKit/blob/main/Source/WebCore/page/EventHandler.cpp#L3181-L3225"
+  ],
+  "status": "completed",
+  "conclusion": "failure"
+}

@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.6.2 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.6.4 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,54 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.6.4: native track dragging and save on release
+
+Source `040774dc80900899787df31ab2ff7a13f7938cf3` passed all seven
+[candidate gates](verification/release-v1.6.4/candidate-workflow.json) and all eight
+[publication gates](verification/release-v1.6.4/tag-workflow.json). Track volume now
+uses native range dragging with an arrow cursor. Holding the pointer does not
+save, including stationary holds; release saves one changed value. Hover leaves
+the value unchanged. Cancellation stops native tracking and preserves an earlier
+released adjustment queued behind a save. Keyboard changes save on key release;
+assistive input keeps a short fallback. Master volume behavior is unchanged.
+
+[Actual-mouse checks](verification/release-v1.6.4/native-volume-evidence.json)
+include four Chromium/native-host checks and two Mac WebKit checks. Local tests
+ran on the byte-identical UI before verifier-only release changes; their
+[source equivalence](verification/release-v1.6.4/ui-source-equivalence.json) is
+recorded explicitly. The public audit passed all
+[50 assets and eight checksum pairs](verification/release-v1.6.4/assets.json) and
+[six exact executable vulnerability scans](verification/release-v1.6.4/security-scans.json).
+
+All 16 [tagged post-publication jobs](verification/release-v1.6.4/postpublication-status.json)
+passed, including public downloads, browser/native-host checks, automatic updates
+and Mac/Windows installers on both architectures.
+
+All four [tagged automatic-updater reports](verification/release-v1.6.4/tagged-auto-update-evidence.json)
+and the [separate current-default updater run](verification/release-v1.6.4/supplemental-auto-update-evidence.json)
+passed actual public discovery, verified replacement and restart. Fixtures use
+older version metadata with the release source; their full source comes from
+verified tagged manifests and the build recipe, while public/installed binaries
+embed the clean full source SHA. These checks preserve show/media data and do
+not autoplay. All three [public installer scripts](verification/release-v1.6.4/installer-defaults.json)
+match default commit `2085137b0315ba93a30ab1b73273acc7337e4248` and select v1.6.4.
+
+All four [default-installer jobs](verification/release-v1.6.4/default-installer-workflows.json)
+and all 12 [tagged/default native reports](verification/release-v1.6.4/native-installer-evidence.json)
+passed, including PowerShell 5.1 and 7 on both Windows architectures.
+[Installer integrity](verification/release-v1.6.4/installer-integrity.json)
+verifies exact bootstrap/installed hashes, complete Windows firewall snapshots
+without exemptions, and Mac default/global/unrelated-rule and cleanup checks.
+Raw rules and machine identifiers remain private.
+
+The [verification record](verification/release-v1.6.4/README.md) preserves earlier
+failures, including the unpublished v1.6.3 tag. Its Windows menu and Mac paused-video
+verifiers now wait for complete readiness within their existing bounds. Production
+code is unchanged between the passed v1.6.3 candidate and v1.6.4. Playwright WebKit
+checks are separate from physical input into the dedicated system WKWebView.
+Physical speaker/projector, clean-machine and affected UTM viewer checks remain
+incomplete; neither Windows runner provides an audio endpoint.
 
 ### Version 1.6.2: save track volume after a quiet period
 

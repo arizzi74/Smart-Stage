@@ -1,0 +1,46 @@
+{
+  "passed": true,
+  "browser": "chromium",
+  "browserVersion": "153.0.8010.12",
+  "mouseDrags": [
+    {
+      "releaseOutside": false,
+      "heldPreviewRaw": 72,
+      "heldWrites": 0,
+      "heldRevisionDelta": 0,
+      "heldCapture": false,
+      "releasedRaw": 72,
+      "releasedWrites": 1,
+      "releasedRevisionDelta": 1,
+      "expectedRevision": 1,
+      "releasedCapture": false,
+      "hoverChangedValue": false
+    },
+    {
+      "releaseOutside": true,
+      "heldPreviewRaw": 28,
+      "heldWrites": 0,
+      "heldRevisionDelta": 0,
+      "heldCapture": false,
+      "releasedRaw": 28,
+      "releasedWrites": 1,
+      "releasedRevisionDelta": 1,
+      "expectedRevision": 2,
+      "releasedCapture": false,
+      "hoverChangedValue": false
+    }
+  ],
+  "heldDragAndStationaryHoldDoNotSave": true,
+  "insideAndOutsideReleaseSaveOnce": true,
+  "hoverAfterReleaseDoesNotChangeValue": true,
+  "releasedPointerCapture": false,
+  "stateAndPlaylistRefreshPreserveDOMFocusAndDraft": true,
+  "earlierAcknowledgementPreservesHeldDraft": true,
+  "latestReleasedTargetUsesAcknowledgedRevision": true,
+  "unchangedReleaseChangeBlurDoNotWriteAgain": true,
+  "heldKeyboardAdjustmentSavesOnRelease": true,
+  "cancelledNativeDragRestoresSavedValueWithoutDelayedWrite": true,
+  "cancelledNewGesturePreservesEarlierReleasedCueTarget": true,
+  "secondaryMouseButtonDoesNotAdjustOrSave": true,
+  "nativeMacWebViewVerified": false
+}

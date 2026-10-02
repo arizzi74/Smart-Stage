@@ -1,11 +1,11 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.6.2**.
+The desktop application and Linux gateway are released as **Smart Stage 1.6.4**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.2
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.4
 
 ## Implemented
 
@@ -177,6 +177,23 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.2
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.6.4 is source `040774dc80900899787df31ab2ff7a13f7938cf3`. Track sliders
+use native dragging with an arrow cursor, save a changed value on release and
+remain stable on hover. Held gestures do not save; cancellation clears tracking
+and preserves earlier released queued adjustments. Seven candidate and eight
+publication gates passed, including four Chromium/native-host checks and two
+Mac WebKit checks. All 50 public assets, eight checksum pairs and six exact
+executable vulnerability scans passed. Tagged and current-default updater runs
+passed actual public discovery, replacement and restart on all four targets.
+All three public installer scripts match their v1.6.4 default commit.
+All 16 tagged post-publication jobs passed.
+All four default-installer jobs and 12 tagged/default native installer reports
+passed, including both PowerShell versions and strict firewall preservation.
+Earlier failures and verifier-only recovery
+remain recorded. Physical input into the dedicated system WKWebView, speaker/projector,
+clean-machine and affected UTM viewer acceptance remain incomplete. See the
+[current verification record](docs/verification/release-v1.6.4/README.md).
 
 Version 1.6.2 is source `9b29965af368b1b7775c3dae691436ed201364e3`. Track-volume
 saves now wait for 200ms without a change and flush on enabled release/focus loss.

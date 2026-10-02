@@ -1,0 +1,219 @@
+{
+  "workflowRunID": 37041731128,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/37041731128",
+  "sourceCommit": "94908416ecbb28dd87d74abf95edb39db2e7e772",
+  "tag": "v1.6.3",
+  "runAttempt": 1,
+  "status": "failed_tag_not_publishable",
+  "workflowStatusAtSnapshot": "completed",
+  "workflowConclusionAtSnapshot": "failure",
+  "publicationBlockedByFailedNativeGates": true,
+  "failures": [
+    {
+      "jobID": 110953212566,
+      "job": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/37041731128/job/110953212566",
+      "failedSteps": [
+        "Exercise the real Windows Admin WebView, chooser and original-file drops"
+      ]
+    },
+    {
+      "jobID": 110953212797,
+      "job": "native (macos-15-intel, darwin, amd64)",
+      "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/37041731128/job/110953212797",
+      "failedSteps": [
+        "Native executable startup"
+      ]
+    }
+  ],
+  "windowsAMD64": {
+    "jobID": 110953212566,
+    "failedStep": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+    "failingVerifier": "scripts/windows_close_checks.py",
+    "failingVerifierLine": 110,
+    "assertion": "menu_label(103) == \"Esci da Smart Stage\\tCtrl+Q\"",
+    "observedFailure": "AssertionError; the actual returned menu text was not retained by this verifier",
+    "assertionPrecondition": "The native title and Admin menu item 101 had reached Italian; the Quit menu item 103 was immediately asserted",
+    "failureReport": {
+      "artifact": {
+        "id": 11242289100,
+        "name": "windows-admin-checks-amd64",
+        "size": 2644,
+        "sha256": "aeabea696e721bfdf8f131275c9df7109c356bbcccb79adaa11c4985c1a9eab4",
+        "githubDigestVerified": true,
+        "createdAt": "2026-10-02T17:37:16Z",
+        "updatedAt": "2026-10-02T17:37:16Z",
+        "workflowRunID": 37041731128,
+        "sourceCommit": "94908416ecbb28dd87d74abf95edb39db2e7e772"
+      },
+      "member": {
+        "member": "smartstage-windows-amd64.exe.native-admin.json",
+        "sha256": "953e4dc7cbe4e7c3757c143df96db01268280c988acf1b7b25cd7d849cfef960"
+      },
+      "status": "failed",
+      "sourceExecutableSHA256": "8e03f2e07801965916a892c2ab01b2409cd8d8394b961c78328981da3ce7b684",
+      "shippedExecutableCloseStatus": "failed",
+      "errorTextRecorded": false
+    },
+    "nativeArtifact": {
+      "artifact": {
+        "id": 11242199173,
+        "name": "native-windows-amd64",
+        "size": 10515468,
+        "sha256": "681eef3c94d2e8f615b6ca6148e59c56c7ab60e9951457555a97291e9365bd70",
+        "githubDigestVerified": true,
+        "createdAt": "2026-10-02T17:37:37Z",
+        "updatedAt": "2026-10-02T17:37:37Z",
+        "workflowRunID": 37041731128,
+        "sourceCommit": "94908416ecbb28dd87d74abf95edb39db2e7e772"
+      },
+      "status": "failed_tag_evidence_not_publishable",
+      "binarySourceMembers": {
+        "applicationBinary": {
+          "member": "smartstage-windows-amd64.exe",
+          "sha256": "8e03f2e07801965916a892c2ab01b2409cd8d8394b961c78328981da3ce7b684"
+        },
+        "applicationChecksum": {
+          "member": "smartstage-windows-amd64.exe.sha256",
+          "sha256": "2579c57c15e31a827659772f8e9e734f9b9f314ad2675c7e37696472c83c494f"
+        },
+        "toolchain": {
+          "member": "toolchain-windows-amd64.txt",
+          "sha256": "8a4f8551d90725d5d1e6d333238f2576853fb3a6f9849949ffafff1a7a8bbf77"
+        }
+      },
+      "binary": {
+        "sourceCommit": "94908416ecbb28dd87d74abf95edb39db2e7e772",
+        "sourceModified": false,
+        "os": "windows",
+        "architecture": "amd64",
+        "goVersion": "go1.26.8",
+        "cgoEnabled": true,
+        "sha256": "8e03f2e07801965916a892c2ab01b2409cd8d8394b961c78328981da3ce7b684",
+        "checksumVerified": true
+      },
+      "jsonEvidenceMembers": [
+        "smartstage-windows-amd64.exe.native-admin.json",
+        "windows-install-amd64.json"
+      ]
+    },
+    "laterCurrentUserInstallationPassed": true,
+    "installationMember": {
+      "member": "windows-install-amd64.json",
+      "sha256": "51c7edf4f80359a7f44c83b3e457ef7a1a6e1bf4791b61d4d8a850cd117f4df3"
+    },
+    "browserTrackTestsSkipped": true,
+    "rawLogSHA256": "2c25c113585d44147e76488ad42294cdbb1474646abbe5d75c52944cf32083c8",
+    "cause": "Under investigation; artifact alone does not distinguish asynchronous relabeling from a product error."
+  },
+  "macosAMD64": {
+    "jobID": 110953212797,
+    "failedStep": "Native executable startup",
+    "failingVerifier": "scripts/native_scene_checks.py",
+    "failingVerifierLine": 55,
+    "observedFailure": "Native scene probe exited nonzero: Initially paused video briefly played or failed to prepare its first frame",
+    "nativeArtifact": {
+      "artifact": {
+        "id": 11242344319,
+        "name": "native-darwin-amd64",
+        "size": 16938402,
+        "sha256": "e665bf7e3607bdf62020f177d2fb605171f214be79bd38e9fc94116210ee58f7",
+        "githubDigestVerified": true,
+        "createdAt": "2026-10-02T17:39:29Z",
+        "updatedAt": "2026-10-02T17:39:29Z",
+        "workflowRunID": 37041731128,
+        "sourceCommit": "94908416ecbb28dd87d74abf95edb39db2e7e772"
+      },
+      "status": "failed_tag_evidence_not_publishable",
+      "binarySourceMembers": {
+        "applicationBinary": {
+          "member": "smartstage-darwin-amd64",
+          "sha256": "f9d2213c568e7d408d51e046bbd7d6e4dde01d16b81f296556865a2b445b7cf1"
+        },
+        "applicationChecksum": {
+          "member": "smartstage-darwin-amd64.sha256",
+          "sha256": "4909ce9bb35899980dfecfab77e528c8b3d383cef020638bf040be3cdfcf0b06"
+        },
+        "toolchain": {
+          "member": "toolchain-darwin-amd64.txt",
+          "sha256": "0bf511212768283e9078ac43fc05f304d726332de960f86d584a6935ee079c61"
+        }
+      },
+      "binary": {
+        "sourceCommit": "94908416ecbb28dd87d74abf95edb39db2e7e772",
+        "sourceModified": false,
+        "os": "darwin",
+        "architecture": "amd64",
+        "goVersion": "go1.26.8",
+        "cgoEnabled": true,
+        "sha256": "f9d2213c568e7d408d51e046bbd7d6e4dde01d16b81f296556865a2b445b7cf1",
+        "checksumVerified": true
+      },
+      "jsonEvidenceMembers": [
+        "native-enumeration-darwin-amd64.json",
+        "native-harness-darwin-amd64.smoke.json",
+        "native-playlist-probe-darwin-x86_64/result.json"
+      ]
+    },
+    "nativeSmokeMember": {
+      "member": "native-harness-darwin-amd64.smoke.json",
+      "sha256": "56b322557813dddf7249fd279200de667646afda8ab4a548eb3cffd54ef93256"
+    },
+    "applicationAndTrackTestsSkippedAfterFailure": true,
+    "rawLogSHA256": "09106cbc86e5427dd880555f349830dd9705b01d586285a5f1a674bb3820c378",
+    "cause": "Under investigation; the failing assertion covers preparation and playing state and no exact failed measurement was printed.",
+    "readOnlyDiagnosis": {
+      "knownFromFailingBranch": {
+        "phase": 55,
+        "layerReadyForDisplay": true,
+        "minimumSecondsSinceSceneRequest": 0.25,
+        "timedOut": false
+      },
+      "missingMeasurements": [
+        "started",
+        "playerRate",
+        "muted",
+        "playerCurrentTime",
+        "layerHidden",
+        "seeking",
+        "primed",
+        "reported",
+        "pausedTransportEventObserved",
+        "playingTransportEventObserved"
+      ],
+      "nativeSceneReportRetained": false,
+      "staticRace": "The phase gate observes asynchronous AVPlayerLayer readiness before the native prime-seek/KVO callbacks queued through onMain necessarily finish reporting paused and rendering the ready layer. The elapsed threshold is measured from scene request, not readiness completion.",
+      "interpretation": "A reachable verifier-readiness race exists, but the original log has insufficient measurements to prove which condition caused this run to fail. No product fix or tolerance increase is justified from this evidence alone.",
+      "recommendedFocusedVerifierChange": "Wait within the existing bounded probe deadline for completed native preparation and observed paused transport acknowledgement. Throughout that wait, continue failing on any started/rate/clock advance or playing event. Retain the existing mute, first-frame and visibility assertions after readiness, and print exact bounded scalar/boolean measurements on assertion failure or timeout.",
+      "sourceFiles": [
+        {
+          "path": "scripts/native-scene-darwin.m",
+          "sha256": "b50d9d6add016e9defa3bbef575ede9d213a49dc685dfebd2044b46f4e415ca1"
+        },
+        {
+          "path": "scripts/native_scene_checks.py",
+          "sha256": "9289b10aafa342cee72d9a82212879df2735b79755ac42e57a58cb78f83f18c4"
+        },
+        {
+          "path": "scripts/native-smoke.py",
+          "sha256": "1272e31bfacd41586ec45b8d5d781eaa646372d11458dfb80f403e5222736d53"
+        },
+        {
+          "path": "internal/platform/bridge_darwin.m",
+          "sha256": "2ce0621dca1443196dbd110c34085b3d58df6dd9432ce67d3f08871c5585a6ed"
+        }
+      ]
+    }
+  },
+  "acceptedMainCandidate": {
+    "workflowRunID": 37039452823,
+    "sourceCommit": "94908416ecbb28dd87d74abf95edb39db2e7e772",
+    "allSevenGatesPassed": true,
+    "evidenceUnaltered": true,
+    "privateSummary": "native-evidence/37039452823/summary.json"
+  },
+  "scope": "The tagged run failed on two native gates at this snapshot and is retained as failed. Main candidate success is separate evidence and does not override tag failure. Exact tag-source binaries and uploaded report/archive checksums are verified. Sanitized record excludes raw host logs, cookies, tokens, device identifiers and local machine paths. Remaining tag jobs can update run status but cannot erase these failures.",
+  "finalPublicationConclusion": "skipped",
+  "finalBinarySecurityConclusion": "skipped",
+  "remainingNativeARMJobsCompletedSuccessfully": true
+}
