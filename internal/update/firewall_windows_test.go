@@ -20,6 +20,7 @@ func TestWindowsLANFirewallRuleScoped(t *testing.T) {
 	if os.Getenv("SMARTSTAGE_TEST_FIREWALL") != "1" {
 		t.Skip("requires an administrator Windows runner and SMARTSTAGE_TEST_FIREWALL=1")
 	}
+	prepareWindowsFirewallProvider(t)
 	self, err := os.Executable()
 	if err != nil {
 		t.Fatal(err)
@@ -35,6 +36,32 @@ func TestWindowsLANFirewallRuleScoped(t *testing.T) {
 			verifyWindowsFirewallRule(t, program)
 		})
 	}
+}
+
+// Initial native NetSecurity/CIM startup on a fresh Windows runner is separate
+// from exercising the rule payload. Prepare it with read-only queries before
+// the unchanged one-minute rule verification and global-profile comparison.
+func prepareWindowsFirewallProvider(t *testing.T) {
+	t.Helper()
+	powershell, err := windowsPowerShellPath()
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	start := time.Now()
+	script := `$ErrorActionPreference='Stop'
+$ProgressPreference='SilentlyContinue'
+Import-Module (Join-Path $PSHOME 'Modules\NetSecurity\NetSecurity.psd1') -ErrorAction Stop
+$null = Get-NetFirewallProfile -ErrorAction Stop
+$null = Get-NetFirewallRule -PolicyStore ActiveStore -ErrorAction Stop | Select-Object -First 1
+exit 0
+`
+	output, err := exec.CommandContext(ctx, powershell, "-NoProfile", "-NonInteractive", "-OutputFormat", "Text", "-EncodedCommand", encodePowerShell(script)).CombinedOutput()
+	if err != nil {
+		t.Fatalf("read-only native firewall provider preparation after %s: %v (context: %v): %s", time.Since(start), err, ctx.Err(), output)
+	}
+	t.Logf("Read-only native firewall provider ready after %s", time.Since(start))
 }
 
 func verifyWindowsFirewallRule(t *testing.T, program string) {
@@ -55,14 +82,21 @@ func verifyWindowsFirewallRule(t *testing.T, program string) {
 	run := func(script string) ([]byte, error) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 		defer cancel()
-		return exec.CommandContext(ctx, powershell, "-NoProfile", "-NonInteractive", "-OutputFormat", "Text", "-EncodedCommand", encodePowerShell("$ProgressPreference='SilentlyContinue'\n"+script)).CombinedOutput()
+		start := time.Now()
+		output, err := exec.CommandContext(ctx, powershell, "-NoProfile", "-NonInteractive", "-OutputFormat", "Text", "-EncodedCommand", encodePowerShell("$ProgressPreference='SilentlyContinue'\n"+script)).CombinedOutput()
+		if err != nil {
+			return output, fmt.Errorf("%w (elapsed %s; context: %v)", err, time.Since(start), ctx.Err())
+		}
+		return output, nil
 	}
 	t.Cleanup(func() {
 		if output, err := run("$ErrorActionPreference='Stop'; $rule=Get-NetFirewallRule -Name '" + name + "' -ErrorAction SilentlyContinue; if ($rule) { $rule | Remove-NetFirewallRule }; exit 0"); err != nil {
 			t.Errorf("clean scoped firewall fixture: %v: %s", err, output)
 		}
 	})
-	script := `$before = Get-NetFirewallProfile | Select-Object Name, Enabled, DefaultInboundAction, DefaultOutboundAction | ConvertTo-Json -Compress
+	script := `$ErrorActionPreference='Stop'
+Import-Module (Join-Path $PSHOME 'Modules\NetSecurity\NetSecurity.psd1') -ErrorAction Stop
+$before = Get-NetFirewallProfile | Select-Object Name, Enabled, DefaultInboundAction, DefaultOutboundAction | ConvertTo-Json -Compress
 ` + windowsFirewallScript(program) + `
 $after = Get-NetFirewallProfile | Select-Object Name, Enabled, DefaultInboundAction, DefaultOutboundAction | ConvertTo-Json -Compress
 if ($before -ne $after) { throw 'Global firewall settings changed.' }

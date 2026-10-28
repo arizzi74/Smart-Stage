@@ -547,7 +547,7 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     report = {"status": "incomplete", "target": f"{args.os}/{args.arch}", "release": args.version,
-              "fixtureScope": "Exact release source with older version metadata; actual public GitHub discovery/download/replacement/relaunch",
+              "fixtureScope": "Exact release source with older version metadata; actual production discovery, public GitHub downloads, replacement and relaunch",
               "physicalPlaybackVerified": False}
     try:
         verify(args, output, report)

@@ -1,4 +1,4 @@
-Smart Stage 1.6.5 checks the Smart Stage website for updates, avoiding GitHub API limits on shared company networks.
+Smart Stage 1.6.6 checks the Smart Stage website for updates, avoiding GitHub API limits on shared company networks.
 
 - Routine checks read a small public website manifest, without a GitHub account or token. GitHub is contacted for the archive and checksum only when an update is installed.
 - Official download URLs, architecture selection, semantic version/channel selection, SHA-256 verification and rollback protection remain in place. A website failure never falls back to the GitHub API.
