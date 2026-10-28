@@ -101,6 +101,7 @@ int main(void) {
         __block SSScenePlayer *originalBackground, *outgoingVideo;
         __block SSSceneImage *outgoingImage;
         __block BOOL visualOverlap = NO, movingOutgoing = NO, shortVisualFadeStarted = NO;
+        __block double videoToImageMaxAdvance = 0;
         __block BOOL seekRacePending = NO, stopSeekPending = NO, escapeSeekPending = NO, stageSeekPending = NO, pauseSeekPending = NO;
         __block double audioFadeBeforePause = 0, visualFadeBeforePause = 0;
         __block double initialPauseReadyAt = 0;
@@ -117,6 +118,12 @@ int main(void) {
                 double now = NSProcessInfo.processInfo.systemUptime;
                 if (now - began > 85) {
                     if (phase == 55) probeInitialPauseDiagnostic("Scene probe timed out preparing initially paused video", now - phaseBegan, transportEvents);
+                    else if (phase == 14) fprintf(stderr, "Scene probe timed out preparing moving video: phaseSeconds=%.6f ownerSame=%d playerSame=%d playing=%d ready=%d started=%d baseline=%.6f position=%.6f\n",
+                        now - phaseBegan, (int)(outgoingVideo && outgoingVideo == sceneForeground),
+                        (int)(originalForeground && originalForeground == sceneForeground.player),
+                        (int)(sceneForeground.player.timeControlStatus == AVPlayerTimeControlStatusPlaying),
+                        (int)sceneForeground.layer.readyForDisplay, (int)sceneForeground.started,
+                        outgoingVideo ? before : 0, seconds(sceneForeground.player.currentTime));
                     else fprintf(stderr, "Scene probe timed out at phase %lu\n", (unsigned long)phase);
                     ss_quit(); return;
                 }
@@ -247,18 +254,31 @@ int main(void) {
                     probeApply(15, 40, background, nil, nil, nil, NO, audio, display, YES, .5, NO);
                     phase = 14; phaseBegan = now;
                 } else if (phase == 14 && sceneForeground.layer.readyForDisplay && sceneForeground.started && sceneVisualCurrent == sceneForeground && !sceneVisualTimer) {
-                    outgoingVideo = sceneForeground; before = seconds(outgoingVideo.player.currentTime);
-                    visualOverlap = NO; movingOutgoing = NO;
-                    probeApply(16, 0, nil, imagePath, nil, nil, NO, audio, display, YES, .5, NO);
-                    phase = 15; phaseBegan = now;
+                    // Observe advancement of this exact player before measuring
+                    // its continued motion during the visual transition.
+                    AVPlayer *player = sceneForeground.player;
+                    double position = seconds(player.currentTime);
+                    if (outgoingVideo != sceneForeground || originalForeground != player) {
+                        outgoingVideo = sceneForeground; originalForeground = player; before = position;
+                    } else if (player && player.timeControlStatus == AVPlayerTimeControlStatusPlaying && position > before + .05) {
+                        before = position;
+                        visualOverlap = NO; movingOutgoing = NO; videoToImageMaxAdvance = 0;
+                        probeApply(16, 0, nil, imagePath, nil, nil, NO, audio, display, YES, .5, NO);
+                        phase = 15; phaseBegan = now;
+                    }
                 } else if (phase == 15) {
                     if (sceneVisualOutgoing == outgoingVideo && sceneImage.layer.opacity > .05 && sceneImage.layer.opacity < .95 && !outgoingVideo.layer.hidden) {
                         visualOverlap = YES;
+                        videoToImageMaxAdvance = MAX(videoToImageMaxAdvance, seconds(outgoingVideo.player.currentTime) - before);
                         if (seconds(outgoingVideo.player.currentTime) > before + .03) movingOutgoing = YES;
                     }
                     if (sceneVisualCurrent == sceneImage && sceneImage.layer.contents && !sceneVisualTimer && !sceneRetiring) {
                         if (!visualOverlap || !movingOutgoing || !outgoingVideo.disposed || outgoingVideo.player) {
-                            fprintf(stderr, "Video-to-image failed to retain moving video or release its decoder\n"); ss_quit(); return;
+                            fprintf(stderr, "Video-to-image failed to retain moving video or release its decoder: overlap=%d moving=%d disposed=%d playerPresent=%d maxClockAdvance=%.6f phaseSeconds=%.6f nativePlaying=%d nativeRate=%.6f\n",
+                                (int)visualOverlap, (int)movingOutgoing, (int)outgoingVideo.disposed,
+                                (int)(outgoingVideo.player != nil), videoToImageMaxAdvance, now - phaseBegan,
+                                (int)(outgoingVideo.player.timeControlStatus == AVPlayerTimeControlStatusPlaying), outgoingVideo.player.rate);
+                            ss_quit(); return;
                         }
                         [observations addObject:@{@"videoToImageVisualCrossfade":@YES,@"outgoingVideoKeepsMovingDuringVisualFade":@YES,@"visualTailDecoderReleased":@YES}];
                         probeApply(17, 50, first, imagePath, nil, nil, NO, audio, display, YES, .5, NO);

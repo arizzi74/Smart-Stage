@@ -2350,11 +2350,19 @@ const assert = require('node:assert/strict');
     assert.equal(config.cues.find(cue => cue.id === secondVolumeCue.id).label, secondTrackLabel, 'A stale row index cannot rename the other cue');
     reorderedLabelSave = volumeAdmin.waitForResponse(response => response.url() === adminBase + '/api/playlist' && response.request().method() === 'PUT');
     await reorderedTrackLabel.fill(originalTrackLabel); await reorderedTrackLabel.press('Tab'); await reorderedLabelSave;
+    const restoredTrackControl = await trackRange.elementHandle();
     config.cues.sort((a, b) => originalCueOrder.indexOf(a.id) - originalCueOrder.indexOf(b.id));
     state.cues = config.cues.map((cue, index) => ({...state.cues.find(item => item.id === cue.id), position:index + 1}));
     config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
     const originalTracks = volumeAdmin.waitForResponse(response => response.url() === adminBase + '/api/playlist' && response.request().method() === 'GET');
     await volumeAdmin.locator('#reload-playlist').dispatchEvent('click'); await originalTracks;
+    // The response can arrive before Admin applies the structural reload.
+    // Start the independent reset only after the original rows are restored.
+    await volumeAdmin.waitForFunction(({node, order}) => {
+      const rendered = [...playlistRows.keys()];
+      return !node.isConnected && !playlistBusy && rendered.length === order.length && rendered.every((id, index) => id === order[index]);
+    }, {node: restoredTrackControl, order: originalCueOrder});
+    await restoredTrackControl.dispose();
     acceptedTrack = trackResponse(.5); await trackRange.fill('50'); await acceptedTrack; await trackLabel('0%');
 
     for (const [raw, label] of [[0, '-100%'], [25, '-50%'], [75, '+50%'], [100, '+100%'], [23, '-54%']]) {

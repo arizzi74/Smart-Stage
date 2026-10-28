@@ -1,8 +1,13 @@
-Smart Stage 1.7.1 improves Cloudflare connections on networks that block QUIC.
+Smart Stage 1.7.2 improves Cloudflare connections on networks that block QUIC.
 
 - Cloudflare still tries QUIC first, but switches to HTTP/2 sooner when connection attempts fail. Previously the app's startup timeout could restart the helper before it reached that fallback.
 - Admin retains a clear connection-timeout notice while retrying instead of immediately replacing it with a generic connecting message. The notice clears when connected or when you explicitly reconnect/change modes. English and Italian are supported.
 - Admin stays local; helper verification, encrypted connections, gateway settings and Windows ARM64 availability are unchanged. Networks must still permit Cloudflare Tunnel traffic on UDP or TCP port 7844; the app does not bypass network policy or disable TLS checks.
+
+The v1.7.1 build did not publish because verification failed. This release also
+corrects test synchronization around playlist reloads and establishes video
+motion before measuring a native crossfade; playback code and assertions remain
+unchanged.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 
