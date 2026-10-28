@@ -194,7 +194,7 @@ const assert = require('node:assert/strict');
     }
     if (url.pathname === '/api/gateway/reconnect') {
       assert.equal(req.method, 'POST'); assert.equal(req.headers['x-csrf-token'], 'test-csrf'); assert.deepEqual(body, {});
-      gateway = { ...gateway, status: 'connecting', remoteURL: '' }; reply(gateway); return;
+      gateway = { ...gateway, status: 'connecting', message: '', remoteURL: '' }; reply(gateway); return;
     }
     if (url.pathname === '/api/remote-control') {
       remoteGets++;
@@ -439,6 +439,48 @@ const assert = require('node:assert/strict');
         assert.equal(await cloudflareAdmin.locator('#remote-qr').getAttribute('src'), '/api/remote-control/qr?index=0');
       } else assert.equal(await cloudflareAdmin.locator('#remote-url').getAttribute('href'), null);
     }
+    const timeoutNotice = 'The last Cloudflare connection attempt timed out. Smart Stage is retrying automatically. If this continues, try another network or choose Public gateway or Local network.';
+    const italianTimeoutNotice = 'L’ultimo tentativo di connessione a Cloudflare è scaduto. Smart Stage riprova automaticamente. Se il problema persiste, prova un’altra rete oppure scegli Gateway pubblico o Rete locale.';
+    const commandsBeforeTimeout = commands.length;
+    const settingsWritesBeforeTimeout = requests.filter(item => item.path === '/api/gateway' && item.method === 'PUT').length;
+    await cloudflareAdmin.locator('#remote-connection-settings > summary').click();
+    for (const status of ['error', 'connecting', 'downloading']) {
+      gateway = {...gateway, status, message:timeoutNotice, remoteURL:''};
+      await cloudflareAdmin.evaluate(() => loadGateway());
+      await cloudflareAdmin.waitForFunction(({status, notice}) => gateway?.status === status && document.getElementById('gateway-status').textContent.includes(notice), {status, notice:timeoutNotice});
+      assert.equal(await cloudflareAdmin.locator('#remote-connection-settings').evaluate(node => node.open), false, 'retry status polling keeps connection settings collapsed');
+      assert.equal(await cloudflareAdmin.locator('#gateway-status').isVisible(), true, 'the previous timeout remains visible outside connection settings during retries');
+      assert.equal(await cloudflareAdmin.locator('#remote-url').getAttribute('href'), null, 'a failed attempt cannot advertise an obsolete remote link');
+      assert.equal(await cloudflareAdmin.locator('#remote-qr').getAttribute('src'), null);
+      assert.equal(await cloudflareAdmin.locator('#connection.live').count(), 1, 'Cloudflare failure does not disconnect local Admin SSE');
+      assert.equal(await cloudflareAdmin.locator('#stop').isDisabled(), false, 'local STOP remains usable while the remote helper retries');
+    }
+    await cloudflareAdmin.locator('#language-mode').selectOption('it');
+    await cloudflareAdmin.waitForFunction(() => document.documentElement.lang === 'it');
+    assert((await cloudflareAdmin.locator('#gateway-status').textContent()).includes(italianTimeoutNotice));
+    gateway = {...gateway, status:'connecting'};
+    await cloudflareAdmin.evaluate(() => loadGateway());
+    await cloudflareAdmin.waitForFunction(notice => gateway?.status === 'connecting' && document.getElementById('gateway-status').textContent.includes(notice), italianTimeoutNotice);
+    assert.equal(await cloudflareAdmin.locator('#gateway-url').inputValue(), 'https://draft-gateway.example/smartstage');
+    assert.equal(await cloudflareAdmin.locator('#gateway-token').inputValue(), gatewayRegistrationToken, 'timeout notices and language changes preserve an unsubmitted gateway draft');
+    await cloudflareAdmin.locator('#language-mode').selectOption('en');
+    await cloudflareAdmin.waitForFunction(() => document.documentElement.lang === 'en');
+    gateway = {...gateway, status:'connected', message:'Cloudflare connected. Local network remote access is disabled.', remoteURL:'https://recovered-connection.trycloudflare.com/command#token=' + cloudflareToken};
+    await cloudflareAdmin.evaluate(() => loadGateway());
+    await cloudflareAdmin.waitForFunction(() => gateway?.status === 'connected' && !document.getElementById('remote-ready').hidden);
+    assert.equal((await cloudflareAdmin.locator('#gateway-status').textContent()).includes(timeoutNotice), false, 'successful connection clears the previous timeout');
+    assert.equal(await cloudflareAdmin.locator('#remote-url').textContent(), gateway.remoteURL);
+    gateway = {...gateway, status:'error', message:timeoutNotice, remoteURL:''};
+    await cloudflareAdmin.evaluate(() => loadGateway());
+    await cloudflareAdmin.waitForFunction(notice => document.getElementById('gateway-status').textContent.includes(notice), timeoutNotice);
+    await cloudflareAdmin.locator('#remote-connection-settings > summary').click();
+    const manualReconnect = cloudflareAdmin.waitForResponse(response => response.url().endsWith('/api/gateway/reconnect'));
+    await cloudflareAdmin.locator('#reconnect-gateway').click(); assert.equal((await manualReconnect).status(), 200);
+    await cloudflareAdmin.waitForFunction(() => gateway?.status === 'connecting' && !document.getElementById('reconnect-gateway').disabled);
+    assert.equal((await cloudflareAdmin.locator('#gateway-status').textContent()).includes(timeoutNotice), false, 'explicit reconnect starts with a fresh connection notice');
+    assert.equal(commands.length, commandsBeforeTimeout, 'helper failure, retry and localization never send playback commands');
+    assert.equal(requests.filter(item => item.path === '/api/gateway' && item.method === 'PUT').length, settingsWritesBeforeTimeout, 'helper failures never switch connection modes automatically');
+    assert.equal(await cloudflareAdmin.locator('#gateway-mode').inputValue(), 'cloudflare');
     const armReason = 'Cloudflare is unavailable on Windows ARM64 because Cloudflare does not publish a native cloudflared helper for this platform. Choose Public gateway or Local network.';
     gateway = {...gateway, status:'unavailable', cloudflareAvailable:false, cloudflareReason:armReason};
     await cloudflareAdmin.evaluate(() => loadGateway());
@@ -515,7 +557,7 @@ const assert = require('node:assert/strict');
     assert(socketFrames.every(frame => frame.type === 'authenticate'), 'live status socket never carries playback commands');
     await cloudflareContext.close(); gateway = beforeCloudflareGateway; language = beforeCloudflareLanguage;
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'cloudflare-browser.json'), JSON.stringify({passed:true, modeOnlySavesPreserveDraftsAndCredentials:true, englishItalianUnavailableCapability:true, temporaryLinkAndQR:true, websocketStatusAndHTTPCommands:true, websocketBackoffHeartbeatAndSessionRecovery:true, websocketWireScripted:true, publicTunnelVerified:false}, null, 2));
+    fs.writeFileSync(path.join(output, 'cloudflare-browser.json'), JSON.stringify({passed:true, modeOnlySavesPreserveDraftsAndCredentials:true, englishItalianUnavailableCapability:true, timeoutNoticeEnglishItalianAcrossRetryAndRecovery:true, localAdminRemainsAvailableDuringHelperFailure:true, temporaryLinkAndQR:true, websocketStatusAndHTTPCommands:true, websocketBackoffHeartbeatAndSessionRecovery:true, websocketWireScripted:true, publicTunnelVerified:false}, null, 2));
   }
   try {
     if (process.env.SMARTSTAGE_CLOUDFLARE_ONLY === '1') { await verifyCloudflareBrowser(); console.log('Cloudflare browser checks passed.'); return; }

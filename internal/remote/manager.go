@@ -43,6 +43,9 @@ type Status struct {
 	CloudflareReason    string `json:"cloudflareReason"`
 	CloudflareVersion   string `json:"cloudflareVersion"`
 }
+
+const cloudflareTimeoutMessage = "The last Cloudflare connection attempt timed out. Smart Stage is retrying automatically. If this continues, try another network or choose Public gateway or Local network."
+
 type Options struct {
 	ConfigDir  string
 	Handler    func(publicURL, prefix string, authentication *auth.Manager) http.Handler
@@ -324,8 +327,9 @@ func (m *Manager) startLocked(restart bool) {
 func (m *Manager) connectCloudflare(ctx context.Context, generation uint64) {
 	defer m.wg.Done()
 	backoff := time.Second
+	lastFailure := ""
 	for ctx.Err() == nil {
-		_ = m.options.Cloudflare(ctx, func(remoteURL, token string) {
+		err := m.options.Cloudflare(ctx, func(remoteURL, token string) {
 			m.mu.Lock()
 			defer m.mu.Unlock()
 			if m.closed || generation != m.generation || ctx.Err() != nil {
@@ -333,6 +337,7 @@ func (m *Manager) connectCloudflare(ctx context.Context, generation uint64) {
 			}
 			m.status.Status = "connected"
 			m.status.Message = "Cloudflare connected. Local network remote access is disabled."
+			lastFailure = ""
 			m.status.RemoteURL = remoteURL
 			if m.options.Changed != nil {
 				m.options.Changed("cloudflare", remoteURL, token)
@@ -344,6 +349,11 @@ func (m *Manager) connectCloudflare(ctx context.Context, generation uint64) {
 			if m.closed || generation != m.generation || ctx.Err() != nil {
 				return
 			}
+			// Retries begin sooner than Admin's polling interval. Keep the
+			// previous failure visible while the next attempt is in progress.
+			if lastFailure != "" && (status == "connecting" || status == "downloading") {
+				message = lastFailure
+			}
 			m.status.Status, m.status.Message = status, message
 		})
 		m.mu.Lock()
@@ -352,7 +362,11 @@ func (m *Manager) connectCloudflare(ctx context.Context, generation uint64) {
 			return
 		}
 		m.status.Status = "error"
-		m.status.Message = "Cloudflare is unavailable. Check your internet connection; retrying automatically."
+		lastFailure = "Cloudflare is unavailable. Check your internet connection; retrying automatically."
+		if errors.Is(err, cloudflared.ErrStartupTimeout) {
+			lastFailure = cloudflareTimeoutMessage
+		}
+		m.status.Message = lastFailure
 		m.status.RemoteURL = ""
 		if m.options.Changed != nil {
 			m.options.Changed("cloudflare", "", "")

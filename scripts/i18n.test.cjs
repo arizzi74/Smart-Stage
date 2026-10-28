@@ -30,6 +30,17 @@ test('catalog formats Italian UI text while retaining raw diagnostic details', (
   assert.equal(api.t(raw), raw);
   api.setLanguage('en'); assert.equal(api.t('Quit Smart Stage'), 'Quit Smart Stage');
 });
+test('Cloudflare timeout guidance remains translated across live language changes', () => {
+  const {api} = setup({language:'en'});
+  const message = 'The last Cloudflare connection attempt timed out. Smart Stage is retrying automatically. If this continues, try another network or choose Public gateway or Local network.';
+  const node = {isConnected:true, textContent:''};
+  api.text(node, () => api.t(message));
+  assert.equal(node.textContent, message);
+  api.setLanguage('it');
+  assert.equal(node.textContent, 'L’ultimo tentativo di connessione a Cloudflare è scaduto. Smart Stage riprova automaticamente. Se il problema persiste, prova un’altra rete oppure scegli Gateway pubblico o Rete locale.');
+  api.setLanguage('en');
+  assert.equal(node.textContent, message);
+});
 test('explicit bindings prune detached nodes without waiting for a language change', async () => {
   const {api} = setup({language:'en'});
   const live = {isConnected:true, textContent:''};

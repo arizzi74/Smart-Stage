@@ -152,6 +152,23 @@ and need internet access permitted by your network. You can select your own
 public gateway for a managed server, or Local network for offline LAN control.
 See [Cloudflare's Quick Tunnel limits](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
 
+The helper tries QUIC first and falls back to HTTP/2 after a bounded number of
+failed connections. QUIC needs outbound UDP port 7844; HTTP/2 needs outbound TCP
+port 7844. Creating a temporary HTTPS URL does not itself prove the tunnel is
+connected: Smart Stage waits for a registered Cloudflare connection before
+displaying the remote link and QR code. If an attempt times out, Admin keeps the
+last timeout notice visible while retrying, and clears it when connected.
+
+Corporate network filters or TLS inspection can interfere with these connections.
+If both transports fail, ask the network administrator to check the
+[Cloudflare Tunnel destinations and SNI names](https://developers.cloudflare.com/tunnel/configuration/),
+including `h2.cftunnel.com` for HTTP/2. An `EOF` during a TLS handshake does not
+identify which device closed the connection. A later `Registered tunnel connection`
+line confirms a successful connection even if some pre-check destinations failed.
+Public gateway mode remains available for a network that allows your HTTPS
+gateway but blocks Cloudflare Tunnel traffic. Smart Stage does not change global
+firewall rules or disable TLS certificate verification to establish a tunnel.
+
 The pinned official cloudflared 2026.10.5 distribution has native Mac ARM64,
 Mac AMD64 and Windows AMD64 helpers. **Cloudflare is disabled on Windows ARM64**:
 there is no official native helper in that release, and Smart Stage does not use

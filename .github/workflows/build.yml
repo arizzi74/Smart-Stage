@@ -136,7 +136,7 @@ jobs:
         env:
           CGO_ENABLED: '0'
           SMARTSTAGE_TEST_CLOUDFLARED_DOWNLOAD: '1'
-        run: go test ./internal/cloudflared -run TestPinnedBinaryAcceptsProductionArguments -count=1 -v
+        run: go test ./internal/cloudflared -run '^TestPinnedBinary(AcceptsProductionArguments|FallsBackFromBlockedQUIC)$' -count=1 -v
       - name: Ensure the Windows dedicated-window runtime
         if: matrix.os == 'windows'
         shell: pwsh

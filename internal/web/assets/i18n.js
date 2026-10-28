@@ -102,6 +102,7 @@
   "Connecting to Cloudflare… Local network remote access is disabled.": "Connessione a Cloudflare… L’accesso remoto dalla rete locale è disabilitato.",
   "Cloudflare connected. Local network remote access is disabled.": "Cloudflare collegato. L’accesso remoto dalla rete locale è disabilitato.",
   "Cloudflare is unavailable. Check your internet connection; retrying automatically.": "Cloudflare non è disponibile. Controlla la connessione Internet; nuovo tentativo automatico in corso.",
+  "The last Cloudflare connection attempt timed out. Smart Stage is retrying automatically. If this continues, try another network or choose Public gateway or Local network.": "L’ultimo tentativo di connessione a Cloudflare è scaduto. Smart Stage riprova automaticamente. Se il problema persiste, prova un’altra rete oppure scegli Gateway pubblico o Rete locale.",
   "Cloudflare remote control is unavailable on this host.": "Il telecomando Cloudflare non è disponibile su questo computer.",
   "select an available Cloudflare tunnel or configure a public gateway before reconnecting": "seleziona un tunnel Cloudflare disponibile o configura un gateway pubblico prima di riconnetterti",
   "select Cloudflare, public gateway or local LAN": "seleziona Cloudflare, il gateway pubblico o la rete locale",

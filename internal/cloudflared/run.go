@@ -76,6 +76,9 @@ func validOrigin(raw string) bool {
 func helperArgs(origin, config string) []string {
 	return []string{"tunnel", "--no-autoupdate", "--config", config,
 		"--url", origin, "--metrics", "127.0.0.1:0", "--protocol", "auto",
+		// Address rotation gates protocol fallback. Bound both counters so
+		// blocked QUIC gives HTTP2 time to connect within the startup deadline.
+		"--retries", "2", "--max-edge-addr-retries", "2",
 		"--grace-period", "1s", "--loglevel", "info", "--output", "json"}
 }
 

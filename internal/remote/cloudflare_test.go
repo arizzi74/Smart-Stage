@@ -285,6 +285,164 @@ func TestCloudflareReconnectAndGatewaySwitchAwaitCleanup(t *testing.T) {
 	}
 }
 
+func waitForCloudflareStatus(t *testing.T, manager *Manager, wanted string) Status {
+	t.Helper()
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		status := manager.Status()
+		if status.Status == wanted {
+			return status
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	t.Fatalf("Cloudflare status did not become %s", wanted)
+	return Status{}
+}
+
+func TestCloudflareTimeoutDiagnosticPersistsAcrossProgressAndRecovery(t *testing.T) {
+	if !cloudflared.Available() {
+		t.Skip("official native helper unavailable")
+	}
+	const secret = "PRIVATE_HELPER_TOKEN"
+	const privatePath = "/PRIVATE_HELPER_PATH"
+	phases, advance := make(chan string, 1), make(chan struct{})
+	options := testOptions(t.TempDir())
+	attempt := 0
+	options.Cloudflare = func(ctx context.Context, connected func(string, string), status func(string, string)) error {
+		attempt++
+		if attempt == 1 {
+			return fmt.Errorf("https://private.example/?token=%s %s: %w", secret, privatePath, cloudflared.ErrStartupTimeout)
+		}
+		for _, phase := range []string{"downloading", "connecting"} {
+			status(phase, "Ordinary helper progress")
+			phases <- phase
+			select {
+			case <-advance:
+			case <-ctx.Done():
+				return ctx.Err()
+			}
+		}
+		connected("https://recovered.trycloudflare.com/command#token=recovered", "recovered")
+		phases <- "connected"
+		<-ctx.Done()
+		return ctx.Err()
+	}
+	m, err := New(context.Background(), Settings{Mode: "cloudflare"}, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer m.Close()
+	initial := waitForCloudflareStatus(t, m, "error")
+	if initial.Message != cloudflareTimeoutMessage {
+		t.Fatal("wrapped timeout did not produce fixed network guidance")
+	}
+	for _, phase := range []string{"downloading", "connecting"} {
+		select {
+		case got := <-phases:
+			if got != phase {
+				t.Fatalf("progress phase %q, want %q", got, phase)
+			}
+		case <-time.After(3 * time.Second):
+			t.Fatal("automatic retry did not report progress")
+		}
+		current := m.Status()
+		if current.Status != phase || current.Message != cloudflareTimeoutMessage || current.RemoteURL != "" {
+			t.Fatal("retry progress hid the last timeout or advertised an unconnected link")
+		}
+		data, _ := json.Marshal(current)
+		for _, value := range []string{secret, privatePath, "private.example"} {
+			if strings.Contains(string(data), value) {
+				t.Fatal("status disclosed raw helper error details")
+			}
+		}
+		advance <- struct{}{}
+	}
+	select {
+	case <-phases:
+	case <-time.After(3 * time.Second):
+		t.Fatal("successful retry did not connect")
+	}
+	current := m.Status()
+	if current.Status != "connected" || current.Message == cloudflareTimeoutMessage || current.RemoteURL == "" {
+		t.Fatal("successful connection retained timeout guidance")
+	}
+}
+
+func TestCloudflareTimeoutDiagnosticResetsOnReconnectAndModeSwitch(t *testing.T) {
+	if !cloudflared.Available() {
+		t.Skip("official native helper unavailable")
+	}
+	for _, reset := range []string{"reconnect", "mode switch"} {
+		t.Run(reset, func(t *testing.T) {
+			options := testOptions(t.TempDir())
+			options.ReserveRestart = func() (func(), func(), error) { return func() {}, func() {}, nil }
+			started := make(chan struct{}, 1)
+			attempt := 0
+			options.Cloudflare = func(ctx context.Context, _ func(string, string), status func(string, string)) error {
+				attempt++
+				if attempt == 1 {
+					return cloudflared.ErrStartupTimeout
+				}
+				status("connecting", "A fresh connection attempt")
+				started <- struct{}{}
+				<-ctx.Done()
+				return cloudflared.ErrStartupTimeout // Cancellation must not publish a fresh failure.
+			}
+			m, err := New(context.Background(), Settings{Mode: "cloudflare"}, options)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer m.Close()
+			if waitForCloudflareStatus(t, m, "error").Message != cloudflareTimeoutMessage {
+				t.Fatal("timeout guidance was not recorded")
+			}
+			if reset == "reconnect" {
+				if _, err := m.Reconnect(); err != nil {
+					t.Fatal(err)
+				}
+				select {
+				case <-started:
+				case <-time.After(time.Second):
+					t.Fatal("explicit reconnect did not start")
+				}
+			} else if _, err := m.Configure(Edit{Mode: "lan"}); err != nil {
+				t.Fatal(err)
+			}
+			if current := m.Status(); current.Message == cloudflareTimeoutMessage || current.Status == "error" {
+				t.Fatal("explicit connection reset retained stale timeout guidance")
+			}
+		})
+	}
+}
+
+func TestCloudflareCancellationDoesNotPublishTimeoutDiagnostic(t *testing.T) {
+	if !cloudflared.Available() {
+		t.Skip("official native helper unavailable")
+	}
+	options := testOptions(t.TempDir())
+	started := make(chan struct{})
+	options.Cloudflare = func(ctx context.Context, _ func(string, string), status func(string, string)) error {
+		status("connecting", "Connecting without a timeout")
+		close(started)
+		<-ctx.Done()
+		return cloudflared.ErrStartupTimeout
+	}
+	m, err := New(context.Background(), Settings{Mode: "cloudflare"}, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer m.Close()
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("helper did not start")
+	}
+	m.Close()
+	if current := m.Status(); current.Status == "error" || current.Message == cloudflareTimeoutMessage {
+		t.Fatal("expected cancellation was reported as a connection timeout")
+	}
+}
+
 func TestUnavailableCloudflareCannotBeSelectedOrOpenLAN(t *testing.T) {
 	if cloudflared.Available() {
 		t.Skip("this test runs on unsupported native targets")

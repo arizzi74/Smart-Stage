@@ -80,7 +80,7 @@ func TestIsolatedEnvironmentAndArguments(t *testing.T) {
 		}
 	}
 	args := strings.Join(helperArgs("http://127.0.0.1:1234", "/private/config.yml"), " ")
-	for _, required := range []string{"--no-autoupdate", "--config /private/config.yml", "--metrics 127.0.0.1:0", "--protocol auto", "--grace-period 1s", "--output json"} {
+	for _, required := range []string{"--no-autoupdate", "--config /private/config.yml", "--metrics 127.0.0.1:0", "--protocol auto", "--retries 2", "--max-edge-addr-retries 2", "--grace-period 1s", "--output json"} {
 		if !strings.Contains(args, required) {
 			t.Errorf("missing helper isolation argument %q", required)
 		}
@@ -90,11 +90,8 @@ func TestIsolatedEnvironmentAndArguments(t *testing.T) {
 	}
 }
 
-// Opt-in compatibility check against the pinned native release. CI can download
-// and prepare the actual release asset (including Darwin archive extraction),
-// or a local uncompressed native asset can be supplied for an offline check.
-// --help parses the full production argv without provisioning a tunnel.
-func TestPinnedBinaryAcceptsProductionArguments(t *testing.T) {
+func pinnedNativeTestHelper(t *testing.T) (string, string, asset) {
+	t.Helper()
 	binary := os.Getenv("SMARTSTAGE_TEST_CLOUDFLARED_BINARY")
 	download := os.Getenv("SMARTSTAGE_TEST_CLOUDFLARED_DOWNLOAD") == "1"
 	if binary == "" && !download {
@@ -113,7 +110,7 @@ func TestPinnedBinaryAcceptsProductionArguments(t *testing.T) {
 		if err != nil {
 			t.Fatal("cannot prepare the pinned official native test helper:", err)
 		}
-		defer os.RemoveAll(runDir)
+		t.Cleanup(func() { _ = os.RemoveAll(runDir) })
 		binary = prepared
 	} else {
 		if a.tgz {
@@ -134,6 +131,15 @@ func TestPinnedBinaryAcceptsProductionArguments(t *testing.T) {
 			t.Fatal("test helper does not match the pinned official native asset:", err)
 		}
 	}
+	return binary, dir, a
+}
+
+// Opt-in compatibility check against the pinned native release. CI can download
+// and prepare the actual release asset (including Darwin archive extraction),
+// or a local uncompressed native asset can be supplied for an offline check.
+// --help parses the full production argv without provisioning a tunnel.
+func TestPinnedBinaryAcceptsProductionArguments(t *testing.T) {
+	binary, dir, a := pinnedNativeTestHelper(t)
 	config := filepath.Join(dir, "config.yml")
 	if err := os.WriteFile(config, []byte("{}\n"), 0600); err != nil {
 		t.Fatal(err)

@@ -1,11 +1,8 @@
-Smart Stage 1.7.0 adds account-free Cloudflare remote control with live WebSocket status.
+Smart Stage 1.7.1 improves Cloudflare connections on networks that block QUIC.
 
-- New installations without gateway settings use Cloudflare on supported platforms. Smart Stage downloads and verifies the official native helper, runs it in the background, and displays an HTTPS remote URL and QR code. No Cloudflare account, server or administrator privileges are needed.
-- Configured gateways and explicit Local network choices remain selected. Switch between Cloudflare, Public gateway and Local network without losing the saved gateway URL or token.
-- Cloudflare is grayed out on Windows ARM64 because the official distribution has no native helper. Gateway and Local network remain available; no emulated helper is substituted.
-- Cloudflare uses WebSockets for live status and authenticated HTTPS requests for commands. Only remote controls are exposed: Admin stays local, LAN access stays closed, and a separate high-entropy pairing secret protects each connection.
-- Quitting, reconnecting or switching modes closes the helper and its remote sessions. Cloudflare Quick Tunnel URLs change on reconnection; scan the new QR code. Quick Tunnels require internet access and have no uptime guarantee.
-- Update checks continue to use the website manifest without a GitHub account or token. Existing gateways work without a server upgrade.
+- Cloudflare still tries QUIC first, but switches to HTTP/2 sooner when connection attempts fail. Previously the app's startup timeout could restart the helper before it reached that fallback.
+- Admin retains a clear connection-timeout notice while retrying instead of immediately replacing it with a generic connecting message. The notice clears when connected or when you explicitly reconnect/change modes. English and Italian are supported.
+- Admin stays local; helper verification, encrypted connections, gateway settings and Windows ARM64 availability are unchanged. Networks must still permit Cloudflare Tunnel traffic on UDP or TCP port 7844; the app does not bypass network policy or disable TLS checks.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 
