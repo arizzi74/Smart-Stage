@@ -1,11 +1,11 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.7.0**.
+The desktop application and Linux gateway are released as **Smart Stage 1.7.2**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.7.0
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.7.2
 
 ## Implemented
 
@@ -25,6 +25,10 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.7.0
   forwards only a separate loopback command listener. Its paired WebSocket
   status stream checks origin/session/CSRF and closes with the helper on mode
   change or Quit. Admin stays local and existing gateway/LAN SSE remains usable.
+  Automatic transport selection reaches HTTP/2 fallback before the startup guard
+  on blocked-QUIC paths. A safe connection-timeout notice persists during
+  automatic retries and clears on connection or an explicit reconnect. TLS
+  verification remains enabled; the network must allow tunnel traffic on 7844.
 
 - Audio/video cues have saved centered track-volume sliders in Admin. The remote
   has a speaker/master slider at the top, starting at 75% per launch. Live level
