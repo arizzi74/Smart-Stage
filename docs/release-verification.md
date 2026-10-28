@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.6.4 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.6.6 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,50 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.6.6: website update discovery
+
+Source `560265afc945ec519daa27000893a4c7f2eccafc` passed all seven
+[candidate gates](verification/release-v1.6.6/candidate-workflow.json), nine
+[publication/manifest gates and 16 post-publication jobs](verification/release-v1.6.6/tag-workflow.json).
+The updater reads one bounded public website manifest and never falls back to
+the GitHub API. Only installation of a newer eligible version fetches official
+GitHub archives and checksums. Version/channel, target, URL and SHA-256 guards
+remain in place. [Local checks](verification/release-v1.6.6/local-checks.json)
+and [source equivalence](verification/release-v1.6.6/source-equivalence.json)
+separate the original product changes from later verifier-only recovery.
+
+The [deployed manifest](verification/release-v1.6.6/published-manifest.json) was
+verified anonymously after a release-triggered deployment from protected main.
+The [public audit](verification/release-v1.6.6/public-assets.json) verified all 50
+asset digests, eight checksum pairs and Go 1.26.10. Desktop variants embed the
+clean full source. Static gateway binaries intentionally omit full VCS metadata;
+both were [reproduced exactly](verification/release-v1.6.6/gateway-reproducibility.json)
+from the immutable tagged source.
+
+All four [tagged](verification/release-v1.6.6/tagged-auto-update-evidence.json)
+and four [current-default](verification/release-v1.6.6/supplemental-auto-update-evidence.json)
+automatic updates passed actual discovery, verified public-byte replacement and
+restart without a manual install request, preserving show/media data and avoiding
+autoplay. Tagged fixtures use the release source with older version metadata,
+rather than every historical executable. [Six updater defaults](verification/release-v1.6.6/updater-defaults.json)
+match the exact new release/source/run. The first upgrade from an older installed
+version still uses that version's original GitHub API mechanism.
+
+All six [published-host browser reports](verification/release-v1.6.6/tagged-browser-evidence.json)
+and all 12 [tagged/default installer reports](verification/release-v1.6.6/native-installer-evidence.json)
+passed. Both Windows PowerShell versions retain complete firewall snapshots with
+no exemptions. Mac readbacks retain scoped-rule, global/unrelated-rule and cleanup
+checks. [All three public installer scripts](verification/release-v1.6.6/installer-defaults.json)
+match their default commit and select v1.6.6. Raw logs, rules and machine identifiers
+remain private.
+
+The [verification record](verification/release-v1.6.6/README.md) retains the failed,
+unpublished v1.6.5 tag, unrelated older-harness observations and the Windows
+provider-test recovery. Original strict rule assertions and execution limits are
+preserved. The [Cloudflare assessment](verification/release-v1.6.6/cloudflare-assessment.json)
+is documentation only. Physical output, clean-machine, dedicated system WKWebView
+mouse input and affected UTM viewer acceptance remain incomplete.
 
 ### Version 1.6.4: native track dragging and save on release
 

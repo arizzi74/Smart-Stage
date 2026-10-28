@@ -1,0 +1,508 @@
+{
+  "release": "v1.6.6",
+  "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+  "releaseURL": "https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.6",
+  "releaseID": 426630979,
+  "latestStableTag": "v1.6.6",
+  "prerelease": false,
+  "assetCount": 50,
+  "allFiftyPublicDigestsPassed": true,
+  "checksumPairCount": 8,
+  "allEightChecksumPairsPassed": true,
+  "go": "go1.26.10",
+  "allSixDesktopExecutableVariantsHaveCleanFullSourceAndExpectedTarget": true,
+  "bothGatewayVersionPrefixAndStaticBuildReportsVerified": true,
+  "assets": [
+    {
+      "name": "gateway-daemon-amd64.json",
+      "size": 534,
+      "sha256": "8375b8d01b9aa0886173a45bdec83ac672ea242b7e32c057f2003ab40a442e35",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/gateway-daemon-amd64.json"
+    },
+    {
+      "name": "install-gateway.sh",
+      "size": 2206,
+      "sha256": "ed95604d65df6489f544d74b1e54824c3c7013fd06a3c45ddaaf18958a86e57a",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/install-gateway.sh"
+    },
+    {
+      "name": "native-enumeration-darwin-amd64.json",
+      "size": 239,
+      "sha256": "9d72280e913333aee2e14c1868af1f22cb980d782d0bb339d7440752d7efaece",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/native-enumeration-darwin-amd64.json"
+    },
+    {
+      "name": "native-enumeration-darwin-arm64.json",
+      "size": 309,
+      "sha256": "d305a9dee69df83e3be0dc7a6188d574d00cc07594459087fe4a1393d18ffd4a",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/native-enumeration-darwin-arm64.json"
+    },
+    {
+      "name": "native-enumeration-windows-amd64.json",
+      "size": 229,
+      "sha256": "9c1c3076196dc6bfd764342c4d8ad2fd56976e6247af72b7d1a828d9df53f8be",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/native-enumeration-windows-amd64.json"
+    },
+    {
+      "name": "native-enumeration-windows-arm64.json",
+      "size": 229,
+      "sha256": "9c1c3076196dc6bfd764342c4d8ad2fd56976e6247af72b7d1a828d9df53f8be",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/native-enumeration-windows-arm64.json"
+    },
+    {
+      "name": "native-harness-darwin-amd64.smoke.json",
+      "size": 12590,
+      "sha256": "51579ee2d690fd365db52dad9872468d927948a7cc4b031b40504b10d6e1ab16",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/native-harness-darwin-amd64.smoke.json"
+    },
+    {
+      "name": "native-harness-darwin-arm64.smoke.json",
+      "size": 13009,
+      "sha256": "75007732f4d202eca43dc2ed3f24620d9b17dd51431ab0350e1b26078d6190f3",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/native-harness-darwin-arm64.smoke.json"
+    },
+    {
+      "name": "native-harness-windows-amd64.exe.smoke.json",
+      "size": 14448,
+      "sha256": "f8ef61a486a434bf937e0b409c176f8de50aaf2e9f6769c19c45e181704ab1fd",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/native-harness-windows-amd64.exe.smoke.json"
+    },
+    {
+      "name": "native-harness-windows-arm64.exe.smoke.json",
+      "size": 13815,
+      "sha256": "f0725056b80fe4bf4dca153edd5aabf2214bb111a63015be38e80ee54b571f84",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/native-harness-windows-arm64.exe.smoke.json"
+    },
+    {
+      "name": "smartstage-darwin-amd64.app.zip",
+      "size": 3989206,
+      "sha256": "c50655a63a44e7b560ee81513614a76928349e52be6e8d9311966d78ebd5967f",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-amd64.app.zip"
+    },
+    {
+      "name": "smartstage-darwin-amd64.app.zip.sha256",
+      "size": 98,
+      "sha256": "6c4a5bab592138bbe61ff4007978c08edd64b3e6239b1eb66158dca85d7effad",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-amd64.app.zip.sha256"
+    },
+    {
+      "name": "smartstage-darwin-amd64.http-smoke.json",
+      "size": 738,
+      "sha256": "90780147b6b83084ee47737730b487e771df57168f7b43b52256123bb4f1662e",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-amd64.http-smoke.json"
+    },
+    {
+      "name": "smartstage-darwin-amd64.icon.json",
+      "size": 7839,
+      "sha256": "7d41ad87af4f3512fc96f3fe39b91a59bd967f62171c22886f20a74874cd8c79",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-amd64.icon.json"
+    },
+    {
+      "name": "smartstage-darwin-amd64.imports.txt",
+      "size": 2295,
+      "sha256": "dc226f6d7bf6d0d068f1a6141e5ccb46c61cc62443d66c184d9bfc895658cdc8",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-amd64.imports.txt"
+    },
+    {
+      "name": "smartstage-darwin-amd64.network-mode.json",
+      "size": 970,
+      "sha256": "1e0e85e1103db3516a3faef4adbe74794e85f78eb4bd9598524eafb4136fc9ae",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-amd64.network-mode.json"
+    },
+    {
+      "name": "smartstage-darwin-amd64.zip",
+      "size": 3848134,
+      "sha256": "283d4dfa026a202d0e103556fe04559510f87a9a76adacc6686f9467c4f85a65",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-amd64.zip"
+    },
+    {
+      "name": "smartstage-darwin-amd64.zip.sha256",
+      "size": 94,
+      "sha256": "0d83564ad8e1eaf2a6499a7233208b68fe35bb917a76e44b6090dd23ad3812b8",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-amd64.zip.sha256"
+    },
+    {
+      "name": "smartstage-darwin-arm64.app.zip",
+      "size": 3614982,
+      "sha256": "c9d7901f333a41da5d6ac4729d6d131d125f51a6d665a81176fa8f1ac89e5d0a",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-arm64.app.zip"
+    },
+    {
+      "name": "smartstage-darwin-arm64.app.zip.sha256",
+      "size": 98,
+      "sha256": "d615f4d4c1841c6f5b24ed10f682649a4ed3a9bdbea9232511351d3b902236ee",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-arm64.app.zip.sha256"
+    },
+    {
+      "name": "smartstage-darwin-arm64.http-smoke.json",
+      "size": 738,
+      "sha256": "6ecc2a4ae2feb7de57e105643569649b6ea7dc73f329f04cc62b584c88634313",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-arm64.http-smoke.json"
+    },
+    {
+      "name": "smartstage-darwin-arm64.icon.json",
+      "size": 7835,
+      "sha256": "e7cff6c0bab5e3647e1841d7c50b1e11778c115616e2e1dd8c57553fd8d64767",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-arm64.icon.json"
+    },
+    {
+      "name": "smartstage-darwin-arm64.imports.txt",
+      "size": 2295,
+      "sha256": "fc9fca0420802641873cd0d3ee8a7291cc4d95c8e0fea4e64baf8e1c9975aced",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-arm64.imports.txt"
+    },
+    {
+      "name": "smartstage-darwin-arm64.network-mode.json",
+      "size": 968,
+      "sha256": "f50252ed3bee0fceb75fbdf755bca5884ed4dc0306c0738f246927ba22da56b8",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-arm64.network-mode.json"
+    },
+    {
+      "name": "smartstage-darwin-arm64.zip",
+      "size": 3473578,
+      "sha256": "39d74756dc8a88f55b6086d2df3868731d776e8522a0400f84ce44d200047922",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-arm64.zip"
+    },
+    {
+      "name": "smartstage-darwin-arm64.zip.sha256",
+      "size": 94,
+      "sha256": "2cea85a21123fe567f4ffc292f20979a404648b365943da1effb8c92e46306eb",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-darwin-arm64.zip.sha256"
+    },
+    {
+      "name": "smartstage-gateway-linux-amd64",
+      "size": 7114878,
+      "sha256": "3e397a4d80a62558ae1cc3c043feed34cdeff47ff9d0f7ae756ccf3f7db15123",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-gateway-linux-amd64"
+    },
+    {
+      "name": "smartstage-gateway-linux-amd64.sha256",
+      "size": 97,
+      "sha256": "f7e8319c0e33d0b8d31d102a3a7ccc71b13825a0b583808f92e774cdf24180ee",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-gateway-linux-amd64.sha256"
+    },
+    {
+      "name": "smartstage-gateway-linux-amd64.static.txt",
+      "size": 2609,
+      "sha256": "0dbc92e77d6d7e84739f008144eeed7f0337d0a3078cdf67a82f0707e2f4dada",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-gateway-linux-amd64.static.txt"
+    },
+    {
+      "name": "smartstage-gateway-linux-arm64",
+      "size": 6619262,
+      "sha256": "3333996257ff32342c89dc1cfa547defbdec9012738a16fd372fec33afd9de23",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-gateway-linux-arm64"
+    },
+    {
+      "name": "smartstage-gateway-linux-arm64.sha256",
+      "size": 97,
+      "sha256": "145817ad353cfe76a3920c2800f67bca069ad836f5cffaebbba6df0b0c7d8a09",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-gateway-linux-arm64.sha256"
+    },
+    {
+      "name": "smartstage-gateway-linux-arm64.static.txt",
+      "size": 2591,
+      "sha256": "aa0bae3015662bc10ba1252c642b4db4491ed436fc4e79144720d03d1cb6ec69",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-gateway-linux-arm64.static.txt"
+    },
+    {
+      "name": "smartstage-windows-amd64.exe.http-smoke.json",
+      "size": 998,
+      "sha256": "1a2339311c40d5162e38560e3f936f9417b7bc1c27af2099ad8228da10800427",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-amd64.exe.http-smoke.json"
+    },
+    {
+      "name": "smartstage-windows-amd64.exe.icon.json",
+      "size": 426,
+      "sha256": "9b000904d2e631cdba23cca46029a365da004ed9155cb2e37fcc3cd8e90f9939",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-amd64.exe.icon.json"
+    },
+    {
+      "name": "smartstage-windows-amd64.exe.imports.txt",
+      "size": 16492,
+      "sha256": "d5ae0a11e4cdf847b43f731f92acfd7762c6f3385f7e6feb019e3a58d08ff0a7",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-amd64.exe.imports.txt"
+    },
+    {
+      "name": "smartstage-windows-amd64.exe.native-admin.json",
+      "size": 16824,
+      "sha256": "8d79c3257c3db44e869fec5f50d3c5181c07ee00ff0711a1a6eba5d4a2193e6e",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-amd64.exe.native-admin.json"
+    },
+    {
+      "name": "smartstage-windows-amd64.exe.network-mode.json",
+      "size": 999,
+      "sha256": "c457cf235f85d4197fa6137a7871021194947e6ec993b62b0ef4750576bce011",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-amd64.exe.network-mode.json"
+    },
+    {
+      "name": "smartstage-windows-amd64.zip",
+      "size": 4374625,
+      "sha256": "7a54260c9f2570c687d8e062c59af9002d40d5307ac1d5a2222bd1904b0faf56",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-amd64.zip"
+    },
+    {
+      "name": "smartstage-windows-amd64.zip.sha256",
+      "size": 96,
+      "sha256": "b6d4df790f7fc9adb0a1a76839ce40321c8719fd8c854e90306b8c30afd3c9de",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-amd64.zip.sha256"
+    },
+    {
+      "name": "smartstage-windows-arm64.exe.http-smoke.json",
+      "size": 998,
+      "sha256": "65e0ce43955b5e3229c4c176a580dc0904d369ae260315428d6a673f6b570bc8",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-arm64.exe.http-smoke.json"
+    },
+    {
+      "name": "smartstage-windows-arm64.exe.icon.json",
+      "size": 426,
+      "sha256": "3f76d8dd8c8c090606eb51f355c1c24eee83358f3534c82938d949e1d2be9222",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-arm64.exe.icon.json"
+    },
+    {
+      "name": "smartstage-windows-arm64.exe.imports.txt",
+      "size": 16227,
+      "sha256": "f8e1fc9ea52372892048f0d68954bc584097e2576c255de768083e278b6b6622",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-arm64.exe.imports.txt"
+    },
+    {
+      "name": "smartstage-windows-arm64.exe.native-admin.json",
+      "size": 201638,
+      "sha256": "11b1a647ea6e2b1842f23ec74544931c54b99b99c5cf9da49357eae842279b1d",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-arm64.exe.native-admin.json"
+    },
+    {
+      "name": "smartstage-windows-arm64.exe.network-mode.json",
+      "size": 999,
+      "sha256": "a05fb685f95cdcb7277b9aec9f9a7bef5efd02acc8beef713bf0aa96a812c83d",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-arm64.exe.network-mode.json"
+    },
+    {
+      "name": "smartstage-windows-arm64.zip",
+      "size": 3901535,
+      "sha256": "91e3f9a70f5e58149bd6ec6ee9daccfff3afcf84a0131a389e8a572c6fdfb768",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-arm64.zip"
+    },
+    {
+      "name": "smartstage-windows-arm64.zip.sha256",
+      "size": 96,
+      "sha256": "5c6ec8e79447ac9514ad19f8d653cb92946efaad3aed4258261ce855420cbe33",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/smartstage-windows-arm64.zip.sha256"
+    },
+    {
+      "name": "toolchain-darwin-amd64.txt",
+      "size": 383,
+      "sha256": "086971ac76eb016a51bff9ea5d9b0babd9856eb1f5cba84aade3f4562f817f6c",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/toolchain-darwin-amd64.txt"
+    },
+    {
+      "name": "toolchain-darwin-arm64.txt",
+      "size": 382,
+      "sha256": "e9609c40f4d8bb0aa7ced1bb4591ed936ceee48597b71f0080a18b5eac9eb2f0",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/toolchain-darwin-arm64.txt"
+    },
+    {
+      "name": "toolchain-windows-amd64.txt",
+      "size": 387,
+      "sha256": "6dccd1ad1e3462890b1de9819cd54435caa98e4b986d81c9482f776823e7370f",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/toolchain-windows-amd64.txt"
+    },
+    {
+      "name": "toolchain-windows-arm64.txt",
+      "size": 391,
+      "sha256": "0b817ce9662720329557a169e0c506ab187f56e9249fe1169f344c99a5189114",
+      "githubDigestVerified": true,
+      "url": "https://github.com/arizzi74/Smart-Stage/releases/download/v1.6.6/toolchain-windows-arm64.txt"
+    }
+  ],
+  "checksumPairs": [
+    {
+      "asset": "smartstage-darwin-amd64.app.zip",
+      "sha256": "c50655a63a44e7b560ee81513614a76928349e52be6e8d9311966d78ebd5967f",
+      "verified": true
+    },
+    {
+      "asset": "smartstage-darwin-amd64.zip",
+      "sha256": "283d4dfa026a202d0e103556fe04559510f87a9a76adacc6686f9467c4f85a65",
+      "verified": true
+    },
+    {
+      "asset": "smartstage-darwin-arm64.app.zip",
+      "sha256": "c9d7901f333a41da5d6ac4729d6d131d125f51a6d665a81176fa8f1ac89e5d0a",
+      "verified": true
+    },
+    {
+      "asset": "smartstage-darwin-arm64.zip",
+      "sha256": "39d74756dc8a88f55b6086d2df3868731d776e8522a0400f84ce44d200047922",
+      "verified": true
+    },
+    {
+      "asset": "smartstage-gateway-linux-amd64",
+      "sha256": "3e397a4d80a62558ae1cc3c043feed34cdeff47ff9d0f7ae756ccf3f7db15123",
+      "verified": true
+    },
+    {
+      "asset": "smartstage-gateway-linux-arm64",
+      "sha256": "3333996257ff32342c89dc1cfa547defbdec9012738a16fd372fec33afd9de23",
+      "verified": true
+    },
+    {
+      "asset": "smartstage-windows-amd64.zip",
+      "sha256": "7a54260c9f2570c687d8e062c59af9002d40d5307ac1d5a2222bd1904b0faf56",
+      "verified": true
+    },
+    {
+      "asset": "smartstage-windows-arm64.zip",
+      "sha256": "91e3f9a70f5e58149bd6ec6ee9daccfff3afcf84a0131a389e8a572c6fdfb768",
+      "verified": true
+    }
+  ],
+  "binaries": [
+    {
+      "asset": "smartstage-darwin-amd64.app.zip",
+      "kind": "bundle",
+      "target": "darwin/amd64",
+      "go": "go1.26.10",
+      "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+      "vcsModified": false,
+      "fullVCSMetadataEmbedded": true,
+      "executableSHA256": "67cecdaa426037c46a35960ee3c6cc0a365e7e750b7f54f3dd551259159287b2",
+      "cgoEnabled": "1"
+    },
+    {
+      "asset": "smartstage-darwin-amd64.zip",
+      "kind": "binary",
+      "target": "darwin/amd64",
+      "go": "go1.26.10",
+      "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+      "vcsModified": false,
+      "fullVCSMetadataEmbedded": true,
+      "executableSHA256": "67cecdaa426037c46a35960ee3c6cc0a365e7e750b7f54f3dd551259159287b2",
+      "cgoEnabled": "1"
+    },
+    {
+      "asset": "smartstage-darwin-arm64.app.zip",
+      "kind": "bundle",
+      "target": "darwin/arm64",
+      "go": "go1.26.10",
+      "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+      "vcsModified": false,
+      "fullVCSMetadataEmbedded": true,
+      "executableSHA256": "d81ef071237aed0319100f080cb58e1ccda97ec7454fa6630fff7c41a8e0126d",
+      "cgoEnabled": "1"
+    },
+    {
+      "asset": "smartstage-darwin-arm64.zip",
+      "kind": "binary",
+      "target": "darwin/arm64",
+      "go": "go1.26.10",
+      "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+      "vcsModified": false,
+      "fullVCSMetadataEmbedded": true,
+      "executableSHA256": "d81ef071237aed0319100f080cb58e1ccda97ec7454fa6630fff7c41a8e0126d",
+      "cgoEnabled": "1"
+    },
+    {
+      "asset": "smartstage-gateway-linux-amd64",
+      "kind": "gateway",
+      "target": "linux/amd64",
+      "go": "go1.26.10",
+      "fullVCSMetadataEmbedded": false,
+      "embeddedFullSource": null,
+      "taggedBuildSource": "560265afc945ec519daa27000893a4c7f2eccafc",
+      "reportedCommitPrefix": "560265afc945",
+      "embeddedVersionAndPrefixVerified": true,
+      "publicStaticReportDigestVerified": true,
+      "noELFInterpreterOrDynamicDependencies": true,
+      "executableSHA256": "3e397a4d80a62558ae1cc3c043feed34cdeff47ff9d0f7ae756ccf3f7db15123",
+      "cgoEnabled": "0"
+    },
+    {
+      "asset": "smartstage-gateway-linux-arm64",
+      "kind": "gateway",
+      "target": "linux/arm64",
+      "go": "go1.26.10",
+      "fullVCSMetadataEmbedded": false,
+      "embeddedFullSource": null,
+      "taggedBuildSource": "560265afc945ec519daa27000893a4c7f2eccafc",
+      "reportedCommitPrefix": "560265afc945",
+      "embeddedVersionAndPrefixVerified": true,
+      "publicStaticReportDigestVerified": true,
+      "noELFInterpreterOrDynamicDependencies": true,
+      "executableSHA256": "3333996257ff32342c89dc1cfa547defbdec9012738a16fd372fec33afd9de23",
+      "cgoEnabled": "0"
+    },
+    {
+      "asset": "smartstage-windows-amd64.zip",
+      "kind": "binary",
+      "target": "windows/amd64",
+      "go": "go1.26.10",
+      "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+      "vcsModified": false,
+      "fullVCSMetadataEmbedded": true,
+      "executableSHA256": "261867108217b10f76a6475740887f5b10ed51544ff7306c8f9266ce08b0dd4c",
+      "cgoEnabled": "1"
+    },
+    {
+      "asset": "smartstage-windows-arm64.zip",
+      "kind": "binary",
+      "target": "windows/arm64",
+      "go": "go1.26.10",
+      "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+      "vcsModified": false,
+      "fullVCSMetadataEmbedded": true,
+      "executableSHA256": "b0a4ed9648bb20a4fa0af4c57fd264093f842d63f71526ffe01c796b268e7e37",
+      "cgoEnabled": "1"
+    }
+  ],
+  "scope": "Anonymous public downloads verified against GitHub release digests; eight executable variants include the four standalone desktop targets, two Mac app-bundle cores and two Linux gateway targets. Desktop full VCS metadata is distinct from the reproducible gateways, which intentionally omit embedded full VCS data and use digest-verified tagged-build reports plus embedded version/prefix. Native runtime behavior and vulnerability gates are recorded in the release workflow."
+}

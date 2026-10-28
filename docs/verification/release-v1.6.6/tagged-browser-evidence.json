@@ -1,0 +1,194 @@
+{
+  "release": "v1.6.6",
+  "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+  "run": 40684349039,
+  "expectedReports": 6,
+  "reports": [
+    {
+      "target": "darwin/arm64",
+      "browserEngine": "chromium",
+      "browser": "153.0.8010.12",
+      "passed": true,
+      "application": "Smart Stage v1.6.6 (560265afc945), go1.26.10, darwin/arm64",
+      "checks": [
+        "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+        "Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible",
+        "Four real media fixtures were imported without copying; Admin saved four labels and reordered stable cue IDs",
+        "Embedded screen-wake-lock control truthfully reported Needs HTTPS and stayed disabled on real non-loopback HTTP",
+        "Admin saved a cue color through the real API; playlist/command reads and remote CSSOM styling agreed under production CSP",
+        "Remote Stage off preserved native video playback while hiding the stage; Stage on reopened it and emergency Escape stopped and hid it",
+        "Video second press paused in place; seeking while paused preserved the native generation and Stage; third press resumed; STOP then returned to the selected background",
+        "A second image press cleared its overlay while independent native music kept its identity and generation",
+        "Real native music kept its generation through image selection, Stage off/on, pause, paused seek, resume and playing seek; paused position stayed frozen and resumed/playing seeks advanced natively; STOP rejected a delayed seek, cleared the image and returned to background",
+        "Admin saved/reloaded fade and background soundtrack settings without a pause preference; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available",
+        "Stage drafts survived background/hidden flag saves in the same Admin document; selected background buttons toggled to default or black and deselected even when equal to the default; independent music generation was preserved when audio was available",
+        "Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap",
+        "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser",
+        "Admin Quit during real native video playback exited successfully and closed both HTTP listeners",
+        "Same Admin tab reconnected after relaunch, loaded new assets once, and suppressed automatic OS browser dispatch"
+      ],
+      "artifact": {
+        "id": 12815721193,
+        "name": "browser-native-darwin-arm64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "6348b4a0fb2034176d50c141ce980a9c068bcf9becebbe0fef302a3607b610ab",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "2249f63876b4af8769b9a484914379316d6587e94fef691816f303bd98147a64",
+      "physicalRoutingVerified": false,
+      "desktopNativeWindowMouseForwardingVerified": false
+    },
+    {
+      "target": "darwin/arm64",
+      "browserEngine": "webkit",
+      "browser": "26.6",
+      "passed": true,
+      "application": "Smart Stage v1.6.6 (560265afc945), go1.26.10, darwin/arm64",
+      "checks": [
+        "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+        "Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible"
+      ],
+      "artifact": {
+        "id": 12815721193,
+        "name": "browser-native-darwin-arm64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "6348b4a0fb2034176d50c141ce980a9c068bcf9becebbe0fef302a3607b610ab",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "af753c60e523dab39b160bd8bf221f7d5697616742949bbf7d9f96b433d1f1c1",
+      "physicalRoutingVerified": false,
+      "desktopNativeWindowMouseForwardingVerified": false
+    },
+    {
+      "target": "darwin/amd64",
+      "browserEngine": "chromium",
+      "browser": "153.0.8010.12",
+      "passed": true,
+      "application": "Smart Stage v1.6.6 (560265afc945), go1.26.10, darwin/amd64",
+      "checks": [
+        "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+        "Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible",
+        "Four real media fixtures were imported without copying; Admin saved four labels and reordered stable cue IDs",
+        "Embedded screen-wake-lock control truthfully reported Needs HTTPS and stayed disabled on real non-loopback HTTP",
+        "Admin saved a cue color through the real API; playlist/command reads and remote CSSOM styling agreed under production CSP",
+        "Remote Stage off preserved native video playback while hiding the stage; Stage on reopened it and emergency Escape stopped and hid it",
+        "Video second press paused in place; seeking while paused preserved the native generation and Stage; third press resumed; STOP then returned to the selected background",
+        "A second image press cleared its overlay while independent native music kept its identity and generation",
+        "Real native music kept its generation through image selection, Stage off/on, pause, paused seek, resume and playing seek; paused position stayed frozen and resumed/playing seeks advanced natively; STOP rejected a delayed seek, cleared the image and returned to background",
+        "Admin saved/reloaded fade and background soundtrack settings without a pause preference; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available",
+        "Stage drafts survived background/hidden flag saves in the same Admin document; selected background buttons toggled to default or black and deselected even when equal to the default; independent music generation was preserved when audio was available",
+        "Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap",
+        "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser",
+        "Admin Quit during real native video playback exited successfully and closed both HTTP listeners",
+        "Same Admin tab reconnected after relaunch, loaded new assets once, and suppressed automatic OS browser dispatch"
+      ],
+      "artifact": {
+        "id": 12815197290,
+        "name": "browser-native-darwin-amd64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "f59b8ae722d8deada6f0ba0f361dbb7f9915f2e7ea9a93d8c3e8a33f4d1f4267",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "94bcaa39b5cf7a41a78c2ed31c003d196c706c17652c1743304d2e2f971a7ff3",
+      "physicalRoutingVerified": false,
+      "desktopNativeWindowMouseForwardingVerified": false
+    },
+    {
+      "target": "darwin/amd64",
+      "browserEngine": "webkit",
+      "browser": "26.6",
+      "passed": true,
+      "application": "Smart Stage v1.6.6 (560265afc945), go1.26.10, darwin/amd64",
+      "checks": [
+        "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+        "Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible"
+      ],
+      "artifact": {
+        "id": 12815197290,
+        "name": "browser-native-darwin-amd64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "f59b8ae722d8deada6f0ba0f361dbb7f9915f2e7ea9a93d8c3e8a33f4d1f4267",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "8b7f3ab3ecdfa3a5b61fe2e6def80d6fc044c6a62d6bc8dd860620951a8d03a0",
+      "physicalRoutingVerified": false,
+      "desktopNativeWindowMouseForwardingVerified": false
+    },
+    {
+      "target": "windows/amd64",
+      "browserEngine": "chromium",
+      "browser": "153.0.8010.12",
+      "passed": true,
+      "application": "Smart Stage v1.6.6 (560265afc945), go1.26.10, windows/amd64",
+      "checks": [
+        "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+        "Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible",
+        "Four real media fixtures were imported without copying; Admin saved four labels and reordered stable cue IDs",
+        "Embedded screen-wake-lock control truthfully reported Needs HTTPS and stayed disabled on real non-loopback HTTP",
+        "Admin saved a cue color through the real API; playlist/command reads and remote CSSOM styling agreed under production CSP",
+        "Missing native audio output produced a visible recoverable error; STOP remained usable",
+        "Remote Stage off preserved native video playback while hiding the stage; Stage on reopened it and emergency Escape stopped and hid it",
+        "Video second press paused in place; seeking while paused preserved the native generation and Stage; third press resumed; STOP then returned to the selected background",
+        "Real native image selection, independent stage hiding/restoration, and image-only STOP passed; music/background soundtrack integration was unavailable because the runner has no audio endpoint",
+        "Admin saved/reloaded fade and background soundtrack settings without a pause preference; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available",
+        "Stage drafts survived background/hidden flag saves in the same Admin document; selected background buttons toggled to default or black and deselected even when equal to the default; independent music generation was preserved when audio was available",
+        "Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap",
+        "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser",
+        "Admin Quit during real native video playback exited successfully and closed both HTTP listeners",
+        "Windows relaunch loaded its dedicated Admin window; the existing external Admin tab also reconnected, loaded new assets exactly once, retained its URL and stayed the only page without an OS browser dispatch"
+      ],
+      "artifact": {
+        "id": 12815186753,
+        "name": "browser-native-windows-amd64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "77f42c3a9f91d2ad67c17be50928c7f9e16cebee95923e698f3b7d3feb19a678",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "ae8afe109420d670723b6d227be0ad36c364f37dd2db7cda9ed206a015bef0e2",
+      "physicalRoutingVerified": false,
+      "desktopNativeWindowMouseForwardingVerified": false
+    },
+    {
+      "target": "windows/arm64",
+      "browserEngine": "chromium",
+      "browser": "153.0.8010.12",
+      "passed": true,
+      "application": "Smart Stage v1.6.6 (560265afc945), go1.26.10, windows/arm64",
+      "checks": [
+        "Local Admin opened without a pairing dialog, displayed remote URL/code/QR, and rejected LAN access",
+        "Admin has no Host files browser; connection settings stay collapsed while LAN link, QR and firewall guidance remain accessible",
+        "Four real media fixtures were imported without copying; Admin saved four labels and reordered stable cue IDs",
+        "Embedded screen-wake-lock control truthfully reported Needs HTTPS and stayed disabled on real non-loopback HTTP",
+        "Admin saved a cue color through the real API; playlist/command reads and remote CSSOM styling agreed under production CSP",
+        "Missing native audio output produced a visible recoverable error; STOP remained usable",
+        "Remote Stage off preserved native video playback while hiding the stage; Stage on reopened it and emergency Escape stopped and hid it",
+        "Video second press paused in place; seeking while paused preserved the native generation and Stage; third press resumed; STOP then returned to the selected background",
+        "Real native image selection, independent stage hiding/restoration, and image-only STOP passed; music/background soundtrack integration was unavailable because the runner has no audio endpoint",
+        "Admin saved/reloaded fade and background soundtrack settings without a pause preference; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available",
+        "Stage drafts survived background/hidden flag saves in the same Admin document; selected background buttons toggled to default or black and deselected even when equal to the default; independent music generation was preserved when audio was available",
+        "Command URL paired automatically on plain LAN HTTP, cleared its fragment, rendered the saved order and sent one PLAY per tap",
+        "Real native playing/STOP/natural completion reached the browser over SSE; no media transferred to browser",
+        "Admin Quit during real native video playback exited successfully and closed both HTTP listeners",
+        "Windows relaunch loaded its dedicated Admin window; the existing external Admin tab also reconnected, loaded new assets exactly once, retained its URL and stayed the only page without an OS browser dispatch"
+      ],
+      "artifact": {
+        "id": 12814554960,
+        "name": "browser-native-windows-arm64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "21179bec813fff80db9b9dba6f2a03727b60fa6e2aec261c1c1de974d51db8e4",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "72a78806e9fc57ceb22a0c7382fff5fa9d1ad2dec3cc6d5f2f6ce2a72ee856b3",
+      "physicalRoutingVerified": false,
+      "desktopNativeWindowMouseForwardingVerified": false
+    }
+  ],
+  "allSixReportsPassed": true,
+  "scope": "Four full Chromium native-host browser suites plus two focused Mac Playwright WebKit runs. Dedicated system-WKWebView mouse forwarding and physical routing are not verified."
+}

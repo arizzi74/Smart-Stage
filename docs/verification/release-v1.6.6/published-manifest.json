@@ -1,0 +1,18 @@
+{
+  "url": "https://arizzi74.github.io/Smart-Stage/updates.json",
+  "httpStatus": 200,
+  "anonymousRead": true,
+  "schemaVersion": 1,
+  "release": "v1.6.6",
+  "requiredDesktopArchivePairs": 6,
+  "allSixArchivePairsPresent": true,
+  "publishedReleaseCount": 32,
+  "sha256": "87588fa3bd14ec9184ad8872a11d8d762a040a1a066d4a04b3d24ef6a84ed8f8",
+  "bytes": 93934,
+  "siteWorkflowRun": 40686796175,
+  "siteSource": "560265afc945ec519daa27000893a4c7f2eccafc",
+  "siteBranch": "main",
+  "siteEvent": "workflow_dispatch",
+  "siteConclusion": "success",
+  "productionAPIRequiredForClientDiscovery": false
+}

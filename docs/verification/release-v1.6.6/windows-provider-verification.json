@@ -1,0 +1,43 @@
+{
+  "run": 40683453449,
+  "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+  "status": "completed",
+  "conclusion": "success",
+  "productionFirewallCodeChanged": false,
+  "setupIsReadOnly": true,
+  "rulePayloadStillRunsOncePerCase": true,
+  "rulePayloadLimitSeconds": 60,
+  "setupLimitSeconds": 120,
+  "assertionsPreserved": [
+    "program path",
+    "enabled inbound allow",
+    "private profile",
+    "TCP",
+    "LocalSubnet only",
+    "global profiles unchanged",
+    "scoped fixture cleanup"
+  ],
+  "targets": [
+    {
+      "target": "windows/amd64",
+      "providerReadySeconds": 5.0637277,
+      "caseSeconds": [
+        3.11,
+        1.85,
+        1.97
+      ],
+      "allThreeCasesPassed": true
+    },
+    {
+      "target": "windows/arm64",
+      "providerReadySeconds": 9.6228415,
+      "caseSeconds": [
+        38.17,
+        26.39,
+        26.6
+      ],
+      "allThreeCasesPassed": true
+    }
+  ],
+  "scope": "Real Windows NetSecurity readbacks, not an interactive UAC or physical LAN connectivity observation; original failed artifacts did not record exact deadline state."
+}

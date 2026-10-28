@@ -1,13 +1,21 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.6.4**.
+The desktop application and Linux gateway are released as **Smart Stage 1.6.6**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.4
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.6
 
 ## Implemented
+
+- Update checks read the public website manifest without a GitHub account or
+  token. The updater contacts GitHub for official archives/checksums only when
+  installing a newer eligible version. Website errors never fall back to the
+  GitHub API. Release automation refreshes and anonymously verifies the manifest
+  through protected main before testing actual automatic updates. Builds use
+  Go 1.26.10. Cloudflare Quick Tunnels were assessed only; no helper or new
+  connection mode is installed by this change.
 
 - Audio/video cues have saved centered track-volume sliders in Admin. The remote
   has a speaker/master slider at the top, starting at 75% per launch. Live level
@@ -177,6 +185,18 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.4
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.6.6 is source `560265afc945ec519daa27000893a4c7f2eccafc`. Seven exact-source
+candidate gates, nine publication/manifest gates and all 16 tagged post-publication
+jobs passed. All 50 public digests and eight checksum pairs passed; all desktop
+executable variants embed the clean full source and Go 1.26.10. Both static Linux
+gateway binaries reproduced byte for byte from the immutable source. Tagged and
+current-default actual updater checks passed on all four targets. All 12 native
+installer reports passed, including both PowerShell versions and strict firewall
+preservation. The Windows firewall test now prepares its native provider using
+read-only queries; production rule code and assertions remain unchanged. Earlier
+failed checks and the unpublished v1.6.5 tag remain recorded. See the
+[current verification record](docs/verification/release-v1.6.6/README.md).
 
 Version 1.6.4 is source `040774dc80900899787df31ab2ff7a13f7938cf3`. Track sliders
 use native dragging with an arrow cursor, save a changed value on release and

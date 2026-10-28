@@ -1,0 +1,631 @@
+{
+  "release": "v1.6.6",
+  "releaseSource": "560265afc945ec519daa27000893a4c7f2eccafc",
+  "workflow": {
+    "run": 40684349039,
+    "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+    "path": ".github/workflows/build.yml",
+    "event": "push",
+    "branch": "v1.6.6",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039",
+    "jobs": [
+      {
+        "id": 122802777466,
+        "name": "shared",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802777466"
+      },
+      {
+        "id": 122802777846,
+        "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802777846"
+      },
+      {
+        "id": 122802777870,
+        "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802777870"
+      },
+      {
+        "id": 122802777991,
+        "name": "native (macos-15-intel, darwin, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802777991"
+      },
+      {
+        "id": 122802777993,
+        "name": "native (macos-15, darwin, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802777993"
+      },
+      {
+        "id": 122802778138,
+        "name": "gateway",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802778138"
+      },
+      {
+        "id": 122810722872,
+        "name": "binary-security",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122810722872"
+      },
+      {
+        "id": 122810992765,
+        "name": "publish",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122810992765"
+      },
+      {
+        "id": 122811128156,
+        "name": "publish-site",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128156"
+      },
+      {
+        "id": 122811128328,
+        "name": "verify-browser / browser (macos-15, darwin, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128328"
+      },
+      {
+        "id": 122811128382,
+        "name": "verify-browser / browser (windows-11-arm, windows, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128382"
+      },
+      {
+        "id": 122811128385,
+        "name": "verify-browser / browser (windows-2025, windows, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128385"
+      },
+      {
+        "id": 122811128387,
+        "name": "verify-download / download (windows-2025, windows, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128387"
+      },
+      {
+        "id": 122811128403,
+        "name": "verify-download / download (macos-15-intel, darwin, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128403"
+      },
+      {
+        "id": 122811128490,
+        "name": "verify-browser / browser (macos-15-intel, darwin, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128490"
+      },
+      {
+        "id": 122811128516,
+        "name": "verify-download / download (windows-11-arm, windows, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128516"
+      },
+      {
+        "id": 122811128542,
+        "name": "verify-download / download (macos-15, darwin, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128542"
+      },
+      {
+        "id": 122811128825,
+        "name": "verify-windows-install / install (windows-2025, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128825"
+      },
+      {
+        "id": 122811128950,
+        "name": "verify-windows-install / install (windows-11-arm, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128950"
+      },
+      {
+        "id": 122811129026,
+        "name": "verify-macos-install / install (macos-15-intel, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811129026"
+      },
+      {
+        "id": 122811129072,
+        "name": "verify-macos-install / install (macos-15, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811129072"
+      },
+      {
+        "id": 122811573066,
+        "name": "verify-update / update (windows-2025, windows, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811573066"
+      },
+      {
+        "id": 122811573098,
+        "name": "verify-update / update (macos-15-intel, darwin, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811573098"
+      },
+      {
+        "id": 122811573424,
+        "name": "verify-update / update (windows-11-arm, windows, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811573424"
+      },
+      {
+        "id": 122811573442,
+        "name": "verify-update / update (macos-15, darwin, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811573442"
+      }
+    ],
+    "allNinePublicationAndManifestGatesPassed": true,
+    "allSixteenPostPublicationJobsPassed": true,
+    "publicationAndManifestGates": [
+      {
+        "id": 122802777466,
+        "name": "shared",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802777466"
+      },
+      {
+        "id": 122802777846,
+        "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802777846"
+      },
+      {
+        "id": 122802777870,
+        "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802777870"
+      },
+      {
+        "id": 122802777991,
+        "name": "native (macos-15-intel, darwin, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802777991"
+      },
+      {
+        "id": 122802777993,
+        "name": "native (macos-15, darwin, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802777993"
+      },
+      {
+        "id": 122802778138,
+        "name": "gateway",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122802778138"
+      },
+      {
+        "id": 122810722872,
+        "name": "binary-security",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122810722872"
+      },
+      {
+        "id": 122810992765,
+        "name": "publish",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122810992765"
+      },
+      {
+        "id": 122811128156,
+        "name": "publish-site",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128156"
+      }
+    ],
+    "postPublicationJobs": [
+      {
+        "id": 122811128328,
+        "name": "verify-browser / browser (macos-15, darwin, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128328"
+      },
+      {
+        "id": 122811128382,
+        "name": "verify-browser / browser (windows-11-arm, windows, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128382"
+      },
+      {
+        "id": 122811128385,
+        "name": "verify-browser / browser (windows-2025, windows, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128385"
+      },
+      {
+        "id": 122811128387,
+        "name": "verify-download / download (windows-2025, windows, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128387"
+      },
+      {
+        "id": 122811128403,
+        "name": "verify-download / download (macos-15-intel, darwin, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128403"
+      },
+      {
+        "id": 122811128490,
+        "name": "verify-browser / browser (macos-15-intel, darwin, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128490"
+      },
+      {
+        "id": 122811128516,
+        "name": "verify-download / download (windows-11-arm, windows, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128516"
+      },
+      {
+        "id": 122811128542,
+        "name": "verify-download / download (macos-15, darwin, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128542"
+      },
+      {
+        "id": 122811128825,
+        "name": "verify-windows-install / install (windows-2025, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128825"
+      },
+      {
+        "id": 122811128950,
+        "name": "verify-windows-install / install (windows-11-arm, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811128950"
+      },
+      {
+        "id": 122811129026,
+        "name": "verify-macos-install / install (macos-15-intel, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811129026"
+      },
+      {
+        "id": 122811129072,
+        "name": "verify-macos-install / install (macos-15, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811129072"
+      },
+      {
+        "id": 122811573066,
+        "name": "verify-update / update (windows-2025, windows, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811573066"
+      },
+      {
+        "id": 122811573098,
+        "name": "verify-update / update (macos-15-intel, darwin, amd64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811573098"
+      },
+      {
+        "id": 122811573424,
+        "name": "verify-update / update (windows-11-arm, windows, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811573424"
+      },
+      {
+        "id": 122811573442,
+        "name": "verify-update / update (macos-15, darwin, arm64)",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40684349039/job/122811573442"
+      }
+    ]
+  },
+  "reports": [
+    {
+      "target": "darwin/arm64",
+      "status": "passed",
+      "release": "v1.6.6",
+      "artifact": {
+        "id": 12815566642,
+        "name": "auto-update-darwin-arm64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "d0e7464da0dd5e1f304348f1d90bd1744e367376da388f6f553b6424b503cf78",
+        "githubDigestAndSizeVerified": true
+      },
+      "fixtureArtifact": {
+        "id": 12814312751,
+        "name": "update-fixture-darwin-arm64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "c6884e2b398864d9c43c8a96605f3fded744202840afc8cc5d5ae7e584ef973c",
+        "githubDigestAndSizeVerified": true
+      },
+      "fixture": {
+        "version": "v0.0.0-preview.1",
+        "sourceSHA": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "target": "darwin/arm64",
+        "archive": "fixture-darwin-arm64.app.zip",
+        "archiveSHA256": "47222c6c7490c7894184bbb9bf303141d3f964e1789163149d55e13607af57cf",
+        "executableSHA256": "3f60f153218fa8665c0460df003b4e1a711ec0046e2fdd9aa2394f489ea56317",
+        "purpose": "Native production updater verification with older version metadata; not a published release"
+      },
+      "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (560265afc945), go1.26.10, darwin/arm64",
+      "fixtureProvenance": "Digest-verified tagged artifact and exact-source build recipe, with executed source prefix; full embedded fixture VCS metadata is not asserted.",
+      "fixtureArchiveAndExecutableHashesVerified": true,
+      "rawReportSHA256": "0813115a85157de3a5b6c65c424d97c873ef3958bcc686e2902ea152dfa01081",
+      "installedVersionOutput": "Smart Stage v1.6.6 (560265afc945), go1.26.10, darwin/arm64",
+      "installedExecutableSHA256": "d81ef071237aed0319100f080cb58e1ccda97ec7454fa6630fff7c41a8e0126d",
+      "publishedArchiveSHA256": "39d74756dc8a88f55b6086d2df3868731d776e8522a0400f84ce44d200047922",
+      "publishedExecutableSHA256": "d81ef071237aed0319100f080cb58e1ccda97ec7454fa6630fff7c41a8e0126d",
+      "publicBytesMatchedIndependentAudit": true,
+      "updateHTTPInstallRequestsSent": 0,
+      "outcome": {
+        "version": "v1.6.6",
+        "status": "updated"
+      },
+      "checks": {
+        "actualPublishedBytesInstalled": true,
+        "productionReleaseDiscovery": true,
+        "productionArchiveValidation": true,
+        "productionHelperHandoff": true,
+        "oldProcessExitedCleanly": true,
+        "startupAcknowledgedBeforeBackupRemoval": true,
+        "savedShowPreserved": true,
+        "hostMediaPreserved": true,
+        "restartedWithoutAutoplay": true,
+        "adminPortPreserved": true,
+        "testDirectoryRemoved": true,
+        "testProcessCleanupPassed": true,
+        "startupUpdatePending": true,
+        "startupReservationRejectedPLAY": true,
+        "gatewayModeDefault": true,
+        "lanListenerClosedAfterUpdate": true
+      },
+      "physicalPlaybackVerified": false
+    },
+    {
+      "target": "darwin/amd64",
+      "status": "passed",
+      "release": "v1.6.6",
+      "artifact": {
+        "id": 12815940846,
+        "name": "auto-update-darwin-amd64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "ae3d1594cdf5d6fe549e407319f4506b6ffead5c89ff7d60e1ffa8a9f3c4802b",
+        "githubDigestAndSizeVerified": true
+      },
+      "fixtureArtifact": {
+        "id": 12814213311,
+        "name": "update-fixture-darwin-amd64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "c86740d8941fcb5c34f044feb72900e9f4b7a3eb4e5081c80beaf6bae90d4c06",
+        "githubDigestAndSizeVerified": true
+      },
+      "fixture": {
+        "version": "v0.0.0-preview.1",
+        "sourceSHA": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "target": "darwin/amd64",
+        "archive": "fixture-darwin-amd64.app.zip",
+        "archiveSHA256": "dc36851d59b30c8a68c557b31987fc09632ea1c2ba99927bc42b0a4185921fc7",
+        "executableSHA256": "9cb42395fb6fb18377d3b3e87afa1e20ba2dc1a501f734dad8fe9530c49ee4c5",
+        "purpose": "Native production updater verification with older version metadata; not a published release"
+      },
+      "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (560265afc945), go1.26.10, darwin/amd64",
+      "fixtureProvenance": "Digest-verified tagged artifact and exact-source build recipe, with executed source prefix; full embedded fixture VCS metadata is not asserted.",
+      "fixtureArchiveAndExecutableHashesVerified": true,
+      "rawReportSHA256": "d26ff0e0f95a74a5a297405ee095e13f957ff3b9d0d20d90416f68d4adcbbe35",
+      "installedVersionOutput": "Smart Stage v1.6.6 (560265afc945), go1.26.10, darwin/amd64",
+      "installedExecutableSHA256": "67cecdaa426037c46a35960ee3c6cc0a365e7e750b7f54f3dd551259159287b2",
+      "publishedArchiveSHA256": "283d4dfa026a202d0e103556fe04559510f87a9a76adacc6686f9467c4f85a65",
+      "publishedExecutableSHA256": "67cecdaa426037c46a35960ee3c6cc0a365e7e750b7f54f3dd551259159287b2",
+      "publicBytesMatchedIndependentAudit": true,
+      "updateHTTPInstallRequestsSent": 0,
+      "outcome": {
+        "version": "v1.6.6",
+        "status": "updated"
+      },
+      "checks": {
+        "actualPublishedBytesInstalled": true,
+        "productionReleaseDiscovery": true,
+        "productionArchiveValidation": true,
+        "productionHelperHandoff": true,
+        "oldProcessExitedCleanly": true,
+        "startupAcknowledgedBeforeBackupRemoval": true,
+        "savedShowPreserved": true,
+        "hostMediaPreserved": true,
+        "restartedWithoutAutoplay": true,
+        "adminPortPreserved": true,
+        "testDirectoryRemoved": true,
+        "testProcessCleanupPassed": true,
+        "startupUpdatePending": true,
+        "startupReservationRejectedPLAY": true,
+        "gatewayModeDefault": true,
+        "lanListenerClosedAfterUpdate": true
+      },
+      "physicalPlaybackVerified": false
+    },
+    {
+      "target": "windows/arm64",
+      "status": "passed",
+      "release": "v1.6.6",
+      "artifact": {
+        "id": 12814942346,
+        "name": "auto-update-windows-arm64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "a836e246c2f107fa56a21910929a7bb5a0a345de12c00fededf92e22bafeeb8b",
+        "githubDigestAndSizeVerified": true
+      },
+      "fixtureArtifact": {
+        "id": 12816015186,
+        "name": "update-fixture-windows-arm64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "52aa34c2d5968297e360ce65be2bf474445f6f250d542f037b8ecdc5ac25cdaf",
+        "githubDigestAndSizeVerified": true
+      },
+      "fixture": {
+        "version": "v0.0.0-preview.1",
+        "sourceSHA": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "target": "windows/arm64",
+        "archive": "fixture-windows-arm64.zip",
+        "archiveSHA256": "53034c25af5a1a00dc47b4572d808d44af5565d0c6a91f6f9b9722990b149198",
+        "executableSHA256": "deded84296ef0b3bb9e0057003a0c93e6a948f32d60ed8ec7d34dcdb82492678",
+        "purpose": "Native production updater verification with older version metadata; not a published release"
+      },
+      "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (560265afc945), go1.26.10, windows/arm64",
+      "fixtureProvenance": "Digest-verified tagged artifact and exact-source build recipe, with executed source prefix; full embedded fixture VCS metadata is not asserted.",
+      "fixtureArchiveAndExecutableHashesVerified": true,
+      "rawReportSHA256": "1b7d7790d874c635cf020a55117a94e6d32656b61fab16087c3115929a8a61d7",
+      "installedVersionOutput": "Smart Stage v1.6.6 (560265afc945), go1.26.10, windows/arm64",
+      "installedExecutableSHA256": "b0a4ed9648bb20a4fa0af4c57fd264093f842d63f71526ffe01c796b268e7e37",
+      "publishedArchiveSHA256": "91e3f9a70f5e58149bd6ec6ee9daccfff3afcf84a0131a389e8a572c6fdfb768",
+      "publishedExecutableSHA256": "b0a4ed9648bb20a4fa0af4c57fd264093f842d63f71526ffe01c796b268e7e37",
+      "publicBytesMatchedIndependentAudit": true,
+      "updateHTTPInstallRequestsSent": 0,
+      "outcome": {
+        "version": "v1.6.6",
+        "status": "updated"
+      },
+      "checks": {
+        "actualPublishedBytesInstalled": true,
+        "productionReleaseDiscovery": true,
+        "productionArchiveValidation": true,
+        "productionHelperHandoff": true,
+        "oldProcessExitedCleanly": true,
+        "startupAcknowledgedBeforeBackupRemoval": true,
+        "savedShowPreserved": true,
+        "hostMediaPreserved": true,
+        "restartedWithoutAutoplay": true,
+        "adminPortPreserved": true,
+        "testDirectoryRemoved": true,
+        "testProcessCleanupPassed": true,
+        "startupUpdatePending": true,
+        "startupReservationRejectedPLAY": true,
+        "gatewayModeDefault": true,
+        "lanListenerClosedAfterUpdate": true
+      },
+      "physicalPlaybackVerified": false
+    },
+    {
+      "target": "windows/amd64",
+      "status": "passed",
+      "release": "v1.6.6",
+      "artifact": {
+        "id": 12816060364,
+        "name": "auto-update-windows-amd64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "c5d621b81ebf0ea0a341abb812db0edc8fbd9194c25dad2965f3845b630022ae",
+        "githubDigestAndSizeVerified": true
+      },
+      "fixtureArtifact": {
+        "id": 12813983915,
+        "name": "update-fixture-windows-amd64",
+        "run": 40684349039,
+        "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "archiveSHA256": "c7c321e7e4e4db1988ea4570a04161f1adc6f1675266ca711dd17cd6a9afb2ce",
+        "githubDigestAndSizeVerified": true
+      },
+      "fixture": {
+        "version": "v0.0.0-preview.1",
+        "sourceSHA": "560265afc945ec519daa27000893a4c7f2eccafc",
+        "target": "windows/amd64",
+        "archive": "fixture-windows-amd64.zip",
+        "archiveSHA256": "7b14970b310e01bc43ca39a18ba434051b1ddd7b290bf0e5e793cb5f3be3ff58",
+        "executableSHA256": "433eb90d012aa95dcea1866de5dbcaa3681112242c4b974aa50287972ad6efbe",
+        "purpose": "Native production updater verification with older version metadata; not a published release"
+      },
+      "fixtureVersionOutput": "Smart Stage v0.0.0-preview.1 (560265afc945), go1.26.10, windows/amd64",
+      "fixtureProvenance": "Digest-verified tagged artifact and exact-source build recipe, with executed source prefix; full embedded fixture VCS metadata is not asserted.",
+      "fixtureArchiveAndExecutableHashesVerified": true,
+      "rawReportSHA256": "a605eb133e8f6623485a4ab688c11d219222e4b17d5090cccd709d04d62d94d8",
+      "installedVersionOutput": "Smart Stage v1.6.6 (560265afc945), go1.26.10, windows/amd64",
+      "installedExecutableSHA256": "261867108217b10f76a6475740887f5b10ed51544ff7306c8f9266ce08b0dd4c",
+      "publishedArchiveSHA256": "7a54260c9f2570c687d8e062c59af9002d40d5307ac1d5a2222bd1904b0faf56",
+      "publishedExecutableSHA256": "261867108217b10f76a6475740887f5b10ed51544ff7306c8f9266ce08b0dd4c",
+      "publicBytesMatchedIndependentAudit": true,
+      "updateHTTPInstallRequestsSent": 0,
+      "outcome": {
+        "version": "v1.6.6",
+        "status": "updated"
+      },
+      "checks": {
+        "actualPublishedBytesInstalled": true,
+        "productionReleaseDiscovery": true,
+        "productionArchiveValidation": true,
+        "productionHelperHandoff": true,
+        "oldProcessExitedCleanly": true,
+        "startupAcknowledgedBeforeBackupRemoval": true,
+        "savedShowPreserved": true,
+        "hostMediaPreserved": true,
+        "restartedWithoutAutoplay": true,
+        "adminPortPreserved": true,
+        "testDirectoryRemoved": true,
+        "testProcessCleanupPassed": true,
+        "startupUpdatePending": true,
+        "startupReservationRejectedPLAY": true,
+        "gatewayModeDefault": true,
+        "lanListenerClosedAfterUpdate": true
+      },
+      "physicalPlaybackVerified": false
+    }
+  ],
+  "expectedReports": 4,
+  "observedReports": 4,
+  "missing": [],
+  "allFourActualUpdatesPassed": true,
+  "scope": "Real production startup discovery through the website manifest, public GitHub archive validation/replacement/restart, preserved show/media and no autoplay. Fixtures use the exact tagged release source with older version metadata, not historical executables."
+}

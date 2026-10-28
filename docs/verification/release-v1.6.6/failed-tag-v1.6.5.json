@@ -1,0 +1,118 @@
+{
+  "releaseTag": "v1.6.5",
+  "source": "d7fc7a78042de9a781d6dafca94b68f6fdf51f28",
+  "run": 40682095629,
+  "status": "completed",
+  "conclusion": "failure",
+  "releasePublished": false,
+  "tagRetainedWithoutForce": true,
+  "failedJob": {
+    "id": 122795106020,
+    "platform": "windows/arm64",
+    "step": "Shared tests on target OS",
+    "test": "TestWindowsLANFirewallRuleScoped/smartstage.exe",
+    "elapsedSeconds": 66.79,
+    "error": "exit status 1 with empty subprocess output; old verifier did not retain context deadline state"
+  },
+  "jobs": [
+    {
+      "id": 122795105548,
+      "name": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122795105548"
+    },
+    {
+      "id": 122795105863,
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122795105863"
+    },
+    {
+      "id": 122795105885,
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122795105885"
+    },
+    {
+      "id": 122795105968,
+      "name": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122795105968"
+    },
+    {
+      "id": 122795106020,
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122795106020"
+    },
+    {
+      "id": 122795106055,
+      "name": "native (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122795106055"
+    },
+    {
+      "id": 122797408254,
+      "name": "binary-security",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122797408254"
+    },
+    {
+      "id": 122797409353,
+      "name": "verify-macos-install",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122797409353"
+    },
+    {
+      "id": 122797409720,
+      "name": "verify-browser",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122797409720"
+    },
+    {
+      "id": 122797409995,
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122797409995"
+    },
+    {
+      "id": 122797410254,
+      "name": "publish-site",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122797410254"
+    },
+    {
+      "id": 122797410348,
+      "name": "verify-download",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122797410348"
+    },
+    {
+      "id": 122797410997,
+      "name": "verify-windows-install",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122797410997"
+    },
+    {
+      "id": 122797411319,
+      "name": "verify-update",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40682095629/job/122797411319"
+    }
+  ],
+  "inference": "Repeated first-invocation duration is consistent with cold NetSecurity/CIM startup consuming the original one-minute subprocess bound, but original artifacts do not prove the exact failing stage or deadline. Production rule payload and strict assertions are unchanged; subsequent test preparation is read-only and separately bounded."
+}

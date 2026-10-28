@@ -1,0 +1,21 @@
+{
+  "run": 40683453449,
+  "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+  "status": "completed",
+  "conclusion": "success",
+  "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40683453449",
+  "jobs": [
+    {
+      "name": "firewall (windows-2025)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40683453449/job/122799749308"
+    },
+    {
+      "name": "firewall (windows-11-arm)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40683453449/job/122799749512"
+    }
+  ]
+}

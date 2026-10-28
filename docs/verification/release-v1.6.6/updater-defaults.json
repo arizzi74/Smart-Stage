@@ -1,0 +1,13 @@
+{
+  "release": "v1.6.6",
+  "workflowSource": "06b4208f77328428fa1caf79746d6756be71662b",
+  "file": ".github/workflows/update.yml",
+  "workflowSHA256": "28bda2a01c31c5934271131704ac3b9a6933b2ab2689aea6786569d8733f08ac",
+  "workflowRun": 40687452194,
+  "expectedDefaults": {
+    "version": "v1.6.6",
+    "fixture-run": "40684349039",
+    "fixture-source": "560265afc945ec519daa27000893a4c7f2eccafc"
+  },
+  "allSixDispatchAndActiveDefaultsVerified": true
+}

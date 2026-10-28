@@ -1,0 +1,36 @@
+{
+  "run": 40683453374,
+  "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+  "status": "completed",
+  "conclusion": "success",
+  "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40683453374",
+  "jobs": [
+    {
+      "name": "update (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40683453374/job/122799748270"
+    },
+    {
+      "name": "update (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40683453374/job/122799748556"
+    },
+    {
+      "name": "update (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40683453374/job/122799748575"
+    },
+    {
+      "name": "update (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40683453374/job/122799748623"
+    }
+  ],
+  "fixtureSource": "040774dc80900899787df31ab2ff7a13f7938cf3",
+  "release": "v1.6.4",
+  "scope": "Old GitHub API discovery recovered in a separate run after the previously reported reset. This does not replace or relabel the earlier failed attempt or establish manifest behavior."
+}

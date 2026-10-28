@@ -1,0 +1,32 @@
+{
+  "release": "v1.6.6",
+  "defaultSource": "5fb2962613073ff887371608912fd49b46dd4a68",
+  "publicMainSourceAtCollection": "06b4208f77328428fa1caf79746d6756be71662b",
+  "allThreePublicScriptBytesVerified": true,
+  "installers": [
+    {
+      "name": "install.sh",
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+      "sha256": "92882fb7d524574acece3ab8e802c0825b0c528d93a06756c6be77b9007777f2",
+      "bytes": 17505,
+      "matchesExactCommit": true,
+      "pinsRelease": true
+    },
+    {
+      "name": "install.ps1",
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1",
+      "sha256": "3411611ab582f748333e74e3c73d75f9dad897256ef3ae45ee8fffb14948b0c1",
+      "bytes": 16629,
+      "matchesExactCommit": true,
+      "pinsRelease": true
+    },
+    {
+      "name": "install-gateway.sh",
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install-gateway.sh",
+      "sha256": "ed95604d65df6489f544d74b1e54824c3c7013fd06a3c45ddaaf18958a86e57a",
+      "bytes": 2206,
+      "matchesExactCommit": true,
+      "pinsRelease": true
+    }
+  ]
+}

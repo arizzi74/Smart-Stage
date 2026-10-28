@@ -1,0 +1,25 @@
+{
+  "source": "d7fc7a78042de9a781d6dafca94b68f6fdf51f28",
+  "go": "go1.26.10",
+  "goRaceAllPackages": "passed",
+  "goVetAllPackages": "passed",
+  "sourcePackageVulnerabilityScan": "passed",
+  "javascriptTests": {
+    "passed": 11,
+    "failed": 0
+  },
+  "manifestGeneratorTests": {
+    "passed": 5,
+    "failed": 0
+  },
+  "websiteBrowserChecks": {
+    "passed": 22,
+    "failed": 0
+  },
+  "workflowActionlint": "passed",
+  "manifestGeneratedFromCurrentPublicReleases": {
+    "requiredRelease": "v1.6.4",
+    "releases": 31,
+    "bytes": 91013
+  }
+}

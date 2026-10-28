@@ -1,0 +1,19 @@
+{
+  "release": "v1.6.6",
+  "source": "560265afc945ec519daa27000893a4c7f2eccafc",
+  "go": "go1.26.10",
+  "method": "Build the immutable release source in a detached worktree with the unchanged reproducible gateway script, version and commit-prefix flags; compare each output byte hash to the independently verified public binary.",
+  "binaries": [
+    {
+      "target": "linux/amd64",
+      "sha256": "3e397a4d80a62558ae1cc3c043feed34cdeff47ff9d0f7ae756ccf3f7db15123",
+      "matchesPublicBytes": true
+    },
+    {
+      "target": "linux/arm64",
+      "sha256": "3333996257ff32342c89dc1cfa547defbdec9012738a16fd372fec33afd9de23",
+      "matchesPublicBytes": true
+    }
+  ],
+  "bothPublicGatewayBinariesReproducedExactly": true
+}

@@ -1,0 +1,21 @@
+{
+  "run": 40679763680,
+  "source": "d7fc7a78042de9a781d6dafca94b68f6fdf51f28",
+  "status": "completed",
+  "conclusion": "success",
+  "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40679763680",
+  "jobs": [
+    {
+      "name": "profile (macos-15, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40679763680/job/122787178751"
+    },
+    {
+      "name": "profile (macos-15-intel, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40679763680/job/122787179238"
+    }
+  ]
+}

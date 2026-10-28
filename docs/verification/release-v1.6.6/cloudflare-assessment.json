@@ -1,0 +1,39 @@
+{
+  "date": "2026-10-28",
+  "status": "assessment only; no integration or helper download implemented",
+  "cloudflareAccountRequiredForQuickTunnel": false,
+  "webSocketsSupported": true,
+  "serverSentEventsSupportedByQuickTunnels": false,
+  "currentSmartStageBrowserStatusTransport": "Server-Sent Events",
+  "backgroundIntegrationFeasible": true,
+  "requiredDesign": [
+    "Expose a separate loopback remote-control listener, never the Admin listener",
+    "Replace or supplement remote status SSE with authenticated WebSocket transport",
+    "Keep Smart Stage pairing secrets; no Cloudflare login is different from unauthenticated show control",
+    "Download a pinned official helper on first use and verify its checksum before execution",
+    "Cache the helper per user, hide its console, manage cancellation and exit, and stop it when Smart Stage quits",
+    "Refresh the remote URL and QR code after every new temporary tunnel",
+    "Retain the existing gateway as the default reliable option"
+  ],
+  "limitations": [
+    "Quick Tunnels have no uptime guarantee and are documented for testing/development",
+    "Temporary hostname changes for each new tunnel",
+    "200 in-flight requests per Quick Tunnel",
+    "Corporate networks must allow Cloudflare outbound connectivity",
+    "No native Windows ARM64 helper asset is currently published; using Windows 11 x64 emulation would need platform testing"
+  ],
+  "helperReleaseAssessed": "2026.10.5",
+  "officialAssetsAssessed": [
+    "cloudflared-darwin-arm64.tgz",
+    "cloudflared-darwin-amd64.tgz",
+    "cloudflared-windows-amd64.exe"
+  ],
+  "nativeCloudflareIntegrationTested": false,
+  "sources": [
+    "https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/",
+    "https://developers.cloudflare.com/cloudflare-one/faq/cloudflare-tunnels-faq/",
+    "https://developers.cloudflare.com/tunnel/get-started/",
+    "https://github.com/cloudflare/cloudflared/releases/tag/2026.10.5",
+    "https://learn.microsoft.com/en-us/windows/arm/apps-on-arm-x86-emulation"
+  ]
+}

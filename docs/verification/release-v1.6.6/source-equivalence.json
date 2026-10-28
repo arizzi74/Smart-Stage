@@ -1,0 +1,16 @@
+{
+  "release": "v1.6.6",
+  "releaseSource": "560265afc945ec519daa27000893a4c7f2eccafc",
+  "localAndEarlierCandidateSource": "d7fc7a78042de9a781d6dafca94b68f6fdf51f28",
+  "productionCodeUnchanged": true,
+  "changedFiles": [
+    "docs/release-notes.md",
+    "internal/update/firewall_windows_test.go",
+    "scripts/verify-auto-update.py"
+  ],
+  "windowsTestBothArchitecturesCompile": true,
+  "originalRulePayloadExecutionLimitSeconds": 60,
+  "newReadOnlyProviderPreparationLimitSeconds": 120,
+  "originalScopedRuleAndGlobalProfileAssertionsPreserved": true,
+  "runtimeChecksRequireNewCandidateAndTagGates": true
+}
