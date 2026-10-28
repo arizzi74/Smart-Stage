@@ -22,6 +22,8 @@ import time
 import urllib.parse
 import wave
 
+from smoke_shutdown import remove_test_directory, stop_application
+
 
 def until(check, message, timeout=45):
     end = time.monotonic() + timeout
@@ -278,13 +280,10 @@ def verify(executable, report, first_log, restart_log):
                     except (OSError, AssertionError, subprocess.SubprocessError):
                         pass
                 if process and process.poll() is None:
-                    process.terminate()
-                    try:
-                        process.wait(timeout=15)
-                    except subprocess.TimeoutExpired:
-                        process.kill(); process.wait(timeout=5)
+                    stop_application(process, admin_port)
                 if (config / 'restart.log').exists():
                     restart_log.write_bytes((config / 'restart.log').read_bytes())
+                remove_test_directory(config)
 
 
 def main():

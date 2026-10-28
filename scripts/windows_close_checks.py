@@ -6,6 +6,8 @@ import socket
 import subprocess
 import time
 
+from smoke_shutdown import stop_application
+
 
 def shipped_close_confirmation_checks(executable, work, config, media, helpers, report):
     user = ctypes.WinDLL("user32", use_last_error=True)
@@ -194,12 +196,7 @@ def shipped_close_confirmation_checks(executable, work, config, media, helpers, 
         report.update(status="failed", error=str(error))
         raise
     finally:
-        if process is not None and process.poll() is None:
-            process.terminate()
-            try:
-                process.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                process.wait(timeout=5)
+        if process is not None:
+            stop_application(process, admin_port)
         if log_path.exists():
             report["hostLog"] = log_path.read_text(encoding="utf-8", errors="replace")[-18000:]

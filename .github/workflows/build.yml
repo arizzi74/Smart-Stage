@@ -24,6 +24,7 @@ jobs:
       - run: go test -race ./...
       - run: go vet ./...
       - run: node --test scripts/i18n.test.cjs scripts/wake-lock.test.cjs
+      - run: python3 scripts/test-smoke-shutdown.py
   gateway:
     runs-on: ubuntu-24.04
     steps:

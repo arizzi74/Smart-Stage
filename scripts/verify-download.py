@@ -8,11 +8,9 @@ import argparse
 import hashlib
 import http.client
 import json
-import os
 from pathlib import Path
 import platform
 import re
-import signal
 import socket
 import stat
 import subprocess
@@ -20,6 +18,8 @@ import tempfile
 import time
 import urllib.request
 import zipfile
+
+from smoke_shutdown import remove_test_directory, stop_application
 
 
 def gateway_default(version):
@@ -155,13 +155,13 @@ def smoke(binary, target_os, target_arch, version, report):
                     assert status in (403, 404), f"Legacy remote listener served Admin: HTTP {status}"
                     report.update(legacyLANRelease=True, remoteListenerRejectsAdmin=True)
             finally:
-                if process.poll() is None:
-                    process.terminate() if os.name == "nt" else process.send_signal(signal.SIGINT)
                 try:
-                    process.wait(timeout=15)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    process.wait(timeout=5)
+                    report["authenticatedAdminQuit"] = stop_application(process, admin_port)
+                finally:
+                    # Forced shutdown of an old/failed release can leave its
+                    # guardian briefly draining after the main process exits.
+                    remove_test_directory(config)
+                    report["temporaryConfigRemoved"] = True
 
 
 def main():

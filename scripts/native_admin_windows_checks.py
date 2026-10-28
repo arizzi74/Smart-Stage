@@ -9,6 +9,7 @@ import subprocess
 import tempfile
 
 from windows_close_checks import shipped_close_confirmation_checks
+from smoke_shutdown import remove_test_directory, stop_application
 
 
 def admin_window_checks(executable, evidence_path):
@@ -97,14 +98,11 @@ def admin_window_checks(executable, evidence_path):
                     close_report = report["shippedExecutableClose"] = {"status": "incomplete"}
                     shipped_close_confirmation_checks(executable, work, config, media, helpers, close_report)
                 finally:
-                    if process.poll() is None:
-                        process.terminate()
-                        try:
-                            process.wait(timeout=15)
-                        except subprocess.TimeoutExpired:
-                            process.kill()
-                            process.wait(timeout=5)
-                    report["hostLog"] = (work / "host.log").read_text(encoding="utf-8", errors="replace")[-18000:]
+                    try:
+                        stop_application(process, admin_port)
+                    finally:
+                        report["hostLog"] = (work / "host.log").read_text(encoding="utf-8", errors="replace")[-18000:]
+                        remove_test_directory(config)
             report["status"] = "passed"
     except Exception as error:
         report.update(status="failed", error=str(error))
