@@ -27,6 +27,24 @@ async function until(check, message, timeout = 30000) {
   throw new Error(message);
 }
 
+function nativeValidationFailure(current, playlist, fixtureNames) {
+  if (current.validationJob.running) return null;
+  const unsupported = new Set(current.cues.filter(cue => cue.validation === 'unsupported').map(cue => cue.id));
+  const cues = playlist.cues.flatMap((cue, index) => {
+    if (!unsupported.has(cue.id) || cue.cache?.status !== 'unsupported') return [];
+    const basename = String(cue.path || '').split(/[\\/]/).pop();
+    const reason = redact(cue.cache.reason || '').trim();
+    // Only retain native operation/HRESULT diagnostics with plain error text.
+    // Other errors can contain local paths or URLs and stay in the local Admin.
+    const safeReason = /^[A-Za-z][A-Za-z ]{0,80} \(0x[0-9a-f]{8}\): [\p{L}\p{N} .,;:'’"()!?-]{1,400}$/iu.test(reason)
+      && !/[A-Za-z0-9_-]{32,}/.test(reason) ? reason : '[native reason omitted: non-whitelisted text]';
+    return [{ position: index + 1, fixture: fixtureNames.has(basename) ? basename : '[unrecognized fixture]',
+      status: cue.cache.status, reason: safeReason }];
+  });
+  return cues.length ? { revision: current.revision, playlistRevision: playlist.playlistRevision,
+    validationJobRunning: false, cues } : null;
+}
+
 function dedicatedWindowsAdmin(platform, release) {
   if (platform !== 'windows') return false; // This scenario starts the portable Mac executable.
   if (release === 'dev') return true;
@@ -532,6 +550,16 @@ function dedicatedWindowsAdmin(platform, release) {
       // work before testing settings persistence on the validated fixtures.
       const validated = await until(async () => {
         const current = await snapshot();
+        if (!current.validationJob.running && current.cues.some(cue => cue.validation === 'unsupported')) {
+          const response = await admin.request.get(adminBase + '/api/playlist');
+          assert.equal(response.status(), 200, 'Native validation diagnostics require the authenticated playlist API');
+          const failure = nativeValidationFailure(current, await response.json(),
+            new Set([...filenames, sceneMusicFilename, sceneImageFilename]));
+          if (failure) {
+            record.nativeValidationFailure = failure;
+            throw new Error('Native cue revalidation failed before saving Stage settings: ' + JSON.stringify(failure));
+          }
+        }
         return !current.validationJob.running && current.cues.every(cue => cue.validation === 'ready') && current;
       }, 'Native cue revalidation did not finish before saving Stage settings', 90000);
       await admin.waitForFunction(revision => state.revision >= revision && !validationRefresh &&
