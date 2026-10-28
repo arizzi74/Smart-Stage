@@ -1,0 +1,51 @@
+{
+  "source": "18108546989e247d817f7093825684892d3bcbc7",
+  "go": "go1.26.10",
+  "candidateRun": 40704179263,
+  "candidateRequiredJobsPassed": 7,
+  "liveCloudflare": {
+    "command": "SMARTSTAGE_TEST_CLOUDFLARE=1 go test -race ./cmd/smartstage -run ^TestCloudflareLiveTunnel$ -count=1 -v",
+    "source": "18108546989e247d817f7093825684892d3bcbc7",
+    "platform": "linux/arm64",
+    "passed": true,
+    "elapsedSeconds": 70.66,
+    "publicDNSReadyAfterSeconds": 60.7,
+    "defaultSystemResolver": true,
+    "realOfficialHelper": true,
+    "realHTTPSPairing": true,
+    "realWebSocketStatus": true,
+    "authenticatedHTTPStop": true,
+    "privateRoutesRejected": true,
+    "helperAndOriginCleanup": true,
+    "nativePlayback": "synthetic"
+  },
+  "browserChecks": {
+    "actualTLSWebSocket": true,
+    "existingGatewaySSE": true,
+    "scriptedCloudflareUI": true,
+    "bilingualWebsite": 22,
+    "javascriptUnitTests": 11
+  },
+  "helper": {
+    "pinnedVersion": "2026.10.5",
+    "officialNativeAssetsHashed": 8,
+    "windowsARM64Available": false,
+    "nativeCLIChecks": [
+      "darwin/arm64",
+      "darwin/amd64",
+      "windows/amd64"
+    ],
+    "guardianParentDeathTestNativeTargets": [
+      "darwin/arm64",
+      "darwin/amd64",
+      "windows/amd64",
+      "windows/arm64"
+    ]
+  },
+  "limitations": [
+    "No physical speaker/projector acceptance was performed.",
+    "The real public tunnel test ran on Linux ARM64 with a synthetic playback backend; native helper downloads and lifecycle checks ran separately on supported desktop CI hosts.",
+    "Quick Tunnels have temporary hostnames and no uptime guarantee.",
+    "Windows ARM64 uses gateway or LAN; no emulated helper is launched."
+  ]
+}

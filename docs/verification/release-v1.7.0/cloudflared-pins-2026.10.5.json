@@ -1,0 +1,85 @@
+{
+  "version": "2026.10.5",
+  "checked_at_utc": "2026-10-28T13:46:48.780189+00:00",
+  "source": "https://api.github.com/repos/cloudflare/cloudflared/releases/tags/2026.10.5",
+  "release": "https://github.com/cloudflare/cloudflared/releases/tag/2026.10.5",
+  "notes": [
+    "Darwin current release asset digests supersede stale release-body checksums.",
+    "All eight supported platform assets were hashed from official downloaded bytes; binaries were not executed for cross-platform checksum checks.",
+    "Windows ARM64 has no official native asset and is disabled."
+  ],
+  "assets": [
+    {
+      "platform": "darwin/amd64",
+      "asset": "cloudflared-darwin-amd64.tgz",
+      "size": 21798374,
+      "sha256": "6699392fed92367808c248c2d90bed66e49bbf66e1b4ee3e4141230f3f7391b3",
+      "official_asset_digest_matches": true,
+      "downloaded_bytes_verified": true,
+      "archive": true
+    },
+    {
+      "platform": "darwin/arm64",
+      "asset": "cloudflared-darwin-arm64.tgz",
+      "size": 19840425,
+      "sha256": "184c7d4f5f977348243a6d7ca8f6cf6073b9b2746cfe8c1fe15aa59e9a522bf0",
+      "official_asset_digest_matches": true,
+      "downloaded_bytes_verified": true,
+      "archive": true
+    },
+    {
+      "platform": "linux/386",
+      "asset": "cloudflared-linux-386",
+      "size": 37680533,
+      "sha256": "f2de713829081837130b38e27f3c95aa9d7fc1a4f48b833362d21234dd8780d8",
+      "official_asset_digest_matches": true,
+      "downloaded_bytes_verified": true,
+      "archive": false
+    },
+    {
+      "platform": "linux/amd64",
+      "asset": "cloudflared-linux-amd64",
+      "size": 40263303,
+      "sha256": "e1bc0cf084fd9e590554fe769a86b1db46701c3f847a43d902f7b974a4e16298",
+      "official_asset_digest_matches": true,
+      "downloaded_bytes_verified": true,
+      "archive": false
+    },
+    {
+      "platform": "linux/arm",
+      "asset": "cloudflared-linux-arm",
+      "size": 37132381,
+      "sha256": "a018911e1bbfd739937f3011f589e9e73245baeee14742f8b3413472bb007adc",
+      "official_asset_digest_matches": true,
+      "downloaded_bytes_verified": true,
+      "archive": false
+    },
+    {
+      "platform": "linux/arm64",
+      "asset": "cloudflared-linux-arm64",
+      "size": 37662975,
+      "sha256": "72e0d05a67e09da87cf495e409a28c3cc5994dd23fc66a982eebea6a55923b7d",
+      "official_asset_digest_matches": true,
+      "downloaded_bytes_verified": true,
+      "archive": false
+    },
+    {
+      "platform": "windows/386",
+      "asset": "cloudflared-windows-386.exe",
+      "size": 38078600,
+      "sha256": "66cba8003e4f87a8e6b772f331b8c04c7d41ac4f2dc30dd2c13ae09de3b6007e",
+      "official_asset_digest_matches": true,
+      "downloaded_bytes_verified": true,
+      "archive": false
+    },
+    {
+      "platform": "windows/amd64",
+      "asset": "cloudflared-windows-amd64.exe",
+      "size": 55343328,
+      "sha256": "db4e4c413612a0916f3e1679d3caaf376f94911952d163028fb726fb2e0516a9",
+      "official_asset_digest_matches": true,
+      "downloaded_bytes_verified": true,
+      "archive": false
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "source": "941e3634494b86af661ee776af6c31e40d8b1838",
+  "scripts": [
+    {
+      "script": "install.sh",
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+      "sha256": "16563b3bbdca1907da7fc481b70f253b5c594c8bae624b7115efb87e878f6e1a",
+      "matchesCheckout": true,
+      "defaultVersion": "v1.7.0"
+    },
+    {
+      "script": "install.ps1",
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1",
+      "sha256": "b7f53e952434b191483d4508e3f36e60439636f84faee92b143ec99e66756a47",
+      "matchesCheckout": true,
+      "defaultVersion": "v1.7.0"
+    },
+    {
+      "script": "install-gateway.sh",
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install-gateway.sh",
+      "sha256": "03cab005b3965961e96f416ea1acf17593de55e4fa27938e1d8725256e815831",
+      "matchesCheckout": true,
+      "defaultVersion": "v1.7.0"
+    }
+  ]
+}

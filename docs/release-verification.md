@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.6.6 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.7.0 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -124,13 +124,37 @@ installed driver has not been identified and a visual UTM retest is still needed
 The native release workflow verifies ZIP contents/permissions and runs the
 extracted binary before publication. Startup must serve local Admin. Standalone
 Mac launches must report an accepted system-browser hand-off; Windows must show
-a responsive dedicated Admin HWND with its icon and must not dispatch a browser. Default gateway
-startup must leave the LAN port closed; an explicit LAN restart must preserve the
+a responsive dedicated Admin HWND with its icon and must not dispatch a browser.
+Cloudflare and gateway startup must leave the LAN port closed; an explicit LAN restart must preserve the
 show and reject private routes on the remote listener. Published-archive checksum/extraction/startup
 and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.7.0: Cloudflare Quick Tunnels and WebSocket control
+
+Source `18108546989e247d817f7093825684892d3bcbc7` passed seven candidate gates
+and all 25 tagged release jobs, including public downloads, native installers,
+browser controls and actual startup updates on all four desktop targets. The
+[verification record](verification/release-v1.7.0/README.md) includes public asset
+digests, the deployed update manifest, helper checksums and native report receipts.
+
+Cloudflare is the default on supported hosts without a configured gateway.
+Existing gateway and explicit LAN selections are retained, and switching modes
+preserves gateway credentials. The official helper runs in the background and
+forwards only a separate loopback remote listener; Admin remains local. Phone
+status uses authenticated WebSockets, while gateway and LAN retain SSE. The
+pinned official distribution has no Windows ARM64 helper, so that option is
+disabled in the Windows ARM64 app; it can use gateway or LAN instead.
+
+A real public tunnel test passed HTTPS pairing, WebSocket status, authenticated
+commands, private-route rejection and shutdown using the default system resolver.
+It ran on Linux ARM64 with synthetic playback. Native desktop CI separately
+verified helper downloads, CLI compatibility and cleanup after normal shutdown
+and parent termination. Temporary tunnel hostnames change on recreation; new
+links can take about a minute to resolve. Physical output and clean-machine
+acceptance remain separate open checks.
 
 ### Version 1.6.6: website update discovery
 

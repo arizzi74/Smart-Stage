@@ -478,8 +478,8 @@ replacement/refusal behavior and Finder-to-Admin startup on both Macs.
 The Windows installer supports PowerShell 5.1 and newer. Its overrides are
 `SMARTSTAGE_VERSION`, `SMARTSTAGE_INSTALL_DIR` (parent of `SmartStage`), and
 `SMARTSTAGE_NO_LAUNCH=1`. It never requests elevation. The app configures the
-scoped incoming rule only after you explicitly select Local LAN; default gateway
-installation and updates leave firewall rules unchanged.
+scoped incoming rule only after you explicitly select Local LAN; Cloudflare and
+gateway installation and updates leave firewall rules unchanged.
 
 ```sh
 go test -race ./...

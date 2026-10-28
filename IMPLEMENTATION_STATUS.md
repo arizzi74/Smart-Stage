@@ -108,13 +108,13 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.7.0
   cards 01–03, with pause controls and reduced-motion support.
 - Static Linux AMD64/ARM64 public gateway, authenticated outbound WSS relay,
   strict remote-only routes, isolated pairing sessions, bounded HTTP/SSE relay
-  and automatic desktop reconnection. Public HTTPS mode is the default and
-  closes direct LAN access. Admin URL/token setup and public link/QR are local.
+  and automatic desktop reconnection. Gateway and Cloudflare modes close direct
+  LAN access. Admin URL/token setup and public link/QR are local.
 - Interactive one-command Linux installer enumerates suitable nginx HTTPS
   virtual hosts, adds `/smartstage`, or offers Caddy; validates and backs up
   proxy configuration and installs an unprivileged systemd service.
 - Explicit Local LAN selection reserves stopped playback, persists the choice,
-  restarts the native app and configures its scoped firewall rule. Gateway-mode
+  restarts the native app and configures its scoped firewall rule. Cloudflare/gateway
   installation/updates leave incoming rules unchanged.
 
 - Compiled-in AVFoundation/AppKit/Core Audio backend on macOS and Media
@@ -166,8 +166,8 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.7.0
   atomically without copying or autoplay, respecting configured media roots.
   Filesystem identity handles actual Unicode/case aliases without broadening roots.
 - Remote connection settings start collapsed while the link, QR and status stay
-  visible. Local LAN save guidance explains firewall access; public gateway
-  remains the default with no firewall authorization. Browser-only hosts without
+  visible. Local LAN save guidance explains firewall access; Cloudflare and gateway
+  require no inbound firewall authorization. Browser-only hosts without
   a native chooser retain a compact, collapsed absolute-path import form.
 - Compact remote Stage/Disconnect controls, Escape stop-and-close behavior in
   native app/stage and connected browser pages, and persisted per-cue colors.
@@ -194,6 +194,18 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.7.0
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.7.0 is source `18108546989e247d817f7093825684892d3bcbc7`. Seven candidate
+gates and all 25 tagged release jobs passed. All 50 public asset digests, eight
+checksum pairs and the v1.7.0 website manifest were verified. Actual automatic
+updates, native installers and browser controls passed on all four desktop
+targets. A real public Cloudflare tunnel passed HTTPS pairing, WebSocket status,
+authenticated commands and shutdown on Linux ARM64 with synthetic playback;
+supported desktop CI separately verified official helper downloads/CLI and
+process cleanup. All four installer-default/build/update workflows and their ten
+installer/updater reports passed. Windows ARM64 correctly disables Cloudflare. Earlier candidate
+failures and their corrections remain in the
+[v1.7.0 verification record](docs/verification/release-v1.7.0/README.md).
 
 Version 1.6.6 is source `560265afc945ec519daa27000893a4c7f2eccafc`. Seven exact-source
 candidate gates, nine publication/manifest gates and all 16 tagged post-publication
