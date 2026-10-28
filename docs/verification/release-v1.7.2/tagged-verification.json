@@ -1,0 +1,332 @@
+{
+  "status": "passed",
+  "release": "v1.7.2",
+  "source": "8d2680a6ba788f17020510259c5f627ea8ab8b27",
+  "run": 40736071491,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491",
+  "workflowConclusion": "success",
+  "passedJobs": 25,
+  "checkedAtUTC": "2026-10-28T17:56:36.651496+00:00",
+  "artifactArchivesDigestVerified": 16,
+  "actualStartupUpdatesPassed": 4,
+  "nativeInstallerReportsPassed": 6,
+  "nativeBrowserReportsPassed": 6,
+  "installedExecutableHashesMatchPublicAudit": 10,
+  "installerBootstrapSource": "8d2680a6ba788f17020510259c5f627ea8ab8b27",
+  "bootstrapSHA256": {
+    "install.sh": "16563b3bbdca1907da7fc481b70f253b5c594c8bae624b7115efb87e878f6e1a",
+    "install.ps1": "b7f53e952434b191483d4508e3f36e60439636f84faee92b143ec99e66756a47"
+  },
+  "artifacts": [
+    {
+      "id": 12838567078,
+      "name": "auto-update-darwin-amd64",
+      "archiveSHA256": "0e3e29a694c753f677912d0a05348687219485af4eb18f4bceb9b747fb45753a",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12837919448,
+      "name": "auto-update-darwin-arm64",
+      "archiveSHA256": "9d99e1f78d581cfe4195f8a0e22223e5512794dd7d49ddf7957d3929f93c094c",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12837533393,
+      "name": "auto-update-windows-amd64",
+      "archiveSHA256": "fb58fd9f887477afeebc43c371c9a78ee243a1abc34c63675f5b64e690611ad7",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12837139563,
+      "name": "auto-update-windows-arm64",
+      "archiveSHA256": "be8dd9e2151452fad2de449555417e46e52109ec5b30d592e48b40a013184770",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12839405523,
+      "name": "browser-native-darwin-amd64",
+      "archiveSHA256": "0eb88f875a75853eb15ce69d0ed6d6d1bf112f6bc012803c098ddec8f4d3378d",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12838772213,
+      "name": "browser-native-darwin-arm64",
+      "archiveSHA256": "b1e5efb397607ae5006c708fd9fcf2dc1e5f0b863e38c683ea7ffd1ee9568cf3",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12839290286,
+      "name": "browser-native-windows-amd64",
+      "archiveSHA256": "f78792c516dbb16deba4db3baa7b0f33f987df33f3234af1b647cb5cdf57148e",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12837744880,
+      "name": "browser-native-windows-arm64",
+      "archiveSHA256": "9c06b1bd1740543c8c7a49e0e5659cfbcfbde8e1cc2c185b38b04b07a83bc883",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12838875836,
+      "name": "mac-app-install-amd64",
+      "archiveSHA256": "a192dff13198682ded51353c2baca085379a48e3a97bfe3261c0e96e413c6b16",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12837768795,
+      "name": "mac-app-install-arm64",
+      "archiveSHA256": "f96edaa08ecf7a47ad70a100b9d0f5af710aa0ea193bd093b33fb0bf98c07ace",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12835874813,
+      "name": "update-fixture-darwin-amd64",
+      "archiveSHA256": "9a94966a49a1a700dbc44a6efad42284bdca1941f11f0036bc002f53843d365b",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12837162987,
+      "name": "update-fixture-darwin-arm64",
+      "archiveSHA256": "7614471c5a4ebb2d193f7da592cdcff7c5ae887599eea8a08ea9ea07994916d9",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12838315449,
+      "name": "update-fixture-windows-amd64",
+      "archiveSHA256": "c347e22b2a0d5652cc840cd8483d9e3e5208e60508cf736fe8b059fdb0645fe3",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12837703170,
+      "name": "update-fixture-windows-arm64",
+      "archiveSHA256": "ff27cc97facfa1822ad01fbe656de7e2c25ec00c3eb73c2900cb420e2c986af0",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12837344511,
+      "name": "windows-app-install-amd64",
+      "archiveSHA256": "7a1ce8edb7814d48e9cf76f1957817adf3ea34f478c387746e3bf3516ad45983",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 12838762781,
+      "name": "windows-app-install-arm64",
+      "archiveSHA256": "c01ebc75e313b85e7266bf6d3f63309beeab7529616b2dc29042f14214f8d640",
+      "githubDigestAndSizeVerified": true
+    }
+  ],
+  "reports": [
+    {
+      "kind": "native-browser",
+      "target": "darwin/amd64",
+      "engine": "chromium",
+      "status": "passed",
+      "artifactID": 12839405523,
+      "reportSHA256": "86fb13d3ebacc2cda1be73c74372e778ee5acd959490acfb99383a9829664ea3",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 15
+    },
+    {
+      "kind": "native-browser",
+      "target": "darwin/amd64",
+      "engine": "webkit",
+      "status": "passed",
+      "artifactID": 12839405523,
+      "reportSHA256": "d7c492de3783455f297852b57e83ddaa2c32993476ecfee65126ab508479276d",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 2
+    },
+    {
+      "kind": "native-browser",
+      "target": "darwin/arm64",
+      "engine": "chromium",
+      "status": "passed",
+      "artifactID": 12838772213,
+      "reportSHA256": "b4f7eb017d396cecd2b6b4fc8082fb0769aa358d42c9fa186c0b473082ddda69",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 15
+    },
+    {
+      "kind": "native-browser",
+      "target": "darwin/arm64",
+      "engine": "webkit",
+      "status": "passed",
+      "artifactID": 12838772213,
+      "reportSHA256": "b2a211d28f2d3395c276fe5c78bbff2ae3f833f09467c7c6d51899e9177ac7fd",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 2
+    },
+    {
+      "kind": "native-browser",
+      "target": "windows/amd64",
+      "engine": "chromium",
+      "status": "passed",
+      "artifactID": 12839290286,
+      "reportSHA256": "5c469b30298c2c78c8c0a183c7e6fc943419ddfb198f3b883598edc7b3552b4c",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 15
+    },
+    {
+      "kind": "native-browser",
+      "target": "windows/arm64",
+      "engine": "chromium",
+      "status": "passed",
+      "artifactID": 12837744880,
+      "reportSHA256": "af26c742a689f5b2d00c75e78d3b19ac794d4fa51f15b0a018d6df5c603c48bb",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 15
+    },
+    {
+      "kind": "native-installer",
+      "target": "darwin/amd64",
+      "shell": "sh",
+      "status": "passed",
+      "artifactID": 12838875836,
+      "reportSHA256": "4e534ad0118a2742d52c383e57f7c176d987707fd9808d3563124c1715f61f37",
+      "installedExecutableSHA256": "ddb0d8a6cd6f718fb740f20e2be5e1ea17b64c1a2d8372ae23b11a0abe70fe3e",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.sh",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 22,
+      "firewallSnapshotsComparedWithoutExemptions": false
+    },
+    {
+      "kind": "native-installer",
+      "target": "darwin/arm64",
+      "shell": "sh",
+      "status": "passed",
+      "artifactID": 12837768795,
+      "reportSHA256": "60d60d6e53c4b6d4a1e1f8e3166b1fcbf3dcd64329c34e8c5a9ece59f6937d64",
+      "installedExecutableSHA256": "2760460f5b7ca4829caec8b2f5c995f80924bfc9ec687118607f332df94ae33f",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.sh",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 22,
+      "firewallSnapshotsComparedWithoutExemptions": false
+    },
+    {
+      "kind": "native-installer",
+      "target": "windows/amd64",
+      "shell": "powershell5.1",
+      "status": "passed",
+      "artifactID": 12837344511,
+      "reportSHA256": "4f259bbf08d2c4c80740958f96fa85d51bf90718cc6f3e9929e0cff9a7cc590c",
+      "installedExecutableSHA256": "fcf1590e1b6f24794e0dd35cb2c21c282a81a1043297926fff1acbe70c64ff95",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.ps1",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 20,
+      "firewallSnapshotsComparedWithoutExemptions": true
+    },
+    {
+      "kind": "native-installer",
+      "target": "windows/amd64",
+      "shell": "powershell7",
+      "status": "passed",
+      "artifactID": 12837344511,
+      "reportSHA256": "d5ab278dc6ab9fb9a8638d7e4c8160aeb0d2b4f615e029a723ead61bcbce51ae",
+      "installedExecutableSHA256": "fcf1590e1b6f24794e0dd35cb2c21c282a81a1043297926fff1acbe70c64ff95",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.ps1",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 20,
+      "firewallSnapshotsComparedWithoutExemptions": true
+    },
+    {
+      "kind": "native-installer",
+      "target": "windows/arm64",
+      "shell": "powershell5.1",
+      "status": "passed",
+      "artifactID": 12838762781,
+      "reportSHA256": "95dd6aa5c3f7186405a7cb261a67d9b02f49136c573abbcfdfebc5ab9d567f16",
+      "installedExecutableSHA256": "bf0dcd894d4a8555c27c6062e6593bf4e8fe3009658ef180702e47a952c5b5ba",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.ps1",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 20,
+      "firewallSnapshotsComparedWithoutExemptions": true
+    },
+    {
+      "kind": "native-installer",
+      "target": "windows/arm64",
+      "shell": "powershell7",
+      "status": "passed",
+      "artifactID": 12838762781,
+      "reportSHA256": "75b6fb8e9e8952505c48029e01415261d31ab8931a71d3e11f1f0dac1d85aee5",
+      "installedExecutableSHA256": "bf0dcd894d4a8555c27c6062e6593bf4e8fe3009658ef180702e47a952c5b5ba",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.ps1",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 20,
+      "firewallSnapshotsComparedWithoutExemptions": true
+    },
+    {
+      "kind": "startup-update",
+      "target": "darwin/amd64",
+      "status": "passed",
+      "artifactID": 12838567078,
+      "reportSHA256": "31d5fcc7746e91b6c0b6bb9fe97eb11b1938e3cd3541aadf8668be7c78e670b6",
+      "installedExecutableSHA256": "ddb0d8a6cd6f718fb740f20e2be5e1ea17b64c1a2d8372ae23b11a0abe70fe3e",
+      "publicBytesMatched": true,
+      "fixtureArtifactID": 12835874813,
+      "fixtureSourceAndArchiveHashesVerified": true,
+      "manualHTTPInstallRequests": 0,
+      "requiredChecksPassed": 16
+    },
+    {
+      "kind": "startup-update",
+      "target": "darwin/arm64",
+      "status": "passed",
+      "artifactID": 12837919448,
+      "reportSHA256": "6022212d6ee29f18ec254408d5252c776ec13beacfe71f0bd8c6739d1330c284",
+      "installedExecutableSHA256": "2760460f5b7ca4829caec8b2f5c995f80924bfc9ec687118607f332df94ae33f",
+      "publicBytesMatched": true,
+      "fixtureArtifactID": 12837162987,
+      "fixtureSourceAndArchiveHashesVerified": true,
+      "manualHTTPInstallRequests": 0,
+      "requiredChecksPassed": 16
+    },
+    {
+      "kind": "startup-update",
+      "target": "windows/amd64",
+      "status": "passed",
+      "artifactID": 12837533393,
+      "reportSHA256": "651767835a266eaf438e3c578f43b8fc7d58f68a88ecf3e8d338ebac39a3a6d8",
+      "installedExecutableSHA256": "fcf1590e1b6f24794e0dd35cb2c21c282a81a1043297926fff1acbe70c64ff95",
+      "publicBytesMatched": true,
+      "fixtureArtifactID": 12838315449,
+      "fixtureSourceAndArchiveHashesVerified": true,
+      "manualHTTPInstallRequests": 0,
+      "requiredChecksPassed": 16
+    },
+    {
+      "kind": "startup-update",
+      "target": "windows/arm64",
+      "status": "passed",
+      "artifactID": 12837139563,
+      "reportSHA256": "a7d80cf6d656fed00469d5d50b99c18a6b21adc12c460c4665415a5b65f1bc7e",
+      "installedExecutableSHA256": "bf0dcd894d4a8555c27c6062e6593bf4e8fe3009658ef180702e47a952c5b5ba",
+      "publicBytesMatched": true,
+      "fixtureArtifactID": 12837703170,
+      "fixtureSourceAndArchiveHashesVerified": true,
+      "manualHTTPInstallRequests": 0,
+      "requiredChecksPassed": 16
+    }
+  ],
+  "scope": "Tagged-source receipts only. Four real startup updates, six native installer shell reports and six Chromium/WebKit reports. Updater fixtures use exact tagged source with older version metadata. Ten installed executables match independently audited public bytes; browser jobs separately passed public archive checksum validation. Windows firewall comparisons retain every rule. Raw machine paths/rules/logs stay in private artifact ZIPs. Physical routing and dedicated native-window mouse forwarding are not asserted. Floating default-source verification is separate.",
+  "privacy": {
+    "checked": true,
+    "strictWhitelistedReportFields": true,
+    "rawMachinePathsIncluded": false,
+    "firewallRuleListsIncluded": false,
+    "privateSessionURLsIncluded": false,
+    "sessionSecretsIncluded": false
+  },
+  "independentPublicAuditSHA256": "e62057b2a90783a36794ebd619aeaa8fb35801d5864eb3e839df54d746b7a708"
+}

@@ -1,0 +1,276 @@
+{
+  "release": "v1.7.2",
+  "workflow": {
+    "id": 40736071491,
+    "name": "Build and test native targets",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491",
+    "source": "8d2680a6ba788f17020510259c5f627ea8ab8b27",
+    "ref": "v1.7.2",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "attempt": 1,
+    "completedAtUTC": "2026-10-28T17:55:42Z"
+  },
+  "checkedAtUTC": "2026-10-28T17:56:13.599Z",
+  "expectedJobs": 25,
+  "passedJobs": 25,
+  "allExpectedJobsPassed": true,
+  "jobs": [
+    {
+      "id": 122984852725,
+      "name": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122984852725",
+      "currentStep": null
+    },
+    {
+      "id": 122984853121,
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122984853121",
+      "currentStep": null,
+      "runnerAllocated": true,
+      "nativeFallbackStep": {
+        "number": 7,
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeFallbackActualProof": {
+        "cliArgumentTestPassed": true,
+        "blockedQuicFallbackTestPassed": true,
+        "threeFailedQUICDialsBeforeFallback": true,
+        "loopbackTCPEdgeReached": true,
+        "elapsedSeconds": 18.5
+      }
+    },
+    {
+      "id": 122984853405,
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122984853405",
+      "currentStep": null,
+      "runnerAllocated": true,
+      "nativeFallbackStep": {
+        "number": 7,
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    },
+    {
+      "id": 122984853414,
+      "name": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122984853414",
+      "currentStep": null
+    },
+    {
+      "id": 122984853483,
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122984853483",
+      "currentStep": null,
+      "runnerAllocated": true,
+      "nativeFallbackStep": {
+        "number": 7,
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeFallbackActualProof": {
+        "cliArgumentTestPassed": true,
+        "blockedQuicFallbackTestPassed": true,
+        "threeFailedQUICDialsBeforeFallback": true,
+        "loopbackTCPEdgeReached": true,
+        "elapsedSeconds": 19.5
+      }
+    },
+    {
+      "id": 122984853571,
+      "name": "native (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122984853571",
+      "currentStep": null,
+      "runnerAllocated": true,
+      "nativeFallbackStep": {
+        "number": 7,
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeFallbackActualProof": {
+        "cliArgumentTestPassed": true,
+        "blockedQuicFallbackTestPassed": true,
+        "threeFailedQUICDialsBeforeFallback": true,
+        "loopbackTCPEdgeReached": true,
+        "elapsedSeconds": 17.8
+      }
+    },
+    {
+      "id": 122994007028,
+      "name": "binary-security",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994007028",
+      "currentStep": null
+    },
+    {
+      "id": 122994355487,
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994355487",
+      "currentStep": null
+    },
+    {
+      "id": 122994537928,
+      "name": "publish-site",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994537928",
+      "currentStep": null
+    },
+    {
+      "id": 122994538300,
+      "name": "verify-download / download (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538300",
+      "currentStep": null
+    },
+    {
+      "id": 122994538407,
+      "name": "verify-download / download (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538407",
+      "currentStep": null
+    },
+    {
+      "id": 122994538446,
+      "name": "verify-download / download (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538446",
+      "currentStep": null
+    },
+    {
+      "id": 122994538467,
+      "name": "verify-browser / browser (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538467",
+      "currentStep": null
+    },
+    {
+      "id": 122994538486,
+      "name": "verify-browser / browser (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538486",
+      "currentStep": null
+    },
+    {
+      "id": 122994538604,
+      "name": "verify-browser / browser (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538604",
+      "currentStep": null
+    },
+    {
+      "id": 122994538636,
+      "name": "verify-browser / browser (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538636",
+      "currentStep": null
+    },
+    {
+      "id": 122994538671,
+      "name": "verify-download / download (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538671",
+      "currentStep": null
+    },
+    {
+      "id": 122994538784,
+      "name": "verify-macos-install / install (macos-15, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538784",
+      "currentStep": null
+    },
+    {
+      "id": 122994538849,
+      "name": "verify-macos-install / install (macos-15-intel, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538849",
+      "currentStep": null
+    },
+    {
+      "id": 122994538891,
+      "name": "verify-windows-install / install (windows-2025, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538891",
+      "currentStep": null
+    },
+    {
+      "id": 122994538893,
+      "name": "verify-windows-install / install (windows-11-arm, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122994538893",
+      "currentStep": null
+    },
+    {
+      "id": 122995061280,
+      "name": "verify-update / update (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122995061280",
+      "currentStep": null
+    },
+    {
+      "id": 122995061443,
+      "name": "verify-update / update (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122995061443",
+      "currentStep": null
+    },
+    {
+      "id": 122995061469,
+      "name": "verify-update / update (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122995061469",
+      "currentStep": null
+    },
+    {
+      "id": 122995061472,
+      "name": "verify-update / update (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40736071491/job/122995061472",
+      "currentStep": null
+    }
+  ],
+  "nativeFallbackProofTests": [
+    "TestPinnedBinaryAcceptsProductionArguments",
+    "TestPinnedBinaryFallsBackFromBlockedQUIC"
+  ],
+  "nativeFallbackProofScope": "The pinned official helper tries QUIC, falls back after three unanswered UDP dials, and reaches a loopback TCP edge. This is not a public tunnel or completed TLS registration check.",
+  "privacyScope": "Public workflow/job metadata only; no raw logs, pairing/session keys, public tunnel URLs, machine paths or firewall rule lists."
+}

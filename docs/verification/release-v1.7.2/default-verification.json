@@ -1,0 +1,563 @@
+{
+  "release": "v1.7.2",
+  "releaseSource": "8d2680a6ba788f17020510259c5f627ea8ab8b27",
+  "defaultSource": "3ebe4780989e3b4794b0aafa788c042da74139e3",
+  "checkedAtUTC": "2026-10-28T18:02:23.875760+00:00",
+  "workflowStateCheckedAtUTC": "2026-10-28T18:01:20.210696+00:00",
+  "status": "passed",
+  "workflows": [
+    {
+      "run": 40739449345,
+      "name": "Verify Mac app installation and quarantine removal",
+      "source": "3ebe4780989e3b4794b0aafa788c042da74139e3",
+      "event": "push",
+      "branch": "main",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739449345",
+      "path": ".github/workflows/install-macos.yml",
+      "updatedAt": "2026-10-28T17:52:09Z",
+      "jobs": [
+        {
+          "id": 122996754603,
+          "name": "install (macos-15-intel, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739449345/job/122996754603",
+          "failedSteps": []
+        },
+        {
+          "id": 122996755249,
+          "name": "install (macos-15, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739449345/job/122996755249",
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "run": 40739451015,
+      "name": "Verify Windows single-command app installation",
+      "source": "3ebe4780989e3b4794b0aafa788c042da74139e3",
+      "event": "push",
+      "branch": "main",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451015",
+      "path": ".github/workflows/install-windows.yml",
+      "updatedAt": "2026-10-28T17:59:25Z",
+      "jobs": [
+        {
+          "id": 122996762235,
+          "name": "install (windows-11-arm, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451015/job/122996762235",
+          "failedSteps": []
+        },
+        {
+          "id": 122996762558,
+          "name": "install (windows-2025, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451015/job/122996762558",
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "run": 40739449319,
+      "name": "Verify automatic updates against published native releases",
+      "source": "3ebe4780989e3b4794b0aafa788c042da74139e3",
+      "event": "push",
+      "branch": "main",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739449319",
+      "path": ".github/workflows/update.yml",
+      "updatedAt": "2026-10-28T17:51:00Z",
+      "jobs": [
+        {
+          "id": 122996754592,
+          "name": "update (windows-11-arm, windows, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739449319/job/122996754592",
+          "failedSteps": []
+        },
+        {
+          "id": 122996754948,
+          "name": "update (macos-15, darwin, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739449319/job/122996754948",
+          "failedSteps": []
+        },
+        {
+          "id": 122996755020,
+          "name": "update (windows-2025, windows, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739449319/job/122996755020",
+          "failedSteps": []
+        },
+        {
+          "id": 122996755155,
+          "name": "update (macos-15-intel, darwin, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739449319/job/122996755155",
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "run": 40739451606,
+      "name": "Build and test native targets",
+      "source": "3ebe4780989e3b4794b0aafa788c042da74139e3",
+      "event": "push",
+      "branch": "main",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606",
+      "path": ".github/workflows/build.yml",
+      "updatedAt": "2026-10-28T18:01:01Z",
+      "jobs": [
+        {
+          "id": 122996766120,
+          "name": "native (macos-15-intel, darwin, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/122996766120",
+          "failedSteps": []
+        },
+        {
+          "id": 122996766476,
+          "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/122996766476",
+          "failedSteps": []
+        },
+        {
+          "id": 122996766531,
+          "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/122996766531",
+          "failedSteps": []
+        },
+        {
+          "id": 122996766604,
+          "name": "native (macos-15, darwin, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/122996766604",
+          "failedSteps": []
+        },
+        {
+          "id": 122996766642,
+          "name": "shared",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/122996766642",
+          "failedSteps": []
+        },
+        {
+          "id": 122996767031,
+          "name": "gateway",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/122996767031",
+          "failedSteps": []
+        },
+        {
+          "id": 123002358103,
+          "name": "binary-security",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/123002358103",
+          "failedSteps": []
+        },
+        {
+          "id": 123002718221,
+          "name": "verify-download",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/123002718221",
+          "failedSteps": []
+        },
+        {
+          "id": 123002718323,
+          "name": "verify-windows-install",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/123002718323",
+          "failedSteps": []
+        },
+        {
+          "id": 123002718906,
+          "name": "publish-site",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/123002718906",
+          "failedSteps": []
+        },
+        {
+          "id": 123002719021,
+          "name": "verify-browser",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/123002719021",
+          "failedSteps": []
+        },
+        {
+          "id": 123002719601,
+          "name": "publish",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/123002719601",
+          "failedSteps": []
+        },
+        {
+          "id": 123002719850,
+          "name": "verify-update",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/123002719850",
+          "failedSteps": []
+        },
+        {
+          "id": 123002720251,
+          "name": "verify-macos-install",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40739451606/job/123002720251",
+          "failedSteps": []
+        }
+      ]
+    }
+  ],
+  "requiredFlags": {
+    "macInstaller": [
+      "publishedBootstrapMatchesCheckout",
+      "pipedShellEntryPoint",
+      "archiveChecksumVerified",
+      "defaultGatewayInstallNeedsNoFirewallAuthorization",
+      "defaultInstallFirewallRulesUnchanged",
+      "installationCheckFirewallRulesUnchanged",
+      "installedReleaseBytesMatch",
+      "firewallGlobalSettingsUnchanged",
+      "unrelatedFirewallRulesUnchanged",
+      "firewallTestRulesRemoved",
+      "realBlockedFirewallRulesUnblocked",
+      "actualListeningExecutableAllowed",
+      "existingBlockedBundleRuleUnblocked",
+      "nativeAdminPageLoaded",
+      "nativeAdminWindowVisible",
+      "nativeAdminSingleWindow",
+      "nativeAdminDidNotDispatchExternalBrowser",
+      "quitAppleEventStoppedCore",
+      "defaultPortsClosedAfterQuit",
+      "adminServedOnLoopback",
+      "adminListenerOnly127001",
+      "existingConfigurationUntouched",
+      "gatewayModeDefault",
+      "lanListenerClosedByDefault"
+    ],
+    "windowsInstaller": [
+      "productionDownloads",
+      "publishedBootstrapMatchesCheckout",
+      "publicIRMEntryPointVerified",
+      "rejectedCorruptArchiveTraversalAndWrongArchitecture",
+      "rollbackRestoredPreviousBinaryAndShortcuts",
+      "rollbackRemovedFailedCandidateAndWorkDirectory",
+      "reinstallIsIdempotent",
+      "unsignedWebView2InstallerRejectedWithoutExecution",
+      "installedLocationSupportsAutomaticUpdates",
+      "nativeEscapeReachedEmergencyStop",
+      "nativeEscapeStageDisabled",
+      "runningAppRefusedWithoutReplacement",
+      "shortcutRelaunchReusesRunningApp",
+      "adminQuitWaitedForNativeProcessExit",
+      "configPreserved",
+      "defaultGatewayHasNoLANListener",
+      "firewallRulesUnchanged",
+      "noElevationRequested",
+      "adminQuitClosedServer",
+      "testInstallationAndConfigRemoved"
+    ],
+    "updater": [
+      "actualPublishedBytesInstalled",
+      "productionReleaseDiscovery",
+      "productionArchiveValidation",
+      "productionHelperHandoff",
+      "oldProcessExitedCleanly",
+      "startupAcknowledgedBeforeBackupRemoval",
+      "savedShowPreserved",
+      "hostMediaPreserved",
+      "restartedWithoutAutoplay",
+      "adminPortPreserved",
+      "testDirectoryRemoved",
+      "testProcessCleanupPassed",
+      "startupUpdatePending",
+      "startupReservationRejectedPLAY",
+      "gatewayModeDefault",
+      "lanListenerClosedAfterUpdate"
+    ]
+  },
+  "expectedInstallerReports": 6,
+  "observedInstallerReports": 6,
+  "expectedUpdaterReports": 4,
+  "observedUpdaterReports": 4,
+  "missing": [],
+  "reports": [
+    {
+      "family": "installer",
+      "target": "darwin/arm64",
+      "shell": "sh",
+      "defaultReleaseSelectionVerified": true,
+      "bootstrapMatchesExactWorkflowSource": true,
+      "bootstrapSHA256": "a38ba15a8636e0fb8046da8c1eba482e4220fdbdb1fd29d8186c53fb5c8487ac",
+      "bundleAndCoreFinalFirewallReadbacksAllowed": true,
+      "status": "passed",
+      "release": "v1.7.2",
+      "artifact": {
+        "id": 12839525627,
+        "name": "mac-app-install-arm64",
+        "run": 40739449345,
+        "archiveSHA256": "9ce7031348ce3142f83ff7e937882593a78d068bf315b7089a0e0a3e41fa9dfa",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "6c37306c0e5c4eef9dcb6ce21643e2e212626f3f14557fd152e92de37271a8c3",
+      "installedExecutableSHA256": "2760460f5b7ca4829caec8b2f5c995f80924bfc9ec687118607f332df94ae33f",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "allRequiredFlagsPassed": true,
+      "requiredFlagCount": 24
+    },
+    {
+      "family": "installer",
+      "target": "darwin/amd64",
+      "shell": "sh",
+      "defaultReleaseSelectionVerified": true,
+      "bootstrapMatchesExactWorkflowSource": true,
+      "bootstrapSHA256": "a38ba15a8636e0fb8046da8c1eba482e4220fdbdb1fd29d8186c53fb5c8487ac",
+      "bundleAndCoreFinalFirewallReadbacksAllowed": true,
+      "status": "passed",
+      "release": "v1.7.2",
+      "artifact": {
+        "id": 12838952412,
+        "name": "mac-app-install-amd64",
+        "run": 40739449345,
+        "archiveSHA256": "ca7d19fc8bf1cd00cae9f403f9baeb4a3c37ba3033c61b6a250dca046c83264d",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "27c568aa680f22c8d742565ebfcf5ff9c6ed86c46e854e6ba58cc008e07825b2",
+      "installedExecutableSHA256": "ddb0d8a6cd6f718fb740f20e2be5e1ea17b64c1a2d8372ae23b11a0abe70fe3e",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "allRequiredFlagsPassed": true,
+      "requiredFlagCount": 24
+    },
+    {
+      "family": "installer",
+      "target": "windows/arm64",
+      "shell": "WindowsPowerShell5.1",
+      "defaultReleaseSelectionVerified": true,
+      "bootstrapMatchesExactWorkflowSource": true,
+      "bootstrapSHA256": "461a50f63481ae90b3cbe852d3f2fe4b694b248045a1c9dc1a962e061ddb9692",
+      "completeFirewallSnapshotsEqual": true,
+      "firewallExemptions": 0,
+      "status": "passed",
+      "release": "v1.7.2",
+      "artifact": {
+        "id": 12839366791,
+        "name": "windows-app-install-arm64",
+        "run": 40739451015,
+        "archiveSHA256": "0fb69fe46551280c9d35876e2265ef1d13b423ff6bd81f06d866bad10ba40379",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "dfa15f906cfc6c24b0751360e17145311feabddaaf74b8b50824179f409004b2",
+      "installedExecutableSHA256": "bf0dcd894d4a8555c27c6062e6593bf4e8fe3009658ef180702e47a952c5b5ba",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "allRequiredFlagsPassed": true,
+      "requiredFlagCount": 20
+    },
+    {
+      "family": "installer",
+      "target": "windows/arm64",
+      "shell": "PowerShell7",
+      "defaultReleaseSelectionVerified": true,
+      "bootstrapMatchesExactWorkflowSource": true,
+      "bootstrapSHA256": "461a50f63481ae90b3cbe852d3f2fe4b694b248045a1c9dc1a962e061ddb9692",
+      "completeFirewallSnapshotsEqual": true,
+      "firewallExemptions": 0,
+      "status": "passed",
+      "release": "v1.7.2",
+      "artifact": {
+        "id": 12839366791,
+        "name": "windows-app-install-arm64",
+        "run": 40739451015,
+        "archiveSHA256": "0fb69fe46551280c9d35876e2265ef1d13b423ff6bd81f06d866bad10ba40379",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "3c6bcf802df8fa0218cb1c37ec158bc31beb0f39c8f4848963f99118df94bd0e",
+      "installedExecutableSHA256": "bf0dcd894d4a8555c27c6062e6593bf4e8fe3009658ef180702e47a952c5b5ba",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "allRequiredFlagsPassed": true,
+      "requiredFlagCount": 20
+    },
+    {
+      "family": "installer",
+      "target": "windows/amd64",
+      "shell": "WindowsPowerShell5.1",
+      "defaultReleaseSelectionVerified": true,
+      "bootstrapMatchesExactWorkflowSource": true,
+      "bootstrapSHA256": "461a50f63481ae90b3cbe852d3f2fe4b694b248045a1c9dc1a962e061ddb9692",
+      "completeFirewallSnapshotsEqual": true,
+      "firewallExemptions": 0,
+      "status": "passed",
+      "release": "v1.7.2",
+      "artifact": {
+        "id": 12839141070,
+        "name": "windows-app-install-amd64",
+        "run": 40739451015,
+        "archiveSHA256": "3d6bd1955b8398f40ca799f74fd08759120bd1f3ca97cf7586687ac274a28a29",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "5c702c076e35ab7b89e4f65025aa793dfbaf4a48b2d9f8aeeed4fd799009cbe2",
+      "installedExecutableSHA256": "fcf1590e1b6f24794e0dd35cb2c21c282a81a1043297926fff1acbe70c64ff95",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "allRequiredFlagsPassed": true,
+      "requiredFlagCount": 20
+    },
+    {
+      "family": "installer",
+      "target": "windows/amd64",
+      "shell": "PowerShell7",
+      "defaultReleaseSelectionVerified": true,
+      "bootstrapMatchesExactWorkflowSource": true,
+      "bootstrapSHA256": "461a50f63481ae90b3cbe852d3f2fe4b694b248045a1c9dc1a962e061ddb9692",
+      "completeFirewallSnapshotsEqual": true,
+      "firewallExemptions": 0,
+      "status": "passed",
+      "release": "v1.7.2",
+      "artifact": {
+        "id": 12839141070,
+        "name": "windows-app-install-amd64",
+        "run": 40739451015,
+        "archiveSHA256": "3d6bd1955b8398f40ca799f74fd08759120bd1f3ca97cf7586687ac274a28a29",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "35a6a6fe3ffec848b8a07b942f7e7427b75845ac7c69887a5368db6c08410c9d",
+      "installedExecutableSHA256": "fcf1590e1b6f24794e0dd35cb2c21c282a81a1043297926fff1acbe70c64ff95",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "allRequiredFlagsPassed": true,
+      "requiredFlagCount": 20
+    },
+    {
+      "family": "updater",
+      "target": "darwin/arm64",
+      "installedVersionOutput": "Smart Stage v1.7.2 (8d2680a6ba78), go1.26.10, darwin/arm64",
+      "fixtureSource": "8d2680a6ba788f17020510259c5f627ea8ab8b27",
+      "fixtureArchiveSHA256": "79a5b0a6963d8def877fc2027d6cbdaa5f01f6f69db79ea6f695361a95840c5f",
+      "fixtureExecutableSHA256": "1d99e69189c6919335b7a06c3ca3d3e2c605f9d911fe4a97f83092cbcb999eca",
+      "updateHTTPInstallRequestsSent": 0,
+      "status": "passed",
+      "release": "v1.7.2",
+      "artifact": {
+        "id": 12838552570,
+        "name": "auto-update-darwin-arm64",
+        "run": 40739449319,
+        "archiveSHA256": "5029f697a4d87e4806ec7ab91d77d7b8c9b2242e3ddbdf9b7fb072aae482a6b7",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "cdcaa856c32259984c9a2d0802d3adf568359ca63244d74355712b7c099bdfba",
+      "installedExecutableSHA256": "2760460f5b7ca4829caec8b2f5c995f80924bfc9ec687118607f332df94ae33f",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "allRequiredFlagsPassed": true,
+      "requiredFlagCount": 16
+    },
+    {
+      "family": "updater",
+      "target": "darwin/amd64",
+      "installedVersionOutput": "Smart Stage v1.7.2 (8d2680a6ba78), go1.26.10, darwin/amd64",
+      "fixtureSource": "8d2680a6ba788f17020510259c5f627ea8ab8b27",
+      "fixtureArchiveSHA256": "4ef92c3320b04933b8f5a0e6ea94665777e391df881362aec060938324f9ed56",
+      "fixtureExecutableSHA256": "393a497e8e7e4c6aa1aca55f73e9655eb13beede4600821d0ebbf8e896cd6bed",
+      "updateHTTPInstallRequestsSent": 0,
+      "status": "passed",
+      "release": "v1.7.2",
+      "artifact": {
+        "id": 12838966207,
+        "name": "auto-update-darwin-amd64",
+        "run": 40739449319,
+        "archiveSHA256": "f787e8ba41757cc853e3eec798a6849f7868148e29384b4ceb22c1621325cdea",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "6e92ad14c27d2a2d3b6e944287e025715039488b3d43585fa50578fe6f11571b",
+      "installedExecutableSHA256": "ddb0d8a6cd6f718fb740f20e2be5e1ea17b64c1a2d8372ae23b11a0abe70fe3e",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "allRequiredFlagsPassed": true,
+      "requiredFlagCount": 16
+    },
+    {
+      "family": "updater",
+      "target": "windows/arm64",
+      "installedVersionOutput": "Smart Stage v1.7.2 (8d2680a6ba78), go1.26.10, windows/arm64",
+      "fixtureSource": "8d2680a6ba788f17020510259c5f627ea8ab8b27",
+      "fixtureArchiveSHA256": "d0b0c90846307a9d6ea5cd79a7166c8eaefe906f7ce7df052544f14248b62d6a",
+      "fixtureExecutableSHA256": "7c49ffb75be69544394f349b40aeb787a3548ab0cb6441dde37ec23b9b8a99bc",
+      "updateHTTPInstallRequestsSent": 0,
+      "status": "passed",
+      "release": "v1.7.2",
+      "artifact": {
+        "id": 12837689092,
+        "name": "auto-update-windows-arm64",
+        "run": 40739449319,
+        "archiveSHA256": "b278567fca626950c7f521c4c49ef755af7f38dcc9d84faf5bb58d4638e71e72",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "bb55ddbeda9a3eea882b67657fa8c1ff52fbb23ed8d8cf1ef1d83944c259360d",
+      "installedExecutableSHA256": "bf0dcd894d4a8555c27c6062e6593bf4e8fe3009658ef180702e47a952c5b5ba",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "allRequiredFlagsPassed": true,
+      "requiredFlagCount": 16
+    },
+    {
+      "family": "updater",
+      "target": "windows/amd64",
+      "installedVersionOutput": "Smart Stage v1.7.2 (8d2680a6ba78), go1.26.10, windows/amd64",
+      "fixtureSource": "8d2680a6ba788f17020510259c5f627ea8ab8b27",
+      "fixtureArchiveSHA256": "1815139647b70fc5ddb7df67b7168c25840af711d2424fa83a9d6a034d6532da",
+      "fixtureExecutableSHA256": "cd31ccef8eddca77d9c8fd4db6c573de3abc454e40fe1f74be842910ed4b2275",
+      "updateHTTPInstallRequestsSent": 0,
+      "status": "passed",
+      "release": "v1.7.2",
+      "artifact": {
+        "id": 12839565517,
+        "name": "auto-update-windows-amd64",
+        "run": 40739449319,
+        "archiveSHA256": "4cd6fceb196d87086639e30df848b12b5ddb0f7de192f2a83b4109a49e640c9f",
+        "githubDigestAndSizeVerified": true
+      },
+      "rawReportSHA256": "894965551b219f108ab60dc8b3eef63b66b0374587db0a657aa3b08a13f54304",
+      "installedExecutableSHA256": "fcf1590e1b6f24794e0dd35cb2c21c282a81a1043297926fff1acbe70c64ff95",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "allRequiredFlagsPassed": true,
+      "requiredFlagCount": 16
+    }
+  ],
+  "independentPublicAuditSHA256": "e62057b2a90783a36794ebd619aeaa8fb35801d5864eb3e839df54d746b7a708",
+  "allDefaultWorkflowsAndTenReportsPassed": true,
+  "scope": "GET-only verification. Raw machine paths, firewall rule lists and logs remain private; strict full Windows firewall comparisons have no exemptions. Full main-build workflow completion is also required.",
+  "privacy": {
+    "checked": true,
+    "strictWhitelistedReportFields": true,
+    "rawMachinePathsIncluded": false,
+    "firewallRuleListsIncluded": false,
+    "privateSessionURLsIncluded": false,
+    "sessionSecretsIncluded": false,
+    "publicURLsRestrictedToGitHubWorkflowEvidence": true
+  }
+}

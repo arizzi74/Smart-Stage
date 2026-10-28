@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "oldHTTPBoundaryPrecedesRestoredDOM": true,
+  "priorLabelRenderDetachmentRejected": true,
+  "delayedApplicationBlocksFixedBoundary": true,
+  "fixedBoundaryWaitsForOriginalCueOrderAndIdle": true,
+  "strictVisibleAccessibleOutputAndSavedVolumePass": true,
+  "exactOriginalMinus46AssertionReproduced": false,
+  "scope": "Controlled browser-only reload application delay; no product changes or native/public tunnel claims."
+}

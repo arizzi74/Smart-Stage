@@ -25,8 +25,8 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.7.2
   forwards only a separate loopback command listener. Its paired WebSocket
   status stream checks origin/session/CSRF and closes with the helper on mode
   change or Quit. Admin stays local and existing gateway/LAN SSE remains usable.
-  Automatic transport selection reaches HTTP/2 fallback before the startup guard
-  on blocked-QUIC paths. A safe connection-timeout notice persists during
+  Automatic transport selection bounds failed QUIC retries so HTTP/2 fallback
+  can run before the startup guard expires. A safe connection-timeout notice persists during
   automatic retries and clears on connection or an explicit reconnect. TLS
   verification remains enabled; the network must allow tunnel traffic on 7844.
 
@@ -198,6 +198,17 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.7.2
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.7.2 is source `8d2680a6ba788f17020510259c5f627ea8ab8b27`. All 25 tagged
+release jobs passed, including native builds/security, public downloads, browser
+controls, installers and actual startup updates on all four desktop targets. All
+50 public asset digests, eight checksum pairs and the website manifest passed.
+All four installer-default/build/update workflows and ten default reports passed.
+The pinned helper demonstrated failed-QUIC-to-HTTP/2 fallback on both Macs and
+Windows AMD64; a separate Linux ARM64 public tunnel passed HTTPS pairing,
+WebSocket status, authenticated STOP and cleanup with synthetic playback. Earlier
+failures, the unpublished v1.7.1 tag and verifier-only recovery are retained in the
+[v1.7.2 verification record](docs/verification/release-v1.7.2/README.md).
 
 Version 1.7.0 is source `18108546989e247d817f7093825684892d3bcbc7`. Seven candidate
 gates and all 25 tagged release jobs passed. All 50 public asset digests, eight

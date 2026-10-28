@@ -1,0 +1,147 @@
+{
+  "workflow": {
+    "id": 40724577750,
+    "name": "Build and test native targets",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40724577750",
+    "source": "9d2aa59cd417a8fc531d95235b823171f08747ba",
+    "branch": "main",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "failure",
+    "attempt": 1,
+    "completedAtUTC": "2026-10-28T16:35:47Z"
+  },
+  "checkedAtUTC": "2026-10-28T16:46:20.418Z",
+  "requiredGateCount": 7,
+  "passedRequiredGates": 5,
+  "jobs": [
+    {
+      "id": 122944259850,
+      "name": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40724577750/job/122944259850",
+      "nativeFallbackStep": null
+    },
+    {
+      "id": 122944260150,
+      "name": "native (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40724577750/job/122944260150",
+      "nativeFallbackStep": {
+        "conclusion": "success",
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "number": 7,
+        "status": "completed"
+      },
+      "nativeFallbackActualProof": {
+        "cliArgumentTestPassed": true,
+        "blockedQuicFallbackTestPassed": true,
+        "threeFailedQUICDialsBeforeFallback": true,
+        "loopbackTCPEdgeReached": true,
+        "elapsedSeconds": 15.8
+      }
+    },
+    {
+      "id": 122944260176,
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40724577750/job/122944260176",
+      "nativeFallbackStep": {
+        "conclusion": "success",
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "number": 7,
+        "status": "completed"
+      },
+      "nativeFallbackActualProof": {
+        "cliArgumentTestPassed": true,
+        "blockedQuicFallbackTestPassed": true,
+        "threeFailedQUICDialsBeforeFallback": true,
+        "loopbackTCPEdgeReached": true,
+        "elapsedSeconds": 19.2
+      }
+    },
+    {
+      "id": 122944260282,
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40724577750/job/122944260282",
+      "nativeFallbackStep": {
+        "conclusion": "skipped",
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "number": 7,
+        "status": "completed"
+      }
+    },
+    {
+      "id": 122944260353,
+      "name": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40724577750/job/122944260353",
+      "nativeFallbackStep": null
+    },
+    {
+      "id": 122944260511,
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40724577750/job/122944260511",
+      "nativeFallbackStep": {
+        "conclusion": "success",
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "number": 7,
+        "status": "completed"
+      },
+      "nativeFallbackActualProof": {
+        "cliArgumentTestPassed": true,
+        "blockedQuicFallbackTestPassed": true,
+        "threeFailedQUICDialsBeforeFallback": true,
+        "loopbackTCPEdgeReached": true,
+        "elapsedSeconds": 22.7
+      }
+    },
+    {
+      "id": 122954648605,
+      "name": "binary-security",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40724577750/job/122954648605",
+      "nativeFallbackStep": null
+    }
+  ],
+  "nativeFallbackProofTests": [
+    "TestPinnedBinaryAcceptsProductionArguments",
+    "TestPinnedBinaryFallsBackFromBlockedQUIC"
+  ],
+  "nativeFallbackProofScope": "The pinned official helper must try QUIC, fall back after three unanswered UDP dials, and reach a loopback TCP edge. This is not a public tunnel or completed TLS registration check.",
+  "privacyScope": "Public workflow/job metadata, whitelisted fixture basename and a native HRESULT/reason prefix only; no raw logs, pairing/session keys, public tunnel URLs, machine paths or firewall rule lists.",
+  "allRequiredGatesPassed": false,
+  "failure": {
+    "jobID": 122944260282,
+    "step": "Exercise Admin and remote controls through the built native host",
+    "verifier": "scripts/browser-native-smoke.cjs",
+    "originalError": "Native cue revalidation did not finish before saving Stage settings",
+    "state": {
+      "validationJobRunning": false,
+      "position": 3,
+      "fixture": "video-aac-1080p.mp4",
+      "status": "unsupported",
+      "nativeHRESULT": "0xc00d3e85",
+      "redactedReasonPrefix": "Rewind native inspection track (0xc00d3e85): The request is invalid because Shutdown() has",
+      "reasonEvidence": "Native failure screenshot; full trailing reason was not captured in result JSON.",
+      "otherCueStatuses": [
+        "ready",
+        "ready",
+        "ready",
+        "ready",
+        "ready"
+      ]
+    },
+    "scope": "The browser scenario explicitly selects LAN. The production Cloudflare helper is unavailable on Windows ARM64 and was not invoked in this scenario.",
+    "diagnosis": "The terminal native inspection failure remained unresolved in this candidate. No native fix, retry, rerun or relaxed readiness requirement was used to produce this evidence."
+  }
+}

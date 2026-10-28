@@ -1,0 +1,160 @@
+{
+  "workflow": {
+    "id": 40729233056,
+    "name": "Build and test native targets",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40729233056",
+    "source": "95feb466bc1935c8ea05c0c53fba19d99a006078",
+    "branch": "main",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "failure",
+    "attempt": 1,
+    "completedAtUTC": "2026-10-28T17:05:52Z"
+  },
+  "checkedAtUTC": "2026-10-28T17:06:34.809Z",
+  "requiredGateCount": 7,
+  "passedRequiredGates": 5,
+  "allRequiredGatesPassed": false,
+  "productionCodeUnchangedFrom": "9d2aa59cd417a8fc531d95235b823171f08747ba",
+  "changeScope": "Verifier-only fail-fast diagnostics in scripts/browser-native-smoke.cjs; original 90-second deadline and all-cues-ready gate retained.",
+  "jobs": [
+    {
+      "id": 122960698153,
+      "name": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40729233056/job/122960698153",
+      "currentStep": null,
+      "nativeFallbackStep": null,
+      "nativeBrowserStep": null
+    },
+    {
+      "id": 122960698282,
+      "name": "native (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40729233056/job/122960698282",
+      "currentStep": null,
+      "nativeFallbackStep": null,
+      "nativeBrowserStep": null
+    },
+    {
+      "id": 122960698462,
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40729233056/job/122960698462",
+      "currentStep": null,
+      "nativeFallbackStep": {
+        "number": 7,
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeFallbackActualProof": {
+        "cliArgumentTestPassed": true,
+        "blockedQuicFallbackTestPassed": true,
+        "threeFailedQUICDialsBeforeFallback": true,
+        "loopbackTCPEdgeReached": true,
+        "elapsedSeconds": 19.7
+      }
+    },
+    {
+      "id": 122960698466,
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40729233056/job/122960698466",
+      "currentStep": null,
+      "nativeFallbackStep": {
+        "number": 7,
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeFallbackActualProof": {
+        "cliArgumentTestPassed": true,
+        "blockedQuicFallbackTestPassed": true,
+        "threeFailedQUICDialsBeforeFallback": true,
+        "loopbackTCPEdgeReached": true,
+        "elapsedSeconds": 20
+      }
+    },
+    {
+      "id": 122960698519,
+      "name": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40729233056/job/122960698519",
+      "currentStep": null,
+      "nativeFallbackStep": null,
+      "nativeBrowserStep": null
+    },
+    {
+      "id": 122960698605,
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40729233056/job/122960698605",
+      "currentStep": null,
+      "nativeFallbackStep": {
+        "number": 7,
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "success"
+      }
+    },
+    {
+      "id": 122971892637,
+      "name": "binary-security",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40729233056/job/122971892637",
+      "currentStep": null,
+      "nativeFallbackStep": null,
+      "nativeBrowserStep": null
+    }
+  ],
+  "earlierCandidateReceipt": "earlier-candidate-workflow.json",
+  "privacyScope": "Public workflow/job metadata and hosted-runner cancellation annotations only; no raw logs, pairing/session keys, public tunnel URLs, machine paths or firewall rule lists.",
+  "nativeFallbackProofTests": [
+    "TestPinnedBinaryAcceptsProductionArguments",
+    "TestPinnedBinaryFallsBackFromBlockedQUIC"
+  ],
+  "nativeFallbackProofScope": "The pinned official helper tries QUIC, falls back after three unanswered UDP dials, and reaches a loopback TCP edge. This is not a public tunnel or completed TLS registration check.",
+  "infrastructureFailure": {
+    "jobID": 122960698282,
+    "jobName": "native (macos-15, darwin, arm64)",
+    "conclusion": "cancelled",
+    "runnerAssigned": false,
+    "stepsRun": 0,
+    "annotation": "The job was not acquired by Runner of type hosted even after multiple attempts",
+    "capacityNotice": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+    "dependentSkippedJobID": 122971892637
+  },
+  "nativeReadinessResult": {
+    "windowsARM64JobID": 122960698605,
+    "builtHostBrowserStep": "success",
+    "productionCodeUnchangedFrom": "9d2aa59cd417a8fc531d95235b823171f08747ba",
+    "readinessRequirement": "Every cue ready and validation job stopped within the original 90-second deadline.",
+    "limitation": "The earlier terminal MF_E_SHUTDOWN native inspection failure remains preserved and unresolved; this candidate pass does not establish a native fix."
+  }
+}

@@ -1,0 +1,221 @@
+{
+  "release": "v1.7.1",
+  "workflow": {
+    "id": 40733068153,
+    "name": "Build and test native targets",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153",
+    "source": "95feb466bc1935c8ea05c0c53fba19d99a006078",
+    "ref": "v1.7.1",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "failure",
+    "attempt": 1,
+    "completedAtUTC": "2026-10-28T17:25:25Z"
+  },
+  "checkedAtUTC": "2026-10-28T17:25:39.488Z",
+  "expectedJobs": 25,
+  "passedJobs": 4,
+  "allExpectedJobsPassed": false,
+  "jobs": [
+    {
+      "id": 122974254709,
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122974254709",
+      "currentStep": null,
+      "runnerAllocated": true,
+      "nativeFallbackStep": {
+        "number": 7,
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeFallbackActualProof": {
+        "cliArgumentTestPassed": true,
+        "blockedQuicFallbackTestPassed": true,
+        "threeFailedQUICDialsBeforeFallback": true,
+        "loopbackTCPEdgeReached": true,
+        "elapsedSeconds": 21
+      }
+    },
+    {
+      "id": 122974254720,
+      "name": "native (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122974254720",
+      "currentStep": null,
+      "runnerAllocated": true,
+      "nativeFallbackStep": {
+        "number": 7,
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeFallbackActualProof": {
+        "cliArgumentTestPassed": true,
+        "blockedQuicFallbackTestPassed": true,
+        "threeFailedQUICDialsBeforeFallback": true,
+        "loopbackTCPEdgeReached": true,
+        "elapsedSeconds": 17
+      }
+    },
+    {
+      "id": 122974254805,
+      "name": "gateway",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122974254805",
+      "currentStep": null
+    },
+    {
+      "id": 122974254840,
+      "name": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122974254840",
+      "currentStep": null
+    },
+    {
+      "id": 122974254902,
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122974254902",
+      "currentStep": null,
+      "runnerAllocated": true,
+      "nativeFallbackStep": {
+        "number": 7,
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "status": "completed",
+        "conclusion": "skipped"
+      }
+    },
+    {
+      "id": 122974255823,
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122974255823",
+      "currentStep": null,
+      "runnerAllocated": true,
+      "nativeFallbackStep": {
+        "number": 7,
+        "name": "Verify the official native Cloudflare helper and launch arguments",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeFallbackActualProof": {
+        "cliArgumentTestPassed": true,
+        "blockedQuicFallbackTestPassed": true,
+        "threeFailedQUICDialsBeforeFallback": true,
+        "loopbackTCPEdgeReached": true,
+        "elapsedSeconds": 22.1
+      }
+    },
+    {
+      "id": 122983043737,
+      "name": "binary-security",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122983043737",
+      "currentStep": null
+    },
+    {
+      "id": 122983044869,
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122983044869",
+      "currentStep": null
+    },
+    {
+      "id": 122983045037,
+      "name": "verify-macos-install",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122983045037",
+      "currentStep": null
+    },
+    {
+      "id": 122983045435,
+      "name": "verify-download",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122983045435",
+      "currentStep": null
+    },
+    {
+      "id": 122983045598,
+      "name": "publish-site",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122983045598",
+      "currentStep": null
+    },
+    {
+      "id": 122983045782,
+      "name": "verify-windows-install",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122983045782",
+      "currentStep": null
+    },
+    {
+      "id": 122983045879,
+      "name": "verify-browser",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122983045879",
+      "currentStep": null
+    },
+    {
+      "id": 122983046800,
+      "name": "verify-update",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/40733068153/job/122983046800",
+      "currentStep": null
+    }
+  ],
+  "candidateReceipts": [
+    "earlier-candidate-workflow.json",
+    "candidate-workflow.json"
+  ],
+  "nativeFallbackProofTests": [
+    "TestPinnedBinaryAcceptsProductionArguments",
+    "TestPinnedBinaryFallsBackFromBlockedQUIC"
+  ],
+  "nativeFallbackProofScope": "The pinned official helper tries QUIC, falls back after three unanswered UDP dials, and reaches a loopback TCP edge. This is not a public tunnel or completed TLS registration check.",
+  "privacyScope": "Public workflow/job metadata only; no raw logs, pairing/session keys, public tunnel URLs, machine paths or firewall rule lists.",
+  "failures": [
+    {
+      "jobID": 122974254805,
+      "name": "gateway",
+      "stepNumber": 9,
+      "step": "Verify bilingual Admin, preserved edits and independent remote language",
+      "verifier": "scripts/browser-smoke.cjs",
+      "assertionLine": 2160,
+      "callerLine": 2358,
+      "error": "The signed track level is visible as well as exposed to assistive technology",
+      "actual": "-46%",
+      "expected": "0%",
+      "scope": "Track-volume assertion after restoring original cue order/reloading playlist and setting the range to 50. Earlier gateway HTTP/WebSocket checks passed.",
+      "diagnosis": "An intervening render between the successful browser readiness predicate and the separate output text read was observed. Fixture synchronization versus product state handling remains unproven; no retry or assertion change."
+    },
+    {
+      "jobID": 122974255823,
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "stepNumber": 11,
+      "step": "Native executable startup",
+      "verifier": "scripts/native-scene-darwin.m",
+      "assertionLine": 261,
+      "error": "Video-to-image failed to retain moving video or release its decoder",
+      "scope": "Existing native scene crossfade/decoder-disposal check. The official Cloudflare helper tests passed beforehand.",
+      "diagnosis": "The error combines four predicates and does not identify the failed one. No native fix, retry or relaxed check claimed."
+    }
+  ],
+  "publicationBlocked": true,
+  "jobExpansionNote": "The six initial jobs completed with gateway and Mac Intel native failures. Binary security, publication and all downstream reusable release verifiers were skipped; no published release or expanded post-publication matrix exists for this failed run."
+}

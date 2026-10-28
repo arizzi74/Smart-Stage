@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.7.0 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.7.2 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,32 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.7.2: Cloudflare transport fallback and retry diagnostics
+
+Source `8d2680a6ba788f17020510259c5f627ea8ab8b27` passed all 25 tagged
+release jobs. [The verification record](verification/release-v1.7.2/README.md)
+includes public asset/manifest checks, native installer and actual startup update
+receipts, local race/vet checks, and earlier failed or capacity-cancelled runs.
+All four current-default workflows and ten installer/updater reports also passed;
+the three public bootstrap scripts select v1.7.2.
+The v1.7.1 tag remains unpublished; verifier recovery changed no playback code
+and retained the original timing bounds and result assertions.
+
+The helper still prefers QUIC, but bounds both retry counters so repeated failed
+QUIC connections can reach HTTP/2 before the existing startup guard expires.
+The real pinned helper demonstrated three failed UDP dials followed by HTTP/2
+selection and TCP acceptance on Linux ARM64, both Mac architectures and Windows
+AMD64. This transport fixture does not complete an edge TLS handshake; a separate
+real public tunnel test on Linux ARM64 passed HTTPS pairing, WebSocket status,
+authenticated STOP and cleanup with synthetic playback.
+
+Admin retains a fixed English/Italian timeout notice through automatic retry
+phases and clears it on connection or explicit reconnect. TLS verification and
+loopback-only Admin remain unchanged. Other setup or network failures can still
+exhaust the 90-second startup deadline. The Cloudflare helper remains unavailable
+on Windows ARM64; gateway and LAN still work there. Physical output and
+clean-machine acceptance remain separate open checks.
 
 ### Version 1.7.0: Cloudflare Quick Tunnels and WebSocket control
 

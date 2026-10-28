@@ -1,0 +1,36 @@
+{
+  "source": "9d2aa59cd417a8fc531d95235b823171f08747ba",
+  "go": "go1.26.10",
+  "goRaceAllPackagesPassed": true,
+  "goVetAllPackagesPassed": true,
+  "workflowLintPassed": true,
+  "realCloudflare": {
+    "passed": true,
+    "platform": "linux/arm64",
+    "test": "TestCloudflareLiveTunnel",
+    "seconds": 10.47,
+    "publicDNSSeconds": 0.9,
+    "defaultSystemResolver": true,
+    "HTTPSPairing": true,
+    "privateRoutesRejected": true,
+    "webSocketStatus": true,
+    "authenticatedHTTPStop": true,
+    "helperAndOriginCleanup": true,
+    "playback": "synthetic"
+  },
+  "limits": [
+    "No physical speaker/projector test was performed.",
+    "The live public tunnel test used Linux ARM64 with synthetic playback.",
+    "The user separately confirmed HTTP2 registration on the affected Apple Silicon Mac; this does not prove which network component caused failed TLS handshakes."
+  ],
+  "diagnosticTests": {
+    "typedTimeoutPersistsDuringRetryPhases": true,
+    "connectionAndExplicitResetClearFailure": true,
+    "cancellationDoesNotPublishFailure": true,
+    "rawHelperErrorRemainsPrivate": true,
+    "italianAndEnglishBrowserCoverage": true,
+    "gatewayDraftPreserved": true,
+    "staleQRCodeRemoved": true,
+    "localAdminSSEAndStopAvailable": true
+  }
+}

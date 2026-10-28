@@ -1,0 +1,18 @@
+{
+  "implementationSource": "9d2aa59cd417a8fc531d95235b823171f08747ba",
+  "releaseSource": "8d2680a6ba788f17020510259c5f627ea8ab8b27",
+  "changedFiles": [
+    "docs/release-notes.md",
+    "scripts/browser-native-smoke.cjs",
+    "scripts/browser-smoke.cjs",
+    "scripts/native-scene-darwin.m"
+  ],
+  "productionCodeIdentical": true,
+  "changes": "Release notes and verifier diagnostics/synchronization only; no native playback repair, deadline increase or readiness exemption.",
+  "failedUnpublishedTag": "v1.7.1",
+  "failedTagSource": "95feb466bc1935c8ea05c0c53fba19d99a006078",
+  "verifierRecovery": {
+    "gateway": "Wait for old rows to detach, exact original cue order, and idle playlist before the separate volume-reset scenario. Strict visible/accessibility/saved-value assertions are unchanged.",
+    "macScene": "Observe the same video player advancing before measuring continued motion during the existing 0.5-second crossfade. All four phase-15 predicates and global 85-second bound remain."
+  }
+}

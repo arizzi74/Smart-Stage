@@ -1,0 +1,56 @@
+{
+  "status": "reviewed",
+  "release": "v1.7.2",
+  "source": "8d2680a6ba788f17020510259c5f627ea8ab8b27",
+  "recordedAtUTC": "2026-10-28T17:30:07.195108+00:00",
+  "file": "scripts/native-scene-darwin.m",
+  "fileSHA256": "d1173833a44e58ef9b8b03f7e44f2144423288cab701ea0068725755e257d292",
+  "priorFailedTag": "v1.7.1",
+  "priorFailedRun": 40733068153,
+  "priorFailedJob": 122974255823,
+  "evidence": "The prior job recorded a combined phase15 failure without individual predicate values. Source review identified that phase14 entered the transition before observing advancement of the exact native player clock; the particular failed phase15 predicate cannot be inferred from that log.",
+  "precondition": {
+    "sameSceneOwnerRequired": true,
+    "sameAVPlayerRequired": true,
+    "laterTimerSampleRequired": true,
+    "currentTimeControlStatusPlayingRequired": true,
+    "minimumObservedClockAdvanceSeconds": 0.05,
+    "usesExistingGlobalDeadline": true
+  },
+  "unchangedConstraints": {
+    "globalTimeoutSeconds": 85,
+    "audioFadeSeconds": 0.5,
+    "visualFadeSeconds": 0.5,
+    "overlapOpacityLowerExclusive": 0.05,
+    "overlapOpacityUpperExclusive": 0.95,
+    "outgoingMotionAdvanceSeconds": 0.03,
+    "phase15Predicates": [
+      "visual overlap observed",
+      "outgoing motion observed during overlap",
+      "outgoing owner disposed",
+      "outgoing player reference released"
+    ],
+    "allFourPredicatesRemainRequired": true,
+    "noAssertionsSkippedOrWeakened": true,
+    "productionRendererByteIdenticalToPriorTaggedSource": true
+  },
+  "diagnostics": {
+    "phase14TimeoutReportsPreconditionState": true,
+    "phase15FailureReportsEachPredicate": true,
+    "boundedNumericFieldsOnly": true,
+    "machinePathsObjectAddressesAndDeviceIdentifiersIncluded": false
+  },
+  "localValidation": {
+    "sourceConstraintReviewPassed": true,
+    "diffWhitespaceCheckPreviouslyPassed": true,
+    "nativeMacExecutionPerformed": false,
+    "nativeMacCompilationPerformed": false,
+    "hostPlatform": "linux/arm64",
+    "AppleSDKAvailable": false
+  },
+  "nativeVerification": {
+    "taggedRun": 40736071491,
+    "resultAsserted": false,
+    "scope": "Native Mac execution is delegated to the actual tagged macOS CI jobs; this receipt does not claim their result."
+  }
+}

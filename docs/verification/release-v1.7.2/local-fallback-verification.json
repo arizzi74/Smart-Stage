@@ -1,0 +1,62 @@
+{
+  "status": "passed",
+  "source": "9d2aa59cd417a8fc531d95235b823171f08747ba",
+  "recordedAtUTC": "2026-10-28T16:20:34.800284+00:00",
+  "scope": "Local verification of helper changes immediately before the candidate commit; the three changed helper/test files were subsequently confirmed byte-identical to this commit. Candidate workflow results are recorded separately.",
+  "candidateRun": 40724577750,
+  "candidateWorkflowConclusionAsserted": false,
+  "testedFileSHA256": {
+    "internal/cloudflared/run.go": "5699046988b22b919b8fcb52e15f9283414587ecda43265c8d07b48b354b3722",
+    "internal/cloudflared/cloudflared_test.go": "42ce6fc4daa16fb92c9e5dcb506d04ceaf2d8dc80627c5966d221fa7cf8f7316",
+    "internal/cloudflared/native_fallback_test.go": "46c171220f0227afc4c03548d6383ec350249a68703b7a680a2f1212dd26cd16"
+  },
+  "helper": {
+    "version": "2026.10.5",
+    "platform": "linux/arm64",
+    "officialAsset": "cloudflared-linux-arm64",
+    "sha256": "72e0d05a67e09da87cf495e409a28c3cc5994dd23fc66a982eebea6a55923b7d",
+    "bytes": 37662975,
+    "officialPinnedSHA256AndSizeVerified": true,
+    "downloadAndPreparationPathExercised": true,
+    "nativeCLIProductionArgumentsAccepted": true
+  },
+  "fallback": {
+    "test": "TestPinnedBinaryFallsBackFromBlockedQUIC",
+    "raceDetector": true,
+    "elapsedSecondsToTCPAcceptance": 21.1,
+    "initialProtocol": "quic",
+    "failedQUICDials": 3,
+    "fallbackProtocol": "http2",
+    "realHelperLogsObserved": true,
+    "realUDPPacketsObserved": true,
+    "loopbackTCPAcceptance": true,
+    "provisioningRequests": 1,
+    "syntheticProvisionerOriginAndEdgesOnLoopback": true,
+    "publicTunnelProvisioned": false,
+    "TLSHandshakeCompleted": false,
+    "CloudflareEdgeRegistrationVerified": false,
+    "hostFirewallModified": false
+  },
+  "productionPolicy": {
+    "protocol": "auto",
+    "retries": 2,
+    "maxEdgeAddressRetries": 2,
+    "startupTimeoutSeconds": 90,
+    "originSecurityAndGuardianLifecycleUnchanged": true
+  },
+  "checks": {
+    "helperRaceTestsPassed": true,
+    "helperVetPassed": true,
+    "crossCompileTargets": [
+      "darwin/arm64",
+      "windows/arm64"
+    ],
+    "crossCompilePassed": true,
+    "downloadModeNativeArgumentAndFallbackTestsPassed": true
+  },
+  "limitations": [
+    "TCP acceptance verifies an attempted HTTP2 transport after blocked UDP; the loopback fixture closes the socket before TLS handshake or edge registration.",
+    "The helper may perform normal upstream feature/discovery DNS; provisioning, synthetic origin and tested edge transport endpoints are loopback.",
+    "This receipt does not assert public pairing, WebSocket operation or physical playback."
+  ]
+}
