@@ -517,7 +517,7 @@ def main():
             default_firewall_apps = firewall_apps()
             first_install = install(script, destination, None if args.version == default_version else args.version)
             if gateway_default(args.version):
-                assert "Public gateway mode needs no incoming-connection firewall rule" in first_install.stdout
+                assert "Cloudflare and public gateway modes need no incoming-connection firewall rule" in first_install.stdout
                 report["defaultGatewayInstallNeedsNoFirewallAuthorization"] = True
             else:
                 assert "Firewall setup skipped (SMARTSTAGE_SKIP_FIREWALL=1)" in first_install.stdout
