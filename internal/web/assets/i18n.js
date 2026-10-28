@@ -493,6 +493,7 @@
   "Updates are checked automatically.": "La ricerca degli aggiornamenti è automatica.",
   "Development builds cannot update automatically. Install an official release first.": "Le versioni di sviluppo non possono aggiornarsi automaticamente. Installa prima una versione ufficiale.",
   "Checking GitHub for a newer release…": "Ricerca di una versione più recente su GitHub…",
+  "Checking the Smart Stage website for a newer release…": "Ricerca di una versione più recente sul sito di Smart Stage…",
   "Checking for a startup update before enabling playback…": "Ricerca di un aggiornamento all’avvio prima di abilitare la riproduzione…",
   "Smart Stage is up to date.": "Smart Stage è aggiornato.",
   "A new release is available. Stop playback and turn off the stage to install it.": "È disponibile una nuova versione. Ferma la riproduzione e disattiva la scena per installarla.",

@@ -75,14 +75,20 @@ run without a terminal. Application logs are in `%APPDATA%\SmartStage\smartstage
 ## Automatic updates
 
 Starting with preview 10, Smart Stage **updates automatically when it starts**.
-It checks GitHub, downloads the correct version for your computer, verifies the
-checksum, installs it and restarts. The Mac and Windows apps reopen their Admin
+It checks the Smart Stage website for a newer version. Only when an update is
+available does it download the matching archive and checksum from GitHub, verify
+the download, install it and restart. Routine checks need no GitHub account or
+token and do not use the GitHub API's shared-IP allowance. The Mac and Windows apps reopen their Admin
 window. The standalone Mac executable reconnects an open Admin browser tab or
 opens one if needed. Saved shows and output preferences stay in place; playback never resumes automatically.
 
 Install the current release once using the Mac or Windows command above, or the
 matching Windows ZIP below to enable automatic updates. Previews before 10 need this
 manual upgrade; preview 10 and later can update on launch.
+
+Versions released before website-based discovery still use their original GitHub
+API updater for the first upgrade. If a shared company IP is rate-limited, wait
+for its reset or run the current installer once. Existing playlists stay in place.
 
 Playback and editing wait while a startup update is checked or prepared. If the
 network is unavailable, the initial check times out after ten seconds and you
@@ -410,7 +416,7 @@ Advanced examples, run from the folder containing the extracted executable:
 
 ## Build and test
 
-Development prerequisites: Go 1.26.8 or newer, Python 3 for audits, Xcode command-line
+Development prerequisites: Go 1.26.10 or newer, Python 3 for audits, Xcode command-line
 tools/SDK on Mac or LLVM-MinGW **20260908 UCRT** on Windows. Use Git Bash on
 Windows and put the matching compiler `bin` on PATH. Go dependencies, including
 the QR encoder, are compiled into the executable. These tools are not end-user

@@ -1,11 +1,14 @@
-Smart Stage 1.6.4 fixes playlist track-volume dragging on Mac and saves drag adjustments on release.
+Smart Stage 1.6.5 checks the Smart Stage website for updates, avoiding GitHub API limits on shared company networks.
 
-- Click and drag a track-volume slider to preview its adjustment. Moving the pointer over it without pressing does not move it, and its cursor stays an arrow.
-- Mouse/touch adjustments save only when released, including a release outside the slider. A stationary held drag does not save intermediate revisions. Keyboard adjustments save on key release; unchanged levels are skipped.
-- Canceled drags clear the native slider's tracking state. Playlist updates and pending saves preserve the newest released adjustment.
-- The remote master keeps its existing 200 ms behavior and 75% launch default. Centered 0% track readouts and saved volume levels stay compatible.
+- Routine checks read a small public website manifest, without a GitHub account or token. GitHub is contacted for the archive and checksum only when an update is installed.
+- Official download URLs, architecture selection, semantic version/channel selection, SHA-256 verification and rollback protection remain in place. A website failure never falls back to the GitHub API.
+- The release workflow publishes and verifies the website manifest before testing automatic updates. Company filtering refusals are no longer automatically labelled as rate limiting.
+- Startup installation remains automatic before playback; later checks never interrupt a running show.
+- Builds use Go 1.26.10, including the latest certificate-validation and HTTP security fixes for the existing Go release line.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
+
+The first upgrade still uses your installed version's updater. If that older updater is rate-limited, wait for GitHub's reset time or use the installer below once. Subsequent checks use the website manifest.
 
 This feature works with the existing gateway daemon; no gateway upgrade or restart is required.
 

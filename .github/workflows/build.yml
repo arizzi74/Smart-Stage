@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.26.8'
+          go-version: '1.26.10'
           cache: false
       - name: Install pinned vulnerability scanner
         run: go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.26.8'
+          go-version: '1.26.10'
           cache: false
       - name: Install proxy configuration validators
         run: sudo apt-get update && sudo apt-get install -y nginx caddy
@@ -97,7 +97,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.26.8'
+          go-version: '1.26.10'
           cache: false
       - name: Install pinned native Windows build toolchain
         if: matrix.os == 'windows'
@@ -223,7 +223,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.26.8'
+          go-version: '1.26.10'
           cache: false
       - name: Install pinned vulnerability scanner
         run: go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
@@ -263,6 +263,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
+      actions: write
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
@@ -289,6 +290,11 @@ jobs:
             dist/smartstage-windows-*.native-admin.json \
             dist/toolchain-* dist/native-enumeration-* dist/native-harness-*.smoke.json dist/gateway/* \
             --verify-tag "${release_flags[@]}" --title "Smart Stage $RELEASE_TAG" --notes-file docs/release-notes.md
+      - name: Refresh the public update manifest through the protected main website workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: gh workflow run site.yml --ref main -f release="$RELEASE_TAG"
       - name: Mark the failed preview 9 updater as superseded
         if: github.ref_name == 'v0.1.0-preview.10'
         env:
@@ -325,7 +331,7 @@ jobs:
     with:
       version: ${{ github.ref_name }}
   verify-update:
-    needs: publish
+    needs: [publish, publish-site]
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: read
@@ -333,6 +339,17 @@ jobs:
     uses: ./.github/workflows/update.yml
     with:
       version: ${{ github.ref_name }}
+  publish-site:
+    needs: publish
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Wait for verified anonymous discovery of the new release
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python3 scripts/update-manifest.py --verify-public --required-release "$RELEASE_TAG" --timeout 600
   verify-windows-install:
     needs: publish
     if: startsWith(github.ref, 'refs/tags/')

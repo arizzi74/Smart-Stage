@@ -8,6 +8,8 @@ on:
       - 'docs/screenshots/**'
       - 'assets/icon/**'
       - 'scripts/build-site.py'
+      - 'scripts/update-manifest.py'
+      - 'scripts/test-update-manifest.py'
       - 'scripts/site/**'
       - 'scripts/browser/package*.json'
       - '.github/workflows/site.yml'
@@ -17,16 +19,24 @@ on:
       - 'docs/screenshots/**'
       - 'assets/icon/**'
       - 'scripts/build-site.py'
+      - 'scripts/update-manifest.py'
+      - 'scripts/test-update-manifest.py'
       - 'scripts/site/**'
       - 'scripts/browser/package*.json'
       - '.github/workflows/site.yml'
   workflow_dispatch:
+    inputs:
+      release:
+        description: 'Published release that must be present before updater checks start'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: website-${{ github.ref }}
+  group: website-publication
   cancel-in-progress: false
 
 jobs:
@@ -36,6 +46,16 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Build static website
         run: python3 scripts/build-site.py
+      - name: Verify update-manifest validation
+        run: python3 scripts/test-update-manifest.py
+      - name: Generate public update manifest from published releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUIRED_RELEASE: ${{ inputs.release }}
+        run: |
+          flags=()
+          if [[ -n "$REQUIRED_RELEASE" ]]; then flags+=(--required-release "$REQUIRED_RELEASE"); fi
+          python3 scripts/update-manifest.py --output dist/site/updates.json "${flags[@]}"
       - name: Install browser check tools
         run: |
           npm ci --prefix scripts/browser --ignore-scripts --no-audit --no-fund
@@ -58,6 +78,7 @@ jobs:
         id: pages
         env:
           GH_TOKEN: ${{ github.token }}
+          REQUIRED_RELEASE: ${{ inputs.release }}
         shell: bash
         run: |
           if gh api "repos/$GITHUB_REPOSITORY/pages" > "$RUNNER_TEMP/pages.json"; then
@@ -67,6 +88,10 @@ jobs:
             fi
           fi
           echo 'enabled=false' >> "$GITHUB_OUTPUT"
+          if [[ -n "$REQUIRED_RELEASE" ]]; then
+            echo '::error::Release updates require an active GitHub Pages deployment.'
+            exit 1
+          fi
           echo '::notice::Website built but not published. Enable Settings > Pages > Source: GitHub Actions, then run this workflow.'
           echo 'Website deployment is waiting for **Settings → Pages → Source: GitHub Actions**. Once enabled, use **Run workflow** on this workflow. Future website changes publish automatically.' >> "$GITHUB_STEP_SUMMARY"
   deploy:
@@ -74,6 +99,7 @@ jobs:
     needs: [build, configuration]
     runs-on: ubuntu-24.04
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
@@ -85,3 +111,11 @@ jobs:
       - name: Deploy public website
         id: deployment
         uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Verify anonymous public update discovery
+        env:
+          REQUIRED_RELEASE: ${{ inputs.release }}
+        run: |
+          flags=()
+          if [[ -n "$REQUIRED_RELEASE" ]]; then flags+=(--required-release "$REQUIRED_RELEASE"); fi
+          python3 scripts/update-manifest.py --verify-public "${flags[@]}"

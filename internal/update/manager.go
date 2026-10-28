@@ -226,7 +226,7 @@ func (m *Manager) Check() error {
 func (m *Manager) startCheckLocked(unreserve func()) {
 	m.lastAttempt = m.now()
 	m.status.Phase = "checking"
-	m.status.Message = "Checking GitHub for a newer release…"
+	m.status.Message = "Checking the Smart Stage website for a newer release…"
 	if unreserve != nil {
 		m.status.Message = "Checking for a startup update before enabling playback…"
 	}

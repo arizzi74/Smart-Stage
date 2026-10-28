@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	releasesAPI   = "https://api.github.com/repos/arizzi74/Smart-Stage/releases"
+	manifestURL   = "https://arizzi74.github.io/Smart-Stage/updates.json"
 	repositoryURL = "https://github.com/arizzi74/Smart-Stage"
 	maxMetadata   = 8 << 20
 	maxArchive    = 512 << 20
@@ -33,6 +33,11 @@ type githubRelease struct {
 	Assets     []releaseAsset `json:"assets"`
 }
 
+type releaseManifest struct {
+	SchemaVersion int             `json:"schemaVersion"`
+	Releases      []githubRelease `json:"releases"`
+}
+
 type candidate struct {
 	version  string
 	archive  releaseAsset
@@ -44,7 +49,7 @@ type releaseRateLimitError struct {
 }
 
 func (e *releaseRateLimitError) Error() string {
-	return "GitHub temporarily limited update checks; retry after " + e.until.UTC().Format(time.RFC3339)
+	return "Update website temporarily limited update checks; retry after " + e.until.UTC().Format(time.RFC3339)
 }
 
 func releaseRetryTime(header http.Header, now time.Time) time.Time {
@@ -86,55 +91,64 @@ func (m *Manager) discover(ctx context.Context) (*candidate, error) {
 	if err != nil {
 		return nil, err
 	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, manifestURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("User-Agent", "Smart-Stage/"+m.options.CurrentVersion)
+	// Discovery never falls back to the GitHub API, including on feed errors.
+	// Download redirects retain their separate GitHub-only policy.
+	client := *m.client
+	client.CheckRedirect = manifestRedirect
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("cannot check update website: %w", err)
+	}
+	data, readErr := readLimited(resp.Body, maxMetadata)
+	resp.Body.Close()
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return nil, &releaseRateLimitError{until: releaseRetryTime(resp.Header, m.now())}
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("update website returned HTTP %d; try again later", resp.StatusCode)
+	}
+	if readErr != nil {
+		return nil, fmt.Errorf("cannot read update manifest: %w", readErr)
+	}
+	var manifest releaseManifest
+	if err := json.Unmarshal(data, &manifest); err != nil {
+		return nil, fmt.Errorf("invalid update manifest: %w", err)
+	}
+	if manifest.SchemaVersion != 1 || manifest.Releases == nil || len(manifest.Releases) > 500 {
+		return nil, fmt.Errorf("unsupported or incomplete update manifest")
+	}
 	var best *candidate
 	bestVersion := current
-	// GitHub orders by creation, not semantic version. Inspect bounded pages
-	// instead of relying on /latest, which deliberately excludes previews.
-	for page := 1; page <= 5; page++ {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s?per_page=100&page=%d", releasesAPI, page), nil)
-		if err != nil {
-			return nil, err
+	// A website manifest can contain both channels in any order. Keep semantic
+	// selection and exact official archive/checksum validation unchanged.
+	for _, release := range manifest.Releases {
+		version, err := parseVersion(release.Tag)
+		if err != nil || release.Draft || len(current.pre) == 0 && (release.Prerelease || len(version.pre) != 0) || version.compare(bestVersion) <= 0 {
+			continue
 		}
-		req.Header.Set("Accept", "application/vnd.github+json")
-		req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
-		req.Header.Set("User-Agent", "Smart-Stage/"+m.options.CurrentVersion)
-		resp, err := m.client.Do(req)
-		if err != nil {
-			return nil, fmt.Errorf("cannot check GitHub releases: %w", err)
+		archive, archiveOK := matchingAsset(release, name, maxArchive)
+		checksum, checksumOK := matchingAsset(release, name+".sha256", maxChecksum)
+		if !archiveOK || !checksumOK {
+			continue // A partially uploaded release is not installable yet.
 		}
-		data, readErr := readLimited(resp.Body, maxMetadata)
-		resp.Body.Close()
-		if resp.StatusCode == http.StatusTooManyRequests || resp.StatusCode == http.StatusForbidden {
-			return nil, &releaseRateLimitError{until: releaseRetryTime(resp.Header, m.now())}
-		}
-		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("GitHub release check returned HTTP %d; try again later", resp.StatusCode)
-		}
-		if readErr != nil {
-			return nil, fmt.Errorf("cannot read release list: %w", readErr)
-		}
-		var releases []githubRelease
-		if err := json.Unmarshal(data, &releases); err != nil {
-			return nil, fmt.Errorf("invalid GitHub release list: %w", err)
-		}
-		for _, release := range releases {
-			version, err := parseVersion(release.Tag)
-			if err != nil || release.Draft || len(current.pre) == 0 && (release.Prerelease || len(version.pre) != 0) || version.compare(bestVersion) <= 0 {
-				continue
-			}
-			archive, archiveOK := matchingAsset(release, name, maxArchive)
-			checksum, checksumOK := matchingAsset(release, name+".sha256", maxChecksum)
-			if !archiveOK || !checksumOK {
-				continue // A partially uploaded release is not installable yet.
-			}
-			best = &candidate{version: release.Tag, archive: archive, checksum: checksum}
-			bestVersion = version
-		}
-		if len(releases) < 100 {
-			break
-		}
+		best = &candidate{version: release.Tag, archive: archive, checksum: checksum}
+		bestVersion = version
 	}
 	return best, nil
+}
+
+func manifestRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) >= 3 || req.URL.Scheme != "https" || req.URL.Host != "arizzi74.github.io" || req.URL.User != nil || req.URL.Path != "/Smart-Stage/updates.json" || req.URL.RawQuery != "" || req.URL.Fragment != "" {
+		return fmt.Errorf("update manifest redirect is outside the official website")
+	}
+	return nil
 }
 
 func matchingAsset(release githubRelease, name string, limit int64) (releaseAsset, bool) {

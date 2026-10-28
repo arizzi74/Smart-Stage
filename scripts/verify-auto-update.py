@@ -2,7 +2,7 @@
 """Exercise production startup updates on an ephemeral native CI runner.
 
 The fixture is the release's exact source, built as v0.0.0-preview.1. It uses
-the real public GitHub API, downloads and updater. There is no alternate feed,
+the real public update source, GitHub downloads and updater. There is no alternate feed,
 transport, helper or startup acknowledgement. Gateway mode is the default;
 updates must leave incoming LAN access closed without firewall authorization.
 """

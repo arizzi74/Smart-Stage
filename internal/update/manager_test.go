@@ -2,7 +2,6 @@ package update
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 	"os"
@@ -46,9 +45,8 @@ func managerWaitPhase(t *testing.T, m *Manager, phase string) Status {
 func managerReleaseTransport(release candidate) managerRoundTripper {
 	_, download := managerDownloadFixture("verified archive bytes")
 	return func(r *http.Request) (*http.Response, error) {
-		if r.URL.Host == "api.github.com" {
-			data, _ := json.Marshal([]githubRelease{{Tag: release.version, Prerelease: true, Assets: []releaseAsset{release.archive, release.checksum}}})
-			return managerResponse(string(data)), nil
+		if r.URL.String() == manifestURL {
+			return managerResponse(managerManifest(githubRelease{Tag: release.version, Prerelease: true, Assets: []releaseAsset{release.archive, release.checksum}})), nil
 		}
 		return download(r)
 	}
@@ -66,7 +64,7 @@ func TestStartupAutomaticallyInstallsWithOneSynchronousReservation(t *testing.T)
 		return func() { released.Add(1) }, nil
 	}, Ready: func(p *Prepared) { ready <- p }}, managerDependencies{
 		client: &http.Client{Transport: managerRoundTripper(func(r *http.Request) (*http.Response, error) {
-			if r.URL.Host == "api.github.com" {
+			if r.URL.String() == manifestURL {
 				select {
 				case <-gate:
 				case <-r.Context().Done():
@@ -119,7 +117,7 @@ func TestStartupReleasesReservationWhenNoUpdateOrOffline(t *testing.T) {
 					if offline {
 						return nil, errors.New("network unavailable")
 					}
-					return managerResponse("[]"), nil
+					return managerResponse(managerManifest()), nil
 				})},
 			})
 			m.Start(context.Background())
@@ -153,7 +151,7 @@ func TestLaterChecksNeverInstallDuringTheSession(t *testing.T) {
 		now: func() time.Time { return time.Unix(0, now.Load()) },
 		client: &http.Client{Transport: managerRoundTripper(func(r *http.Request) (*http.Response, error) {
 			if calls.Add(1) == 1 {
-				return managerResponse("[]"), nil
+				return managerResponse(managerManifest()), nil
 			}
 			return transport(r)
 		})},
@@ -276,7 +274,7 @@ func TestDevelopmentBuildDoesNotCheckOrReserve(t *testing.T) {
 		return nil, errors.New("unsupported")
 	}, Ready: func(*Prepared) {}}, managerDependencies{client: &http.Client{Transport: managerRoundTripper(func(*http.Request) (*http.Response, error) {
 		t.Error("development build requested release metadata")
-		return managerResponse("[]"), nil
+		return managerResponse(managerManifest()), nil
 	})}})
 	m.Start(context.Background())
 	if m.Status().Phase != "unsupported" || m.Install() == nil {
@@ -312,7 +310,7 @@ func TestStatusRefreshesHelperOutcomeAfterNewProcessStarts(t *testing.T) {
 	}
 }
 
-func TestGitHubRateLimitBackoff(t *testing.T) {
+func TestUpdateWebsiteRateLimitBackoff(t *testing.T) {
 	var now atomic.Int64
 	now.Store(time.Now().UnixNano())
 	var calls atomic.Int32
@@ -325,7 +323,7 @@ func TestGitHubRateLimitBackoff(t *testing.T) {
 				resp.Header.Set("Retry-After", "120")
 				return resp, nil
 			}
-			return managerResponse("[]"), nil
+			return managerResponse(managerManifest()), nil
 		})},
 	})
 	if err := m.Check(); err != nil {

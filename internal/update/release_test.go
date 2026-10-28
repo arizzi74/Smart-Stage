@@ -3,11 +3,13 @@ package update
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 )
 
 type managerRoundTripper func(*http.Request) (*http.Response, error)
@@ -16,6 +18,17 @@ func (f managerRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) 
 
 func managerResponse(body string) *http.Response {
 	return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(body)), ContentLength: int64(len(body)), Header: make(http.Header)}
+}
+
+func managerManifest(releases ...githubRelease) string {
+	if releases == nil {
+		releases = []githubRelease{}
+	}
+	data, err := json.Marshal(releaseManifest{SchemaVersion: 1, Releases: releases})
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
 }
 
 func managerRelease(tag, name string) githubRelease {
@@ -49,9 +62,9 @@ func TestDiscoverSelectsChannelVersionAndCompleteExactAssets(t *testing.T) {
 		{"v1.0.0", ""},
 	} {
 		t.Run(tc.current, func(t *testing.T) {
-			data, _ := json.Marshal([]githubRelease{preview9, incomplete, untrusted, preview10, draft, wrongArchitecture, duplicate, oversize, stable})
+			data := managerManifest(preview9, incomplete, untrusted, preview10, draft, wrongArchitecture, duplicate, oversize, stable)
 			m := &Manager{options: Options{CurrentVersion: tc.current}, target: Target{Kind: "bundle", GOOS: "darwin", GOARCH: "arm64"}, client: &http.Client{Transport: managerRoundTripper(func(r *http.Request) (*http.Response, error) {
-				if r.URL.Host != "api.github.com" || r.Header.Get("X-GitHub-Api-Version") == "" {
+				if r.URL.String() != manifestURL || r.Header.Get("Accept") != "application/json" || r.Header.Get("Authorization") != "" {
 					t.Errorf("unexpected request: %s", r.URL)
 				}
 				return managerResponse(string(data)), nil
@@ -88,10 +101,7 @@ func TestDiscoverPreviewToStableAndStableChannel(t *testing.T) {
 		{"stable finds newer stable among previews", "v1.0.0", "v1.0.1", []githubRelease{futurePreview, patch, mislabelledPreview, flaggedStable, stable}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			data, err := json.Marshal(tc.releases)
-			if err != nil {
-				t.Fatal(err)
-			}
+			data := managerManifest(tc.releases...)
 			m := &Manager{options: Options{CurrentVersion: tc.current}, target: Target{Kind: "binary", GOOS: "windows", GOARCH: "arm64"}, client: &http.Client{Transport: managerRoundTripper(func(*http.Request) (*http.Response, error) {
 				return managerResponse(string(data)), nil
 			})}}
@@ -106,26 +116,85 @@ func TestDiscoverPreviewToStableAndStableChannel(t *testing.T) {
 	}
 }
 
-func TestDiscoverPaginatesInsteadOfTrustingReleaseOrder(t *testing.T) {
+func TestDiscoverUsesOneWebsiteRequestInsteadOfReleaseOrderOrGitHubAPI(t *testing.T) {
 	name := "smartstage-windows-amd64.zip"
-	page1 := make([]githubRelease, 100)
-	for i := range page1 {
-		page1[i] = managerRelease("v0.1.0-preview.8", name)
+	releases := make([]githubRelease, 100)
+	for i := range releases {
+		releases[i] = managerRelease("v0.1.0-preview.8", name)
 	}
+	releases = append(releases, managerRelease("v0.1.0-preview.10", name))
 	calls := 0
 	m := &Manager{options: Options{CurrentVersion: "v0.1.0-preview.8"}, target: Target{Kind: "binary", GOOS: "windows", GOARCH: "amd64"}, client: &http.Client{Transport: managerRoundTripper(func(r *http.Request) (*http.Response, error) {
 		calls++
-		var data []byte
-		if r.URL.Query().Get("page") == "1" {
-			data, _ = json.Marshal(page1)
-		} else {
-			data, _ = json.Marshal([]githubRelease{managerRelease("v0.1.0-preview.10", name)})
+		if r.URL.String() != manifestURL {
+			t.Fatalf("discovery contacted another server: %s", r.URL)
 		}
-		return managerResponse(string(data)), nil
+		return managerResponse(managerManifest(releases...)), nil
 	})}}
 	got, err := m.discover(context.Background())
-	if err != nil || got == nil || got.version != "v0.1.0-preview.10" || calls != 2 {
+	if err != nil || got == nil || got.version != "v0.1.0-preview.10" || calls != 1 {
 		t.Fatalf("candidate=%+v calls=%d error=%v", got, calls, err)
+	}
+}
+
+func TestManifestDiscoveryNeverFallsBackToGitHub(t *testing.T) {
+	for _, tc := range []struct {
+		name, body string
+		status     int
+		wantError  bool
+	}{
+		{"already current", managerManifest(managerRelease("v1.6.4", "smartstage-windows-arm64.zip")), 200, false},
+		{"unavailable", "unavailable", 503, true},
+		{"filtering forbidden", "blocked", 403, true},
+		{"not published", "not found", 404, true},
+		{"malformed", "<html>error</html>", 200, true},
+		{"unknown schema", `{"schemaVersion":2,"releases":[]}`, 200, true},
+		{"missing releases", `{"schemaVersion":1}`, 200, true},
+		{"null releases", `{"schemaVersion":1,"releases":null}`, 200, true},
+		{"trailing document", managerManifest() + "{}", 200, true},
+		{"oversize", strings.Repeat(" ", maxMetadata+1), 200, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			calls := 0
+			m := &Manager{options: Options{CurrentVersion: "v1.6.4"}, target: Target{Kind: "binary", GOOS: "windows", GOARCH: "arm64"}, now: time.Now,
+				client: &http.Client{Transport: managerRoundTripper(func(r *http.Request) (*http.Response, error) {
+					calls++
+					if r.URL.String() != manifestURL {
+						t.Fatalf("discovery contacted GitHub or another server: %s", r.URL)
+					}
+					resp := managerResponse(tc.body)
+					resp.StatusCode = tc.status
+					return resp, nil
+				})}}
+			got, err := m.discover(context.Background())
+			if got != nil || (err != nil) != tc.wantError || calls != 1 {
+				t.Fatalf("candidate=%+v calls=%d error=%v", got, calls, err)
+			}
+			var limited *releaseRateLimitError
+			if tc.status == 403 && errors.As(err, &limited) {
+				t.Fatal("a filtering refusal must not be misreported as a rate limit")
+			}
+		})
+	}
+}
+
+func TestManifestRedirectDoesNotPermitGitHubOrOtherOrigins(t *testing.T) {
+	for _, raw := range []string{
+		"https://api.github.com/repos/arizzi74/Smart-Stage/releases",
+		"https://example.com/Smart-Stage/updates.json",
+		"https://arizzi74.github.io/other/updates.json",
+		"http://arizzi74.github.io/Smart-Stage/updates.json",
+		"https://user:password@arizzi74.github.io/Smart-Stage/updates.json",
+		"https://arizzi74.github.io:444/Smart-Stage/updates.json",
+	} {
+		u, _ := url.Parse(raw)
+		if manifestRedirect(&http.Request{URL: u}, nil) == nil {
+			t.Errorf("untrusted manifest redirect allowed: %s", raw)
+		}
+	}
+	u, _ := url.Parse(manifestURL)
+	if manifestRedirect(&http.Request{URL: u}, nil) != nil || manifestRedirect(&http.Request{URL: u}, make([]*http.Request, 3)) == nil {
+		t.Fatal("canonical website redirect or redirect bound was handled incorrectly")
 	}
 }
 
