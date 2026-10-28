@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"smartstage/internal/auth"
+	"smartstage/internal/cloudflared"
 	"smartstage/internal/gateway"
 )
 
@@ -31,13 +32,16 @@ type Edit struct {
 	Token string `json:"token"`
 }
 type Status struct {
-	Mode      string `json:"mode"`
-	URL       string `json:"url"`
-	HasToken  bool   `json:"hasToken"`
-	Status    string `json:"status"`
-	Message   string `json:"message"`
-	RemoteURL string `json:"remoteURL"`
-	Restart   bool   `json:"restart,omitempty"`
+	Mode                string `json:"mode"`
+	URL                 string `json:"url"`
+	HasToken            bool   `json:"hasToken"`
+	Status              string `json:"status"`
+	Message             string `json:"message"`
+	RemoteURL           string `json:"remoteURL"`
+	Restart             bool   `json:"restart,omitempty"`
+	CloudflareAvailable bool   `json:"cloudflareAvailable"`
+	CloudflareReason    string `json:"cloudflareReason"`
+	CloudflareVersion   string `json:"cloudflareVersion"`
 }
 type Options struct {
 	ConfigDir  string
@@ -48,6 +52,10 @@ type Options struct {
 	ReserveRestart func() (commit, abort func(), err error)
 	Changed        func(mode, remoteURL, phoneToken string)
 	HTTPClient     *http.Client
+	// Cloudflare owns one loopback command listener and one helper process.
+	// It must close both before returning, including on cancellation. Callbacks
+	// may report only this connection's public URL/token and sanitized status.
+	Cloudflare func(ctx context.Context, connected func(remoteURL, phoneToken string), status func(string, string)) error
 }
 type Manager struct {
 	serial           sync.Mutex
@@ -58,15 +66,17 @@ type Manager struct {
 	ctx              context.Context
 	cancel           context.CancelFunc
 	connectionCancel context.CancelFunc
+	connectionDone   chan struct{}
 	generation       uint64
 	closed           bool
 	wg               sync.WaitGroup
 }
 
-// Load defaults to gateway even for installations created before this option
-// existed. An unconfigured gateway never falls back to an inbound LAN port.
+// Load chooses an account-free tunnel for new/unconfigured installations where
+// an official native helper exists. Saved gateway and explicit LAN choices are
+// retained. Unsupported hosts keep a closed, unconfigured gateway, never LAN.
 func Load(dir string) (Settings, error) {
-	s := Settings{Mode: "gateway"}
+	s := Settings{Mode: defaultMode()}
 	path := filepath.Join(dir, "gateway.json")
 	info, err := os.Lstat(path)
 	if errors.Is(err, os.ErrNotExist) {
@@ -97,14 +107,26 @@ func Load(dir string) (Settings, error) {
 	if s.Token != "" && runtime.GOOS != "windows" && info.Mode().Perm()&0077 != 0 {
 		return s, errors.New("gateway credentials must be private; set gateway.json permissions to 0600")
 	}
-	return validate(s, true)
+	s, err = validate(s, true)
+	if err == nil && s.Mode == "gateway" && s.URL == "" && s.Token == "" {
+		s.Mode = defaultMode()
+	}
+	return s, err
 }
+
+func defaultMode() string {
+	if cloudflared.Available() {
+		return "cloudflare"
+	}
+	return "gateway"
+}
+
 func validate(s Settings, allowEmpty bool) (Settings, error) {
-	if s.Mode != "lan" && s.Mode != "gateway" {
-		return s, errors.New("select public gateway or local LAN")
+	if s.Mode != "lan" && s.Mode != "gateway" && s.Mode != "cloudflare" {
+		return s, errors.New("select Cloudflare, public gateway or local LAN")
 	}
 	s.URL, s.Token = strings.TrimSpace(s.URL), strings.TrimSpace(s.Token)
-	if s.URL == "" && s.Token == "" && (allowEmpty || s.Mode == "lan") {
+	if s.URL == "" && s.Token == "" && (allowEmpty || s.Mode != "gateway") {
 		return s, nil
 	}
 	u, err := gateway.ValidateURL(s.URL)
@@ -128,7 +150,7 @@ func New(parent context.Context, settings Settings, options Options) (*Manager, 
 	}
 	ctx, cancel := context.WithCancel(parent)
 	m := &Manager{settings: s, options: options, ctx: ctx, cancel: cancel}
-	if s.Mode == "gateway" && options.DisableLAN != nil {
+	if s.Mode != "lan" && options.DisableLAN != nil {
 		if err := options.DisableLAN(); err != nil {
 			cancel()
 			return nil, err
@@ -151,9 +173,9 @@ func (m *Manager) Configure(edit Edit) (Status, error) {
 		return m.Status(), errors.New("Smart Stage is shutting down or restarting")
 	}
 	next := Settings{Mode: edit.Mode, URL: strings.TrimSpace(edit.URL), Token: strings.TrimSpace(edit.Token)}
-	// Choosing LAN preserves a previously saved gateway unless a replacement
+	// Choosing another mode preserves a previously saved gateway unless a replacement
 	// URL is explicitly supplied. Credentials are never returned to the UI.
-	if next.Mode == "lan" && next.URL == "" && next.Token == "" {
+	if next.Mode != "gateway" && next.URL == "" && next.Token == "" {
 		next.URL, next.Token = old.URL, old.Token
 	}
 	// A blank token retains the saved registration credential, including when
@@ -164,6 +186,10 @@ func (m *Manager) Configure(edit Edit) (Status, error) {
 	next, err := validate(next, false)
 	if err != nil {
 		return m.Status(), err
+	}
+	if next.Mode == "cloudflare" && !cloudflared.Available() {
+		_, reason := cloudflared.Support()
+		return m.Status(), errors.New(reason)
 	}
 	needsRestart := next.Mode == "lan" && old.Mode != "lan"
 	var commit, abort func()
@@ -183,7 +209,7 @@ func (m *Manager) Configure(edit Edit) (Status, error) {
 		return m.Status(), errors.New("could not save gateway settings")
 	}
 	// Close every inbound connection before making gateway mode visible.
-	if next.Mode == "gateway" && m.options.DisableLAN != nil {
+	if next.Mode != "lan" && m.options.DisableLAN != nil {
 		if err = m.options.DisableLAN(); err != nil {
 			_ = save(m.options.ConfigDir, old)
 			if abort != nil {
@@ -192,6 +218,7 @@ func (m *Manager) Configure(edit Edit) (Status, error) {
 			return m.Status(), err
 		}
 	}
+	m.stopConnection()
 	m.mu.Lock()
 	m.settings = next
 	m.startLocked(needsRestart)
@@ -207,11 +234,33 @@ func (m *Manager) Reconnect() (Status, error) {
 	defer m.serial.Unlock()
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if m.closed || m.status.Restart || m.settings.Mode != "gateway" || m.settings.URL == "" {
-		return m.status, errors.New("configure a public gateway before reconnecting")
+	if m.closed || m.status.Restart || m.settings.Mode == "lan" ||
+		(m.settings.Mode == "gateway" && m.settings.URL == "") ||
+		(m.settings.Mode == "cloudflare" && !cloudflared.Available()) {
+		return m.status, errors.New("select an available Cloudflare tunnel or configure a public gateway before reconnecting")
 	}
+	// Cancellation may call back into Manager, so wait without holding mu.
+	m.mu.Unlock()
+	m.stopConnection()
+	m.mu.Lock()
 	m.startLocked(false)
 	return m.status, nil
+}
+
+// stopConnection completes origin/socket/helper cleanup before a new mode is
+// activated. serial excludes concurrent Configure/Reconnect/Close operations.
+func (m *Manager) stopConnection() {
+	m.mu.Lock()
+	m.generation++
+	if m.connectionCancel != nil {
+		m.connectionCancel()
+	}
+	done := m.connectionDone
+	m.connectionDone = nil
+	m.mu.Unlock()
+	if done != nil {
+		<-done
+	}
 }
 
 // startLocked invokes only the nonblocking Changed callback under the lock.
@@ -222,6 +271,8 @@ func (m *Manager) startLocked(restart bool) {
 	}
 	m.generation++
 	m.status = Status{Mode: m.settings.Mode, URL: m.settings.URL, HasToken: m.settings.Token != "", Status: "disabled", Restart: restart}
+	m.status.CloudflareAvailable, m.status.CloudflareReason = cloudflared.Support()
+	m.status.CloudflareVersion = cloudflared.Version
 	if m.options.Changed != nil {
 		m.options.Changed(m.settings.Mode, "", "")
 	}
@@ -236,6 +287,25 @@ func (m *Manager) startLocked(restart bool) {
 		}
 		return
 	}
+	if m.settings.Mode == "cloudflare" {
+		if !m.status.CloudflareAvailable || m.options.Cloudflare == nil {
+			m.status.Status = "unavailable"
+			m.status.Message = m.status.CloudflareReason
+			if m.status.Message == "" {
+				m.status.Message = "Cloudflare remote control is unavailable on this host."
+			}
+			return
+		}
+		m.status.Status = "connecting"
+		m.status.Message = "Connecting to Cloudflare… Local network remote access is disabled."
+		ctx, cancel := context.WithCancel(m.ctx)
+		m.connectionCancel = cancel
+		done := make(chan struct{})
+		m.connectionDone = done
+		m.wg.Add(1)
+		go func(generation uint64) { defer close(done); m.connectCloudflare(ctx, generation) }(m.generation)
+		return
+	}
 	if m.settings.URL == "" {
 		m.status.Status = "unconfigured"
 		m.status.Message = "Configure your gateway URL and token. Local LAN access is disabled."
@@ -245,8 +315,58 @@ func (m *Manager) startLocked(restart bool) {
 	m.status.Message = "Connecting securely to the public gateway…"
 	ctx, cancel := context.WithCancel(m.ctx)
 	m.connectionCancel = cancel
+	done := make(chan struct{})
+	m.connectionDone = done
 	m.wg.Add(1)
-	go m.connect(ctx, m.generation, m.settings)
+	go func(generation uint64, settings Settings) { defer close(done); m.connect(ctx, generation, settings) }(m.generation, m.settings)
+}
+
+func (m *Manager) connectCloudflare(ctx context.Context, generation uint64) {
+	defer m.wg.Done()
+	backoff := time.Second
+	for ctx.Err() == nil {
+		_ = m.options.Cloudflare(ctx, func(remoteURL, token string) {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+			if m.closed || generation != m.generation || ctx.Err() != nil {
+				return
+			}
+			m.status.Status = "connected"
+			m.status.Message = "Cloudflare connected. Local network remote access is disabled."
+			m.status.RemoteURL = remoteURL
+			if m.options.Changed != nil {
+				m.options.Changed("cloudflare", remoteURL, token)
+			}
+			backoff = time.Second
+		}, func(status, message string) {
+			m.mu.Lock()
+			defer m.mu.Unlock()
+			if m.closed || generation != m.generation || ctx.Err() != nil {
+				return
+			}
+			m.status.Status, m.status.Message = status, message
+		})
+		m.mu.Lock()
+		if m.closed || generation != m.generation || ctx.Err() != nil {
+			m.mu.Unlock()
+			return
+		}
+		m.status.Status = "error"
+		m.status.Message = "Cloudflare is unavailable. Check your internet connection; retrying automatically."
+		m.status.RemoteURL = ""
+		if m.options.Changed != nil {
+			m.options.Changed("cloudflare", "", "")
+		}
+		m.mu.Unlock()
+		timer := time.NewTimer(backoff)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		case <-timer.C:
+		}
+		backoff = min(backoff*2, 30*time.Second)
+	}
 }
 func (m *Manager) connect(ctx context.Context, generation uint64, s Settings) {
 	defer m.wg.Done()

@@ -24,6 +24,11 @@ SOFTWARE.
 
 Smart Stage third-party notices
 
+Cloudflare mode separately downloads the official cloudflared 2026.10.5 helper.
+It is not bundled into Smart Stage. License: Apache-2.0.
+Source and dependency notices: https://github.com/cloudflare/cloudflared/tree/2026.10.5
+License: https://github.com/cloudflare/cloudflared/blob/2026.10.5/LICENSE
+
 QR encoding: github.com/piglig/go-qr v1.1.0
 Source: https://github.com/piglig/go-qr/tree/v1.1.0
 

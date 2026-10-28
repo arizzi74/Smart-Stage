@@ -19,30 +19,39 @@ import (
 	"time"
 
 	"smartstage/internal/auth"
+	"smartstage/internal/cloudflared"
 	"smartstage/internal/gateway"
 )
 
 func testOptions(dir string) Options {
 	return Options{ConfigDir: dir, Handler: func(string, string, *auth.Manager) http.Handler { return http.NotFoundHandler() }}
 }
-func TestDefaultIsClosedUnconfiguredGateway(t *testing.T) {
+func TestDefaultUsesAvailableCloudflareWithoutLANFallback(t *testing.T) {
 	dir := t.TempDir()
 	settings, err := Load(dir)
-	if err != nil || settings.Mode != "gateway" {
+	if err != nil || settings.Mode != defaultMode() {
 		t.Fatalf("default %+v %v", settings, err)
 	}
 	options := testOptions(dir)
 	closed := false
 	options.DisableLAN = func() error { closed = true; return nil }
+	options.Cloudflare = func(ctx context.Context, _ func(string, string), _ func(string, string)) error {
+		<-ctx.Done()
+		return ctx.Err()
+	}
 	m, err := New(context.Background(), settings, options)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer m.Close()
-	if !closed || m.Status().Status != "unconfigured" || m.Status().HasToken || m.Status().RemoteURL != "" {
+	wantStatus := "unconfigured"
+	if cloudflared.Available() {
+		wantStatus = "connecting"
+	}
+	if !closed || m.Status().Status != wantStatus || m.Status().HasToken || m.Status().RemoteURL != "" || m.Status().CloudflareAvailable != cloudflared.Available() {
 		t.Fatalf("default status %+v", m.Status())
 	}
-	if _, err := m.Reconnect(); err == nil {
+	if _, err := m.Reconnect(); !cloudflared.Available() && err == nil {
 		t.Fatal("unconfigured reconnect accepted")
 	}
 }

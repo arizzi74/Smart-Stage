@@ -47,6 +47,11 @@ jobs:
           SMARTSTAGE_TEST_GATEWAY_BROWSER: '1'
           NODE_PATH: ${{ github.workspace }}/scripts/browser/node_modules
         run: go test ./internal/httpapi -run TestGatewayBrowser -count=1 -v
+      - name: Exercise authenticated WebSocket remote in a real browser
+        env:
+          SMARTSTAGE_TEST_CLOUDFLARE_BROWSER: '1'
+          NODE_PATH: ${{ github.workspace }}/scripts/browser/node_modules
+        run: go test ./internal/httpapi -run TestCloudflareBrowser -count=1 -v
       - name: Verify bilingual Admin, preserved edits and independent remote language
         env:
           NODE_PATH: ${{ github.workspace }}/scripts/browser/node_modules
@@ -57,6 +62,7 @@ jobs:
           name: gateway-browser-checks
           path: |
             dist/gateway-browser-checks/
+            dist/cloudflare-browser-checks/
             dist/browser-checks/
           if-no-files-found: warn
       - name: Build and inspect static Linux binaries
@@ -123,6 +129,13 @@ jobs:
           CGO_ENABLED: '0'
           SMARTSTAGE_TEST_FIREWALL: ${{ matrix.os == 'windows' && '1' || '0' }}
         run: go test ./...
+      - name: Verify the official native Cloudflare helper and launch arguments
+        if: matrix.os != 'windows' || matrix.arch != 'arm64'
+        shell: bash
+        env:
+          CGO_ENABLED: '0'
+          SMARTSTAGE_TEST_CLOUDFLARED_DOWNLOAD: '1'
+        run: go test ./internal/cloudflared -run TestPinnedBinaryAcceptsProductionArguments -count=1 -v
       - name: Ensure the Windows dedicated-window runtime
         if: matrix.os == 'windows'
         shell: pwsh

@@ -247,7 +247,7 @@ namespace SmartStageInstaller {
         Write-Host "Installed $reportedVersion"
         Write-Host "Application: $executable"
         Write-Host 'Desktop and Start menu shortcuts are ready. Your settings and media are preserved.'
-        Write-Host 'Public gateway access needs no administrator approval or incoming firewall rule.'
+        Write-Host 'Cloudflare and public gateway access need no administrator approval or incoming firewall rule.'
         $gatewayConfig = Join-Path ([Environment]::GetFolderPath('ApplicationData')) 'SmartStage\gateway.json'
         if (Test-Path -LiteralPath $gatewayConfig) {
             try {

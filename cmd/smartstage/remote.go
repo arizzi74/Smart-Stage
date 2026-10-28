@@ -66,12 +66,16 @@ func (l *lanControl) changed(mode, publicURL, token string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	l.mode = mode
-	if mode == "gateway" {
+	if mode == "gateway" || mode == "cloudflare" {
 		var links []httpapi.RemoteLink
 		if publicURL != "" {
-			links = []httpapi.RemoteLink{{Label: "Public gateway · HTTPS", URL: publicURL}}
+			label := "Public gateway · HTTPS"
+			if mode == "cloudflare" {
+				label = "Cloudflare · HTTPS"
+			}
+			links = []httpapi.RemoteLink{{Label: label, URL: publicURL}}
 		}
-		l.admin.SetRemoteControl(links, token, "gateway")
+		l.admin.SetRemoteControl(links, token, mode)
 	} else if l.server != nil {
 		l.admin.SetRemoteLinks(remoteLinks(l.addresses, l.bind, l.advertise, l.port, l.auth.CommandToken()))
 	} else {

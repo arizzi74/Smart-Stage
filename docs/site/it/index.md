@@ -41,14 +41,16 @@ Su Mac, i download effettuati dal browser possono richiedere **Apri comunque** (
 
 1. Trascina i file multimediali dal Finder o da Esplora file nella finestra Admin dell'app, oppure premi **Scegli file…**. I file restano nella loro posizione originale.
 2. Scegli l'uscita audio e lo schermo di scena. Imposta le etichette e i colori dei pulsanti e, se vuoi, un'immagine o un video come sfondo.
-3. Apri **Telecomando → Impostazioni di connessione**. Configura l'URL e il token del gateway, oppure seleziona **Rete locale** e segui le indicazioni per il firewall.
+3. Attendi la connessione a **Cloudflare**, oppure apri **Telecomando → Impostazioni di connessione** per scegliere un **Gateway pubblico** personale o **Rete locale**.
 4. Inquadra il codice QR con il telefono o il tablet e tocca un pulsante per avviare la riproduzione.
 
 Le immagini possono cambiare ciò che appare sullo schermo di scena mentre la musica continua. **Attiva/Disattiva scena** controlla lo schermo di scena in modo indipendente. **STOP** torna allo sfondo corrente; **Escape** interrompe immediatamente tutto l'audio e chiude lo schermo di scena quando la finestra nativa di Smart Stage è attiva. **Esci da Smart Stage** in Admin interrompe la riproduzione e chiude l'app.
 
-## Controllo remoto e gateway Linux
+## Controllo remoto e gateway Linux opzionale
 
-La modalità con gateway pubblico è quella predefinita. Richiede un server pubblico configurato e l'accesso a Internet; la porta del computer per il controllo remoto in ingresso dalla LAN rimane chiusa. Admin resta accessibile solo in locale su `127.0.0.1`. In alternativa, puoi scegliere il controllo sulla rete LAN locale senza gateway.
+Cloudflare è la modalità predefinita sui computer compatibili quando non è configurato un gateway. Crea un link HTTPS temporaneo senza un account o un server; richiede l’accesso a internet e il link cambia dopo il riavvio o la riconnessione. I gateway già configurati e la scelta esplicita di Rete locale restano selezionati. Admin resta accessibile solo in locale su `127.0.0.1` e i file multimediali rimangono sul computer.
+
+Cloudflare non è disponibile su Windows ARM64 perché Cloudflare non pubblica un programma ufficiale nativo per questa piattaforma. Scegli **Gateway pubblico** con un tuo server, oppure **Rete locale** per il controllo sulla stessa LAN fidata senza internet. La modalità LAN usa HTTP non cifrato e può richiedere l’autorizzazione nel firewall.
 
 Sul tuo server Linux pubblico con systemd, installa il gateway separato per ARM64 o AMD64:
 

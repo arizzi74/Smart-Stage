@@ -14,8 +14,17 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.6.6
   installing a newer eligible version. Website errors never fall back to the
   GitHub API. Release automation refreshes and anonymously verifies the manifest
   through protected main before testing actual automatic updates. Builds use
-  Go 1.26.10. Cloudflare Quick Tunnels were assessed only; no helper or new
-  connection mode is installed by this change.
+  Go 1.26.10.
+
+- Cloudflare Quick Tunnels provide an account-free remote mode, default on
+  supported hosts without configured gateway settings. Saved gateway and LAN
+  selections are retained; switching modes preserves gateway URL/token. A
+  pinned official native helper is downloaded, checksum-verified and run in
+  the background with isolated configuration. Windows ARM64 has no native
+  helper in the pinned distribution and the option is disabled. The tunnel
+  forwards only a separate loopback command listener. Its paired WebSocket
+  status stream checks origin/session/CSRF and closes with the helper on mode
+  change or Quit. Admin stays local and existing gateway/LAN SSE remains usable.
 
 - Audio/video cues have saved centered track-volume sliders in Admin. The remote
   has a speaker/master slider at the top, starting at 75% per launch. Live level

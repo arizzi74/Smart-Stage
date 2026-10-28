@@ -6,6 +6,9 @@ const adminPage = location.pathname === '/admin';
 const gatewayRoute = /^\/smartstage\/e\/[A-Za-z0-9_-]{16,128}\/command$/.test(location.pathname);
 const endpointPrefix = gatewayRoute ? location.pathname.slice(0, -'/command'.length) : '';
 const endpointPath = path => endpointPrefix + path;
+// HTTPS only selects public pairing guidance. Authentication and transport
+// capabilities still come from the host, never from this browser hint.
+let publicRemote = gatewayRoute || !adminPage && location.protocol === 'https:';
 // The native user-agent token changes guidance only. It grants no API access
 // and never lets JavaScript read or submit a native file's original path.
 const desktopAdmin = adminPage && /(?:^|\s)SmartStageDesktop(?:\s|$)/.test(navigator.userAgent);
@@ -14,6 +17,7 @@ const desktopAdmin = adminPage && /(?:^|\s)SmartStageDesktop(?:\s|$)/.test(navig
 const windowsPlatform = /(?:^|\s)SmartStageWindowsDesktop(?:\s|$)|Windows NT/.test(navigator.userAgent) || /^Win/.test(navigator.platform);
 const fileManagerName = windowsPlatform ? 'File Explorer' : 'Finder';
 let state = null, role = '', csrf = '', online = false, source = null, lastSeen = 0;
+let liveTransport = 'sse', eventsGeneration = 0, eventReconnectTimer = null, eventReconnectAttempt = 0, liveSocketLastSeen = 0;
 let playlist = null, devices = null;
 let playlistBusy = false, refreshing = false, renderedOrder = '', playlistRefresh = false;
 let stageSettingsDirty = false, stageSettingsRevision = 0, stageSettingsBase = '', stageSettingsConflict = '';
@@ -35,7 +39,7 @@ let presenceBusy = false, quitBusy = false, appClosed = false, reloadingAdmin = 
 let adminCapabilities = {}, chooseFilesBusy = false;
 let playlistFileBusy = false, playlistFileRevision = 0;
 let remoteLinks = [], selectedRemoteURL = '', remoteRefresh = false;
-let gateway = null, gatewayDirty = false, gatewayBusy = false, gatewayRefresh = false, gatewaySequence = 0;
+let gateway = null, gatewayDirty = false, gatewayFieldsDirty = false, gatewayBusy = false, gatewayRefresh = false, gatewaySequence = 0;
 let updateStatus = null, updateBusy = false, updatePreparing = false, updatePollAt = 0;
 let updateRestartInstance = '', updateRestartComplete = false, updateRestartStarted = 0;
 const cueButtons = new Map(), playlistRows = new Map();
@@ -101,13 +105,15 @@ document.body.classList.toggle('remote-page', !adminPage);
 document.body.classList.toggle('admin-page', adminPage);
 $('page-title').hidden = !adminPage;
 $('master-volume-control').hidden = adminPage;
-if (gatewayRoute) {
+function configurePublicPairing() {
+  if (!publicRemote) return;
   localizedText($('pair-guidance'), () => t("Scan the current QR code or open the remote control link shown in Admin on the host computer. You can also paste the access key from that link below."));
   localizedText($('pair-key-label'), () => t("Access key"));
   $('pair-key').inputMode = 'text'; $('pair-key').maxLength = 64; $('pair-key').minLength = 64;
   $('pair-key').pattern = '[0-9a-fA-F]{64}';
-  localizedText($('pair-network-hint'), () => t("Keep Smart Stage running and connected to the public gateway."));
+  localizedText($('pair-network-hint'), () => gatewayRoute ? t("Keep Smart Stage running and connected to the public gateway.") : t("Keep Smart Stage running and connected to the internet."));
 }
+configurePublicPairing();
 
 function element(tag, text, className) {
   const node = document.createElement(tag);
@@ -617,7 +623,8 @@ function connection(connected) {
 function showPair() {
   if (appClosed || quitBusy || reloadingAdmin) return;
   if (!adminPage) window.smartStageWakeLock?.setConnected(false);
-  connection(false); if (source) { source.close(); source = null; }
+  connection(false); disconnectEvents();
+  if (!adminPage) { csrf = ''; role = ''; }
   if (adminPage) { void connectLocalAdmin(); return; }
   if (!$('pairing').open) $('pairing').showModal();
 }
@@ -662,7 +669,7 @@ function reloadAdmin() {
   if (reloadingAdmin) return;
   reloadingAdmin = true;
   clearTimeout(localSessionRetry);
-  if (source) { source.close(); source = null; }
+  disconnectEvents();
   location.reload();
 }
 async function probeClosedAdmin() {
@@ -685,7 +692,7 @@ async function probeClosedAdmin() {
 function showAppClosed() {
   appClosed = true; quitBusy = false; online = false; role = ''; csrf = '';
   clearTimeout(localSessionRetry);
-  if (source) { source.close(); source = null; }
+  disconnectEvents();
   $('page-title').hidden = true; $('admin-view').hidden = true; $('playback-error').hidden = true;
   localizedText($('notice'), () => ''); $('notice').classList.remove('error');
   $('app-closed').hidden = false; $('stop').disabled = true; $('quit-app').disabled = true;
@@ -736,6 +743,8 @@ async function refreshState() {
     const result = await api('GET', '/api/state');
     if (quitBusy || appClosed || reloadingAdmin) return false;
     role = result.role; csrf = result.csrfToken;
+    liveTransport = !adminPage && result.liveTransport === 'websocket' ? 'websocket' : 'sse';
+    if (liveTransport === 'websocket') { publicRemote = true; configurePublicPairing(); }
     if (adminPage) { adminCapabilities = result.capabilities || {}; applyHostLanguage(result.language); }
     applyState(result.state); return !reloadingAdmin;
   } catch (error) {
@@ -747,21 +756,87 @@ async function refreshState() {
   }
   finally { refreshing = false; }
 }
-function connectEvents() {
-  if (quitBusy || appClosed || reloadingAdmin) return;
-  if (source) source.close();
-  source = new EventSource(endpointPath('/api/events'));
-  source.addEventListener('state', event => {
-    try {
-      const next = JSON.parse(event.data);
-      const gap = state && (next.instanceId !== state.instanceId || next.revision > state.revision + 1);
-      lastSeen = Date.now(); applyState(next); connection(true);
-      if (gap) void refreshState();
-    } catch { connection(false); }
+function disconnectEvents() {
+  ++eventsGeneration;
+  clearTimeout(eventReconnectTimer); eventReconnectTimer = null;
+  if (source) { const previous = source; source = null; previous.close(); }
+}
+function acceptLiveState(next) {
+  const gap = state && (next.instanceId !== state.instanceId || next.revision > state.revision + 1);
+  lastSeen = Date.now(); applyState(next); connection(true);
+  if (gap) void refreshState();
+}
+function retryLiveSocket(generation) {
+  if (generation !== eventsGeneration || eventReconnectTimer || !csrf || quitBusy || appClosed || reloadingAdmin || $('pairing').open) return;
+  connection(false);
+  const delay = Math.min(10000, 500 * 2 ** Math.min(eventReconnectAttempt++, 5));
+  eventReconnectTimer = setTimeout(async () => {
+    eventReconnectTimer = null;
+    if (generation !== eventsGeneration || !csrf) return;
+    // Revalidate the HTTP session before retrying: an upgrade rejected with
+    // HTTP 401 is deliberately opaque to the browser's WebSocket API.
+    const refreshed = await refreshState();
+    if (generation !== eventsGeneration || !csrf || $('pairing').open) return;
+    if (refreshed) openLiveSocket(generation);
+    else retryLiveSocket(generation);
+  }, delay);
+}
+function openLiveSocket(generation) {
+  if (generation !== eventsGeneration || !csrf || quitBusy || appClosed || reloadingAdmin) return;
+  const url = new URL(endpointPath('/api/ws'), location.href);
+  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+  let socket;
+  try { socket = new WebSocket(url.href); }
+  catch { retryLiveSocket(generation); return; }
+  source = socket; liveSocketLastSeen = Date.now();
+  let receivedState = false;
+  const handshake = setTimeout(() => { if (source === socket && !receivedState) socket.close(); }, 10000);
+  socket.addEventListener('open', () => {
+    if (source !== socket || generation !== eventsGeneration) return;
+    // Cookies authenticate the upgrade; the first frame confirms same-origin
+    // session CSRF. No credentials are placed in URLs or browser storage.
+    socket.send(JSON.stringify({type: 'authenticate', csrfToken: csrf}));
   });
-  source.addEventListener('heartbeat', () => { lastSeen = Date.now(); });
-  source.addEventListener('open', () => { void refreshState(); void sendAdminPresence(true); });
-  source.addEventListener('error', () => { connection(false); void refreshState(); });
+  socket.addEventListener('message', event => {
+    if (source !== socket || generation !== eventsGeneration) return;
+    try {
+      const frame = JSON.parse(event.data);
+      if (frame.type === 'state' && frame.state && Array.isArray(frame.state.cues)) {
+        acceptLiveState(frame.state); receivedState = true; liveSocketLastSeen = Date.now();
+        clearTimeout(handshake); eventReconnectAttempt = 0;
+      } else if (frame.type === 'heartbeat' && receivedState) {
+        lastSeen = Date.now(); liveSocketLastSeen = lastSeen; connection(true);
+      }
+    } catch { connection(false); socket.close(); }
+  });
+  socket.addEventListener('error', () => {
+    if (source === socket && generation === eventsGeneration) { connection(false); socket.close(); }
+  });
+  socket.addEventListener('close', event => {
+    clearTimeout(handshake);
+    if (source !== socket || generation !== eventsGeneration) return;
+    source = null;
+    if ([4401, 4403].includes(event.code)) {
+      showPair(); pairError(() => t("Session expired or was logged out; pair again"));
+      return;
+    }
+    retryLiveSocket(generation);
+  });
+}
+function connectEvents() {
+  if (quitBusy || appClosed || reloadingAdmin || !csrf) return;
+  disconnectEvents(); eventReconnectAttempt = 0;
+  const generation = eventsGeneration;
+  if (!adminPage && liveTransport === 'websocket') { openLiveSocket(generation); return; }
+  const events = new EventSource(endpointPath('/api/events')); source = events;
+  events.addEventListener('state', event => {
+    if (source !== events || generation !== eventsGeneration) return;
+    try { acceptLiveState(JSON.parse(event.data)); }
+    catch { connection(false); }
+  });
+  events.addEventListener('heartbeat', () => { if (source === events) lastSeen = Date.now(); });
+  events.addEventListener('open', () => { if (source === events) { void refreshState(); void sendAdminPresence(true); } });
+  events.addEventListener('error', () => { if (source === events) { connection(false); void refreshState(); } });
 }
 function applyState(next) {
   if (quitBusy || appClosed || reloadingAdmin) return;
@@ -939,16 +1014,17 @@ async function loadRemoteControl() {
     const result = await api('GET', '/api/remote-control');
     if (sequence !== gatewaySequence || quitBusy || appClosed || reloadingAdmin) return;
     remoteLinks = result.links || [];
-    const publicMode = result.mode === 'gateway';
+    const cloudflareMode = result.mode === 'cloudflare';
+    const publicMode = cloudflareMode || result.mode === 'gateway';
     localizedText($('remote-code'), () => result.token);
     $('remote-code-row').hidden = publicMode;
-    localizedText($('remote-guidance'), () => publicMode ? t("Scan this QR code or open the link from any phone or tablet with an internet connection. Keep Smart Stage running.") : t("Connect your phone or tablet to the same network, then scan this QR code with its camera or open the link."));
+    localizedText($('remote-guidance'), () => cloudflareMode ? t("Scan this QR code or open the temporary HTTPS link on any phone or tablet with internet access. No Cloudflare account is needed. Use the new link after restarting or reconnecting Smart Stage.") : publicMode ? t("Scan this QR code or open the link from any phone or tablet with an internet connection. Keep Smart Stage running.") : t("Connect your phone or tablet to the same network, then scan this QR code with its camera or open the link."));
     $('remote-ready').hidden = !remoteLinks.length;
     $('remote-section').classList.toggle('has-remote', remoteLinks.length > 0);
     $('remote-unavailable').hidden = remoteLinks.length > 0;
     if (!remoteLinks.length) {
       clearRemoteLinks();
-      localizedText($('remote-unavailable'), () => publicMode ? t("The public gateway is not connected. The remote link and QR code appear after Smart Stage connects.") : t("No network address is available. Connect this computer to Wi-Fi or Ethernet to use remote control."));
+      localizedText($('remote-unavailable'), () => cloudflareMode ? t("The temporary Cloudflare link and QR code appear after Smart Stage connects.") : publicMode ? t("The public gateway is not connected. The remote link and QR code appear after Smart Stage connects.") : t("No network address is available. Connect this computer to Wi-Fi or Ethernet to use remote control."));
       localizedText($('remote-message'), () => ''); return;
     }
     $('remote-network').replaceChildren(...remoteLinks.map(link => option(link.url, link.label)));
@@ -988,16 +1064,34 @@ function renderGateway() {
   const publicDraft = $('gateway-mode').value === 'gateway';
   const stored = Boolean(gateway?.hasToken);
   const unavailable = gatewayBusy || !online || role !== 'admin' || updatePending();
+  gatewayDirty = Boolean(gateway && ($('gateway-mode').value !== gateway.mode || publicDraft && gatewayFieldsDirty));
+  const cloudflareAvailable = gateway?.cloudflareAvailable === true;
+  $('cloudflare-option').disabled = !cloudflareAvailable;
+  $('cloudflare-unavailable').hidden = !gateway || cloudflareAvailable;
+  const cloudflareReason = () => t(gateway?.cloudflareReason || "Cloudflare is unavailable on this computer. Choose Public gateway or Local network.");
+  localizedText($('cloudflare-unavailable'), cloudflareReason);
+  localizedAttribute($('cloudflare-option'), 'title', () => cloudflareAvailable ? '' : cloudflareReason());
   $('gateway-fields').hidden = !publicDraft;
   $('gateway-url').required = publicDraft;
   $('gateway-token').required = publicDraft && !stored;
   localizedAttribute($('gateway-token'), 'placeholder', () => stored ? t("Leave blank to keep saved token") : t("Token from the gateway installer"));
   localizedText($('gateway-token-hint'), () => stored ? t("Leave blank to use the saved token with this URL, or enter a replacement.") : t("Enter the token printed by the gateway installer."));
-  for (const id of ['gateway-mode', 'gateway-url', 'gateway-token', 'save-gateway']) $(id).disabled = unavailable;
-  $('reconnect-gateway').hidden = gateway?.mode !== 'gateway';
-  $('reconnect-gateway').disabled = unavailable || gatewayDirty;
+  for (const id of ['gateway-mode', 'save-gateway']) $(id).disabled = unavailable;
+  // Hidden gateway drafts must not take part in browser validation or saving.
+  for (const id of ['gateway-url', 'gateway-token']) $(id).disabled = unavailable || !publicDraft;
+  if ($('gateway-mode').value === 'cloudflare' && !cloudflareAvailable) $('save-gateway').disabled = true;
+  $('reconnect-gateway').hidden = !['cloudflare', 'gateway'].includes(gateway?.mode);
+  $('reconnect-gateway').disabled = unavailable || gatewayDirty || gateway?.mode === 'cloudflare' && !cloudflareAvailable;
   const status = gateway?.status;
-  const description = () => gateway?.mode === 'gateway' ? {
+  const description = () => gateway?.mode === 'cloudflare' ? {
+    downloading: t("Downloading the Cloudflare connection helper…"),
+    connecting: t("Creating a temporary HTTPS link with Cloudflare…"),
+    connected: t("Cloudflare connected. Your temporary HTTPS link is ready."),
+    retrying: t("Cloudflare connection interrupted. Retrying automatically…"),
+    error: t("Cloudflare connection interrupted. Retrying automatically…"),
+    unavailable: cloudflareReason(),
+    disabled: t("Waiting for the Cloudflare connection…")
+  }[status] || t("Waiting for the Cloudflare connection…") : gateway?.mode === 'gateway' ? {
     unconfigured: t("Configure your gateway URL and token to connect. Local network remote access is disabled."),
     connecting: t("Connecting to public gateway… Local network remote access is disabled."),
     connected: t("Connected to public gateway. Local network remote access is disabled."),
@@ -1006,22 +1100,31 @@ function renderGateway() {
   }[status] || t("Waiting for the public gateway connection…") : gateway ? t("Local network remote control is enabled.") : t("Loading connection settings…");
   localizedText($('gateway-status'), () => {
     const message = gateway?.message;
-    const repeatsConnectedStatus = status === 'connected' && message === 'Public gateway connected. Local LAN access is disabled.';
-    return description() + (message && !repeatsConnectedStatus ? ` ${t(message)}` : '');
+    const repeatsModeStatus = [
+      'Public gateway connected. Local LAN access is disabled.',
+      'Downloading the Cloudflare helper…',
+      'Connecting to Cloudflare… Local network remote access is disabled.',
+      'Cloudflare connected. Local network remote access is disabled.',
+      'Cloudflare is unavailable. Check your internet connection; retrying automatically.'
+    ].includes(message);
+    const duplicate = !message || repeatsModeStatus || t(message) === description();
+    return description() + (!duplicate ? ` ${t(message)}` : '');
   });
-  $('gateway-status').classList.toggle('error', status === 'error');
+  $('gateway-status').classList.toggle('error', ['error', 'unavailable'].includes(status));
   $('lan-firewall-guidance').hidden = gateway?.mode !== 'lan';
-  localizedText($('network-note-title'), () => gateway?.mode === 'gateway' ? t("Public gateway over HTTPS") : t("Trusted LAN only"));
-  localizedText($('network-note-text'), () => gateway?.mode === 'gateway' ? t("Remote commands travel through your gateway over HTTPS. Anyone with the remote link can control playback. Admin stays on this computer. HTTPS also allows supported phones and tablets to use Keep awake.") : t("HTTP traffic is not encrypted. Pairing protects control access, but cannot protect against someone listening on the network. Keep the host and controllers on a trusted network."));
+  localizedText($('network-note-title'), () => gateway?.mode === 'cloudflare' ? t("Temporary Cloudflare HTTPS link") : gateway?.mode === 'gateway' ? t("Public gateway over HTTPS") : t("Trusted LAN only"));
+  localizedText($('network-note-text'), () => gateway?.mode === 'cloudflare' ? t("Cloudflare provides a temporary HTTPS address without an account. The link changes after restarting or reconnecting. Anyone with the link can control playback. Keep Smart Stage running and connected to the internet. Admin and media stay on this computer. HTTPS allows supported phones and tablets to use Keep awake.") : gateway?.mode === 'gateway' ? t("Remote commands travel through your gateway over HTTPS. Anyone with the remote link can control playback. Admin stays on this computer. HTTPS also allows supported phones and tablets to use Keep awake.") : t("HTTP traffic is not encrypted. Pairing protects control access, but cannot protect against someone listening on the network. Keep the host and controllers on a trusted network."));
 }
 function applyGateway(value) {
-  if (value.mode === 'gateway' && (value.status !== 'connected' || (gateway?.remoteURL && gateway.remoteURL !== value.remoteURL))) {
+  if (value.mode !== gateway?.mode || ['cloudflare', 'gateway'].includes(value.mode) && (value.status !== 'connected' || gateway?.remoteURL && gateway.remoteURL !== value.remoteURL)) {
     clearRemoteLinks();
-    localizedText($('remote-unavailable'), () => t("The public gateway is not connected. The remote link and QR code appear after Smart Stage connects."));
+    localizedText($('remote-unavailable'), () => value.mode === 'cloudflare' ? t("The temporary Cloudflare link and QR code appear after Smart Stage connects.") : value.mode === 'gateway' ? t("The public gateway is not connected. The remote link and QR code appear after Smart Stage connects.") : t("Finding your network address…"));
   }
   if (value.status === 'connected' && gateway?.status !== 'connected' && !$('gateway-message').classList.contains('error')) localizedText($('gateway-message'), () => '');
+  const preserveMode = gatewayDirty;
   gateway = value;
-  if (!gatewayDirty) { $('gateway-mode').value = value.mode; $('gateway-url').value = value.url || ''; }
+  if (!preserveMode) $('gateway-mode').value = value.mode;
+  if (!gatewayFieldsDirty) $('gateway-url').value = value.url || '';
   renderGateway();
 }
 async function loadGateway() {
@@ -1038,22 +1141,28 @@ async function loadGateway() {
   } finally { gatewayRefresh = false; }
 }
 for (const id of ['gateway-mode', 'gateway-url', 'gateway-token']) $(id).addEventListener('input', () => {
+  if (id !== 'gateway-mode') gatewayFieldsDirty = true;
   gatewayDirty = true; localizedText($('gateway-message'), () => ''); renderGateway();
 });
 $('gateway-form').addEventListener('submit', async event => {
   event.preventDefault();
   if (gatewayBusy || !online || role !== 'admin' || updatePending()) return;
-  const body = { mode: $('gateway-mode').value, url: $('gateway-url').value.trim() };
-  if ($('gateway-token').value.trim()) body.token = $('gateway-token').value.trim();
+  const body = { mode: $('gateway-mode').value };
+  if (body.mode === 'cloudflare' && gateway?.cloudflareAvailable !== true) return;
+  if (body.mode === 'gateway') {
+    body.url = $('gateway-url').value.trim();
+    if ($('gateway-token').value.trim()) body.token = $('gateway-token').value.trim();
+  }
   // Clear secrets before the request. They are never echoed by the status API
   // or retained in browser storage, even when saving fails.
-  $('gateway-token').value = '';
+  if (body.mode === 'gateway') $('gateway-token').value = '';
   gatewayBusy = true; gatewaySequence++; renderGateway();
   localizedText($('gateway-message'), () => t("Saving connection…")); $('gateway-message').classList.remove('error');
   try {
     const result = await api('PUT', '/api/gateway', body);
+    if (body.mode === 'gateway') gatewayFieldsDirty = false;
     gatewayDirty = false; applyGateway(result);
-    localizedText($('gateway-message'), () => result.restart ? t("Saved. Smart Stage is restarting to enable local network remote control. Approve its firewall setup and allow Smart Stage incoming connections when prompted.") : result.mode === 'gateway' ? t("Saved. The public link and QR code appear once connected.") : t("Saved. Local network remote control is enabled. Allow Smart Stage incoming connections if your firewall asks."));
+    localizedText($('gateway-message'), () => result.restart ? t("Saved. Smart Stage is restarting to enable local network remote control. Approve its firewall setup and allow Smart Stage incoming connections when prompted.") : result.mode === 'cloudflare' ? t("Saved. The temporary HTTPS link and QR code appear once Cloudflare connects.") : result.mode === 'gateway' ? t("Saved. The public link and QR code appear once connected.") : t("Saved. Local network remote control is enabled. Allow Smart Stage incoming connections if your firewall asks."));
     await loadRemoteControl();
   } catch (error) {
     localizedText($('gateway-message'), () => t("Could not save the connection. {0}", {0: errorText(error)}));
@@ -1067,7 +1176,7 @@ $('reconnect-gateway').addEventListener('click', async () => {
   try {
     applyGateway(await api('POST', '/api/gateway/reconnect', {}));
     await loadRemoteControl();
-    localizedText($('gateway-message'), () => t("Reconnecting. Use the current link or QR code after the gateway connects."));
+    localizedText($('gateway-message'), () => gateway?.mode === 'cloudflare' ? t("Reconnecting. Use the new temporary link or QR code after Cloudflare connects.") : t("Reconnecting. Use the current link or QR code after the gateway connects."));
   } catch (error) { localizedText($('gateway-message'), () => errorText(error)); $('gateway-message').classList.add('error'); }
   finally { gatewayBusy = false; renderGateway(); }
 });
@@ -1683,7 +1792,10 @@ async function initializeSession() {
   if (adminPage) { await Promise.all([loadLanguage(), loadGateway(), loadRemoteControl(), loadPlaylist(), loadDevices(), loadUpdateStatus()]); }
   return true;
 }
-setInterval(() => { if (Date.now() - lastSeen > 18000) connection(false); }, 2000);
+setInterval(() => {
+  if (Date.now() - lastSeen > 18000) connection(false);
+  if (!adminPage && liveTransport === 'websocket' && source?.readyState === WebSocket.OPEN && Date.now() - liveSocketLastSeen > 18000) source.close();
+}, 2000);
 setInterval(() => { if (!document.hidden) void loadRemoteControl(); }, 10000);
 setInterval(() => { if (!document.hidden) void loadGateway(); }, 3000);
 setInterval(() => {
@@ -1709,7 +1821,9 @@ async function start() {
   if (location.hash) history.replaceState(null, '', location.pathname + location.search);
   if (token === null) { await initializeSession(); return; }
   try {
-    if (!(gatewayRoute ? /^[0-9a-fA-F]{64}$/ : /^[0-9]{8}$/).test(token)) throw new Error('This link has an invalid connection code. Scan the current QR code in Admin.');
+    const publicToken = /^[0-9a-fA-F]{64}$/.test(token);
+    if (!publicToken && (gatewayRoute || !/^[0-9]{8}$/.test(token))) throw new Error('This link has an invalid connection code. Scan the current QR code in Admin.');
+    if (publicToken) { publicRemote = true; configurePublicPairing(); }
     const session = await api('POST', '/api/pair', { key: token });
     role = session.role; csrf = session.csrfToken;
     if ($('pairing').open) $('pairing').close();

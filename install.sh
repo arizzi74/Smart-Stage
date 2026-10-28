@@ -60,7 +60,7 @@ configure_firewall() {
         return 0
     fi
     if [ "$lan_firewall" != 1 ]; then
-        printf 'Public gateway mode needs no incoming-connection firewall rule. Choose Local network in Admin to enable LAN remote control.\n'
+        printf 'Cloudflare and public gateway modes need no incoming-connection firewall rule. Choose Local network in Admin to enable LAN remote control.\n'
         return 0
     fi
     firewall_core="$destination/Contents/MacOS/smartstage"

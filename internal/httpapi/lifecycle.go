@@ -28,6 +28,10 @@ func (a *API) SetChooseFiles(choose, available func() bool) {
 }
 
 func (a *API) addCapabilities(reply map[string]any) {
+	reply["liveTransport"] = "sse"
+	if a.websockets != nil {
+		reply["liveTransport"] = "websocket"
+	}
 	if a.role != "admin" {
 		return
 	}

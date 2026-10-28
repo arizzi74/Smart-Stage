@@ -1,16 +1,15 @@
-Smart Stage 1.6.6 checks the Smart Stage website for updates, avoiding GitHub API limits on shared company networks.
+Smart Stage 1.7.0 adds account-free Cloudflare remote control with live WebSocket status.
 
-- Routine checks read a small public website manifest, without a GitHub account or token. GitHub is contacted for the archive and checksum only when an update is installed.
-- Official download URLs, architecture selection, semantic version/channel selection, SHA-256 verification and rollback protection remain in place. A website failure never falls back to the GitHub API.
-- The release workflow publishes and verifies the website manifest before testing automatic updates. Company filtering refusals are no longer automatically labelled as rate limiting.
-- Startup installation remains automatic before playback; later checks never interrupt a running show.
-- Builds use Go 1.26.10, including the latest certificate-validation and HTTP security fixes for the existing Go release line.
+- New installations without gateway settings use Cloudflare on supported platforms. Smart Stage downloads and verifies the official native helper, runs it in the background, and displays an HTTPS remote URL and QR code. No Cloudflare account, server or administrator privileges are needed.
+- Configured gateways and explicit Local network choices remain selected. Switch between Cloudflare, Public gateway and Local network without losing the saved gateway URL or token.
+- Cloudflare is grayed out on Windows ARM64 because the official distribution has no native helper. Gateway and Local network remain available; no emulated helper is substituted.
+- Cloudflare uses WebSockets for live status and authenticated HTTPS requests for commands. Only remote controls are exposed: Admin stays local, LAN access stays closed, and a separate high-entropy pairing secret protects each connection.
+- Quitting, reconnecting or switching modes closes the helper and its remote sessions. Cloudflare Quick Tunnel URLs change on reconnection; scan the new QR code. Quick Tunnels require internet access and have no uptime guarantee.
+- Update checks continue to use the website manifest without a GitHub account or token. Existing gateways work without a server upgrade.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 
-The first upgrade still uses your installed version's updater. If that older updater is rate-limited, wait for GitHub's reset time or use the installer below once. Subsequent checks use the website manifest.
-
-This feature works with the existing gateway daemon; no gateway upgrade or restart is required.
+If upgrading from a version older than 1.6.6 whose updater is rate-limited, use the installer below once. Subsequent checks use the website manifest.
 
 Install on Mac:
 

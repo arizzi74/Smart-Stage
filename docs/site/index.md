@@ -41,14 +41,16 @@ Mac browser downloads may require **Open Anyway** because the app is not notariz
 
 1. Drop media from Finder or File Explorer into the dedicated Admin window, or choose **Choose Media…**. Files remain in their original locations.
 2. Choose your audio output and stage display. Set cue labels, colors and an optional image or video background.
-3. Open **Remote control → Connection settings**. Configure your gateway URL and token, or select **Local network** and follow the firewall guidance.
+3. Wait for **Cloudflare** to connect, or open **Remote control → Connection settings** to choose your own **Public gateway** or **Local network**.
 4. Scan the QR code on your phone or tablet and tap a cue to play.
 
 Images can change the stage picture while music keeps playing. **Stage on/off** controls the stage independently. **STOP** returns to the current background; **Escape** immediately stops all sound and closes the stage when Smart Stage's native window has focus. **Quit Smart Stage** in Admin stops playback and exits.
 
-## Remote control and Linux gateway
+## Remote control and optional Linux gateway
 
-Public gateway mode is the default. It needs a configured public server and internet access; it keeps the desktop's inbound LAN remote port closed. Admin stays local on `127.0.0.1`. Alternatively, choose local LAN control without a gateway.
+Cloudflare is the default on supported computers when no gateway is configured. It creates a temporary HTTPS link without an account or server; internet access is required, and the link changes after restarting or reconnecting. Existing configured gateways and explicit Local network choices stay selected. Admin stays local on `127.0.0.1`, and media stays on the computer.
+
+Cloudflare is unavailable on Windows ARM64 because Cloudflare does not publish an official native helper for that platform. Choose **Public gateway** with your own server, or **Local network** for control on the same trusted LAN without internet. LAN mode uses unencrypted HTTP and may request firewall approval.
 
 On your public Linux server with systemd, install the separate ARM64 or AMD64 gateway:
 

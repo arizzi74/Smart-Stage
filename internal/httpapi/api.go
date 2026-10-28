@@ -42,6 +42,8 @@ type API struct {
 	cookieName     string
 	cookiePath     string
 	requireTLS     bool
+	publicOrigin   string
+	websockets     *liveSockets
 	remoteLinks    []RemoteLink
 	remoteToken    string
 	remoteMode     string
@@ -116,17 +118,27 @@ func (a *API) trusted(r *http.Request) bool {
 	if a.requireTLS && r.TLS == nil {
 		return false
 	}
-	if a.role == "admin" {
+	// Cloudflare terminates HTTPS before forwarding to its dedicated loopback
+	// listener. Only that listener's configured public origin is trusted; proxy
+	// headers never grant an external peer access to it.
+	if a.role == "admin" || a.publicOrigin != "" {
 		peer, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil || !net.ParseIP(peer).IsLoopback() {
 			return false
 		}
 	}
+	if a.publicOrigin != "" && !strings.EqualFold(r.Host, strings.TrimPrefix(a.publicOrigin, "https://")) {
+		return false
+	}
+	scheme := "http"
+	if r.TLS != nil || a.publicOrigin != "" {
+		scheme = "https"
+	}
 	host, port, err := net.SplitHostPort(r.Host)
 	if err != nil {
 		host = r.Host
 		port = "80"
-		if r.TLS != nil {
+		if scheme == "https" {
 			port = "443"
 		}
 	}
@@ -135,10 +147,6 @@ func (a *API) trusted(r *http.Request) bool {
 	a.mu.RUnlock()
 	if !allowed || strings.ContainsAny(host, "/@\\") {
 		return false
-	}
-	scheme := "http"
-	if r.TLS != nil {
-		scheme = "https"
 	}
 	origin := r.Header.Get("Origin")
 	if origin != "" {
@@ -205,13 +213,23 @@ func decodeLimit(w http.ResponseWriter, r *http.Request, target any, limit int64
 	return true
 }
 func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
+	connectSources := "'self'"
+	if a.publicOrigin != "" {
+		// Explicit WSS avoids browsers that do not match wss: against an HTTPS
+		// 'self' source. The constructor validates this immutable origin.
+		connectSources += " " + strings.Replace(a.publicOrigin, "https:", "wss:", 1)
+	}
+	w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src "+connectSources+"; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.Header().Set("X-Frame-Options", "DENY")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.Header().Set("Cache-Control", "no-store")
 	if !a.trusted(r) {
 		fail(w, 403, "origin_denied", "Host or Origin is not an allowed local address")
+		return
+	}
+	if a.websockets != nil && a.websockets.closed() {
+		fail(w, 503, "unavailable", "This remote connection has closed; reconnect from Admin")
 		return
 	}
 	if r.URL.Path == "/licenses.txt" {
@@ -241,6 +259,10 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if r.URL.RawQuery != "" && r.URL.Path != "/api/files" && r.URL.Path != "/api/remote-control/qr" {
 		fail(w, 400, "invalid_request", "Query parameters are not accepted on this route")
+		return
+	}
+	if r.URL.Path == "/api/events" && a.websockets != nil || r.URL.Path == "/api/ws" && a.websockets == nil {
+		fail(w, 404, "unknown_route", "Unknown route")
 		return
 	}
 	if r.URL.Path == "/api/local-session" {
@@ -332,12 +354,12 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	admin := session.Role == "admin"
 	path := r.URL.Path
 	remoteStage := r.Method == http.MethodPost && path == "/api/stage-output"
-	if path != "/api/state" && path != "/api/events" && path != "/api/play" && path != "/api/stop" && path != "/api/emergency-stop" && path != "/api/logout" && !remoteStage && !admin {
+	if path != "/api/state" && path != "/api/events" && path != "/api/ws" && path != "/api/play" && path != "/api/stop" && path != "/api/emergency-stop" && path != "/api/logout" && !remoteStage && !admin {
 		fail(w, 403, "admin_required", "Admin pairing is required")
 		return
 	}
 	// STOP and Quit bypass bounded ordinary-operation slots.
-	if path != "/api/stop" && path != "/api/emergency-stop" && path != "/api/quit" && path != "/api/events" && path != "/api/state" {
+	if path != "/api/stop" && path != "/api/emergency-stop" && path != "/api/quit" && path != "/api/events" && path != "/api/ws" && path != "/api/state" {
 		select {
 		case a.ordinary <- struct{}{}:
 			defer func() { <-a.ordinary }()
@@ -392,9 +414,11 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 200, reply)
 	case "GET /api/events":
 		a.events(w, r, session)
+	case "GET /api/ws":
+		a.liveStatus(w, r, session)
 	case "POST /api/logout":
 		a.auth.Logout(session.ID)
-		http.SetCookie(w, &http.Cookie{Name: a.cookieName, Value: "", Path: a.cookiePath, HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: -1})
+		http.SetCookie(w, &http.Cookie{Name: a.cookieName, Value: "", Path: a.cookiePath, HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: a.secureCookie(r), MaxAge: -1})
 		writeJSON(w, 200, map[string]bool{"loggedOut": true})
 	case "POST /api/play":
 		var body app.PlayRequest
@@ -548,10 +572,14 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func (a *API) setSession(w http.ResponseWriter, r *http.Request, s auth.Session) {
-	http.SetCookie(w, &http.Cookie{Name: a.cookieName, Value: s.ID, Path: a.cookiePath, HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: r.TLS != nil, MaxAge: int(auth.Lifetime.Seconds())})
+	http.SetCookie(w, &http.Cookie{Name: a.cookieName, Value: s.ID, Path: a.cookiePath, HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: a.secureCookie(r), MaxAge: int(auth.Lifetime.Seconds())})
 	reply := map[string]any{"role": s.Role, "csrfToken": s.CSRF, "expires": s.Expires}
 	a.addCapabilities(reply)
 	writeJSON(w, 200, reply)
+}
+
+func (a *API) secureCookie(r *http.Request) bool {
+	return r.TLS != nil || a.requireTLS || a.publicOrigin != ""
 }
 
 func (a *API) events(w http.ResponseWriter, r *http.Request, session auth.Session) {

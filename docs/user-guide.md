@@ -28,8 +28,9 @@ The installer detects Apple Silicon or Intel, downloads the matching published
 app ZIP, verifies its SHA-256 checksum, and installs **Smart Stage.app** with its
 icon into `~/Applications`. It removes `com.apple.quarantine` only from that app
 and its contents, then launches it. Copying the app needs no administrator
-password, and no extra runtime is required. Public gateway mode is now the default:
-installation and subsequent updates need no incoming firewall rule. Explicitly
+password. Cloudflare is the default when no gateway is configured; its official
+native helper is downloaded and checksum-verified automatically. Cloudflare and
+public gateway installation and updates need no incoming firewall rule. Explicitly
 selecting **Local network** in Admin restarts Smart Stage and requests authorization
 to configure only this app's incoming rule. Saved shows are retained.
 
@@ -122,6 +123,39 @@ Preview versions receive newer previews and stable releases; stable versions
 receive stable releases. To keep checks but disable automatic installation for
 a particular launch, use `--no-auto-update`.
 
+## Cloudflare remote control
+
+On a new installation without a configured gateway, Smart Stage selects
+**Cloudflare** when an official native `cloudflared` helper is available. Existing
+configured gateways and explicit Local network choices stay selected. Switch
+modes under **Remote control → Connection settings**; the saved gateway URL and
+registration token are retained when switching to Cloudflare or Local network.
+
+No Cloudflare account, domain, registration token or administrator privileges are
+needed. Smart Stage downloads a pinned, SHA-256 verified official helper into
+its user configuration directory, runs it without a Terminal window, and stops
+it when you quit or switch modes. It does not read an existing Cloudflare account
+configuration or install a system service. The helper is separately downloaded;
+the Smart Stage ZIP still contains one executable or app bundle.
+
+Scan the HTTPS remote link's QR code when connected. Cloudflare carries remote
+commands and live WebSocket status; media and Admin remain on the computer.
+The helper forwards only a separate remote-control listener on `127.0.0.1`, never
+Admin. Direct LAN access stays disabled. The remote requires a random 256-bit
+pairing secret, including when using an account-free tunnel.
+
+Quick Tunnel URLs are temporary: restarting/reconnecting changes the URL and
+pairing secret, so scan the new QR code. Quick Tunnels have no uptime guarantee
+and need internet access permitted by your network. You can select your own
+public gateway for a managed server, or Local network for offline LAN control.
+See [Cloudflare's Quick Tunnel limits](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
+
+The pinned official cloudflared 2026.10.5 distribution has native Mac ARM64,
+Mac AMD64 and Windows AMD64 helpers. **Cloudflare is disabled on Windows ARM64**:
+there is no official native helper in that release, and Smart Stage does not use
+x64 emulation. Choose Public gateway or Local network on that platform. A future
+Smart Stage update can enable it when a verified native helper is available.
+
 ## Public gateway
 
 On your Linux server (AMD64 or ARM64, systemd), run:
@@ -137,7 +171,7 @@ installs a static Go binary, an unprivileged systemd service, and generates a
 private registration token. See [gateway installation](gateway-install.md)
 for proxy prerequisites, manual setup, logs and removal.
 
-In Smart Stage Admin → **Remote control**, expand **Connection settings**, keep
+In Smart Stage Admin → **Remote control**, expand **Connection settings**, select
 **Public gateway** selected, enter the HTTPS URL and registration token printed
 by the installer, then Save. Connection settings start collapsed; the remote
 link, QR code and connection status remain visible.
@@ -214,8 +248,9 @@ acceptance testing.
 3. Select audio and stage outputs, then Save outputs. Explicitly acknowledge
    primary/only-display coverage. Audio works without a stage display. Use an
    extended desktop for independent projection; mirrored displays are identified.
-4. In Admin, find **Remote control → Connection settings**. Configure your public gateway URL/token,
-   then scan its QR code or copy its URL. Alternatively, explicitly select
+4. In Admin, scan the Cloudflare QR code once connected, or open
+   **Remote control → Connection settings** and configure your public gateway URL/token.
+   Alternatively, explicitly select
    **Local network** and save to restart with a local listener and firewall setup.
    The link pairs the browser without a separate key entry.
 5. In **Stage and sound**, choose an optional saved image or looping video

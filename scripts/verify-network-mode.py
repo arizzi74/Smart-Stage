@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify gateway-default and explicit LAN restart using a real native executable.
+"""Verify supported tunnel default and explicit LAN restart with a native executable.
 
 The actual restart helper, native lifecycle, ports, authentication, and saved
 configuration are exercised. Firewall elevation is explicitly skipped here;
@@ -186,13 +186,22 @@ def verify(executable, report, first_log, restart_log):
                 admin = until(lambda: Client(admin_port).authenticate(), 'Local Admin did not authenticate')
                 initial = admin.request('GET', '/api/state')['state']
                 gateway = admin.request('GET', '/api/gateway')
-                assert gateway['mode'] == 'gateway' and gateway['status'] == 'unconfigured', gateway
-                assert not gateway['hasToken'] and not gateway['remoteURL']
-                assert not listening(command_port), 'Fresh gateway mode opened an incoming LAN listener'
+                expected_mode = 'cloudflare' if gateway['cloudflareAvailable'] else 'gateway'
+                assert gateway['mode'] == expected_mode, gateway
+                assert not gateway['hasToken'] and not gateway['url']
+                if expected_mode == 'gateway':
+                    assert gateway['status'] == 'unconfigured' and not gateway['remoteURL']
+                    assert gateway['cloudflareReason'], 'Unsupported native helper was not explained'
+                assert not listening(command_port), 'Fresh installation opened an incoming LAN listener'
                 remote = admin.request('GET', '/api/remote-control')
-                assert remote['mode'] == 'gateway' and not remote['links'] and not remote['token']
+                assert remote['mode'] == expected_mode
+                if remote['links']:
+                    assert expected_mode == 'cloudflare'
+                    assert all(re.fullmatch(r'https://[a-z0-9-]+\.trycloudflare\.com/command#token=[a-f0-9]{64}', link['url']) for link in remote['links'])
+                else:
+                    assert not remote['token']
                 assert socket_owner(admin_port) == process.pid
-                report.update(gatewayDefault=True, unconfiguredHasNoFallback=True,
+                report.update(defaultMode=expected_mode, unconfiguredHasNoLANFallback=True,
                               initialAdminPID=process.pid, assignedAdminPort=admin_port,
                               configuredCommandPort=command_port, defaultLANListenerClosed=True)
                 saved = admin.request('PUT', '/api/playlist', {
@@ -291,7 +300,7 @@ def main():
     try:
         verify(executable, report, first_log, restart_log)
         report['status'] = 'passed'
-        print('Native network-mode restart passed: gateway default, explicit LAN restart, preserved ports/configuration, new process/session, pairing and Quit.')
+        print('Native network-mode restart passed: supported tunnel default, explicit LAN restart, preserved ports/configuration, new process/session, pairing and Quit.')
     except Exception as error:
         report.update(status='failed', error=str(error))
         for log in (first_log, restart_log):

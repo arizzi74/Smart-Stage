@@ -21,7 +21,8 @@ const assert = require('node:assert/strict');
   let volumePostGate = null, trackVolumeWriteGate = null, stopPostGate = null, stateReadGate = null, rejectVolume = false, rejectTrackVolume = false;
   let nativePlaylistStatus = { id: 0, phase: 'idle' }, nativePlaylistResult = { phase: 'complete' }, nativePlaylistMismatch = false;
   let adminDocumentLoads = 0, adminCapabilities = { chooseFiles: false };
-  let gateway = { mode: 'lan', url: '', hasToken: false, status: 'disabled', message: '', remoteURL: '' };
+  let gateway = { mode: 'lan', url: '', hasToken: false, status: 'disabled', message: '', remoteURL: '', cloudflareAvailable: true, cloudflareReason: '', cloudflareVersion: 'test-version' };
+  const cloudflareToken = 'd4'.repeat(32);
   const gatewayRemoteToken = 'a1'.repeat(32), gatewayRegistrationToken = 'b2'.repeat(32);
   const publicPrefix = '/smartstage/e/' + '0123456789abcdef'.repeat(2), publicRequests = [];
   let gatewayDelay = 0, gatewayFailSave = false;
@@ -78,7 +79,7 @@ const assert = require('node:assert/strict');
     };
     if (url.pathname === '/api/local-session' && listenerRole === 'admin') { pair(); return; }
     if (url.pathname === '/api/pair' && listenerRole === 'command') {
-      if (body.key !== (prefix ? gatewayRemoteToken : token)) { reply({ error: { message: 'Invalid connection code' } }, 401); return; }
+      if (body.key !== (prefix ? gatewayRemoteToken : gateway.mode === 'cloudflare' ? cloudflareToken : token)) { reply({ error: { message: 'Invalid connection code' } }, 401); return; }
       pair(); return;
     }
     if (role !== listenerRole) { reply({ error: { message: 'Connect this browser first' } }, 401); return; }
@@ -101,7 +102,7 @@ const assert = require('node:assert/strict');
         const gate = stateReadGate; stateReadGate = null;
         gate.snapshot = snapshot; gate.entered(); await gate.released;
       }
-      reply({ role, csrfToken: 'test-csrf', state: snapshot, ...(role === 'admin' ? { capabilities: adminCapabilities, language } : {}) }); return;
+      reply({ role, csrfToken: 'test-csrf', liveTransport: role === 'command' && gateway.mode === 'cloudflare' ? 'websocket' : 'sse', state: snapshot, ...(role === 'admin' ? { capabilities: adminCapabilities, language } : {}) }); return;
     }
     if (['/api/admin-presence', '/api/quit', '/api/choose-files'].includes(url.pathname)) {
       if (role !== 'admin') { reply({ error: { message: 'Admin only' } }, 403); return; }
@@ -184,10 +185,11 @@ const assert = require('node:assert/strict');
       assert.equal(req.method, 'PUT'); assert.equal(req.headers['x-csrf-token'], 'test-csrf');
       assert.equal(req.headers.origin, `http://127.0.0.1:${req.socket.localPort}`);
       if (gatewayFailSave) { reply({ error: { message: 'Gateway settings could not be saved.' } }, 500); return; }
-      assert(['lan', 'gateway'].includes(body.mode));
+      assert(['cloudflare', 'lan', 'gateway'].includes(body.mode));
+      if (body.mode !== 'gateway') assert.deepEqual(Object.keys(body), ['mode'], 'mode-only saves cannot submit hidden gateway credentials');
       if (body.mode === 'gateway' && !gateway.hasToken) assert.equal(body.token, gatewayRegistrationToken);
       if (body.token !== undefined) assert.match(body.token, /^[0-9a-f]{64}$/);
-      gateway = { mode: body.mode, url: body.url, hasToken: Boolean(body.token || gateway.hasToken), status: body.mode === 'gateway' ? 'connecting' : 'disabled', message: '', remoteURL: '', restart: body.mode === 'lan' && gateway.mode !== 'lan' };
+      gateway = { ...gateway, mode: body.mode, url: body.url ?? gateway.url, hasToken: Boolean(body.token || gateway.hasToken), status: body.mode !== 'lan' ? 'connecting' : 'disabled', message: '', remoteURL: '', restart: body.mode === 'lan' && gateway.mode !== 'lan' };
       reply(gateway); return;
     }
     if (url.pathname === '/api/gateway/reconnect') {
@@ -196,7 +198,7 @@ const assert = require('node:assert/strict');
     }
     if (url.pathname === '/api/remote-control') {
       remoteGets++;
-      reply(gateway.mode === 'gateway' ? { mode: 'gateway', token: gateway.status === 'connected' ? gatewayRemoteToken : '', links: gateway.status === 'connected' ? [{ label: 'Public gateway', url: gateway.remoteURL, qrURL: '/api/remote-control/qr?index=0' }] : [] } : { mode: 'lan', links, token }); return;
+      reply(gateway.mode === 'cloudflare' ? { mode: 'cloudflare', token: gateway.status === 'connected' ? cloudflareToken : '', links: gateway.status === 'connected' ? [{ label: 'Cloudflare', url: gateway.remoteURL, qrURL: '/api/remote-control/qr?index=0' }] : [] } : gateway.mode === 'gateway' ? { mode: 'gateway', token: gateway.status === 'connected' ? gatewayRemoteToken : '', links: gateway.status === 'connected' ? [{ label: 'Public gateway', url: gateway.remoteURL, qrURL: '/api/remote-control/qr?index=0' }] : [] } : { mode: 'lan', links, token }); return;
     }
     if (url.pathname === '/api/remote-control/qr') { res.writeHead(200, { 'Content-Type': 'image/png', 'Cache-Control': 'no-store' }); res.end(imageFixture); return; }
     if (url.pathname === '/api/playlist/volume') {
@@ -386,7 +388,137 @@ const assert = require('node:assert/strict');
     Object.assign(observation, {releasedRaw:raw, releasedWrites:fixtureTrackRequests().length - before.count, releasedRevisionDelta:config.playlistRevision - before.revision, expectedRevision:write.body.expectedRevision, releasedCapture:false, hoverChangedValue:false});
     await node.dispose(); return raw;
   };
+  async function verifyCloudflareBrowser() {
+    // Cloudflare browser checks use real page assets and HTTP fixture sessions.
+    // The WebSocket wire is explicitly scripted, without a public tunnel or
+    // native cloudflared process; Go integration tests cover the real server.
+    const beforeCloudflareGateway = {...gateway}, beforeCloudflareLanguage = {...language};
+    language = {mode:'system', effective:'en', system:'en'};
+    gateway = {...gateway, mode:'cloudflare', status:'downloading', message:'Downloading the Cloudflare helper…', cloudflareAvailable:true, cloudflareReason:'', url:'https://saved-gateway.example/smartstage', hasToken:true, remoteURL:''};
+    const cloudflareContext = await browser.newContext();
+    const cloudflareAdmin = await cloudflareContext.newPage();
+    cloudflareAdmin.on('pageerror', error => errors.push(error.message));
+    await cloudflareAdmin.goto(adminBase + '/admin'); await cloudflareAdmin.locator('#connection.live').waitFor();
+    await cloudflareAdmin.waitForFunction(() => document.getElementById('gateway-mode').value === 'cloudflare');
+    assert.match(await cloudflareAdmin.locator('#gateway-status').textContent(), /Downloading/);
+    assert.equal(await cloudflareAdmin.locator('#remote-connection-settings').evaluate(node => node.open), false);
+    await cloudflareAdmin.locator('#remote-connection-settings > summary').click();
+    assert.equal(await cloudflareAdmin.locator('#cloudflare-option').isDisabled(), false);
+    assert.match(await cloudflareAdmin.locator('#connection-mode-hint').textContent(), /without an account/);
+    await cloudflareAdmin.locator('#gateway-mode').selectOption('gateway');
+    await cloudflareAdmin.locator('#gateway-url').fill('https://draft-gateway.example/smartstage');
+    await cloudflareAdmin.locator('#gateway-token').fill(gatewayRegistrationToken);
+    await cloudflareAdmin.locator('#gateway-mode').selectOption('cloudflare');
+    await cloudflareAdmin.locator('#save-gateway').click();
+    await cloudflareAdmin.waitForFunction(() => document.getElementById('gateway-message').textContent.startsWith('Saved.'));
+    assert.deepEqual(requests.filter(item => item.path === '/api/gateway' && item.method === 'PUT').at(-1).body, {mode:'cloudflare'});
+    assert.equal(gateway.url, 'https://saved-gateway.example/smartstage'); assert.equal(gateway.hasToken, true);
+    await cloudflareAdmin.evaluate(() => loadGateway());
+    await cloudflareAdmin.locator('#gateway-mode').selectOption('gateway');
+    assert.equal(await cloudflareAdmin.locator('#gateway-url').inputValue(), 'https://draft-gateway.example/smartstage');
+    assert.equal(await cloudflareAdmin.locator('#gateway-token').inputValue(), gatewayRegistrationToken, 'mode-only saves preserve an unsubmitted gateway secret in its draft');
+    await cloudflareAdmin.locator('#gateway-mode').selectOption('lan');
+    await cloudflareAdmin.locator('#save-gateway').click();
+    await cloudflareAdmin.waitForFunction(() => document.getElementById('gateway-message').textContent.includes('restarting to enable local network'));
+    assert.deepEqual(requests.filter(item => item.path === '/api/gateway' && item.method === 'PUT').at(-1).body, {mode:'lan'});
+    await cloudflareAdmin.locator('#gateway-mode').selectOption('gateway');
+    assert.equal(await cloudflareAdmin.locator('#gateway-url').inputValue(), 'https://draft-gateway.example/smartstage');
+    assert.equal(await cloudflareAdmin.locator('#gateway-token').inputValue(), gatewayRegistrationToken);
+    await cloudflareAdmin.locator('#gateway-mode').selectOption('cloudflare');
+    await cloudflareAdmin.locator('#save-gateway').click();
+    await cloudflareAdmin.waitForFunction(() => document.getElementById('gateway-message').textContent.includes('once Cloudflare connects'));
+    for (const [status, message] of [['downloading','Downloading'], ['connecting','Creating a temporary HTTPS'], ['connected','temporary HTTPS link is ready'], ['retrying','Retrying automatically']]) {
+      gateway = {...gateway, status, message:'', remoteURL:status === 'connected' ? 'https://first-connection.trycloudflare.com/command#token=' + cloudflareToken : ''};
+      await cloudflareAdmin.evaluate(() => loadGateway());
+      assert.match(await cloudflareAdmin.locator('#gateway-status').textContent(), new RegExp(message));
+      assert.equal(await cloudflareAdmin.locator('#remote-ready').isVisible(), status === 'connected');
+      if (status === 'connected') {
+        assert.equal(await cloudflareAdmin.locator('#remote-url').textContent(), gateway.remoteURL);
+        assert.equal(await cloudflareAdmin.locator('#remote-code-row').isVisible(), false);
+        assert.match(await cloudflareAdmin.locator('#remote-guidance').textContent(), /No Cloudflare account/);
+        assert.equal(await cloudflareAdmin.locator('#remote-qr').getAttribute('src'), '/api/remote-control/qr?index=0');
+      } else assert.equal(await cloudflareAdmin.locator('#remote-url').getAttribute('href'), null);
+    }
+    const armReason = 'Cloudflare is unavailable on Windows ARM64 because Cloudflare does not publish a native cloudflared helper for this platform. Choose Public gateway or Local network.';
+    gateway = {...gateway, status:'unavailable', cloudflareAvailable:false, cloudflareReason:armReason};
+    await cloudflareAdmin.evaluate(() => loadGateway());
+    await cloudflareAdmin.waitForFunction(() => document.getElementById('cloudflare-option').disabled);
+    assert.deepEqual(await cloudflareAdmin.evaluate(() => ({disabled:document.getElementById('cloudflare-option').disabled, available:gateway?.cloudflareAvailable})), {disabled:true, available:false});
+    assert.equal(await cloudflareAdmin.locator('#save-gateway').isDisabled(), true);
+    assert.equal(await cloudflareAdmin.locator('#cloudflare-unavailable').textContent(), armReason);
+    await cloudflareAdmin.locator('#language-mode').selectOption('it');
+    await cloudflareAdmin.waitForFunction(() => document.documentElement.lang === 'it');
+    assert.match(await cloudflareAdmin.locator('#cloudflare-unavailable').textContent(), /Windows ARM64.*non pubblica.*nativo/);
+    assert.equal(await cloudflareAdmin.locator('#cloudflare-option').textContent(), 'Cloudflare (link HTTPS temporaneo)');
+    await cloudflareAdmin.screenshot({path:path.join(output, 'cloudflare-unavailable-it.png')});
+    await cloudflareAdmin.locator('#gateway-mode').selectOption('gateway');
+    assert.equal(await cloudflareAdmin.locator('#gateway-token').inputValue(), gatewayRegistrationToken, 'language and capability updates preserve gateway drafts');
+    assert.equal(await cloudflareAdmin.locator('#save-gateway').isDisabled(), false);
+    gateway = {...gateway, mode:'cloudflare', status:'connected', message:'', cloudflareAvailable:true, cloudflareReason:'', remoteURL:'https://new-connection.trycloudflare.com/command#token=' + cloudflareToken};
+    const socketPage = await cloudflareContext.newPage(); socketPage.on('pageerror', error => errors.push(error.message));
+    const socketAttempts = [], socketFrames = [], socketURLs = [];
+    let currentSocket, socketFailures = 0;
+    await socketPage.addInitScript(() => {
+      window.__unexpectedEventSource = 0;
+      window.EventSource = class {constructor() {window.__unexpectedEventSource++; throw new Error('Cloudflare must use WebSocket live status');}};
+    });
+    await socketPage.routeWebSocket('**/api/ws', socket => {
+      currentSocket = socket; socketURLs.push(socket.url());
+      socket.onMessage(message => {
+        socketFrames.push(JSON.parse(String(message))); socketAttempts.push(Date.now());
+        if (socketFailures > 0) { socketFailures--; void socket.close({code:1013, reason:'temporary fixture disconnect'}); }
+        else socket.send(JSON.stringify({type:'state', state}));
+      });
+    });
+    const beforeSocketRequests = requests.length;
+    await socketPage.goto(commandBase + '/command#token=' + cloudflareToken); await socketPage.locator('#connection.live').waitFor();
+    assert.equal(await socketPage.locator('#pair-key').getAttribute('maxlength'), '64');
+    assert.equal(await socketPage.locator('#pair-key').getAttribute('pattern'), '[0-9a-fA-F]{64}');
+    assert.deepEqual(socketFrames[0], {type:'authenticate', csrfToken:'test-csrf'});
+    assert.equal(await socketPage.evaluate(() => window.__unexpectedEventSource), 0);
+    assert.equal(await socketPage.evaluate(() => location.hash), '');
+    assert.equal(await socketPage.evaluate(() => localStorage.length + sessionStorage.length), 0);
+    assert(socketURLs.every(url => url === commandBase.replace(/^http/, 'ws') + '/api/ws'), 'WebSocket URLs contain no access key or CSRF token');
+    assert.equal(requests.slice(beforeSocketRequests).some(item => item.path === '/api/events'), false);
+    const beforeSocketPlay = commands.filter(item => item.path === '/api/play').length;
+    const socketPlayResponse = socketPage.waitForResponse(response => response.url().endsWith('/api/play'));
+    await socketPage.locator('.cue:not(:disabled)').first().click(); assert.equal((await socketPlayResponse).status(), 202);
+    currentSocket.send(JSON.stringify({type:'state', state}));
+    assert.equal(commands.filter(item => item.path === '/api/play').length, beforeSocketPlay + 1, 'commands remain independent HTTP requests');
+    const beforeRetryStateGets = stateGets;
+    socketFailures = 2; await currentSocket.close({code:1013, reason:'temporary fixture disconnect'});
+    await socketPage.locator('#connection.stale').waitFor();
+    assert.equal(await socketPage.locator('.cue').first().isDisabled(), true);
+    const stopWhileDisconnected = socketPage.waitForResponse(response => response.url().endsWith('/api/stop'));
+    await socketPage.locator('#stop').click(); assert.equal((await stopWhileDisconnected).status(), 202, 'STOP can use HTTP while live status reconnects');
+    await socketPage.locator('#connection.live').waitFor({timeout:12000});
+    assert.equal(socketAttempts.length, 4);
+    assert(socketAttempts[2] - socketAttempts[1] >= 900, 'second retry backs off to one second');
+    assert(socketAttempts[3] - socketAttempts[2] >= 1900, 'third retry backs off to two seconds');
+    assert(stateGets >= beforeRetryStateGets + 3, 'each retry validates its HTTP session');
+    assert.equal(commands.filter(item => item.path === '/api/play').length, beforeSocketPlay + 1, 'live reconnect never replays a command');
+    await socketPage.evaluate(() => {lastSeen=Date.now()-19000; connection(false);});
+    currentSocket.send(JSON.stringify({type:'heartbeat'})); await socketPage.locator('#connection.live').waitFor();
+    await currentSocket.close({code:4403, reason:'fixture invalid CSRF'});
+    await socketPage.locator('#pairing').waitFor({state:'visible'});
+    const attemptsAfterAuthFailure = socketAttempts.length; await socketPage.waitForTimeout(650);
+    assert.equal(socketAttempts.length, attemptsAfterAuthFailure, 'authorization close requires pairing instead of reconnecting');
+    await socketPage.locator('#pair-key').fill(cloudflareToken); await socketPage.locator('#pair-form button[type=submit]').click();
+    await socketPage.locator('#connection.live').waitFor();
+    const commandCookie = (await cloudflareContext.cookies()).find(cookie => cookie.name === 'smartstage_command_session');
+    sessions.delete(commandCookie.value);
+    await currentSocket.close({code:1013, reason:'fixture expired session before upgrade'});
+    await socketPage.locator('#pairing').waitFor({state:'visible'});
+    const attemptsAfterMissingSession = socketAttempts.length; await socketPage.waitForTimeout(650);
+    assert.equal(socketAttempts.length, attemptsAfterMissingSession, 'an HTTP 401 on retry stops the WebSocket loop');
+    assert.equal(await socketPage.evaluate(() => window.__unexpectedEventSource), 0);
+    assert(socketFrames.every(frame => frame.type === 'authenticate'), 'live status socket never carries playback commands');
+    await cloudflareContext.close(); gateway = beforeCloudflareGateway; language = beforeCloudflareLanguage;
+    assert.deepEqual(errors, []);
+    fs.writeFileSync(path.join(output, 'cloudflare-browser.json'), JSON.stringify({passed:true, modeOnlySavesPreserveDraftsAndCredentials:true, englishItalianUnavailableCapability:true, temporaryLinkAndQR:true, websocketStatusAndHTTPCommands:true, websocketBackoffHeartbeatAndSessionRecovery:true, websocketWireScripted:true, publicTunnelVerified:false}, null, 2));
+  }
   try {
+    if (process.env.SMARTSTAGE_CLOUDFLARE_ONLY === '1') { await verifyCloudflareBrowser(); console.log('Cloudflare browser checks passed.'); return; }
     if (trackDragOnly) {
       const context = await browser.newContext({viewport:{width:1280, height:900}});
       const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
@@ -563,11 +695,11 @@ const assert = require('node:assert/strict');
     await page.locator('#connection.live').waitFor();
     assert.equal(await page.locator('#pair-key').inputValue(), '', 'manual code is cleared after submission');
 
-    gateway = { mode: 'gateway', url: '', hasToken: false, status: 'unconfigured', message: '', remoteURL: '' };
+    gateway = { mode: 'gateway', url: '', hasToken: false, status: 'unconfigured', message: '', remoteURL: '', cloudflareAvailable:false, cloudflareReason:'Cloudflare remote control is unavailable on this host.', cloudflareVersion:'test-version' };
     const freshAdmin = await browser.newPage(); freshAdmin.on('pageerror', e => errors.push(e.message));
     await freshAdmin.goto(adminBase + '/admin');
     await freshAdmin.waitForFunction(() => document.getElementById('gateway-status').textContent.includes('Configure your gateway URL'));
-    assert.equal(await freshAdmin.locator('#gateway-mode').inputValue(), 'gateway', 'new installations start with public gateway mode');
+    assert.equal(await freshAdmin.locator('#gateway-mode').inputValue(), 'gateway', 'unsupported hosts without saved settings select the public gateway fallback');
     assert.equal(await freshAdmin.locator('#remote-ready').isVisible(), false, 'unconfigured gateway mode does not advertise a LAN fallback');
     assert.equal(await freshAdmin.locator('#remote-connection-settings').evaluate(node => node.open), false, 'connection settings start collapsed');
     assert.equal(await freshAdmin.locator('#gateway-fields').isVisible(), false);
@@ -579,7 +711,7 @@ const assert = require('node:assert/strict');
     assert.equal(await freshAdmin.locator('#lan-firewall-guidance').isVisible(), false, 'an unsaved LAN draft does not advertise an active LAN firewall flow');
     await freshAdmin.locator('#save-gateway').click();
     await freshAdmin.waitForFunction(() => document.getElementById('gateway-message').textContent.includes('restarting to enable local network'));
-    assert.deepEqual(requests.filter(r => r.path === '/api/gateway' && r.body.mode).at(-1).body, { mode: 'lan', url: '' });
+    assert.deepEqual(requests.filter(r => r.path === '/api/gateway' && r.body.mode).at(-1).body, { mode: 'lan' });
     await freshAdmin.close(); gateway.restart = false;
 
     // The final validation event can arrive while an earlier playlist-cache
@@ -2230,8 +2362,9 @@ const assert = require('node:assert/strict');
     await publicSeekContext.close(); await seekContext.close();
     Object.assign(state, beforeSeekFixture); state.revision++; broadcast();
     await italianRemoteContext.close();
+    await verifyCloudflareBrowser();
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, trackVolumeLiveAndPlaylistPersistence: true, trackVolumeHeldMouseTouchKeyboardSaveOnlyOnRelease: true, trackVolumeHoverAfterReleaseAndPointerCaptureCleared: true, trackVolumeStateRefreshPreservesActiveDOMAndFocus: true, trackVolumeUntrackedInputTrailing200msFallback: true, trackVolumeUnchangedValueDeduplicationAndExactRevisions: true, trackVolumeDelayedLatestPendingAndIndependentCueDeadlines: true, trackVolumeReadyTargetsDrainWithoutStateRefresh: true, trackVolumeStructuralRefreshPreservesDeadlineAndCueIdentity: true, trackVolumeSignedLabelsAndNormalizedEndpoints: true, trackVolumeSignedFailureRollbackAndReload: true, masterVolumeDefaultMuteAndGatewayControl: true, masterVolumeTrailing200msAndImmediateRelease: true, masterVolumeSingleFlightLatestPendingWithoutStateGet: true, masterVolumeSameValueDeduplicationAndCompetingControllerIntent: true, masterVolumeDelayedStateSSEAndAcknowledgementProtection: true, masterVolumeStopEpochAndInstanceCancellation: true, masterVolumeGlobalEscapeCancellationAndStopConfirmation: true, volumeControlsEnglishItalianAndResponsive: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayDefaultAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, cloudflareModeOnlySavesPreserveGatewayDraftsAndStoredCredentials:true, cloudflareEnglishItalianCapabilitiesAndTemporaryQR:true, cloudflareWebSocketLiveStatusAndHTTPCommands:true, cloudflareWebSocketBackoffHeartbeatAndSessionRecovery:true, cloudflareWebSocketWireScripted:true, cloudflarePublicTunnelVerified:false, trackVolumeLiveAndPlaylistPersistence: true, trackVolumeHeldMouseTouchKeyboardSaveOnlyOnRelease: true, trackVolumeHoverAfterReleaseAndPointerCaptureCleared: true, trackVolumeStateRefreshPreservesActiveDOMAndFocus: true, trackVolumeUntrackedInputTrailing200msFallback: true, trackVolumeUnchangedValueDeduplicationAndExactRevisions: true, trackVolumeDelayedLatestPendingAndIndependentCueDeadlines: true, trackVolumeReadyTargetsDrainWithoutStateRefresh: true, trackVolumeStructuralRefreshPreservesDeadlineAndCueIdentity: true, trackVolumeSignedLabelsAndNormalizedEndpoints: true, trackVolumeSignedFailureRollbackAndReload: true, masterVolumeDefaultMuteAndGatewayControl: true, masterVolumeTrailing200msAndImmediateRelease: true, masterVolumeSingleFlightLatestPendingWithoutStateGet: true, masterVolumeSameValueDeduplicationAndCompetingControllerIntent: true, masterVolumeDelayedStateSSEAndAcknowledgementProtection: true, masterVolumeStopEpochAndInstanceCancellation: true, masterVolumeGlobalEscapeCancellationAndStopConfirmation: true, volumeControlsEnglishItalianAndResponsive: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayFallbackAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } catch (error) {

@@ -4,6 +4,12 @@ Smart Stage’s own code is licensed under the [MIT License](../LICENSE). Third-
 
 Desktop binaries embed the project license and the full notices below, available through the local Admin `/licenses.txt` endpoint. The gateway embeds the project license and its transport notice, available with `smartstage-gateway --licenses`.
 
+Cloudflare mode separately downloads the official **cloudflared 2026.10.5**
+executable; it is not bundled into Smart Stage. Cloudflared is licensed under
+the [Apache License 2.0](https://github.com/cloudflare/cloudflared/blob/2026.10.5/LICENSE).
+Its source and dependency notices are available from the
+[official release](https://github.com/cloudflare/cloudflared/releases/tag/2026.10.5).
+
 Smart Stage third-party notices
 
 QR encoding: github.com/piglig/go-qr v1.1.0

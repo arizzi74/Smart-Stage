@@ -22,6 +22,7 @@ import (
 	"smartstage/internal/app"
 	"smartstage/internal/auth"
 	"smartstage/internal/browseropen"
+	"smartstage/internal/cloudflared"
 	"smartstage/internal/files"
 	"smartstage/internal/httpapi"
 	"smartstage/internal/identity"
@@ -47,6 +48,13 @@ func (r *rootsFlag) Set(v string) error { *r = append(*r, v); return nil }
 var allowStartupDialog = true
 
 func main() {
+	if handled, err := cloudflared.Guardian(os.Args[1:]); handled {
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Smart Stage Cloudflare:", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) >= 5 && os.Args[1] == "--smartstage-restart" && os.Args[4] == "--" {
 		pid, err := strconv.Atoi(os.Args[2])
 		if err == nil {
@@ -246,6 +254,7 @@ func main() {
 		restartReady := make(chan *update.Restart, 1)
 		remoteManager, err := remote.New(ctx, settings, remote.Options{ConfigDir: *configDir,
 			DisableLAN: local.disable, Changed: local.changed,
+			Cloudflare: (&cloudflareControl{configDir: *configDir, app: service}).serve,
 			Handler: func(publicURL, prefix string, authentication *auth.Manager) http.Handler {
 				handler, err := httpapi.NewGatewayCommand(service, authentication, web.Handler(), publicURL, prefix)
 				if err != nil {

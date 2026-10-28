@@ -158,3 +158,5 @@
 .remote-page .transport>.identity,.remote-page .transport>.now,.remote-page .transport>.transport-actions{grid-row:2}
 @media(max-width:800px){.remote-page .transport>.now{grid-column:1;grid-row:3}.remote-page .transport>.transport-actions{grid-column:2;grid-row:2/4}.track-volume-control{grid-template-columns:12px minmax(80px,1fr) 12px 48px}.track-volume-control label{grid-column:1/-1}.master-volume-control{gap:8px}}
 @media(max-height:500px) and (orientation:landscape){.remote-page .transport>.now{grid-column:2;grid-row:2}.remote-page .transport>.transport-actions{grid-column:3;grid-row:2}}
+
+#cloudflare-option:disabled{color:var(--muted);opacity:.5}
