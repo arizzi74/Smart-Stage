@@ -169,7 +169,9 @@ func launchGuardian(ctx context.Context, opts Options, binary, runDir string, st
 		return ErrCache
 	}
 	cmd := exec.CommandContext(context.Background(), self, guardianArgument)
-	cmd.Dir = runDir
+	// Windows locks a process's current directory against deletion. Only the
+	// actual helper runs inside runDir; its guardian must outlive and remove it.
+	cmd.Dir = filepath.Dir(runDir)
 	cmd.Env = isolatedEnvironment(os.Environ(), runDir)
 	cmd.WaitDelay = 2 * time.Second
 	cleanupProcess := configureProcess(cmd)

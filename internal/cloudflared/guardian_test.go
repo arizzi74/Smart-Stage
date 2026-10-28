@@ -23,6 +23,11 @@ const guardianParentFixture = "--smartstage-cloudflared-test-parent"
 // Only this package's test binary dispatches subprocess fixtures. Production
 // uses the explicit early Guardian call in cmd/smartstage, without package init.
 func init() {
+	if len(os.Args) == 2 && os.Args[1] == guardianArgument {
+		if cwd, err := os.Getwd(); err == nil {
+			_ = os.WriteFile(filepath.Join(cwd, "guardian-cwd"), []byte(cwd), 0600)
+		}
+	}
 	if handled, err := Guardian(os.Args[1:]); handled {
 		if err != nil {
 			os.Exit(1)
@@ -56,6 +61,9 @@ func guardianTestBinaryName() string {
 func guardianHelperFixture() {
 	data, _ := json.Marshal(map[string]int{"helper": os.Getpid(), "guardian": os.Getppid()})
 	_ = os.WriteFile("processes.json", data, 0600)
+	if cwd, err := os.Getwd(); err == nil {
+		_ = os.WriteFile("helper-cwd", []byte(cwd), 0600)
+	}
 	behavior, _ := os.ReadFile("behavior")
 	switch string(behavior) {
 	case "exit":
@@ -121,6 +129,31 @@ func guardianProcesses(t *testing.T, runDir string) (helper, guardian int) {
 	return processes["helper"], processes["guardian"]
 }
 
+func assertGuardianWorkingDirectories(t *testing.T, runDir string) {
+	t.Helper()
+	// Observe the native processes rather than only checking exec.Cmd fields.
+	// Windows locks every running process's current directory against deletion.
+	for _, expected := range []struct {
+		name string
+		file string
+		dir  string
+	}{
+		{"guardian", filepath.Join(filepath.Dir(runDir), "guardian-cwd"), filepath.Dir(runDir)},
+		{"helper", filepath.Join(runDir, "helper-cwd"), runDir},
+	} {
+		data, err := os.ReadFile(expected.file)
+		if err != nil {
+			t.Errorf("%s did not report its working directory in the expected location", expected.name)
+			continue
+		}
+		actual, actualErr := os.Stat(string(data))
+		want, wantErr := os.Stat(expected.dir)
+		if actualErr != nil || wantErr != nil || !os.SameFile(actual, want) {
+			t.Errorf("%s started in a directory that violates runtime cleanup isolation", expected.name)
+		}
+	}
+}
+
 func waitGuardianCleanup(t *testing.T, settings guardianSettings, helper, guardian int) {
 	t.Helper()
 	deadline := time.Now().Add(10 * time.Second)
@@ -150,6 +183,7 @@ func TestGuardianNormalCancellationReapsAndRemovesRuntime(t *testing.T) {
 		t.Fatal("native guardian did not start")
 	}
 	helper, guardian := guardianProcesses(t, settings.RunDir)
+	assertGuardianWorkingDirectories(t, settings.RunDir)
 	cancel()
 	select {
 	case err := <-done:
@@ -196,6 +230,7 @@ func TestGuardianAbruptParentDeathReapsAndRemovesRuntime(t *testing.T) {
 		t.Fatal("parent fixture readiness timed out")
 	}
 	helper, guardian := guardianProcesses(t, settings.RunDir)
+	assertGuardianWorkingDirectories(t, settings.RunDir)
 	if err := parent.Process.Kill(); err != nil {
 		t.Fatal(err)
 	}

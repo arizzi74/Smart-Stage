@@ -90,7 +90,7 @@ int main(int argc, const char **argv) {
             if (phase == 0) {
                 evaluating = YES;
                 [webView evaluateJavaScript:
-                    @"JSON.stringify({ready:document.getElementById('connection')?.textContent==='Connected to host' && typeof role!=='undefined' && role==='admin' && !localSessionBusy && typeof csrf!=='undefined' && csrf.length>0 && typeof source!=='undefined' && source?.readyState===EventSource.OPEN && typeof state!=='undefined' && state?.cues?.length===1,epoch:typeof state!=='undefined'?state?.stopEpoch:null,nativeAgent:navigator.userAgent.includes('SmartStageDesktop'),rows:document.getElementById('playlist')?.children.length})"
+                    @"JSON.stringify({ready:document.getElementById('connection')?.textContent==='Connected to host' && typeof role!=='undefined' && role==='admin' && !localSessionBusy && typeof csrf!=='undefined' && csrf.length>0 && typeof source!=='undefined' && source?.readyState===EventSource.OPEN && typeof gateway!=='undefined' && gateway!==null && typeof state!=='undefined' && state?.cues?.length===1,epoch:typeof state!=='undefined'?state?.stopEpoch:null,nativeAgent:navigator.userAgent.includes('SmartStageDesktop'),rows:document.getElementById('playlist')?.children.length})"
                     completionHandler:^(id result, NSError *jsError) {
                         evaluating = NO;
                         if (jsError || ![result isKindOfClass:NSString.class]) return;
@@ -106,7 +106,7 @@ int main(int argc, const char **argv) {
                         report[@"nativeUserAgentAndPlaylistRendered"] = @YES;
                         evaluating = YES;
                         [webView evaluateJavaScript:
-                            @"window.__smartStageNativeProbe='preserved';document.getElementById('remote-connection-settings').open=true;document.getElementById('gateway-url').value='https://unsaved.example/smartstage';document.getElementById('gateway-url').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('stop').click();true"
+                            @"window.__smartStageNativeProbe='preserved';window.__smartStageSavedMode=gateway.mode;document.getElementById('remote-connection-settings').open=true;document.getElementById('gateway-mode').value='gateway';document.getElementById('gateway-mode').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('gateway-mode').dispatchEvent(new Event('change',{bubbles:true}));if(document.getElementById('gateway-fields').hidden || document.getElementById('gateway-url').disabled)throw new Error('Public gateway fields are not available for editing');document.getElementById('gateway-url').value='https://unsaved.example/smartstage';document.getElementById('gateway-url').dispatchEvent(new Event('input',{bubbles:true}));document.getElementById('stop').click();true"
                             completionHandler:^(id ignored, NSError *actionError) {
                                 (void)ignored; evaluating = NO;
                                 if (actionError) fail(actionError.description); else phase = 1;
@@ -134,7 +134,7 @@ int main(int argc, const char **argv) {
             } else if (phase == 3 && window.isVisible) {
                 evaluating = YES;
                 [webView evaluateJavaScript:
-                    @"JSON.stringify({draft:window.__smartStageNativeProbe,url:document.getElementById('gateway-url')?.value,settingsOpen:document.getElementById('remote-connection-settings')?.open,gatewayDirty:typeof gatewayDirty!=='undefined' && gatewayDirty,online:typeof online!=='undefined' && online,eventSourceState:typeof source!=='undefined'?source?.readyState:null,hidden:document.hidden})"
+                    @"JSON.stringify({draft:window.__smartStageNativeProbe,mode:document.getElementById('gateway-mode')?.value,originalMode:window.__smartStageSavedMode,savedMode:typeof gateway!=='undefined'?gateway?.mode:null,url:document.getElementById('gateway-url')?.value,settingsOpen:document.getElementById('remote-connection-settings')?.open,gatewayDirty:typeof gatewayDirty!=='undefined' && gatewayDirty,gatewayFieldsDirty:typeof gatewayFieldsDirty!=='undefined'?gatewayFieldsDirty:null,online:typeof online!=='undefined' && online,eventSourceState:typeof source!=='undefined'?source?.readyState:null,hidden:document.hidden})"
                     completionHandler:^(id result, NSError *jsError) {
                         evaluating = NO;
                         if (jsError || ![result isKindOfClass:NSString.class]) {
@@ -143,11 +143,20 @@ int main(int argc, const char **argv) {
                         NSDictionary *value = [NSJSONSerialization JSONObjectWithData:[result dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
                         if (![value isKindOfClass:NSDictionary.class] ||
                             ![value[@"draft"] isEqual:@"preserved"] ||
+                            ![value[@"mode"] isEqual:@"gateway"] ||
+                            ![value[@"savedMode"] isEqual:value[@"originalMode"]] ||
+                            (![value[@"originalMode"] isEqual:@"gateway"] &&
+                             [value[@"mode"] isEqual:value[@"savedMode"]]) ||
                             ![value[@"url"] isEqual:@"https://unsaved.example/smartstage"] ||
-                            ![value[@"settingsOpen"] boolValue] || ![value[@"gatewayDirty"] boolValue]) {
+                            ![value[@"settingsOpen"] boolValue] || ![value[@"gatewayDirty"] boolValue] ||
+                            (value[@"gatewayFieldsDirty"] != [NSNull null] &&
+                             ![value[@"gatewayFieldsDirty"] boolValue])) {
                             fail([NSString stringWithFormat:@"Reopening Admin reloaded or lost its unsaved UI state: %@", result]); return;
                         }
                         report[@"unsavedUIImmediatelyPreservedOnReopen"] = @YES;
+                        if (![value[@"originalMode"] isEqual:@"gateway"]) {
+                            report[@"unsavedConnectionModeAndURLPreservedOnReopen"] = @YES;
+                        }
                         // Visibility deliberately reconnects SSE. Preserve the
                         // draft on every poll, including the successful one,
                         // while allowing the live connection to recover.

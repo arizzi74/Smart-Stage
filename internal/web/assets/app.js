@@ -1086,7 +1086,7 @@ function renderGateway() {
   const description = () => gateway?.mode === 'cloudflare' ? {
     downloading: t("Downloading the Cloudflare connection helper…"),
     connecting: t("Creating a temporary HTTPS link with Cloudflare…"),
-    connected: t("Cloudflare connected. Your temporary HTTPS link is ready."),
+    connected: t("Cloudflare connected. New links may take a minute to become reachable."),
     retrying: t("Cloudflare connection interrupted. Retrying automatically…"),
     error: t("Cloudflare connection interrupted. Retrying automatically…"),
     unavailable: cloudflareReason(),

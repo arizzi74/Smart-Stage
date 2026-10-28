@@ -138,7 +138,9 @@ it when you quit or switch modes. It does not read an existing Cloudflare accoun
 configuration or install a system service. The helper is separately downloaded;
 the Smart Stage ZIP still contains one executable or app bundle.
 
-Scan the HTTPS remote link's QR code when connected. Cloudflare carries remote
+Scan the HTTPS remote link's QR code when connected. A newly created hostname
+may take about a minute to become reachable while DNS propagates; wait and retry
+the same link if it initially cannot be found. Cloudflare carries remote
 commands and live WebSocket status; media and Admin remain on the computer.
 The helper forwards only a separate remote-control listener on `127.0.0.1`, never
 Admin. Direct LAN access stays disabled. The remote requires a random 256-bit

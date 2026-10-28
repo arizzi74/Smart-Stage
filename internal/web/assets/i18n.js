@@ -124,7 +124,7 @@
   "The temporary Cloudflare link and QR code appear after Smart Stage connects.": "Il link temporaneo di Cloudflare e il codice QR appaiono quando Smart Stage si collega.",
   "Downloading the Cloudflare connection helper…": "Download del programma di connessione Cloudflare…",
   "Creating a temporary HTTPS link with Cloudflare…": "Creazione di un link HTTPS temporaneo con Cloudflare…",
-  "Cloudflare connected. Your temporary HTTPS link is ready.": "Cloudflare collegato. Il link HTTPS temporaneo è pronto.",
+  "Cloudflare connected. New links may take a minute to become reachable.": "Cloudflare collegato. Un nuovo link può richiedere un minuto prima di diventare raggiungibile.",
   "Cloudflare connection interrupted. Retrying automatically…": "Connessione Cloudflare interrotta. Nuovo tentativo automatico…",
   "Waiting for the Cloudflare connection…": "In attesa della connessione Cloudflare…",
   "Temporary Cloudflare HTTPS link": "Link HTTPS temporaneo di Cloudflare",

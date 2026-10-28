@@ -427,7 +427,7 @@ const assert = require('node:assert/strict');
     await cloudflareAdmin.locator('#gateway-mode').selectOption('cloudflare');
     await cloudflareAdmin.locator('#save-gateway').click();
     await cloudflareAdmin.waitForFunction(() => document.getElementById('gateway-message').textContent.includes('once Cloudflare connects'));
-    for (const [status, message] of [['downloading','Downloading'], ['connecting','Creating a temporary HTTPS'], ['connected','temporary HTTPS link is ready'], ['retrying','Retrying automatically']]) {
+    for (const [status, message] of [['downloading','Downloading'], ['connecting','Creating a temporary HTTPS'], ['connected','Cloudflare connected.*New links may take a minute'], ['retrying','Retrying automatically']]) {
       gateway = {...gateway, status, message:'', remoteURL:status === 'connected' ? 'https://first-connection.trycloudflare.com/command#token=' + cloudflareToken : ''};
       await cloudflareAdmin.evaluate(() => loadGateway());
       assert.match(await cloudflareAdmin.locator('#gateway-status').textContent(), new RegExp(message));
