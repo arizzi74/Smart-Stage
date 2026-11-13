@@ -45,7 +45,7 @@ std::string inspect(const std::string &path) {
     return result;
 }
 
-std::string accepted(const char *name, const std::string &path, bool mismatch) {
+std::string accepted(const char *name, const std::string &path, bool mismatch, bool expectedVideo = false) {
     currentCase = name;
     HRESULT strict = strictOpen(path);
     currentStrictHRESULT = hexResult(strict);
@@ -55,7 +55,7 @@ std::string accepted(const char *name, const std::string &path, bool mismatch) {
     } else {
         check(strict, "Strict resolver rejected a correctly named fixture");
     }
-    bool hasAudio = false;
+    bool hasAudio = false, hasVideo = false;
     UINT64 duration = 0;
     {
         Source source;
@@ -74,9 +74,11 @@ std::string accepted(const char *name, const std::string &path, bool mismatch) {
             check(stream->GetMediaTypeHandler(handler.out()), "Read opened source media type");
             check(handler->GetMajorType(&major), "Read opened source major type");
             hasAudio = hasAudio || major == MFMediaType_Audio;
+            hasVideo = hasVideo || major == MFMediaType_Video;
         }
         check(presentation->GetUINT64(MF_PD_DURATION, &duration), "Read opened source duration");
         require(hasAudio, "Opened fixture has no audio stream");
+        require(hasVideo == expectedVideo, "Opened fixture has unexpected video stream presence");
         require(duration > 25000000 && duration < 35000000, "Opened fixture has an unexpected duration");
     }
     // Use a distinct source instance and the actual production decoder probe.
@@ -87,7 +89,30 @@ std::string accepted(const char *name, const std::string &path, bool mismatch) {
     result << "{\"fixture\":" << quote(name) << ",\"strictHRESULT\":" << quote(hexResult(strict))
            << ",\"strictUnsupportedByteStreamObserved\":" << (strict == MF_E_UNSUPPORTED_BYTESTREAM_TYPE ? "true" : "false")
            << ",\"productionOpenSucceeded\":true,\"sourceHasAudio\":true,\"sourceDuration\":"
-           << duration / 10000000.0 << ",\"inspection\":" << inspection << "}";
+           << duration / 10000000.0 << ",\"sourceHasVideo\":" << (hasVideo ? "true" : "false")
+           << ",\"inspection\":" << inspection << "}";
+    return result.str();
+}
+
+std::string repeatedInspection(const std::string &video, const std::string &audio) {
+    constexpr unsigned iterations = 16;
+    std::ostringstream result;
+    result << "{\"status\":\"passed\",\"iterations\":" << iterations << ",\"results\":[";
+    for (unsigned iteration = 0; iteration < iterations; ++iteration) {
+        currentCase = "repeated-mp4-audio-video-" + std::to_string(iteration + 1);
+        currentStrictHRESULT.clear();
+        const std::string videoInspection = inspect(video);
+        if (videoInspection.find("\"error\"") != std::string::npos)
+            throw std::string("Repeated mixed audio/video inspection failed without retry: ") + videoInspection;
+        currentCase = "repeated-audio-" + std::to_string(iteration + 1);
+        const std::string audioInspection = inspect(audio);
+        if (audioInspection.find("\"error\"") != std::string::npos)
+            throw std::string("Repeated audio inspection failed without retry: ") + audioInspection;
+        if (iteration) result << ',';
+        result << "{\"iteration\":" << iteration + 1 << ",\"video\":" << videoInspection
+               << ",\"audio\":" << audioInspection << '}';
+    }
+    result << "]}";
     return result.str();
 }
 
@@ -109,10 +134,10 @@ std::string rejected(const char *name, const std::string &path) {
 }
 
 int wmain(int argc, wchar_t **argv) {
-    if (argc != 8) return 2;
+    if (argc != 9) return 2;
     Apartment apartment;
     std::vector<std::string> records;
-    std::string error;
+    std::string error, repeated;
     bool started = false;
     try {
         check(apartment.hr, "Initialize source probe COM");
@@ -123,8 +148,10 @@ int wmain(int argc, wchar_t **argv) {
         records.push_back(accepted("wav-renamed-mp3", utf8(argv[3]), true));
         records.push_back(accepted("m4a", utf8(argv[4]), false));
         records.push_back(accepted("m4a-renamed-mp3", utf8(argv[5]), true));
+        records.push_back(accepted("mp4-audio-video", utf8(argv[8]), false, true));
         records.push_back(rejected("damaged", utf8(argv[6])));
         records.push_back(rejected("missing", utf8(argv[7])));
+        repeated = repeatedInspection(utf8(argv[8]), utf8(argv[2]));
     } catch (const std::string &message) { error = message; }
     if (started) MFShutdown();
     std::ostringstream result;
@@ -135,6 +162,7 @@ int wmain(int argc, wchar_t **argv) {
         result << records[index];
     }
     result << ']';
+    if (!repeated.empty()) result << ",\"repeatedInspection\":" << repeated;
     if (!error.empty()) result << ",\"error\":" << quote(error)
         << ",\"failedFixture\":" << quote(currentCase)
         << ",\"failedFixtureStrictHRESULT\":" << quote(currentStrictHRESULT);

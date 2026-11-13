@@ -122,12 +122,35 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
       document.getElementById('command-view').addEventListener('pointerdown', window.__sectionTouchHandler);
     });
     let pointerID = 70;
+    const gestureStarts = [];
     const gesture = async ({ target, dx, dy = 0 }) => {
       await target.scrollIntoViewIfNeeded();
-      const box = await target.boundingBox(), size = page.viewportSize();
-      const x = Math.max(box.x + 18, Math.min(box.x + box.width - 18, dx > 0 ? box.x + 30 : box.x + box.width - 30));
-      const y = Math.max(12, Math.min(size.height - 25, box.y + Math.min(box.height / 2, 80)));
-      const id = ++pointerID, scrollBefore = await page.evaluate(() => scrollY);
+      // scrollIntoView can center a cue behind the sticky transport ribbon in
+      // a short viewport. Place its top below that ribbon before hit testing.
+      await target.evaluate(async element => {
+        const ribbon = document.querySelector('header.transport').getBoundingClientRect();
+        const box = element.getBoundingClientRect();
+        if (box.top < ribbon.bottom + 12) scrollBy(0, box.top - ribbon.bottom - 12);
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      });
+      const start = await target.evaluate((element, { dx }) => {
+        const box = element.getBoundingClientRect(), area = document.getElementById('command-view');
+        const bounds = area.getBoundingClientRect(), ribbon = document.querySelector('header.transport').getBoundingClientRect();
+        const seek = document.getElementById('seek-bar'), seekTop = seek && !seek.hidden ? seek.getBoundingClientRect().top : innerHeight;
+        const left = Math.max(8, box.left, bounds.left), right = Math.min(innerWidth - 8, box.right, bounds.right);
+        const top = Math.max(8, box.top, bounds.top, ribbon.bottom + 8), bottom = Math.min(innerHeight - 20, box.bottom, bounds.bottom, seekTop - 4);
+        const x = dx > 0 ? left + Math.min(30, (right - left) / 2) : right - Math.min(30, (right - left) / 2);
+        const y = Math.max(top + 4, Math.min(bottom - 4, box.top + Math.min(box.height / 2, 80)));
+        const hit = document.elementFromPoint(x, y);
+        return { x, y, visible: right - left >= 16 && bottom - top >= 8,
+          targetHit: Boolean(hit && element.contains(hit)), commandHit: Boolean(hit && area.contains(hit)),
+          hitTag: hit?.tagName || '', hitID: hit?.id || '', headerBottom: ribbon.bottom, seekTop,
+          targetTop: box.top, targetBottom: box.bottom, viewportHeight: innerHeight, scrollY };
+      }, { dx });
+      assert(start.visible && start.targetHit && start.commandHit && start.y > start.headerBottom,
+        `Touch starts on its visible command target between the transport ribbon and seek bar: ${JSON.stringify(start)}`);
+      const { x, y } = start, id = ++pointerID;
+      gestureStarts.push({ id, dx, dy, ...start });
       await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id }] });
       for (const part of [.25, .5, .75, 1]) {
         await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + dx * part, y: y + dy * part, id }] });
@@ -135,7 +158,7 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
       }
       await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await page.waitForTimeout(100);
-      return scrollBefore;
+      return start.scrollY;
     };
     const navPlays = plays();
     await gesture({ target: page.locator('[data-cue-id="cue-0"]'), dx: 115 }); await selected('main');
@@ -151,7 +174,11 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
     assert(await page.evaluate(before => scrollY > before, scrollBefore), 'vertical touch drag scrolls the actual remote page');
     assert.equal(plays(), navPlays, 'tab, keyboard, horizontal touch and vertical scrolling send no PLAY request');
     const observedTouch = await page.evaluate(() => window.__sectionTouches);
-    assert(observedTouch.length >= 6 && observedTouch.every(event => event.pointerType === 'touch' && event.trusted), 'gestures exercise real browser touch pointer events');
+    const touchDiagnostics = { expectedGestures: gestureStarts.length, observedCount: observedTouch.length,
+      pointerTypes: [...new Set(observedTouch.map(event => event.pointerType))], trustedCount: observedTouch.filter(event => event.trusted).length, starts: gestureStarts };
+    console.log('Section touch diagnostics:', JSON.stringify(touchDiagnostics));
+    assert(observedTouch.length >= 6 && observedTouch.every(event => event.pointerType === 'touch' && event.trusted),
+      `gestures exercise real browser touch pointer events: ${JSON.stringify(touchDiagnostics)}`);
     await page.setViewportSize(viewport); await page.evaluate(() => scrollTo(0, 0));
     assert.deepEqual(playbackIdentity(), identity, 'section navigation preserves the active transport and timeline');
     assert.equal(plays(), playCount, 'section CRUD, collapse, moves and navigation never start playback');

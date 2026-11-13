@@ -63,6 +63,16 @@ static BOOL playing(SSScenePlayer *source) {
 static BOOL quietBackground(void) {
     return !sceneBackground || sceneBackground.player.volume < .001 || sceneBackground.player.muted;
 }
+static void describeResume(const char *reason, SSScenePlayer *first, AVPlayer *firstPlayer,
+    SSScenePlayer *second, AVPlayer *secondPlayer, double before, double elapsed, BOOL acknowledged) {
+    fprintf(stderr, "%s: firstSourceSame=%d firstPlayerSame=%d secondSourceSame=%d secondPlayerSame=%d "
+        "firstPlaying=%d secondPlaying=%d acknowledged=%d elapsed=%.6f before=%.6f current=%.6f delta=%.6f "
+        "firstRate=%.6f firstTimeControl=%ld firstMuted=%d firstVolume=%.6f secondRate=%.6f secondTimeControl=%ld secondMuted=%d secondVolume=%.6f\n",
+        reason, layer(30) == first, first.player == firstPlayer, layer(31) == second, second.player == secondPlayer,
+        playing(first), playing(second), acknowledged, elapsed, before, seconds(firstPlayer.currentTime), seconds(firstPlayer.currentTime) - before,
+        firstPlayer.rate, (long)firstPlayer.timeControlStatus, firstPlayer.muted, firstPlayer.volume,
+        secondPlayer.rate, (long)secondPlayer.timeControlStatus, secondPlayer.muted, secondPlayer.volume);
+}
 
 int main(void) {
     @autoreleasepool {
@@ -89,6 +99,7 @@ int main(void) {
         __block AVPlayer *videoPlayer, *firstPlayer, *secondPlayer;
         __block AVPlayerItem *videoItem;
         NSMutableArray *observations = [NSMutableArray array];
+        NSMutableDictionary *resumeClockObservation = [NSMutableDictionary dictionary];
         NSMutableSet<NSString *> *transportEvents = [NSMutableSet set];
         NSMutableDictionary<NSString *, NSString *> *failureMessages = [NSMutableDictionary dictionary];
         dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
@@ -101,6 +112,8 @@ int main(void) {
                     fprintf(stderr, "Native layer probe timed out: phase=%lu active=%lu retiring=%lu foreground=%llu\n",
                         (unsigned long)phase, (unsigned long)sceneAudioLayers.count, (unsigned long)sceneRetiringAudioLayers.count,
                         (unsigned long long)sceneForeground.identifier);
+                    if (phase == 5) describeResume("Layer resume timed out", first, firstPlayer, second, secondPlayer,
+                        firstBefore, now - phaseBegan, [transportEvents containsObject:@"30:53:playing"]);
                     ss_quit(); return;
                 }
                 char *raw;
@@ -172,10 +185,31 @@ int main(void) {
                         @"pausedReplacementCannotRestoreVideoOrBackgroundSound": @YES}];
                     probeLayers[0][@"paused"] = @NO; probeLayers[0][@"transport"] = @53; apply(NO);
                     phase = 5; phaseBegan = now;
-                } else if (phase == 5 && playing(first) && now - phaseBegan > .15 && [transportEvents containsObject:@"30:53:playing"]) {
-                    if (first.player != firstPlayer || seconds(firstPlayer.currentTime) <= firstBefore + .07 || second.player != secondPlayer || !playing(second)) {
-                        fprintf(stderr, "Layer resume replaced or interrupted a decoder\n"); ss_quit(); return;
+                } else if (phase == 5) {
+                    BOOL acknowledged = [transportEvents containsObject:@"30:53:playing"];
+                    // Identities and the unrelated decoder must remain intact
+                    // throughout the resume, including while AVPlayer buffers.
+                    if (layer(30) != first || first.player != firstPlayer || layer(31) != second || second.player != secondPlayer || !playing(second)) {
+                        describeResume("Layer resume replaced or interrupted a decoder", first, firstPlayer, second, secondPlayer,
+                            firstBefore, now - phaseBegan, acknowledged);
+                        ss_quit(); return;
                     }
+                    if (!playing(first) || now - phaseBegan <= .15 || !acknowledged) return;
+                    double advancement = seconds(firstPlayer.currentTime) - firstBefore;
+                    if (!resumeClockObservation.count) {
+                        resumeClockObservation[@"firstEligibleClockAdvanceSeconds"] = @(advancement);
+                        resumeClockObservation[@"firstEligibleElapsedSeconds"] = @(now - phaseBegan);
+                        resumeClockObservation[@"waitedForClock"] = @(advancement <= .07);
+                        if (advancement <= .07) describeResume("Layer resume awaiting actual clock advance", first, firstPlayer, second, secondPlayer,
+                            firstBefore, now - phaseBegan, acknowledged);
+                    }
+                    // A playing acknowledgment reports AVPlayer readiness, not
+                    // .07 seconds of elapsed media. Keep the exact motion
+                    // requirement and the probe's existing 55-second deadline.
+                    if (advancement <= .07) return;
+                    resumeClockObservation[@"completedClockAdvanceSeconds"] = @(advancement);
+                    resumeClockObservation[@"completedElapsedSeconds"] = @(now - phaseBegan);
+                    resumeClockObservation[@"requiredClockAdvanceSeconds"] = @0.07;
                     [observations addObject:@{@"audioLayerResumeRetainsPlayerAndUsesItsOwnTransportRevision": @YES}];
                     probeMaster = .4; probeLayers[0][@"volume"] = @0.5; probeLayers[1][@"volume"] = @0.75; apply(NO);
                     phase = 6; phaseBegan = now;
@@ -340,6 +374,7 @@ int main(void) {
                     }
                     passed = YES; dispatch_source_cancel(timer);
                     NSData *report = [NSJSONSerialization dataWithJSONObject:@{@"status": @"passed", @"observations": observations,
+                        @"resumeClockObservation": resumeClockObservation,
                         @"method": @"Production Cocoa bridge; actual AVPlayer identity, native clocks, gain, state and event observations. No physical audio measurement."} options:0 error:NULL];
                     puts([[NSString alloc] initWithData:report encoding:NSUTF8StringEncoding].UTF8String); fflush(stdout); ss_quit();
                 }

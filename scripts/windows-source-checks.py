@@ -38,25 +38,38 @@ def source_checks():
         assert renamed_m4a.read_bytes() == m4a.read_bytes()
         result = subprocess.run([str(probe), str(media / "tone.mp3"), str(wave), str(renamed),
                                  str(m4a), str(renamed_m4a),
-                                 str(media / "damaged.mp4"), str(temporary / "does-not-exist.mp3")],
+                                 str(media / "damaged.mp4"), str(temporary / "does-not-exist.mp3"),
+                                 str(media / "video-aac-1080p.mp4")],
                                 capture_output=True, text=True, encoding="utf-8", timeout=45)
         assert result.returncode == 0, f"Native source probe failed ({result.returncode}): {result.stdout}\n{result.stderr}"
         report = json.loads(result.stdout)
         assert report["status"] == "passed", report
         cases = {case["fixture"]: case for case in report["cases"]}
-        assert set(cases) == {"mp3", "wav-unicode-path", "wav-renamed-mp3", "m4a", "m4a-renamed-mp3", "damaged", "missing"}, report
+        assert set(cases) == {"mp3", "wav-unicode-path", "wav-renamed-mp3", "m4a", "m4a-renamed-mp3", "mp4-audio-video", "damaged", "missing"}, report
         for name in ("mp3", "wav-unicode-path", "wav-renamed-mp3", "m4a", "m4a-renamed-mp3"):
             case = cases[name]
             assert case["productionOpenSucceeded"] and case["sourceHasAudio"], case
             inspection = case["inspection"]
             assert inspection["kind"] == "audio" and inspection["hasAudio"] and not inspection["hasVideo"], case
             assert 2.5 < inspection["duration"] < 3.5, case
+        mixed = cases["mp4-audio-video"]
+        assert mixed["productionOpenSucceeded"] and mixed["sourceHasAudio"] and mixed["sourceHasVideo"], mixed
+        assert mixed["inspection"]["kind"] == "video" and mixed["inspection"]["hasAudio"] and mixed["inspection"]["hasVideo"], mixed
+        assert 2.5 < mixed["inspection"]["duration"] < 3.5, mixed
         for name in ("wav-renamed-mp3", "m4a-renamed-mp3"):
             renamed_case = cases[name]
             assert renamed_case["strictHRESULT"] == "0xc00d36c4" and renamed_case["strictUnsupportedByteStreamObserved"], renamed_case
         for name in ("damaged", "missing"):
             assert cases[name]["productionOpenRejected"] and cases[name]["inspection"]["error"], cases[name]
-        report["method"] = "Production Media Foundation source opener and first-sample decoder inspection; unchanged WAV and AAC/MP4 bytes renamed .mp3 reproduce the prior strict resolver failure; no audio renderer or physical output"
+        repeated = report["repeatedInspection"]
+        assert repeated["status"] == "passed" and repeated["iterations"] == 16, repeated
+        assert len(repeated["results"]) == 16, repeated
+        for index, inspection in enumerate(repeated["results"], 1):
+            assert inspection["iteration"] == index, inspection
+            assert inspection["video"]["kind"] == "video" and inspection["video"]["hasAudio"] and inspection["video"]["hasVideo"], inspection
+            assert inspection["audio"]["kind"] == "audio" and inspection["audio"]["hasAudio"] and not inspection["audio"]["hasVideo"], inspection
+            assert 2.5 < inspection["video"]["duration"] < 3.5 and 2.5 < inspection["audio"]["duration"] < 3.5, inspection
+        report["method"] = "Production Media Foundation source opener and first-sample decoder inspection with independent readers per track; unchanged WAV and AAC/MP4 bytes renamed .mp3 reproduce the prior strict resolver failure; 16 consecutive mixed video/audio and audio-only inspections must all decode successfully without retries; no audio renderer or physical output"
         return report
 
 

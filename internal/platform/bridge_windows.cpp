@@ -101,6 +101,18 @@ void openLocalMedia(const std::string &path, IMFMediaSource **source) {
     check(object->QueryInterface(__uuidof(IMFMediaSource), (void**)source), "Get media source");
 }
 
+void openInspectionReader(const char *path, IMFSourceReader **reader) {
+    Com<IMFMediaSource> source; Com<IMFAttributes> attrs;
+    check(MFCreateAttributes(attrs.out(), 1), "Create reader attributes");
+    check(attrs->SetUINT32(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING, TRUE), "Enable native video decoding");
+    openLocalMedia(path, source.out());
+    HRESULT result = MFCreateSourceReaderFromMediaSource(source.p, attrs.p, reader);
+    // A successfully constructed reader owns source shutdown. A failed
+    // construction leaves that responsibility with this scope.
+    if (FAILED(result)) source->Shutdown();
+    check(result, "Inspect local media");
+}
+
 constexpr UINT commandMessage = WM_APP+1, readyMessage = WM_APP+2, deviceMessage = WM_APP+3, quitMessage = WM_APP+4, sceneMessage = WM_APP+5;
 HWND controlWindow = nullptr, stageWindow = nullptr, videoWindow = nullptr;
 HWND sceneVideoWindows[3] = {nullptr, nullptr, nullptr};
@@ -1809,51 +1821,60 @@ extern "C" char *ss_inspect(const char *path) {
             Playback image; decodeImage(image, path);
             return copy("{\"kind\":\"image\",\"hasAudio\":false,\"hasVideo\":false,\"duration\":0}");
         } catch (const std::string &) { /* Let Media Foundation inspect audio/video. */ }
-        Com<IMFMediaSource> source; Com<IMFSourceReader> reader; Com<IMFAttributes> attrs;
-        check(MFCreateAttributes(attrs.out(), 1), "Create reader attributes");
-        check(attrs->SetUINT32(MF_SOURCE_READER_ENABLE_VIDEO_PROCESSING, TRUE), "Enable native video decoding");
-        openLocalMedia(path, source.out());
-        HRESULT readerResult = MFCreateSourceReaderFromMediaSource(source.p, attrs.p, reader.out());
-        // On success the reader owns shutdown. If construction fails, there
-        // is no reader to shut down the source we created.
-        if (FAILED(readerResult)) source->Shutdown();
-        check(readerResult, "Inspect local media");
-        check(reader->SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS, FALSE), "Isolate inspection tracks");
+        struct Track { DWORD index; GUID major; };
+        std::vector<Track> tracks;
         bool audio = false, video = false;
-        for (DWORD i=0; i<128; ++i) {
+        double duration = 0;
+        {
+            Com<IMFSourceReader> metadata;
+            openInspectionReader(path, metadata.out());
+            for (DWORD i=0; i<128; ++i) {
+                Com<IMFMediaType> original;
+                HRESULT hr = metadata->GetNativeMediaType(i, 0, original.out());
+                if (hr == MF_E_INVALIDSTREAMNUMBER) break;
+                check(hr, "Read native track format"); GUID major;
+                check(original->GetGUID(MF_MT_MAJOR_TYPE, &major), "Read track metadata");
+                if (major != MFMediaType_Audio && major != MFMediaType_Video) continue;
+                if ((major == MFMediaType_Audio && audio) || (major == MFMediaType_Video && video)) continue;
+                tracks.push_back({i, major});
+                if (major == MFMediaType_Audio) audio = true; else video = true;
+            }
+            PROPVARIANT value; PropVariantInit(&value);
+            if (SUCCEEDED(metadata->GetPresentationAttribute(MF_SOURCE_READER_MEDIASOURCE, MF_PD_DURATION, &value)) && value.vt == VT_UI8)
+                duration = value.uhVal.QuadPart/10000000.0;
+            PropVariantClear(&value);
+        }
+        if (tracks.empty()) throw std::string("No supported audio or video track");
+        // Every decoder probe starts from a fresh source at its initial position.
+        // Reusing a reader required deselecting a previously consumed stream and
+        // seeking its multi-track source, an unnecessary transition that has
+        // intermittently failed with MF_E_SHUTDOWN on Windows ARM64. Independent
+        // ownership avoids that coupling; every track still must decode a real
+        // sample, and any failure is returned immediately without a retry.
+        for (const Track &track : tracks) {
+            Com<IMFSourceReader> reader;
+            openInspectionReader(path, reader.out());
+            check(reader->SetStreamSelection(MF_SOURCE_READER_ALL_STREAMS, FALSE), "Isolate inspection track");
             Com<IMFMediaType> original;
-            HRESULT hr = reader->GetNativeMediaType(i, 0, original.out());
-            if (hr == MF_E_INVALIDSTREAMNUMBER) break;
-            check(hr, "Read native track format"); GUID major;
-            check(original->GetGUID(MF_MT_MAJOR_TYPE, &major), "Read track metadata");
-            if (major != MFMediaType_Audio && major != MFMediaType_Video) continue;
-            if ((major == MFMediaType_Audio && audio) || (major == MFMediaType_Video && video)) continue;
+            check(reader->GetNativeMediaType(track.index, 0, original.out()), "Read inspected track format");
+            GUID major;
+            check(original->GetGUID(MF_MT_MAJOR_TYPE, &major), "Read inspected track metadata");
+            if (major != track.major) throw std::string("File changed: media tracks no longer match inspection metadata");
             Com<IMFMediaType> decoded; check(MFCreateMediaType(decoded.out()), "Create decoder format");
             check(decoded->SetGUID(MF_MT_MAJOR_TYPE, major), "Set decoder major type");
             check(decoded->SetGUID(MF_MT_SUBTYPE, major == MFMediaType_Audio ? MFAudioFormat_PCM : MFVideoFormat_RGB32), "Set decoded sample format");
-            check(reader->SetCurrentMediaType(i, nullptr, decoded.p), "Prepare native decoder");
-            check(reader->SetStreamSelection(i, TRUE), "Select inspection track");
-            // A deselected track is not buffered while another track is read.
-            // Rewind before each independent decoder probe in a multi-track file.
-            PROPVARIANT origin; PropVariantInit(&origin); origin.vt = VT_I8; origin.hVal.QuadPart = 0;
-            HRESULT seek = reader->SetCurrentPosition(GUID_NULL, origin); PropVariantClear(&origin);
-            check(seek, "Rewind native inspection track");
+            check(reader->SetCurrentMediaType(track.index, nullptr, decoded.p), "Prepare native decoder");
+            check(reader->SetStreamSelection(track.index, TRUE), "Select inspection track");
             bool gotSample = false;
             for (int attempts=0; attempts<64 && !gotSample; ++attempts) {
                 Com<IMFSample> sample; DWORD flags = 0; LONGLONG timestamp = 0;
-                check(reader->ReadSample(i, 0, nullptr, &flags, &timestamp, sample.out()), "Decode first native sample");
+                check(reader->ReadSample(track.index, 0, nullptr, &flags, &timestamp, sample.out()), "Decode first native sample");
                 if (flags & MF_SOURCE_READERF_ERROR) throw std::string("Native decoder reported a sample error");
                 gotSample = (bool)sample;
                 if (flags & MF_SOURCE_READERF_ENDOFSTREAM) break;
             }
             if (!gotSample) throw std::string("No decodable sample in media track");
-            reader->SetStreamSelection(i, FALSE);
-            if (major == MFMediaType_Audio) audio = true; else video = true;
         }
-        if (!audio && !video) throw std::string("No supported audio or video track");
-        double duration = 0; PROPVARIANT v; PropVariantInit(&v);
-        if (SUCCEEDED(reader->GetPresentationAttribute(MF_SOURCE_READER_MEDIASOURCE, MF_PD_DURATION, &v)) && v.vt == VT_UI8) duration = v.uhVal.QuadPart/10000000.0;
-        PropVariantClear(&v);
         std::ostringstream s; s << "{\"kind\":" << quote(video?"video":"audio") << ",\"hasAudio\":" << (audio?"true":"false")
           << ",\"hasVideo\":" << (video?"true":"false") << ",\"duration\":" << duration << "}";
         return copy(s.str());
