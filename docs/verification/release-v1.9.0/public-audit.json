@@ -1,0 +1,430 @@
+{
+  "allPublicAssetDigestsVerified": true,
+  "assets": [
+    {
+      "githubAssetID": 744498492,
+      "name": "gateway-daemon-amd64.json",
+      "sha256": "d58d74f294c05fa589f59855355c8a92436212218cb76d0eda92c12be851b05a",
+      "size": 534
+    },
+    {
+      "githubAssetID": 744498497,
+      "name": "install-gateway.sh",
+      "sha256": "8902e30cd797dcf74a99fe747f258455b10fd6d34a3ef21d7f6f43b4ee1fdf7f",
+      "size": 2206
+    },
+    {
+      "githubAssetID": 744498407,
+      "name": "native-enumeration-darwin-amd64.json",
+      "sha256": "9d72280e913333aee2e14c1868af1f22cb980d782d0bb339d7440752d7efaece",
+      "size": 239
+    },
+    {
+      "githubAssetID": 744498417,
+      "name": "native-enumeration-darwin-arm64.json",
+      "sha256": "0e5f0f579c04bac31434f9eb992b0a8eb1d1aac585e90f753c05f53f943f93cd",
+      "size": 309
+    },
+    {
+      "githubAssetID": 744498419,
+      "name": "native-enumeration-windows-amd64.json",
+      "sha256": "9c1c3076196dc6bfd764342c4d8ad2fd56976e6247af72b7d1a828d9df53f8be",
+      "size": 229
+    },
+    {
+      "githubAssetID": 744498424,
+      "name": "native-enumeration-windows-arm64.json",
+      "sha256": "9c1c3076196dc6bfd764342c4d8ad2fd56976e6247af72b7d1a828d9df53f8be",
+      "size": 229
+    },
+    {
+      "githubAssetID": 744498452,
+      "name": "native-harness-darwin-amd64.smoke.json",
+      "sha256": "478c590e08344a56ed60a46a5ac272be69375309cf6c3cc41aaba853bc414130",
+      "size": 15290
+    },
+    {
+      "githubAssetID": 744498471,
+      "name": "native-harness-darwin-arm64.smoke.json",
+      "sha256": "c5c03088d02de977817ce45a10d2cf2addb6416f3111e9d9c73791c6a8b0ecfa",
+      "size": 15583
+    },
+    {
+      "githubAssetID": 744498482,
+      "name": "native-harness-windows-amd64.exe.smoke.json",
+      "sha256": "42212a5e83eeb030ac9abb0fb785f6e3de0701f6ba8e085fdfa821d62222fe27",
+      "size": 21836
+    },
+    {
+      "githubAssetID": 744498490,
+      "name": "native-harness-windows-arm64.exe.smoke.json",
+      "sha256": "1581bcfa11bb57c52b8cf5999a2a27b215ee1838f06b5aafd4dbfc1f27bbe204",
+      "size": 21204
+    },
+    {
+      "githubAssetID": 744498130,
+      "name": "smartstage-darwin-amd64.app.zip",
+      "sha256": "7a4c20fab71a26219d9cec46b16f5751b964d3f0952d50aaa0fe929fb7dea2e1",
+      "size": 4125404
+    },
+    {
+      "githubAssetID": 744498173,
+      "name": "smartstage-darwin-amd64.app.zip.sha256",
+      "sha256": "a7587e8fa1e2a7d79e5b7126d71b2b126b4db129896910dd9ab3af17bd43fd6e",
+      "size": 98
+    },
+    {
+      "githubAssetID": 744498305,
+      "name": "smartstage-darwin-amd64.http-smoke.json",
+      "sha256": "9da3bcd969b237b419bab1c295964e8f438dab02c898aad4d564a78c3fbc0057",
+      "size": 738
+    },
+    {
+      "githubAssetID": 744498277,
+      "name": "smartstage-darwin-amd64.icon.json",
+      "sha256": "9a0a85007816e368f7fc91dc5067cc34b582123493c631531c6f435d51ac405b",
+      "size": 7905
+    },
+    {
+      "githubAssetID": 744498232,
+      "name": "smartstage-darwin-amd64.imports.txt",
+      "sha256": "dc226f6d7bf6d0d068f1a6141e5ccb46c61cc62443d66c184d9bfc895658cdc8",
+      "size": 2295
+    },
+    {
+      "githubAssetID": 744498327,
+      "name": "smartstage-darwin-amd64.network-mode.json",
+      "sha256": "296f8ee283e06ef43787c2e0641d56ee4d42102cf1f8d0b90474c0006f27df7b",
+      "size": 976
+    },
+    {
+      "githubAssetID": 744498133,
+      "name": "smartstage-darwin-amd64.zip",
+      "sha256": "5a5e6bea35a14881ab7ec8cb02017516cba8a7b7224e186fe2734f6ca4571ffd",
+      "size": 3984335
+    },
+    {
+      "githubAssetID": 744498175,
+      "name": "smartstage-darwin-amd64.zip.sha256",
+      "sha256": "a87eaf477b7e383f2dbd197cdc530447ea798009cfd0cc4458d8735e8de127e5",
+      "size": 94
+    },
+    {
+      "githubAssetID": 744498131,
+      "name": "smartstage-darwin-arm64.app.zip",
+      "sha256": "456d4354a12041352fbf179720b36d9bff2fa4c50800a8b083bf4fd5d00b17da",
+      "size": 3735395
+    },
+    {
+      "githubAssetID": 744498199,
+      "name": "smartstage-darwin-arm64.app.zip.sha256",
+      "sha256": "350c07b1ebf69e99a56064e53c2600260e2f79402d07cab42f014229c47ea5a1",
+      "size": 98
+    },
+    {
+      "githubAssetID": 744498308,
+      "name": "smartstage-darwin-arm64.http-smoke.json",
+      "sha256": "608de8d023ed241cf7bc916c910bfa2fdaee891cd3bd0e6d99d1efd3962a7c61",
+      "size": 738
+    },
+    {
+      "githubAssetID": 744498289,
+      "name": "smartstage-darwin-arm64.icon.json",
+      "sha256": "ec5e92ee500a8ce4c6e5c42f6ac17e08a5ced88cf5ae29de0e767586da949a8b",
+      "size": 7902
+    },
+    {
+      "githubAssetID": 744498247,
+      "name": "smartstage-darwin-arm64.imports.txt",
+      "sha256": "fc9fca0420802641873cd0d3ee8a7291cc4d95c8e0fea4e64baf8e1c9975aced",
+      "size": 2295
+    },
+    {
+      "githubAssetID": 744498334,
+      "name": "smartstage-darwin-arm64.network-mode.json",
+      "sha256": "d1b22962a7bfeb49f3a942790b7ebb2c29a8469b60fd19159b4b94eea492e3e0",
+      "size": 976
+    },
+    {
+      "githubAssetID": 744498134,
+      "name": "smartstage-darwin-arm64.zip",
+      "sha256": "1cf770711a280f4dff8da59c54f82ed6db5ab2c9eabc407993813254f76c802a",
+      "size": 3593984
+    },
+    {
+      "githubAssetID": 744498203,
+      "name": "smartstage-darwin-arm64.zip.sha256",
+      "sha256": "65041cdb6ed0ca561b2faf584b12d272c5a62079e1b56d39cbac995b3d17cb9f",
+      "size": 94
+    },
+    {
+      "githubAssetID": 744498505,
+      "name": "smartstage-gateway-linux-amd64",
+      "sha256": "6a02cbcfc705846fd28246adb06a50ebaf4e65dcae6406de00a2443e21d251a4",
+      "size": 7110782
+    },
+    {
+      "githubAssetID": 744498512,
+      "name": "smartstage-gateway-linux-amd64.sha256",
+      "sha256": "80c5f2738948eefb081decb994078fd92717a685634287fa8c5c028b7d7e1f79",
+      "size": 97
+    },
+    {
+      "githubAssetID": 744498514,
+      "name": "smartstage-gateway-linux-amd64.static.txt",
+      "sha256": "2051f808b029e92b2451cc4bdfdbb56749c07e3514943b8c65fd529d6c3f211b",
+      "size": 2609
+    },
+    {
+      "githubAssetID": 744498546,
+      "name": "smartstage-gateway-linux-arm64",
+      "sha256": "c026e3324574712968df594adb089c46e20ae4908aa43bf6be63d7bb983939ca",
+      "size": 6619262
+    },
+    {
+      "githubAssetID": 744498545,
+      "name": "smartstage-gateway-linux-arm64.sha256",
+      "sha256": "1b5b93121e8638c5628a55d441f5d3026602db626a29f5ccaca9df571fe724aa",
+      "size": 97
+    },
+    {
+      "githubAssetID": 744498553,
+      "name": "smartstage-gateway-linux-arm64.static.txt",
+      "sha256": "db4604bb9f5bf9fc38779af6e7fbff1bef638b93582960111b7a64156cb8fdc1",
+      "size": 2591
+    },
+    {
+      "githubAssetID": 744498310,
+      "name": "smartstage-windows-amd64.exe.http-smoke.json",
+      "sha256": "15049326977b778806bee6104b9615f483b7b28ed108fdee2ca7a7c7bbff0f4d",
+      "size": 998
+    },
+    {
+      "githubAssetID": 744498290,
+      "name": "smartstage-windows-amd64.exe.icon.json",
+      "sha256": "4ebe417d9e3d732dacf304eeaef971cb115fdb08ceeebf2c20d65a0880f6ad87",
+      "size": 426
+    },
+    {
+      "githubAssetID": 744498260,
+      "name": "smartstage-windows-amd64.exe.imports.txt",
+      "sha256": "cb48c051d0ad61a75a9017e7aaedd7b98edf9fd40a0dfd2623f47eb5605489e8",
+      "size": 16492
+    },
+    {
+      "githubAssetID": 744498370,
+      "name": "smartstage-windows-amd64.exe.native-admin.json",
+      "sha256": "79013058b5f526eef506bc5b39fd69c5599025893f8e91d348eb8f580a99523a",
+      "size": 16808
+    },
+    {
+      "githubAssetID": 744498360,
+      "name": "smartstage-windows-amd64.exe.network-mode.json",
+      "sha256": "d8d3283837c6c9a1e39e336cdc726af1a7371cecdfa2a09171188d9a29e40c72",
+      "size": 1007
+    },
+    {
+      "githubAssetID": 744498132,
+      "name": "smartstage-windows-amd64.zip",
+      "sha256": "30f5e177dd116f0e8d1e111826d0bfb5c33af1223eef348b5ef0adf25287fab3",
+      "size": 4505319
+    },
+    {
+      "githubAssetID": 744498211,
+      "name": "smartstage-windows-amd64.zip.sha256",
+      "sha256": "d5821dd1c41f9d79d66b5398df1737d1929c8e0db71aa38ad0b85176be3d69c9",
+      "size": 96
+    },
+    {
+      "githubAssetID": 744498323,
+      "name": "smartstage-windows-arm64.exe.http-smoke.json",
+      "sha256": "aab6f2db44bbcd43315c583a93487d1aa9015e92b685f0995c11440889f7e6ae",
+      "size": 998
+    },
+    {
+      "githubAssetID": 744498294,
+      "name": "smartstage-windows-arm64.exe.icon.json",
+      "sha256": "a34b48054f1f7cb9441e0c12490b3e99f03df29198c8bef3c76737470a8a83f9",
+      "size": 426
+    },
+    {
+      "githubAssetID": 744498262,
+      "name": "smartstage-windows-arm64.exe.imports.txt",
+      "sha256": "493fd2bfc3af088d349ce4400d8922b336c7041e586428693936bea8e9401487",
+      "size": 16227
+    },
+    {
+      "githubAssetID": 744498380,
+      "name": "smartstage-windows-arm64.exe.native-admin.json",
+      "sha256": "e211cf5a48227b47c97ced0cdf201d46fb025c9b5326d29a69758bc944a70677",
+      "size": 201808
+    },
+    {
+      "githubAssetID": 744498363,
+      "name": "smartstage-windows-arm64.exe.network-mode.json",
+      "sha256": "8129484f50fbd7733df1373da06144b10722b3265ecf3d243a36e25c792924e5",
+      "size": 1004
+    },
+    {
+      "githubAssetID": 744498170,
+      "name": "smartstage-windows-arm64.zip",
+      "sha256": "05867403717ac5d9315000beed3607ebf6d4cc202680387ad1523385bef12608",
+      "size": 4018021
+    },
+    {
+      "githubAssetID": 744498231,
+      "name": "smartstage-windows-arm64.zip.sha256",
+      "sha256": "eee627f630bd9b96ff7a8e5bcb741e1e37f0536facffe61390b98954a849373f",
+      "size": 96
+    },
+    {
+      "githubAssetID": 744498382,
+      "name": "toolchain-darwin-amd64.txt",
+      "sha256": "22ebe6bc58b34e24ab0df19128b8bd1588096706cfd0e309de8aef97a8bd493b",
+      "size": 383
+    },
+    {
+      "githubAssetID": 744498389,
+      "name": "toolchain-darwin-arm64.txt",
+      "sha256": "66a46c37b2587bb1afa19ba1935e0aa284eb77f641351e94d37e1a1ff2e2c015",
+      "size": 382
+    },
+    {
+      "githubAssetID": 744498402,
+      "name": "toolchain-windows-amd64.txt",
+      "sha256": "ce97a47a7d0e475f613d392f092d54e388512a50bb13f520f978f1a88110e11e",
+      "size": 387
+    },
+    {
+      "githubAssetID": 744498401,
+      "name": "toolchain-windows-arm64.txt",
+      "sha256": "f76ded38575ba76d6161c930d605f56b7e82d0a9f47b7d8dbcdfe29917eda9fd",
+      "size": 391
+    }
+  ],
+  "binaries": [
+    {
+      "asset": "smartstage-darwin-arm64.zip",
+      "cgoEnabled": "1",
+      "embeddedFullSource": "2eba7f4815db98430bad940aea227fef484e88df",
+      "executableSHA256": "10096f688834f076fdfa97e6524ac2f01852529a4a1b3964933be6e4180e3aa2",
+      "fullVCSMetadataEmbedded": true,
+      "go": "go1.26.11",
+      "kind": "binary",
+      "target": "darwin/arm64",
+      "vcsModified": false
+    },
+    {
+      "asset": "smartstage-darwin-amd64.zip",
+      "cgoEnabled": "1",
+      "embeddedFullSource": "2eba7f4815db98430bad940aea227fef484e88df",
+      "executableSHA256": "b2691ecda1817aa664f315b44d293c5563bc3dca9032e8461423d51d0838d2ed",
+      "fullVCSMetadataEmbedded": true,
+      "go": "go1.26.11",
+      "kind": "binary",
+      "target": "darwin/amd64",
+      "vcsModified": false
+    },
+    {
+      "asset": "smartstage-darwin-arm64.app.zip",
+      "cgoEnabled": "1",
+      "embeddedFullSource": "2eba7f4815db98430bad940aea227fef484e88df",
+      "executableSHA256": "10096f688834f076fdfa97e6524ac2f01852529a4a1b3964933be6e4180e3aa2",
+      "fullVCSMetadataEmbedded": true,
+      "go": "go1.26.11",
+      "kind": "bundle",
+      "target": "darwin/arm64",
+      "vcsModified": false
+    },
+    {
+      "asset": "smartstage-darwin-amd64.app.zip",
+      "cgoEnabled": "1",
+      "embeddedFullSource": "2eba7f4815db98430bad940aea227fef484e88df",
+      "executableSHA256": "b2691ecda1817aa664f315b44d293c5563bc3dca9032e8461423d51d0838d2ed",
+      "fullVCSMetadataEmbedded": true,
+      "go": "go1.26.11",
+      "kind": "bundle",
+      "target": "darwin/amd64",
+      "vcsModified": false
+    },
+    {
+      "asset": "smartstage-windows-arm64.zip",
+      "cgoEnabled": "1",
+      "embeddedFullSource": "2eba7f4815db98430bad940aea227fef484e88df",
+      "executableSHA256": "6378be5dc14b09e785a255babf5d87573ccc82e287a5322dbccd934c41f559fe",
+      "fullVCSMetadataEmbedded": true,
+      "go": "go1.26.11",
+      "kind": "binary",
+      "target": "windows/arm64",
+      "vcsModified": false
+    },
+    {
+      "asset": "smartstage-windows-amd64.zip",
+      "cgoEnabled": "1",
+      "embeddedFullSource": "2eba7f4815db98430bad940aea227fef484e88df",
+      "executableSHA256": "33a84cfd12ae9a9d0bf6a59640468b0578b1beda7c56906715af5058e72e9bfa",
+      "fullVCSMetadataEmbedded": true,
+      "go": "go1.26.11",
+      "kind": "binary",
+      "target": "windows/amd64",
+      "vcsModified": false
+    },
+    {
+      "asset": "smartstage-gateway-linux-arm64",
+      "cgoEnabled": "0",
+      "embeddedFullSource": null,
+      "embeddedVersionAndPrefixVerified": true,
+      "executableSHA256": "c026e3324574712968df594adb089c46e20ae4908aa43bf6be63d7bb983939ca",
+      "fullVCSMetadataEmbedded": false,
+      "go": "go1.26.11",
+      "kind": "gateway",
+      "noELFInterpreterOrDynamicDependencies": true,
+      "reportedCommitPrefix": "2eba7f4815db",
+      "staticReportDigestVerified": true,
+      "taggedBuildSource": "2eba7f4815db98430bad940aea227fef484e88df",
+      "target": "linux/arm64"
+    },
+    {
+      "asset": "smartstage-gateway-linux-amd64",
+      "cgoEnabled": "0",
+      "embeddedFullSource": null,
+      "embeddedVersionAndPrefixVerified": true,
+      "executableSHA256": "6a02cbcfc705846fd28246adb06a50ebaf4e65dcae6406de00a2443e21d251a4",
+      "fullVCSMetadataEmbedded": false,
+      "go": "go1.26.11",
+      "kind": "gateway",
+      "noELFInterpreterOrDynamicDependencies": true,
+      "reportedCommitPrefix": "2eba7f4815db",
+      "staticReportDigestVerified": true,
+      "taggedBuildSource": "2eba7f4815db98430bad940aea227fef484e88df",
+      "target": "linux/amd64"
+    }
+  ],
+  "checkedAtUTC": "2026-11-13T17:19:49.233237+00:00",
+  "checksumPairsVerified": 8,
+  "cleanFullSourceDesktopExecutablesVerified": 6,
+  "gatewayStaticVersionPrefixReportsVerified": 2,
+  "go": "go1.26.11",
+  "latestStableTag": "v1.9.0",
+  "manifest": {
+    "anonymousRead": true,
+    "bytes": 105618,
+    "desktopArchivePairsVerified": 6,
+    "expectedRelease": "v1.9.0",
+    "latestStableTag": "v1.9.0",
+    "productionClientRequiresGitHubAPI": false,
+    "schemaVersion": 1,
+    "sha256": "f54fc443e9b6e9984e75a4cc70fecfa91283a33ca877c7ccc0da505dad513c1f",
+    "url": "https://arizzi74.github.io/Smart-Stage/updates.json"
+  },
+  "manifestDesktopArchivePairsVerified": 6,
+  "publicAssetCount": 50,
+  "publicAssetDigestsVerified": 50,
+  "publicTagResolvesToExpectedSource": true,
+  "release": "v1.9.0",
+  "releaseID": 444512447,
+  "releaseURL": "https://github.com/arizzi74/Smart-Stage/releases/tag/v1.9.0",
+  "scope": "Anonymous public bytes, GitHub digests, eight checksum pairs, six clean desktop VCS revisions, two static gateways and the public update manifest. Gateways intentionally omit embedded full VCS metadata; their tagged-build source, embedded version/prefix and digest-verified static reports are separate evidence. No native binary execution, installer/browser/auto-update reruns, API writes or publication.",
+  "source": "2eba7f4815db98430bad940aea227fef484e88df",
+  "status": "passed"
+}

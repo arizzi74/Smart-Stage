@@ -1,0 +1,93 @@
+name: Recover v1.9.0 hosted Mac runner
+on:
+  push:
+    branches: [ci/recover-v1.9.0-43466128420]
+    paths: ['.github/workflows/recover-v1.9.0.yml']
+permissions:
+  contents: read
+jobs:
+  retry:
+    if: github.repository == 'arizzi74/Smart-Stage' && github.ref == 'refs/heads/ci/recover-v1.9.0-43466128420' && github.run_attempt == '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Verify capacity-only cancellation and retry the immutable tagged job
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          import json, os, re, subprocess, sys
+
+          REPO = "arizzi74/Smart-Stage"
+          SOURCE = "2eba7f4815db98430bad940aea227fef484e88df"
+          TAG = "v1.9.0"
+          RUN = 43466128420
+          JOB = 132025613872
+
+          def require(condition, message):
+              if not condition:
+                  raise SystemExit(message)
+
+          def api(method, path, missing_ok=False):
+              result = subprocess.run(["gh", "api", "--hostname", "github.com", "--method", method,
+                  "--header", "Accept: application/vnd.github+json",
+                  "--header", "X-GitHub-Api-Version: 2026-03-10", "repos/" + REPO + path],
+                  text=True, capture_output=True)
+              if result.returncode:
+                  if missing_ok and "HTTP 404" in result.stderr:
+                      return None
+                  status = re.search(r"HTTP\s+(\d{3})", result.stderr)
+                  raise SystemExit("GitHub request rejected" + (" (HTTP " + status.group(1) + ")" if status else ""))
+              return json.loads(result.stdout) if result.stdout.strip() else None
+
+          require(os.environ.get("GITHUB_REPOSITORY", REPO) == REPO, "Unexpected repository")
+          ref = api("GET", "/git/ref/tags/" + TAG)["object"]
+          require(ref["type"] == "tag", "Expected the existing annotated release tag")
+          tag = api("GET", "/git/tags/" + ref["sha"])["object"]
+          require(tag["type"] == "commit" and tag["sha"] == SOURCE, "Release tag changed")
+          run = api("GET", f"/actions/runs/{RUN}")
+          require(run["head_sha"] == SOURCE and run["head_branch"] == TAG and run["event"] == "push"
+              and run["path"] == ".github/workflows/build.yml", "Unexpected release workflow identity")
+          if run["run_attempt"] >= 2:
+              print(json.dumps({"retryAlreadyRequested": True, "run": RUN, "attempt": run["run_attempt"]}))
+              sys.exit(0)
+          require(run["run_attempt"] == 1 and run["status"] == "completed" and run["conclusion"] == "failure",
+              "The first release attempt must be terminal before recovery")
+          job = api("GET", f"/actions/jobs/{JOB}")
+          require(job["run_id"] == RUN and job["head_sha"] == SOURCE
+              and job["name"] == "native (macos-15, darwin, arm64)", "Unexpected recovery job identity")
+          require(job["status"] == "completed" and job["conclusion"] == "cancelled"
+              and not job["steps"] and job["runner_id"] == 0 and not job["runner_name"],
+              "Recovery is restricted to a job that acquired no runner and ran no steps")
+          require(job["check_run_url"] == f"https://api.github.com/repos/{REPO}/check-runs/{JOB}",
+              "Unexpected check-run identity")
+          check = api("GET", f"/check-runs/{JOB}")
+          require(check["id"] == JOB and check["head_sha"] == SOURCE and check["status"] == "completed"
+              and check["conclusion"] == "cancelled", "Unexpected check-run source or outcome")
+          annotations = api("GET", f"/check-runs/{JOB}/annotations?per_page=100")
+          acquisition = "The job was not acquired by Runner of type hosted even after multiple attempts"
+          capacity = "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+          require(check["output"]["annotations_count"] == len(annotations) == 4,
+              "Complete expected cancellation annotations are required")
+          expected = [("failure", acquisition)] + [("notice", capacity)] * 3
+          require(sorted((a["annotation_level"], a["message"]) for a in annotations) == sorted(expected),
+              "Only exact hosted-acquisition/capacity annotations are permitted")
+          jobs_response = api("GET", f"/actions/runs/{RUN}/jobs?per_page=100")
+          jobs = jobs_response["jobs"]
+          require(jobs_response["total_count"] == len(jobs), "The complete original job set is required")
+          require(all(j["run_id"] == RUN and j["head_sha"] == SOURCE and j["status"] == "completed" for j in jobs),
+              "All original jobs must be terminal at the expected source")
+          blocking = [j for j in jobs if j["conclusion"] not in ("success", "skipped")]
+          require(len(blocking) == 1 and blocking[0]["id"] == JOB, "An application/test failure cannot be retried by this helper")
+          require(any(j["name"] == "publish" and j["conclusion"] == "skipped" for j in jobs),
+              "Release publication must not have run")
+          require(api("GET", "/releases/tags/" + TAG, missing_ok=True) is None, "The release is already published")
+          if os.environ.get("SMARTSTAGE_RETRY_VERIFY_ONLY") == "1":
+              print(json.dumps({"guardsVerified": True, "source": SOURCE, "tag": TAG, "run": RUN, "job": JOB,
+                  "noMutation": True}))
+              sys.exit(0)
+          api("POST", f"/actions/jobs/{JOB}/rerun")
+          print(json.dumps({"retryRequested": True, "source": SOURCE, "tag": TAG, "run": RUN, "job": JOB}))

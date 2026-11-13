@@ -1,0 +1,150 @@
+name: Recover v1.9.0 hosted Mac runner
+on:
+  push:
+    branches: [ci/recover-v1.9.0-43466128420]
+    paths: ['.github/workflows/recover-v1.9.0.yml']
+permissions:
+  contents: read
+jobs:
+  retry:
+    if: github.repository == 'arizzi74/Smart-Stage' && github.ref == 'refs/heads/ci/recover-v1.9.0-43466128420' && github.run_attempt == '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Verify two capacity-only cancellations and retry failed verification jobs
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          import hashlib, json, os, re, subprocess, sys
+
+          REPO = "arizzi74/Smart-Stage"
+          SOURCE = "2eba7f4815db98430bad940aea227fef484e88df"
+          TAG = "v1.9.0"
+          RUN = 43466128420
+          BRANCH = "ci/recover-v1.9.0-43466128420"
+          JOBS = {
+              132044113517: "verify-download / download (macos-15, darwin, arm64)",
+              132044115018: "verify-macos-install / install (macos-15, arm64)",
+          }
+          RELEASE = 444512447
+          ASSET_FINGERPRINT = "6a7bffedb132f339d5c18d1ae135b3eac80c80cc901d2612e3b528471089e28b"
+          # Canonical ID/name/size/digest rows from the completed public asset audit.
+          PUBLIC_AUDIT_SHA256 = "f21ff7b9a3b92ef2a2add9c7a46853d7878bf26b463efc8e25df2d6fe7cd4a5f"
+          VERIFY_ONLY = os.environ.get("SMARTSTAGE_RETRY_VERIFY_ONLY") == "1"
+          mutation_ready = False
+
+          def require(condition, message):
+              if not condition:
+                  raise SystemExit(message)
+
+          def api(method, path):
+              require(method == "GET" or (method == "POST" and not VERIFY_ONLY and mutation_ready
+                  and path == f"/actions/runs/{RUN}/rerun-failed-jobs"), "Unexpected mutation")
+              result = subprocess.run(["gh", "api", "--hostname", "github.com", "--method", method,
+                  "--header", "Accept: application/vnd.github+json",
+                  "--header", "X-GitHub-Api-Version: 2026-03-10", "repos/" + REPO + path],
+                  text=True, capture_output=True)
+              if result.returncode:
+                  status = re.search(r"HTTP\s+(\d{3})", result.stderr)
+                  raise SystemExit("GitHub request rejected" + (" (HTTP " + status.group(1) + ")" if status else ""))
+              return json.loads(result.stdout) if result.stdout.strip() else None
+
+          def tagged_run():
+              ref = api("GET", "/git/ref/tags/" + TAG)
+              require(ref["ref"] == "refs/tags/" + TAG and ref["object"]["type"] == "tag",
+                  "Expected the existing annotated release tag")
+              tag = api("GET", "/git/tags/" + ref["object"]["sha"])
+              require(tag["tag"] == TAG and tag["object"]["type"] == "commit"
+                  and tag["object"]["sha"] == SOURCE, "Release tag changed")
+              run = api("GET", f"/actions/runs/{RUN}")
+              require(run["id"] == RUN and run["repository"]["full_name"] == REPO
+                  and run["head_repository"]["full_name"] == REPO and run["head_sha"] == SOURCE
+                  and run["head_branch"] == TAG and run["event"] == "push"
+                  and run["path"] == ".github/workflows/build.yml", "Unexpected release workflow identity")
+              return run
+
+          def require_failed_attempt_two(run):
+              require(run["run_attempt"] == 2 and run["status"] == "completed" and run["conclusion"] == "failure",
+                  "The second release attempt must be terminal before recovery")
+
+          require(os.environ.get("GITHUB_REPOSITORY") == REPO, "Unexpected repository")
+          require(os.environ.get("GITHUB_REF") == "refs/heads/" + BRANCH, "Unexpected helper branch")
+          require(os.environ.get("GITHUB_EVENT_NAME") == "push" and os.environ.get("GITHUB_RUN_ATTEMPT") == "1",
+              "Only the first push-triggered helper attempt is permitted")
+          require(os.environ.get("GITHUB_WORKFLOW_REF") == REPO + "/.github/workflows/recover-v1.9.0.yml@refs/heads/" + BRANCH,
+              "Unexpected helper workflow identity")
+          run = tagged_run()
+          if run["run_attempt"] >= 3:
+              print(json.dumps({"retryAlreadyRequested": True, "run": RUN, "attempt": run["run_attempt"]}))
+              sys.exit(0)
+          require_failed_attempt_two(run)
+
+          jobs_response = api("GET", f"/actions/runs/{RUN}/jobs?per_page=100")
+          jobs = jobs_response["jobs"]
+          require(jobs_response["total_count"] == len(jobs) == len({j["id"] for j in jobs}) == 25,
+              "The complete 25-job attempt is required")
+          require(len({j["name"] for j in jobs}) == 25 and all(j["run_id"] == RUN and j["head_sha"] == SOURCE
+              and j["run_attempt"] == 2 and j["status"] == "completed" for j in jobs),
+              "All jobs must be terminal in the expected attempt and source")
+          require(sum(j["conclusion"] == "success" for j in jobs) == 23
+              and {j["id"] for j in jobs if j["conclusion"] != "success"} == set(JOBS),
+              "Only the two fixed verification jobs may be unsuccessful")
+          require(sum(j["name"] == "publish" and j["conclusion"] == "success" for j in jobs) == 1,
+              "Publication must already have succeeded")
+
+          for job_id, name in JOBS.items():
+              job = api("GET", f"/actions/jobs/{job_id}")
+              listed = next(j for j in jobs if j["id"] == job_id)
+              require(job["id"] == job_id and job["run_id"] == RUN and job["head_sha"] == SOURCE
+                  and job["run_attempt"] == 2 and job["name"] == name and listed == job,
+                  "Unexpected recovery job identity or changed job state")
+              require(job["status"] == "completed" and job["conclusion"] == "cancelled"
+                  and not job["steps"] and job["runner_id"] == 0 and not job["runner_name"],
+                  "Recovery is restricted to jobs that acquired no runner and ran no steps")
+              require(job["check_run_url"] == f"https://api.github.com/repos/{REPO}/check-runs/{job_id}",
+                  "Unexpected check-run identity")
+              check = api("GET", f"/check-runs/{job_id}")
+              require(check["id"] == job_id and check["head_sha"] == SOURCE and check["status"] == "completed"
+                  and check["conclusion"] == "cancelled", "Unexpected check-run source or outcome")
+              annotations = api("GET", f"/check-runs/{job_id}/annotations?per_page=100")
+              acquisition = "The job was not acquired by Runner of type hosted even after multiple attempts"
+              capacity = "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+              require(check["output"]["annotations_count"] == len(annotations) == 4,
+                  "Complete expected cancellation annotations are required")
+              expected = [("failure", acquisition)] + [("notice", capacity)] * 3
+              require(sorted((a["annotation_level"], a["message"]) for a in annotations) == sorted(expected),
+                  "Only exact hosted-acquisition/capacity annotations are permitted")
+
+          release = api("GET", "/releases/tags/" + TAG)
+          require(release["id"] == RELEASE and release["tag_name"] == TAG
+              and release["draft"] is False and release["prerelease"] is False,
+              "Expected the audited published stable release")
+          assets = api("GET", f"/releases/{RELEASE}/assets?per_page=100")
+          require(len(assets) == len({a["id"] for a in assets}) == len({a["name"] for a in assets}) == 50
+              and all(a["state"] == "uploaded" for a in assets), "The complete uploaded asset set is required")
+          require({a["id"] for a in release["assets"]} == {a["id"] for a in assets}
+              and len(release["assets"]) == 50, "Release asset lists disagree")
+          rows = sorted([[a["id"], a["name"], a["size"], a["digest"]] for a in assets], key=lambda row: row[1])
+          fingerprint = hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest()
+          require(fingerprint == ASSET_FINGERPRINT, "Published asset identities or audited bytes changed")
+
+          # Recheck immutable identity and the current attempt immediately before the only possible mutation.
+          run = tagged_run()
+          if run["run_attempt"] >= 3:
+              print(json.dumps({"retryAlreadyRequested": True, "run": RUN, "attempt": run["run_attempt"]}))
+              sys.exit(0)
+          require_failed_attempt_two(run)
+          marker = {"source": SOURCE, "tag": TAG, "run": RUN, "jobs": sorted(JOBS),
+              "expectedAttempt": 2, "requestedAttempt": 3, "releaseID": RELEASE,
+              "assetCount": 50, "assetFingerprint": ASSET_FINGERPRINT, "publicAuditSHA256": PUBLIC_AUDIT_SHA256}
+          if VERIFY_ONLY:
+              print(json.dumps({"guardsVerified": True, **marker, "noMutation": True}))
+              sys.exit(0)
+          mutation_ready = True
+          # This endpoint retries unsuccessful jobs/dependents; there is no full-run or job-specific fallback.
+          api("POST", f"/actions/runs/{RUN}/rerun-failed-jobs")
+          print(json.dumps({"retryRequested": True, **marker}))

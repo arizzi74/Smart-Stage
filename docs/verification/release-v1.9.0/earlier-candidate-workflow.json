@@ -1,0 +1,226 @@
+{
+  "workflow": {
+    "id": 43460219465,
+    "name": "Build and test native targets",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465",
+    "source": "44bff71ba60c764710f5870742ec3af391ebf170",
+    "branch": "main",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "failure",
+    "attempt": 1,
+    "createdAtUTC": "2026-11-13T16:11:39Z",
+    "updatedAtUTC": "2026-11-13T16:20:55Z"
+  },
+  "checkedAtUTC": "2026-11-13T16:21:17.666242Z",
+  "requiredGateCount": 7,
+  "passedRequiredGates": 5,
+  "allRequiredGatesPassed": false,
+  "jobs": [
+    {
+      "id": 132004819785,
+      "gate": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132004819785",
+      "startedAtUTC": "2026-11-13T16:11:42Z",
+      "completedAtUTC": "2026-11-13T16:16:41Z",
+      "currentStep": null,
+      "nativeStartupStep": null,
+      "nativeBrowserStep": null,
+      "failedSteps": []
+    },
+    {
+      "id": 132004820229,
+      "gate": "windows/amd64",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132004820229",
+      "startedAtUTC": "2026-11-13T16:11:41Z",
+      "completedAtUTC": "2026-11-13T16:17:57Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "failedSteps": []
+    },
+    {
+      "id": 132004820271,
+      "gate": "darwin/arm64",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132004820271",
+      "startedAtUTC": "2026-11-13T16:11:42Z",
+      "completedAtUTC": "2026-11-13T16:17:24Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "failedSteps": []
+    },
+    {
+      "id": 132004820375,
+      "gate": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132004820375",
+      "startedAtUTC": "2026-11-13T16:11:42Z",
+      "completedAtUTC": "2026-11-13T16:13:09Z",
+      "currentStep": null,
+      "nativeStartupStep": null,
+      "nativeBrowserStep": null,
+      "failedSteps": []
+    },
+    {
+      "id": 132004820491,
+      "gate": "windows/arm64",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132004820491",
+      "startedAtUTC": "2026-11-13T16:11:42Z",
+      "completedAtUTC": "2026-11-13T16:20:54Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      "failedSteps": [
+        {
+          "number": 14,
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "id": 132004820526,
+      "gate": "darwin/amd64",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132004820526",
+      "startedAtUTC": "2026-11-13T16:11:41Z",
+      "completedAtUTC": "2026-11-13T16:19:15Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "failedSteps": []
+    },
+    {
+      "id": 132010382711,
+      "gate": "binary-security",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132010382711",
+      "startedAtUTC": "2026-11-13T16:20:55Z",
+      "completedAtUTC": "2026-11-13T16:20:54Z",
+      "currentStep": null,
+      "nativeStartupStep": null,
+      "nativeBrowserStep": null,
+      "failedSteps": []
+    }
+  ],
+  "conditionalReleaseJobs": [
+    {
+      "id": 132010383401,
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132010383401"
+    },
+    {
+      "id": 132010384036,
+      "name": "verify-windows-install",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132010384036"
+    },
+    {
+      "id": 132010384484,
+      "name": "verify-browser",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132010384484"
+    },
+    {
+      "id": 132010384826,
+      "name": "publish-site",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132010384826"
+    },
+    {
+      "id": 132010384961,
+      "name": "verify-download",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132010384961"
+    },
+    {
+      "id": 132010385328,
+      "name": "verify-macos-install",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132010385328"
+    },
+    {
+      "id": 132010385617,
+      "name": "verify-update",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43460219465/job/132010385617"
+    }
+  ],
+  "privacyScope": "Public workflow/job metadata and step results only; no raw logs, pairing keys, transient tunnel URLs, machine paths or firewall rules.",
+  "scope": "Animated remote section pager and Admin-only playlist sorter candidate. Native startup and browser step success is recorded; observation-level artifact receipts are collected separately.",
+  "failureEvidence": [
+    {
+      "gate": "windows/arm64",
+      "jobID": 132004820491,
+      "step": "Exercise current-user Windows installation and native app lifecycle",
+      "assertion": "Windows Start component did not initialize before the firewall baseline",
+      "sourcePath": "scripts/verify-windows-install.py",
+      "sourceLine": 274,
+      "function": "initialize_windows_shell",
+      "timeoutSeconds": 120,
+      "scope": "Installer verifier precondition failed before firewall baseline collection. The built-native-host browser step containing the new sorter helper was skipped for this target.",
+      "causeEstablished": false
+    }
+  ]
+}

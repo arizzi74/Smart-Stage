@@ -1,0 +1,1039 @@
+{
+  "release": "v1.9.0",
+  "workflow": {
+    "id": 43466128420,
+    "name": "Build and test native targets",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420",
+    "source": "2eba7f4815db98430bad940aea227fef484e88df",
+    "ref": "v1.9.0",
+    "gitRef": "refs/tags/v1.9.0",
+    "tagCommit": "2eba7f4815db98430bad940aea227fef484e88df",
+    "tagObjectType": "tag",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "success",
+    "attempt": 3,
+    "createdAtUTC": "2026-11-13T16:46:43Z",
+    "updatedAtUTC": "2026-11-13T17:52:16Z",
+    "completedAtUTC": "2026-11-13T17:52:16Z"
+  },
+  "checkedAtUTC": "2026-11-13T17:52:52.617062Z",
+  "expectedJobs": 25,
+  "passedJobs": 25,
+  "allExpectedJobsPassed": true,
+  "expectedJobKeys": [
+    "binary-security",
+    "gateway",
+    "native/darwin/amd64",
+    "native/darwin/arm64",
+    "native/windows/amd64",
+    "native/windows/arm64",
+    "publish",
+    "publish-site",
+    "shared",
+    "verify-browser/darwin/amd64",
+    "verify-browser/darwin/arm64",
+    "verify-browser/windows/amd64",
+    "verify-browser/windows/arm64",
+    "verify-download/darwin/amd64",
+    "verify-download/darwin/arm64",
+    "verify-download/windows/amd64",
+    "verify-download/windows/arm64",
+    "verify-macos-install/darwin/amd64",
+    "verify-macos-install/darwin/arm64",
+    "verify-update/darwin/amd64",
+    "verify-update/darwin/arm64",
+    "verify-update/windows/amd64",
+    "verify-update/windows/arm64",
+    "verify-windows-install/windows/amd64",
+    "verify-windows-install/windows/arm64"
+  ],
+  "missingExpectedJobs": [],
+  "jobGroupCounts": {
+    "shared": 1,
+    "native": 4,
+    "binary-security": 1,
+    "verify-download": 4,
+    "verify-macos-install": 2,
+    "publish-site": 1,
+    "publish": 1,
+    "verify-windows-install": 2,
+    "verify-browser": 4,
+    "verify-update": 4,
+    "gateway": 1
+  },
+  "jobs": [
+    {
+      "id": 132060355235,
+      "key": "shared",
+      "jobAttempt": 3,
+      "executionAttempt": 1,
+      "physicalExecutionJobID": 132025613640,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132025613640",
+      "reusedFromAttempt": 1,
+      "previousJobID": 132025613640,
+      "stepTimelineSHA256": "7ff72bb76ba384d05a9296514d3dd71b901f7d2111e438f2f59df005bb1a0cca",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060355235",
+      "startedAtUTC": "2026-11-13T16:46:45Z",
+      "completedAtUTC": "2026-11-13T16:48:01Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 6,
+          "name": "Run go test -race ./...",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060356280,
+      "key": "native/windows/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 1,
+      "physicalExecutionJobID": 132025613591,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132025613591",
+      "reusedFromAttempt": 1,
+      "previousJobID": 132025613591,
+      "stepTimelineSHA256": "85752a1fc13e26da0d9b823776ad76d60005cd36f257b844fbdd0265327e0ca7",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060356280",
+      "startedAtUTC": "2026-11-13T16:46:45Z",
+      "completedAtUTC": "2026-11-13T16:51:52Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 5,
+          "name": "Build and inspect native imports",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Verify the official native Cloudflare helper and launch arguments",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 12,
+          "name": "Verify the ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 13,
+          "name": "Verify embedded icon and optional Finder app",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 14,
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 16,
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 17,
+          "name": "Verify track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 18,
+          "name": "Build an isolated older-version fixture for automatic update verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060357432,
+      "key": "native/windows/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 1,
+      "physicalExecutionJobID": 132025613124,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132025613124",
+      "reusedFromAttempt": 1,
+      "previousJobID": 132025613124,
+      "stepTimelineSHA256": "90efcd7fbd7d7607890a22361300ee5269d78535dd9be608f219214a54024316",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060357432",
+      "startedAtUTC": "2026-11-13T16:46:45Z",
+      "completedAtUTC": "2026-11-13T17:03:34Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 5,
+          "name": "Build and inspect native imports",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Verify the official native Cloudflare helper and launch arguments",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 9,
+          "name": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 12,
+          "name": "Verify the ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 13,
+          "name": "Verify embedded icon and optional Finder app",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 14,
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 16,
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 17,
+          "name": "Verify track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 18,
+          "name": "Build an isolated older-version fixture for automatic update verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060357782,
+      "key": "binary-security",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132043366273,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132043366273",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132043366273,
+      "stepTimelineSHA256": "d9277277596f1f7f301a295c66205c703725c67ec9bf1a5a7ea1428545420cc1",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "binary-security",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060357782",
+      "startedAtUTC": "2026-11-13T17:16:59Z",
+      "completedAtUTC": "2026-11-13T17:17:43Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": []
+    },
+    {
+      "id": 132060357836,
+      "key": "verify-download/darwin/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 3,
+      "physicalExecutionJobID": 132060357836,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060357836",
+      "reusedFromAttempt": null,
+      "previousJobID": null,
+      "stepTimelineSHA256": "08b952d7969e32983424129a81e869ddf8600b81cbb4132ff7dbbfc047c60ac6",
+      "executionEvidence": "Current job has execution steps.",
+      "name": "verify-download / download (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060357836",
+      "startedAtUTC": "2026-11-13T17:51:47Z",
+      "completedAtUTC": "2026-11-13T17:52:16Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 4,
+          "name": "Verify downloaded ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060357967,
+      "key": "verify-macos-install/darwin/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 3,
+      "physicalExecutionJobID": 132060357967,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060357967",
+      "reusedFromAttempt": null,
+      "previousJobID": null,
+      "stepTimelineSHA256": "87a46f2bdcd85a64b7afe91e00f2bff6e3909b3deef0f1e4d3ed7b81cc25b73b",
+      "executionEvidence": "Current job has execution steps.",
+      "name": "verify-macos-install / install (macos-15, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060357967",
+      "startedAtUTC": "2026-11-13T17:51:46Z",
+      "completedAtUTC": "2026-11-13T17:52:12Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": []
+    },
+    {
+      "id": 132060358846,
+      "key": "publish-site",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044112807,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044112807",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044112807,
+      "stepTimelineSHA256": "3e4323abd2200c40a7e8fa5d17bada5deb878d5e73869797b484e016e13c0c4c",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "publish-site",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060358846",
+      "startedAtUTC": "2026-11-13T17:18:18Z",
+      "completedAtUTC": "2026-11-13T17:19:12Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 3,
+          "name": "Wait for verified anonymous discovery of the new release",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060358859,
+      "key": "publish",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132043804848,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132043804848",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132043804848,
+      "stepTimelineSHA256": "3b20ed06c2bdbac82884a2db4831511b7234867691a870a8f6acb00cbca84675",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060358859",
+      "startedAtUTC": "2026-11-13T17:17:45Z",
+      "completedAtUTC": "2026-11-13T17:18:15Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 5,
+          "name": "Publish verified builds to the matching release channel",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 6,
+          "name": "Refresh the public update manifest through the protected main website workflow",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060359492,
+      "key": "verify-windows-install/windows/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044115253,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044115253",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044115253,
+      "stepTimelineSHA256": "a7a2042b6797d42c8a029d4c7d6ce7a93e8bc508337f54761a07d7d4a4ac70e9",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-windows-install / install (windows-11-arm, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060359492",
+      "startedAtUTC": "2026-11-13T17:18:44Z",
+      "completedAtUTC": "2026-11-13T17:30:44Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": []
+    },
+    {
+      "id": 132060359548,
+      "key": "verify-windows-install/windows/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044115200,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044115200",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044115200,
+      "stepTimelineSHA256": "6f73efeffc02c74e5715785ba827b5761d3b9e7f4e2b78774a2a53b5785d30d9",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-windows-install / install (windows-2025, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060359548",
+      "startedAtUTC": "2026-11-13T17:18:18Z",
+      "completedAtUTC": "2026-11-13T17:19:43Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": []
+    },
+    {
+      "id": 132060359735,
+      "key": "verify-download/windows/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044113344,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044113344",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044113344,
+      "stepTimelineSHA256": "dd7ea3bd35700652f79e0b200f21e30693f297811b40b7841fbb073729870b13",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-download / download (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060359735",
+      "startedAtUTC": "2026-11-13T17:18:18Z",
+      "completedAtUTC": "2026-11-13T17:19:19Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 4,
+          "name": "Verify downloaded ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060360036,
+      "key": "verify-browser/darwin/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044113453,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044113453",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044113453,
+      "stepTimelineSHA256": "f9998ad65ea8e68e76e1addd071a14df51f7767fce43a22a68ba02bbf199f56c",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-browser / browser (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060360036",
+      "startedAtUTC": "2026-11-13T17:23:19Z",
+      "completedAtUTC": "2026-11-13T17:24:58Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 6,
+          "name": "Exercise real Admin and Command through the published native host",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Verify released track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060360207,
+      "key": "verify-browser/windows/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044113650,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044113650",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044113650,
+      "stepTimelineSHA256": "36e681a80b29c368a40cc1951e00d6d053d0d15a0013a5e2f529fa0ecfe825ab",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-browser / browser (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060360207",
+      "startedAtUTC": "2026-11-13T17:18:18Z",
+      "completedAtUTC": "2026-11-13T17:19:40Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 6,
+          "name": "Exercise real Admin and Command through the published native host",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Verify released track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ]
+    },
+    {
+      "id": 132060360226,
+      "key": "verify-download/darwin/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044113524,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044113524",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044113524,
+      "stepTimelineSHA256": "02207fba47b0206eb2fb69906317f905b14d492c4a5aa01123e7aa7d8e8b69fc",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-download / download (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060360226",
+      "startedAtUTC": "2026-11-13T17:20:12Z",
+      "completedAtUTC": "2026-11-13T17:20:42Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 4,
+          "name": "Verify downloaded ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060360274,
+      "key": "verify-macos-install/darwin/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044115358,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044115358",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044115358,
+      "stepTimelineSHA256": "2621fc0c8fafaf0d78f56c5b9ae48d10b052e8535980cb01d1263b3f1524acf0",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-macos-install / install (macos-15-intel, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060360274",
+      "startedAtUTC": "2026-11-13T17:21:20Z",
+      "completedAtUTC": "2026-11-13T17:22:19Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": []
+    },
+    {
+      "id": 132060360398,
+      "key": "verify-download/windows/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044113562,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044113562",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044113562,
+      "stepTimelineSHA256": "7e39f4085d4f5f76164821509eee29d11e07838da5f18b001dc583573f48229a",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-download / download (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060360398",
+      "startedAtUTC": "2026-11-13T17:18:44Z",
+      "completedAtUTC": "2026-11-13T17:19:42Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 4,
+          "name": "Verify downloaded ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060360555,
+      "key": "verify-update/darwin/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044659071,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044659071",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044659071,
+      "stepTimelineSHA256": "9948a9297591be11de19cbf3230312786a85f1f8ae9f062278c80f4caed0011b",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-update / update (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060360555",
+      "startedAtUTC": "2026-11-13T17:20:53Z",
+      "completedAtUTC": "2026-11-13T17:21:17Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 5,
+          "name": "Exercise real automatic discovery, replacement and restart",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060361096,
+      "key": "verify-update/windows/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044659019,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044659019",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044659019,
+      "stepTimelineSHA256": "a74bbc0d1a079abb428750597723e2ed370f47dc6fd7ad2678bdee77bb44e171",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-update / update (windows-2025, windows, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060361096",
+      "startedAtUTC": "2026-11-13T17:19:15Z",
+      "completedAtUTC": "2026-11-13T17:19:59Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 5,
+          "name": "Exercise real automatic discovery, replacement and restart",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060361120,
+      "key": "verify-browser/windows/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044113602,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044113602",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044113602,
+      "stepTimelineSHA256": "9c74ff4d8c14e7ae07b0ac83b805ef3aecda279de7baa5bed4d25aa369dd20b9",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-browser / browser (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060361120",
+      "startedAtUTC": "2026-11-13T17:18:43Z",
+      "completedAtUTC": "2026-11-13T17:20:26Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 6,
+          "name": "Exercise real Admin and Command through the published native host",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Verify released track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ]
+    },
+    {
+      "id": 132060361125,
+      "key": "verify-browser/darwin/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044113508,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044113508",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044113508,
+      "stepTimelineSHA256": "22410bce6a0480468bc2ee58304d96912030e6902b505390f8bcbc74623615da",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-browser / browser (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060361125",
+      "startedAtUTC": "2026-11-13T17:20:11Z",
+      "completedAtUTC": "2026-11-13T17:22:13Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 6,
+          "name": "Exercise real Admin and Command through the published native host",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Verify released track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060361194,
+      "key": "verify-update/darwin/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044658998,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044658998",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044658998,
+      "stepTimelineSHA256": "d2f4b486244e246fb3e68ca752219e20ba76c5b2830f72532cb7b90c46fe4a5d",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-update / update (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060361194",
+      "startedAtUTC": "2026-11-13T17:22:47Z",
+      "completedAtUTC": "2026-11-13T17:23:29Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 5,
+          "name": "Exercise real automatic discovery, replacement and restart",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060361894,
+      "key": "verify-update/windows/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132044658962,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132044658962",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132044658962,
+      "stepTimelineSHA256": "da6a5b928f9a515632a480323994b09a0bf6d91434f2e547a0d00602f83d9a6f",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "verify-update / update (windows-11-arm, windows, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060361894",
+      "startedAtUTC": "2026-11-13T17:19:15Z",
+      "completedAtUTC": "2026-11-13T17:20:17Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 5,
+          "name": "Exercise real automatic discovery, replacement and restart",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060415625,
+      "key": "native/darwin/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132040899746,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132040899746",
+      "reusedFromAttempt": 2,
+      "previousJobID": 132040899746,
+      "stepTimelineSHA256": "15e333668f123476103de315d28af2ecf5502125b64ebb46e666783dfbacafaa",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "native (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060415625",
+      "startedAtUTC": "2026-11-13T17:12:50Z",
+      "completedAtUTC": "2026-11-13T17:16:56Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 5,
+          "name": "Build and inspect native imports",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Verify the official native Cloudflare helper and launch arguments",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 12,
+          "name": "Verify the ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 13,
+          "name": "Verify embedded icon and optional Finder app",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 14,
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 16,
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 17,
+          "name": "Verify track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 18,
+          "name": "Build an isolated older-version fixture for automatic update verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060431285,
+      "key": "gateway",
+      "jobAttempt": 3,
+      "executionAttempt": 1,
+      "physicalExecutionJobID": 132025613941,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132025613941",
+      "reusedFromAttempt": 1,
+      "previousJobID": 132025613941,
+      "stepTimelineSHA256": "c0c553fbfbf6c3d37785e0f6e9f6edd6f62491f9cb7f570b86bd67fb48f88ca6",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060431285",
+      "startedAtUTC": "2026-11-13T16:46:45Z",
+      "completedAtUTC": "2026-11-13T16:52:14Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 5,
+          "name": "Test gateway and installer with real proxy configuration validation",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Exercise real HTTPS remote, QR and browser commands",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 8,
+          "name": "Exercise authenticated WebSocket remote in a real browser",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Verify bilingual Admin, preserved edits and independent remote language",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 11,
+          "name": "Build and inspect static Linux binaries",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132060447491,
+      "key": "native/darwin/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 1,
+      "physicalExecutionJobID": 132025613659,
+      "physicalExecutionURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132025613659",
+      "reusedFromAttempt": 1,
+      "previousJobID": 132025613659,
+      "stepTimelineSHA256": "2e32713d236ce4df8b3a3357c678fe9abf1f10eba146170da4dc48470dc96be9",
+      "executionEvidence": "Complete step array and job start/end timestamps exactly match the earliest prior successful execution at this source/run.",
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43466128420/job/132060447491",
+      "startedAtUTC": "2026-11-13T16:46:52Z",
+      "completedAtUTC": "2026-11-13T16:54:00Z",
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 5,
+          "name": "Build and inspect native imports",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 7,
+          "name": "Verify the official native Cloudflare helper and launch arguments",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 12,
+          "name": "Verify the ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 13,
+          "name": "Verify embedded icon and optional Finder app",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 14,
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 16,
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 17,
+          "name": "Verify track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 18,
+          "name": "Build an isolated older-version fixture for automatic update verification",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "scope": "Exact-source tagged build, security, publication, anonymous manifest discovery, download, browser, native installation and updater job metadata. Observation-level artifact receipts and independent public asset audit are separate.",
+  "privacyScope": "Public run/job IDs, source refs, times, step names and outcomes only. No raw logs, process/window IDs, machine paths, pairing/session values or signed URLs.",
+  "jobAccounting": {
+    "effectiveExpectedJobs": 25,
+    "jobEntriesPresent": 25,
+    "reusedSuccessfulEntries": 23,
+    "jobEntriesWithExecutionByAttempt": {
+      "1": 5,
+      "2": 18,
+      "3": 2
+    },
+    "successfulOutcomesByExecutionAttempt": {
+      "1": 5,
+      "2": 18,
+      "3": 2
+    },
+    "entriesWithoutExecutionSteps": 0,
+    "all25FreshExecutionsInCurrentAttempt": false,
+    "priorAttempts": [
+      {
+        "attempt": 1,
+        "status": "completed",
+        "conclusion": "failure",
+        "recordedJobs": 14,
+        "successfulEntries": 5
+      },
+      {
+        "attempt": 2,
+        "status": "completed",
+        "conclusion": "failure",
+        "recordedJobs": 25,
+        "successfulEntries": 23
+      }
+    ],
+    "recoveryReceipt": "runner-retry-verification.json",
+    "scope": "Each current API job entry is matched by logical key, complete exact step array and exact job start/end timestamps against every earlier successful attempt at this immutable source/run. The earliest matching successful job ID is the physical execution; GitHub clone IDs are retained separately. Counts are derived from actual current entries, never from an expected rerun count. All twenty-five effective job outcomes must succeed."
+  }
+}

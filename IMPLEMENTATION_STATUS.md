@@ -222,6 +222,21 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.9.0
 
 ## Built and automatically tested
 
+Version 1.9.0 is source `2eba7f4815db98430bad940aea227fef484e88df`. All seven
+candidate gates and 25 effective tagged checks passed. Remote gestures track the
+finger and animate settling; real mouse sorting covers cue/section movement,
+Save/Cancel, metadata preservation and revision conflicts. Four real-host
+Chromium reports cover the new sorter; WebKit integration reports retain their
+track-drag scope. All 50 public asset digests, eight checksum pairs and website
+update discovery passed. Published installers and actual startup updates passed
+on all four targets. Earlier candidate and runner-capacity failures remain
+recorded separately, with retained and fresh executions distinguished. All ten
+current-default installer/updater reports passed. A separate diagnostics-only
+build passed five gates, including both Windows close/browser checks, but GitHub
+cancelled its unstarted Apple Silicon job for capacity and skipped binary
+security; that build remains incomplete. See the
+[v1.9.0 verification record](docs/verification/release-v1.9.0/README.md).
+
 Version 1.8.0 is source `59d329fa5066b2d1b82ca0efddd2f1fbbb6913eb`. Seven
 candidate gates and all 25 tagged release jobs passed. All 50 public asset
 digests, eight checksum pairs and website update discovery passed. Saved playlist

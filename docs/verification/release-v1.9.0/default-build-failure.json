@@ -1,0 +1,81 @@
+{
+  "status": "failed",
+  "release": "v1.9.0",
+  "target": "windows/arm64",
+  "workflowRunID": 43472019262,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43472019262",
+  "jobID": 132046065345,
+  "jobURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43472019262/job/132046065345",
+  "verificationSource": "bf5d036f6df660161a4433ff2e3d8936dd8542c6",
+  "releaseSource": "2eba7f4815db98430bad940aea227fef484e88df",
+  "sourceDifferenceScope": [
+    ".github/workflows/update.yml",
+    "IMPLEMENTATION_STATUS.md",
+    "install-gateway.sh",
+    "install.ps1",
+    "install.sh"
+  ],
+  "productAndCloseVerifierSourcesIdenticalToRelease": true,
+  "artifact": {
+    "id": 14061623467,
+    "name": "windows-admin-checks-arm64",
+    "sha256": "d90a05c48400ae7af67e3409423482c8dc1508a87d99b0098b6fd1994f4d9298",
+    "githubDigest": "sha256:d90a05c48400ae7af67e3409423482c8dc1508a87d99b0098b6fd1994f4d9298",
+    "githubDigestVerified": true,
+    "sourceAndRunVerified": true,
+    "reportFile": "smartstage-windows-arm64.exe.native-admin.json",
+    "reportSHA256": "fb1b20eb471c92797c4b5a25c3054cc22b99dacfa61053de57b27f02c1ae2044"
+  },
+  "privateJobLogSHA256": "0a937839b45416dea06b14d7fb85660d7c07e3f1b22a12137ff942309e797ba5",
+  "sourceExecutableSHA256": "de9e96b68ed1f71ea2087a3a069b71b0869339a4d3b83100dcb282921d803962",
+  "failure": {
+    "step": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+    "script": "scripts/windows_close_checks.py",
+    "sourceLine": 136,
+    "predicateLine": 82,
+    "assertion": "Timed out waiting for the shipped quit confirmation; last connection error: None",
+    "timeoutSeconds": 8,
+    "expectedDialog": {
+      "class": "#32770",
+      "title": "Uscire da Smart Stage?",
+      "scope": "Visible dialog belonging to the shipped process and owned by its native Admin window"
+    },
+    "phase": "First shipped-process quit confirmation immediately after cancelling the Italian native media chooser"
+  },
+  "reachedChecks": {
+    "helperProbe": {
+      "realAdminAssetsLoadedInWebView2": true,
+      "authenticatedEventSourceConnected": true,
+      "localSessionAndCSRFInitialized": true,
+      "nativeCFHDROPDeliveredToProductionDropTarget": true,
+      "nativeFileDialogOriginalSelectionAccepted": true,
+      "originalDropPathsAndBytesPreserved": true,
+      "nativeChooserOriginalPathPreserved": true,
+      "closeShowsOwnedNativeConfirmation": true,
+      "cancelKeepsAdminAndPlaybackState": true,
+      "confirmedCloseQueuesOneOrderlyQuit": true,
+      "realAdminQuitStoppedHost": true
+    },
+    "shippedProcess": {
+      "completeItalianTitleAndMenuObserved": true,
+      "italianChooserOpenAndCancelLogged": true,
+      "chooserWindowDestroyedAndOwnerEnabledPredicatePassed": true,
+      "nativeCloseDispatchAccepted": true
+    }
+  },
+  "notReached": [
+    "Shipped-process Italian quit-confirmation button and runtime relocalization assertions",
+    "Later shipped-process restart, Cancel and confirmed-exit assertions",
+    "Later native startup, installer and sorter browser steps in this job"
+  ],
+  "limitations": [
+    "Earlier helper checks passed, but the overall real Windows Admin verification failed. Their success does not replace the failed shipped-process close assertion.",
+    "The original verifier did not retain a modal-window enumeration or native chooserActive state at failure.",
+    "A chooser teardown boundary and an earlier unrelated shell overlay are possible contextual factors; the evidence does not establish either as the cause.",
+    "Product sources match the release, but this run used the dev build identity; this is not a failed public-release download or installer result.",
+    "Raw reports and logs remain private because they include temporary local paths and runtime identifiers."
+  ],
+  "causeEstablished": false,
+  "assertionsOrTimeoutsRelaxed": false,
+  "recoveryPolicy": "Preserve this failure. A diagnostic-only verifier revision may collect a fresh result without changing production behavior or the existing 8-second quit-dialog assertion."
+}

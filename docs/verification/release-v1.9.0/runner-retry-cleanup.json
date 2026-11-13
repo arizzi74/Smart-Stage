@@ -1,0 +1,28 @@
+{
+  "checkedAtUTC": "2026-11-13T17:55:18.305737+00:00",
+  "status": "passed",
+  "release": "v1.9.0",
+  "branch": "ci/recover-v1.9.0-43466128420",
+  "deletedRemoteRefExpectedSource": "ef3c5e53d9852af21eb2bb1f929c53aeaa18e2c4",
+  "remoteDeletionUsedExactForceWithLease": true,
+  "remoteRefAbsent": true,
+  "localRefDeletedWithExpectedSource": true,
+  "ownCleanTemporaryWorktreeRemoved": true,
+  "helperWorkflowsNeverMergedIntoMain": true,
+  "archivedHelpers": [
+    {
+      "file": "runner-retry-workflow.yml",
+      "source": "ba69b62f48d2287315332a1ad6efbfc2f36b1768",
+      "sha256": "58be5d553a05747760248f374ac66a06ff8486f9011940420c0aaf36f858b393",
+      "matchesExactHelperSource": true
+    },
+    {
+      "file": "runner-retry-postchecks-workflow.yml",
+      "source": "ef3c5e53d9852af21eb2bb1f929c53aeaa18e2c4",
+      "sha256": "8683eeee40b84e3f55ebd8cbaaaf09b58cfc844e9fdbda02ddf4c2c37b84dce8",
+      "matchesExactHelperSource": true
+    }
+  ],
+  "taggedVerificationSHA256": "5c2511f4bb16bf4595d49c2e936eab89f5237ca845b82fbecca4883834d77fe7",
+  "scope": "Cleanup of this task-created isolated CI recovery branch/worktree only. Immutable tag, public release assets and application source remain unchanged."
+}

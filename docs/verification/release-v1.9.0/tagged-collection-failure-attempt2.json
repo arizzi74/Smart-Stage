@@ -1,0 +1,44 @@
+{
+  "status": "failed",
+  "reason": "hosted_runner_acquisition_failure",
+  "release": "v1.9.0",
+  "source": "2eba7f4815db98430bad940aea227fef484e88df",
+  "run": 43466128420,
+  "attempt": 2,
+  "workflowConclusion": "failure",
+  "effectiveJobs": 25,
+  "successfulEffectiveJobs": 23,
+  "cancelledJobs": [
+    {
+      "jobID": 132044113517,
+      "name": "verify-download / download (macos-15, darwin, arm64)",
+      "conclusion": "cancelled",
+      "runnerAssigned": false,
+      "executedStepCount": 0,
+      "applicationOrInstallerTestExecuted": false,
+      "startedAtUTC": "2026-11-13T17:18:16Z",
+      "completedAtUTC": "2026-11-13T17:33:29Z",
+      "annotationCategories": {
+        "hosted_runner_not_acquired": 1,
+        "macos_arm64_capacity_constraints": 3
+      }
+    },
+    {
+      "jobID": 132044115018,
+      "name": "verify-macos-install / install (macos-15, arm64)",
+      "conclusion": "cancelled",
+      "runnerAssigned": false,
+      "executedStepCount": 0,
+      "applicationOrInstallerTestExecuted": false,
+      "startedAtUTC": "2026-11-13T17:18:16Z",
+      "completedAtUTC": "2026-11-13T17:34:16Z",
+      "annotationCategories": {
+        "hosted_runner_not_acquired": 1,
+        "macos_arm64_capacity_constraints": 3
+      }
+    }
+  ],
+  "taggedVerificationEmitted": false,
+  "checkedAtUTC": "2026-11-13T17:36:17.570320+00:00",
+  "scope": "Original attempt2 failure is preserved. Neither cancelled hosted Mac job acquired a runner or executed any test step; no replacement execution or passing result is inferred."
+}

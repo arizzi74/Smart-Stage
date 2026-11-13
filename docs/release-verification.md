@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.8.0 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.9.0 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,34 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.9.0: continuous section swipes and compact playlist sorting
+
+Release source is `2eba7f4815db98430bad940aea227fef484e88df`. All seven candidate
+gates and 25 effective tagged job results passed. The
+[verification record](verification/release-v1.9.0/README.md) retains the earlier
+candidate failure and both runner-capacity cancellations, with explicit physical
+execution provenance across three tagged attempts. No cancelled job is counted
+as an executed test.
+
+Browser checks cover held horizontal gestures, neighboring-page visibility,
+animated settling, cancellation, vertical scrolling and inactive-page focus.
+The compact sorter is exercised with actual mouse dragging within/across/empty
+sections and for whole sections, atomic Save, Cancel, keyboard controls and stale
+revision rejection. Real Go-host checks verify lazy Admin-only assets, metadata
+preservation and native source continuity where an audio endpoint is available.
+WebKit integration reports retain their track-drag-only scope; a separate Linux
+WebKit component probe does not establish physical Mac or native-window input.
+
+All 50 public asset digests, eight checksum pairs and anonymous website update
+discovery passed. Published installers and actual startup updates passed on all
+four desktop targets. Ten current-default installer/updater reports passed at
+the separate default-pin source. Its original Windows close-dialog timeout
+remains unexplained; a diagnostic-only build passed both Windows jobs and three
+other gates, but its unstarted Apple Silicon job was capacity-cancelled and
+dependent binary security was skipped. That later build is recorded as
+incomplete, independently of the successful release. Physical speaker/projector
+and clean-machine acceptance remain open.
 
 ### Version 1.8.0: saved playlist sections and independent audio layers
 

@@ -1,0 +1,82 @@
+{
+  "checkedAtUTC": "2026-11-13T17:50:33.253608Z",
+  "helper": {
+    "source": "ef3c5e53d9852af21eb2bb1f929c53aeaa18e2c4",
+    "runID": 43476109722,
+    "branch": "ci/recover-v1.9.0-43466128420",
+    "path": ".github/workflows/recover-v1.9.0.yml",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43476109722",
+    "status": "completed",
+    "conclusion": "success",
+    "attempt": 1,
+    "jobID": 132060232893,
+    "fixedGuardStep": {
+      "number": 2,
+      "name": "Verify two capacity-only cancellations and retry failed verification jobs",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "changedPathsFromRelease": [
+      ".github/workflows/recover-v1.9.0.yml"
+    ]
+  },
+  "fixedRetryMarker": {
+    "retryRequested": true,
+    "source": "2eba7f4815db98430bad940aea227fef484e88df",
+    "tag": "v1.9.0",
+    "run": 43466128420,
+    "jobs": [
+      132044113517,
+      132044115018
+    ],
+    "expectedAttempt": 2,
+    "requestedAttempt": 3,
+    "releaseID": 444512447,
+    "assetCount": 50,
+    "assetFingerprint": "6a7bffedb132f339d5c18d1ae135b3eac80c80cc901d2612e3b528471089e28b",
+    "publicAuditSHA256": "f21ff7b9a3b92ef2a2add9c7a46853d7878bf26b463efc8e25df2d6fe7cd4a5f"
+  },
+  "target": {
+    "runID": 43466128420,
+    "source": "2eba7f4815db98430bad940aea227fef484e88df",
+    "tag": "v1.9.0",
+    "gitRef": "refs/tags/v1.9.0",
+    "tagCommit": "2eba7f4815db98430bad940aea227fef484e88df",
+    "tagObjectType": "tag",
+    "acceptedAttempt": 3,
+    "status": "queued"
+  },
+  "publishedAssetGuard": {
+    "releaseID": 444512447,
+    "assetCount": 50,
+    "assetFingerprint": "6a7bffedb132f339d5c18d1ae135b3eac80c80cc901d2612e3b528471089e28b",
+    "publicAuditReceipt": "public-audit.json",
+    "publicAuditSHA256": "f21ff7b9a3b92ef2a2add9c7a46853d7878bf26b463efc8e25df2d6fe7cd4a5f",
+    "metadataStillMatchesAtCheck": true
+  },
+  "earlierAttemptReceipts": [
+    {
+      "path": "earlier-tag-workflow.json",
+      "sha256": "355de065ab4959f263cb70f1d279aa5e7ecf519b79e607c98eb7efcf44efff87"
+    },
+    {
+      "path": "tag-attempt2-workflow.json",
+      "sha256": "7eb3e04809a4f497b29f8ee9db085c1039bdb62eb6ec6dd63810e230cf22e417"
+    },
+    {
+      "path": "tagged-collection-failure-attempt2.json",
+      "sha256": "ed84b9d3c743ba6e40e790f2bc544bb5bdc5b6d42f177732b9b6c55430591564"
+    }
+  ],
+  "jobAccounting": {
+    "priorEffectiveSuccesses": 23,
+    "priorSuccessfulPhysicalExecutionsByEarliestAttempt": {
+      "2": 18,
+      "1": 5
+    },
+    "method": "Exact full step-array plus exact job start/end identity across every prior attempt; current/final effective outcome accounting is recorded separately in tag-workflow.json."
+  },
+  "mainSourceAtCheck": "cde5f30f9689f18c254f9537038d86c99b45064c",
+  "scope": "Successful scoped CI recovery marker and acceptance at the same immutable tag/run, with unchanged audited public asset identities. The helper only changes its temporary branch workflow; no local API writes or product/tag edits.",
+  "privacyScope": "Public source/run/job identities, fixed marker, hashes and metadata only; raw logs, tokens, signed URLs and machine paths excluded."
+}

@@ -1,0 +1,110 @@
+{
+  "checkedAtUTC": "2026-11-13T17:15:41.901891Z",
+  "helper": {
+    "source": "ba69b62f48d2287315332a1ad6efbfc2f36b1768",
+    "runID": 43470490319,
+    "branch": "ci/recover-v1.9.0-43466128420",
+    "path": ".github/workflows/recover-v1.9.0.yml",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43470490319",
+    "status": "completed",
+    "conclusion": "success",
+    "attempt": 1,
+    "jobID": 132040776636,
+    "fixedGuardStep": {
+      "number": 2,
+      "name": "Verify capacity-only cancellation and retry the immutable tagged job",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "changedPaths": [
+      ".github/workflows/recover-v1.9.0.yml"
+    ]
+  },
+  "fixedRetryMarker": {
+    "retryRequested": true,
+    "source": "2eba7f4815db98430bad940aea227fef484e88df",
+    "tag": "v1.9.0",
+    "run": 43466128420,
+    "job": 132025613872
+  },
+  "target": {
+    "runID": 43466128420,
+    "source": "2eba7f4815db98430bad940aea227fef484e88df",
+    "tag": "v1.9.0",
+    "acceptedAttempt": 2,
+    "status": "in_progress",
+    "gitRef": "refs/tags/v1.9.0",
+    "tagCommit": "2eba7f4815db98430bad940aea227fef484e88df",
+    "tagObjectType": "tag"
+  },
+  "mainSourceAtCheck": "2eba7f4815db98430bad940aea227fef484e88df",
+  "scope": "Recovery-helper metadata and exact fixed retry marker; no raw logs, secrets, local API writes or product/main/tag edits.",
+  "earlierAttemptReceipt": {
+    "path": "earlier-tag-workflow.json",
+    "sha256": "355de065ab4959f263cb70f1d279aa5e7ecf519b79e607c98eb7efcf44efff87"
+  },
+  "jobAccounting": {
+    "effectiveExpectedJobs": 25,
+    "reusedSuccessfulJobs": 5,
+    "newExecutionExpectedJobsInAttempt2": 20,
+    "method": "Current attempt and latest endpoints expose the five successful entries with new job IDs and run_attempt=2. Their complete step arrays and original start/end timestamps are byte-equivalent to the original successful jobs at the same source/run. They are retained outcomes, not fresh executions.",
+    "reusedJobs": [
+      {
+        "key": "gateway",
+        "previousJobID": 132025613941,
+        "jobID": 132040902847,
+        "executionAttempt": 1,
+        "jobAttempt": 2,
+        "startedAtUTC": "2026-11-13T16:46:45Z",
+        "completedAtUTC": "2026-11-13T16:52:14Z",
+        "stepCount": 15,
+        "stepTimelineSHA256": "c0c553fbfbf6c3d37785e0f6e9f6edd6f62491f9cb7f570b86bd67fb48f88ca6"
+      },
+      {
+        "key": "native/darwin/amd64",
+        "previousJobID": 132025613659,
+        "jobID": 132040995013,
+        "executionAttempt": 1,
+        "jobAttempt": 2,
+        "startedAtUTC": "2026-11-13T16:46:52Z",
+        "completedAtUTC": "2026-11-13T16:54:00Z",
+        "stepCount": 23,
+        "stepTimelineSHA256": "2e32713d236ce4df8b3a3357c678fe9abf1f10eba146170da4dc48470dc96be9"
+      },
+      {
+        "key": "native/windows/amd64",
+        "previousJobID": 132025613591,
+        "jobID": 132040971334,
+        "executionAttempt": 1,
+        "jobAttempt": 2,
+        "startedAtUTC": "2026-11-13T16:46:45Z",
+        "completedAtUTC": "2026-11-13T16:51:52Z",
+        "stepCount": 23,
+        "stepTimelineSHA256": "85752a1fc13e26da0d9b823776ad76d60005cd36f257b844fbdd0265327e0ca7"
+      },
+      {
+        "key": "native/windows/arm64",
+        "previousJobID": 132025613124,
+        "jobID": 132040901874,
+        "executionAttempt": 1,
+        "jobAttempt": 2,
+        "startedAtUTC": "2026-11-13T16:46:45Z",
+        "completedAtUTC": "2026-11-13T17:03:34Z",
+        "stepCount": 23,
+        "stepTimelineSHA256": "90efcd7fbd7d7607890a22361300ee5269d78535dd9be608f219214a54024316"
+      },
+      {
+        "key": "shared",
+        "previousJobID": 132025613640,
+        "jobID": 132040900978,
+        "executionAttempt": 1,
+        "jobAttempt": 2,
+        "startedAtUTC": "2026-11-13T16:46:45Z",
+        "completedAtUTC": "2026-11-13T16:48:01Z",
+        "stepCount": 12,
+        "stepTimelineSHA256": "7ff72bb76ba384d05a9296514d3dd71b901f7d2111e438f2f59df005bb1a0cca"
+      }
+    ]
+  },
+  "privacyScope": "Public CI identities, source/ref, fixed retry marker and step-timeline hashes only. Raw logs, tokens, signed URLs and machine-specific paths are excluded."
+}

@@ -1,0 +1,2887 @@
+{
+  "status": "incomplete",
+  "workflowRunID": 43476587306,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43476587306",
+  "checkedAtUTC": "2026-11-13T18:08:00.199926+00:00",
+  "verificationSource": "cde5f30f9689f18c254f9537038d86c99b45064c",
+  "defaultInstallerSource": "bf5d036f6df660161a4433ff2e3d8936dd8542c6",
+  "release": "v1.9.0",
+  "releaseSource": "2eba7f4815db98430bad940aea227fef484e88df",
+  "differenceFromFailedDefaultSource": [
+    "scripts/windows_close_checks.py"
+  ],
+  "scope": "Verifier-only diagnostic recovery; product and installer sources unchanged. The earlier failed run remains recorded in default-build-failure.json.",
+  "assertionsAndTimeoutsUnchanged": true,
+  "requiredGates": 7,
+  "completedSuccessfulGates": 5,
+  "allSevenGatesPassed": false,
+  "jobs": [
+    {
+      "id": 132061879895,
+      "gate": "gateway",
+      "name": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43476587306/job/132061879895",
+      "startedAtUTC": "2026-11-13T17:49:26Z",
+      "completedAtUTC": "2026-11-13T17:52:57Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-13T17:49:27Z",
+          "completed_at": "2026-11-13T17:49:28Z"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-13T17:49:28Z",
+          "completed_at": "2026-11-13T17:49:30Z"
+        },
+        {
+          "name": "Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-13T17:49:30Z",
+          "completed_at": "2026-11-13T17:49:30Z"
+        },
+        {
+          "name": "Install proxy configuration validators",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-13T17:49:30Z",
+          "completed_at": "2026-11-13T17:49:56Z"
+        },
+        {
+          "name": "Test gateway and installer with real proxy configuration validation",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-13T17:49:56Z",
+          "completed_at": "2026-11-13T17:50:40Z"
+        },
+        {
+          "name": "Install browser verification tools",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-13T17:50:40Z",
+          "completed_at": "2026-11-13T17:50:53Z"
+        },
+        {
+          "name": "Exercise real HTTPS remote, QR and browser commands",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-13T17:50:53Z",
+          "completed_at": "2026-11-13T17:51:07Z"
+        },
+        {
+          "name": "Exercise authenticated WebSocket remote in a real browser",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-13T17:51:07Z",
+          "completed_at": "2026-11-13T17:51:19Z"
+        },
+        {
+          "name": "Verify bilingual Admin, preserved edits and independent remote language",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-13T17:51:19Z",
+          "completed_at": "2026-11-13T17:52:33Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-11-13T17:52:33Z",
+          "completed_at": "2026-11-13T17:52:35Z"
+        },
+        {
+          "name": "Build and inspect static Linux binaries",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-11-13T17:52:35Z",
+          "completed_at": "2026-11-13T17:52:52Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-11-13T17:52:52Z",
+          "completed_at": "2026-11-13T17:52:54Z"
+        },
+        {
+          "name": "Post Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 23,
+          "started_at": "2026-11-13T17:52:54Z",
+          "completed_at": "2026-11-13T17:52:54Z"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 24,
+          "started_at": "2026-11-13T17:52:54Z",
+          "completed_at": "2026-11-13T17:52:54Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 25,
+          "started_at": "2026-11-13T17:52:54Z",
+          "completed_at": "2026-11-13T17:52:54Z"
+        }
+      ]
+    },
+    {
+      "id": 132061880385,
+      "gate": "shared",
+      "name": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43476587306/job/132061880385",
+      "startedAtUTC": "2026-11-13T17:49:26Z",
+      "completedAtUTC": "2026-11-13T17:50:57Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-13T17:49:27Z",
+          "completed_at": "2026-11-13T17:49:28Z"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-13T17:49:28Z",
+          "completed_at": "2026-11-13T17:49:29Z"
+        },
+        {
+          "name": "Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-13T17:49:29Z",
+          "completed_at": "2026-11-13T17:49:30Z"
+        },
+        {
+          "name": "Install pinned vulnerability scanner",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-13T17:49:30Z",
+          "completed_at": "2026-11-13T17:49:53Z"
+        },
+        {
+          "name": "Reject known vulnerabilities in imported Go packages",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-13T17:49:53Z",
+          "completed_at": "2026-11-13T17:49:54Z"
+        },
+        {
+          "name": "Run go test -race ./...",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-13T17:49:54Z",
+          "completed_at": "2026-11-13T17:50:48Z"
+        },
+        {
+          "name": "Run go vet ./...",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-13T17:50:48Z",
+          "completed_at": "2026-11-13T17:50:54Z"
+        },
+        {
+          "name": "Run node --test scripts/i18n.test.cjs scripts/wake-lock.test.cjs",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-13T17:50:54Z",
+          "completed_at": "2026-11-13T17:50:54Z"
+        },
+        {
+          "name": "Run python3 scripts/test-smoke-shutdown.py",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-13T17:50:54Z",
+          "completed_at": "2026-11-13T17:50:55Z"
+        },
+        {
+          "name": "Post Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17,
+          "started_at": "2026-11-13T17:50:55Z",
+          "completed_at": "2026-11-13T17:50:55Z"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 18,
+          "started_at": "2026-11-13T17:50:55Z",
+          "completed_at": "2026-11-13T17:50:55Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 19,
+          "started_at": "2026-11-13T17:50:55Z",
+          "completed_at": "2026-11-13T17:50:55Z"
+        }
+      ]
+    },
+    {
+      "id": 132061880468,
+      "gate": "Windows AMD64",
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43476587306/job/132061880468",
+      "startedAtUTC": "2026-11-13T17:49:26Z",
+      "completedAtUTC": "2026-11-13T17:55:34Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-13T17:49:27Z",
+          "completed_at": "2026-11-13T17:49:28Z"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-13T17:49:29Z",
+          "completed_at": "2026-11-13T17:49:34Z"
+        },
+        {
+          "name": "Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-13T17:49:34Z",
+          "completed_at": "2026-11-13T17:49:55Z"
+        },
+        {
+          "name": "Install pinned native Windows build toolchain",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-13T17:49:55Z",
+          "completed_at": "2026-11-13T17:50:12Z"
+        },
+        {
+          "name": "Build and inspect native imports",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-13T17:50:12Z",
+          "completed_at": "2026-11-13T17:50:42Z"
+        },
+        {
+          "name": "Shared tests on target OS",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-13T17:50:42Z",
+          "completed_at": "2026-11-13T17:51:43Z"
+        },
+        {
+          "name": "Verify the official native Cloudflare helper and launch arguments",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-13T17:51:43Z",
+          "completed_at": "2026-11-13T17:52:07Z"
+        },
+        {
+          "name": "Ensure the Windows dedicated-window runtime",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-13T17:52:07Z",
+          "completed_at": "2026-11-13T17:52:07Z"
+        },
+        {
+          "name": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-13T17:52:07Z",
+          "completed_at": "2026-11-13T17:52:30Z"
+        },
+        {
+          "name": "Retain native Windows window diagnostics",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-11-13T17:52:30Z",
+          "completed_at": "2026-11-13T17:52:32Z"
+        },
+        {
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-11-13T17:52:32Z",
+          "completed_at": "2026-11-13T17:54:02Z"
+        },
+        {
+          "name": "Verify the ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-11-13T17:54:02Z",
+          "completed_at": "2026-11-13T17:54:06Z"
+        },
+        {
+          "name": "Verify embedded icon and optional Finder app",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-13T17:54:06Z",
+          "completed_at": "2026-11-13T17:54:06Z"
+        },
+        {
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-11-13T17:54:06Z",
+          "completed_at": "2026-11-13T17:54:29Z"
+        },
+        {
+          "name": "Install pinned development-only browser tools",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-11-13T17:54:29Z",
+          "completed_at": "2026-11-13T17:54:54Z"
+        },
+        {
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16,
+          "started_at": "2026-11-13T17:54:54Z",
+          "completed_at": "2026-11-13T17:55:26Z"
+        },
+        {
+          "name": "Verify track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17,
+          "started_at": "2026-11-13T17:55:26Z",
+          "completed_at": "2026-11-13T17:55:26Z"
+        },
+        {
+          "name": "Build an isolated older-version fixture for automatic update verification",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 18,
+          "started_at": "2026-11-13T17:55:26Z",
+          "completed_at": "2026-11-13T17:55:26Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 19,
+          "started_at": "2026-11-13T17:55:26Z",
+          "completed_at": "2026-11-13T17:55:26Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-13T17:55:26Z",
+          "completed_at": "2026-11-13T17:55:28Z"
+        },
+        {
+          "name": "Post Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 39,
+          "started_at": "2026-11-13T17:55:29Z",
+          "completed_at": "2026-11-13T17:55:29Z"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 40,
+          "started_at": "2026-11-13T17:55:29Z",
+          "completed_at": "2026-11-13T17:55:31Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 41,
+          "started_at": "2026-11-13T17:55:31Z",
+          "completed_at": "2026-11-13T17:55:31Z"
+        }
+      ]
+    },
+    {
+      "id": 132061880545,
+      "gate": "macOS ARM64",
+      "name": "native (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43476587306/job/132061880545",
+      "startedAtUTC": "2026-11-13T17:49:25Z",
+      "completedAtUTC": "2026-11-13T18:04:25Z",
+      "steps": []
+    },
+    {
+      "id": 132061880589,
+      "gate": "Windows ARM64",
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43476587306/job/132061880589",
+      "startedAtUTC": "2026-11-13T17:49:26Z",
+      "completedAtUTC": "2026-11-13T18:06:54Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-13T17:49:27Z",
+          "completed_at": "2026-11-13T17:49:30Z"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-13T17:49:30Z",
+          "completed_at": "2026-11-13T17:49:43Z"
+        },
+        {
+          "name": "Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-13T17:49:43Z",
+          "completed_at": "2026-11-13T17:49:54Z"
+        },
+        {
+          "name": "Install pinned native Windows build toolchain",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 4,
+          "started_at": "2026-11-13T17:49:54Z",
+          "completed_at": "2026-11-13T17:50:30Z"
+        },
+        {
+          "name": "Build and inspect native imports",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-13T17:50:30Z",
+          "completed_at": "2026-11-13T17:51:24Z"
+        },
+        {
+          "name": "Shared tests on target OS",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-13T17:51:24Z",
+          "completed_at": "2026-11-13T17:55:15Z"
+        },
+        {
+          "name": "Verify the official native Cloudflare helper and launch arguments",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 7,
+          "started_at": "2026-11-13T17:55:15Z",
+          "completed_at": "2026-11-13T17:55:15Z"
+        },
+        {
+          "name": "Ensure the Windows dedicated-window runtime",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 8,
+          "started_at": "2026-11-13T17:55:15Z",
+          "completed_at": "2026-11-13T17:55:15Z"
+        },
+        {
+          "name": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 9,
+          "started_at": "2026-11-13T17:55:15Z",
+          "completed_at": "2026-11-13T17:56:26Z"
+        },
+        {
+          "name": "Retain native Windows window diagnostics",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 10,
+          "started_at": "2026-11-13T17:56:26Z",
+          "completed_at": "2026-11-13T17:56:28Z"
+        },
+        {
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-11-13T17:56:28Z",
+          "completed_at": "2026-11-13T17:58:04Z"
+        },
+        {
+          "name": "Verify the ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-11-13T17:58:04Z",
+          "completed_at": "2026-11-13T17:58:07Z"
+        },
+        {
+          "name": "Verify embedded icon and optional Finder app",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-13T17:58:07Z",
+          "completed_at": "2026-11-13T17:58:08Z"
+        },
+        {
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 14,
+          "started_at": "2026-11-13T17:58:08Z",
+          "completed_at": "2026-11-13T18:05:20Z"
+        },
+        {
+          "name": "Install pinned development-only browser tools",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-11-13T18:05:20Z",
+          "completed_at": "2026-11-13T18:06:01Z"
+        },
+        {
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16,
+          "started_at": "2026-11-13T18:06:01Z",
+          "completed_at": "2026-11-13T18:06:44Z"
+        },
+        {
+          "name": "Verify track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 17,
+          "started_at": "2026-11-13T18:06:44Z",
+          "completed_at": "2026-11-13T18:06:44Z"
+        },
+        {
+          "name": "Build an isolated older-version fixture for automatic update verification",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 18,
+          "started_at": "2026-11-13T18:06:44Z",
+          "completed_at": "2026-11-13T18:06:44Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 19,
+          "started_at": "2026-11-13T18:06:44Z",
+          "completed_at": "2026-11-13T18:06:44Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-13T18:06:44Z",
+          "completed_at": "2026-11-13T18:06:47Z"
+        },
+        {
+          "name": "Post Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 39,
+          "started_at": "2026-11-13T18:06:47Z",
+          "completed_at": "2026-11-13T18:06:47Z"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 40,
+          "started_at": "2026-11-13T18:06:47Z",
+          "completed_at": "2026-11-13T18:06:52Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 41,
+          "started_at": "2026-11-13T18:06:52Z",
+          "completed_at": "2026-11-13T18:06:52Z"
+        }
+      ]
+    },
+    {
+      "id": 132061880737,
+      "gate": "macOS AMD64",
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43476587306/job/132061880737",
+      "startedAtUTC": "2026-11-13T17:49:29Z",
+      "completedAtUTC": "2026-11-13T18:00:29Z",
+      "steps": [
+        {
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 1,
+          "started_at": "2026-11-13T17:49:28Z",
+          "completed_at": "2026-11-13T17:49:30Z"
+        },
+        {
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 2,
+          "started_at": "2026-11-13T17:49:30Z",
+          "completed_at": "2026-11-13T17:49:38Z"
+        },
+        {
+          "name": "Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 3,
+          "started_at": "2026-11-13T17:49:38Z",
+          "completed_at": "2026-11-13T17:50:38Z"
+        },
+        {
+          "name": "Install pinned native Windows build toolchain",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 4,
+          "started_at": "2026-11-13T17:50:38Z",
+          "completed_at": "2026-11-13T17:50:38Z"
+        },
+        {
+          "name": "Build and inspect native imports",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 5,
+          "started_at": "2026-11-13T17:50:38Z",
+          "completed_at": "2026-11-13T17:52:11Z"
+        },
+        {
+          "name": "Shared tests on target OS",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 6,
+          "started_at": "2026-11-13T17:52:11Z",
+          "completed_at": "2026-11-13T17:53:52Z"
+        },
+        {
+          "name": "Verify the official native Cloudflare helper and launch arguments",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 7,
+          "started_at": "2026-11-13T17:53:52Z",
+          "completed_at": "2026-11-13T17:54:19Z"
+        },
+        {
+          "name": "Ensure the Windows dedicated-window runtime",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 8,
+          "started_at": "2026-11-13T17:54:19Z",
+          "completed_at": "2026-11-13T17:54:19Z"
+        },
+        {
+          "name": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 9,
+          "started_at": "2026-11-13T17:54:19Z",
+          "completed_at": "2026-11-13T17:54:19Z"
+        },
+        {
+          "name": "Retain native Windows window diagnostics",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 10,
+          "started_at": "2026-11-13T17:54:19Z",
+          "completed_at": "2026-11-13T17:54:19Z"
+        },
+        {
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 11,
+          "started_at": "2026-11-13T17:54:19Z",
+          "completed_at": "2026-11-13T17:56:28Z"
+        },
+        {
+          "name": "Verify the ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 12,
+          "started_at": "2026-11-13T17:56:28Z",
+          "completed_at": "2026-11-13T17:56:37Z"
+        },
+        {
+          "name": "Verify embedded icon and optional Finder app",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 13,
+          "started_at": "2026-11-13T17:56:37Z",
+          "completed_at": "2026-11-13T17:57:38Z"
+        },
+        {
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 14,
+          "started_at": "2026-11-13T17:57:38Z",
+          "completed_at": "2026-11-13T17:57:38Z"
+        },
+        {
+          "name": "Install pinned development-only browser tools",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 15,
+          "started_at": "2026-11-13T17:57:38Z",
+          "completed_at": "2026-11-13T17:58:19Z"
+        },
+        {
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 16,
+          "started_at": "2026-11-13T17:58:19Z",
+          "completed_at": "2026-11-13T17:59:14Z"
+        },
+        {
+          "name": "Verify track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 17,
+          "started_at": "2026-11-13T17:59:14Z",
+          "completed_at": "2026-11-13T18:00:10Z"
+        },
+        {
+          "name": "Build an isolated older-version fixture for automatic update verification",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 18,
+          "started_at": "2026-11-13T18:00:10Z",
+          "completed_at": "2026-11-13T18:00:10Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "skipped",
+          "number": 19,
+          "started_at": "2026-11-13T18:00:10Z",
+          "completed_at": "2026-11-13T18:00:10Z"
+        },
+        {
+          "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 20,
+          "started_at": "2026-11-13T18:00:10Z",
+          "completed_at": "2026-11-13T18:00:15Z"
+        },
+        {
+          "name": "Post Run actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 39,
+          "started_at": "2026-11-13T18:00:15Z",
+          "completed_at": "2026-11-13T18:00:16Z"
+        },
+        {
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 40,
+          "started_at": "2026-11-13T18:00:16Z",
+          "completed_at": "2026-11-13T18:00:17Z"
+        },
+        {
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "number": 41,
+          "started_at": "2026-11-13T18:00:17Z",
+          "completed_at": "2026-11-13T18:00:20Z"
+        }
+      ]
+    },
+    {
+      "id": 132071727545,
+      "gate": "binary-security",
+      "name": "binary-security",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43476587306/job/132071727545",
+      "startedAtUTC": "2026-11-13T18:06:55Z",
+      "completedAtUTC": "2026-11-13T18:06:55Z",
+      "steps": []
+    }
+  ],
+  "workflowStatus": "completed",
+  "workflowConclusion": "failure",
+  "completedAtUTC": "2026-11-13T18:06:56Z",
+  "cancelledGates": 1,
+  "skippedRequiredGates": 1,
+  "conditionalJobs": [
+    {
+      "id": 132071729844,
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132071730986,
+      "name": "publish-site",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132071731450,
+      "name": "verify-download",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132071731481,
+      "name": "verify-windows-install",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132071731610,
+      "name": "verify-update",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132071731698,
+      "name": "verify-macos-install",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132071731987,
+      "name": "verify-browser",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ],
+  "infrastructureCancellation": {
+    "jobID": 132061880545,
+    "target": "darwin/arm64",
+    "conclusion": "cancelled",
+    "executedStepCount": 0,
+    "checkRunID": 132061880545,
+    "annotations": [
+      {
+        "level": "failure",
+        "message": "The job was not acquired by Runner of type hosted even after multiple attempts"
+      },
+      {
+        "level": "notice",
+        "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+      },
+      {
+        "level": "notice",
+        "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+      },
+      {
+        "level": "notice",
+        "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+      }
+    ],
+    "noApplicationAssertionsExecuted": true
+  },
+  "originalFailureReceipt": "default-build-failure.json",
+  "originalFailureCauseEstablished": false,
+  "nativeAdminRecovery": [
+    {
+      "target": "windows/amd64",
+      "workflowRunID": 43476587306,
+      "verificationSource": "cde5f30f9689f18c254f9537038d86c99b45064c",
+      "status": "passed",
+      "scope": "Hosted native shipped-process check with SC_CLOSE and real modal-button notifications; not physical mouse input",
+      "artifactID": 14062359203,
+      "artifactName": "windows-admin-checks-amd64",
+      "artifactSHA256": "5c0359e850dfc92f4501470e172f1e5f22e56ef923793d2ce043eb5d3878e10f",
+      "githubArtifactDigestVerified": true,
+      "artifactSourceAndRunVerified": true,
+      "reportSHA256": "a690b1db7a56baaa9ddf2e7516a5dd6e09cb7aa4ad4fe26bf1e30b0188836b0a",
+      "sourceExecutableSHA256": "e8701b7e9ec4e49336c3994a2a6fa9851e0654566d1e83fcc831f05ddf7a99cc",
+      "shippedExecutableCloseAssertions": {
+        "italianMenuRefreshCompletedBeforeQuitAssertion": true,
+        "italianPreferenceAppliedThroughAuthenticatedAPI": true,
+        "italianNativeWindowAndMenusObserved": true,
+        "italianNativeChooserObserved": true,
+        "italianCloseConfirmationAndCancelObserved": true,
+        "nativeCloseConfirmationRelocalizedWhileOpen": true,
+        "languageChangePreservedHostState": true,
+        "italianNativePreferenceSurvivedProcessRestart": true,
+        "englishNativeLabelsRestoredAtRuntime": true,
+        "cancelKeptProcessAndAdminRunning": true,
+        "cancelPreservedHostPlaybackState": true,
+        "confirmExitedProcessCleanly": true,
+        "confirmClosedAdminListener": true,
+        "confirmDestroyedNativeWindows": true
+      },
+      "closeObservations": {
+        "scope": "Same-process window categories and existing verifier predicates; no native chooserActive readback",
+        "sampleLimit": 96,
+        "windowLimit": 16,
+        "samples": [
+          {
+            "phase": "italian-chooser-cancel-dispatched",
+            "elapsedMilliseconds": 1125,
+            "dispatchAccepted": true,
+            "chooserExists": true,
+            "ownerEnabled": false
+          },
+          {
+            "phase": "italian-chooser-cancel-search",
+            "elapsedMilliseconds": 1125,
+            "chooserExists": true,
+            "ownerEnabled": false,
+            "processAlive": true,
+            "existingCancelPredicateReady": false
+          },
+          {
+            "phase": "italian-chooser-cancel-search",
+            "elapsedMilliseconds": 1375,
+            "chooserExists": false,
+            "ownerEnabled": true,
+            "processAlive": true,
+            "existingCancelPredicateReady": true
+          },
+          {
+            "phase": "italian-chooser-cancel-ready",
+            "elapsedMilliseconds": 1375,
+            "processAlive": true
+          },
+          {
+            "phase": "close-dispatched",
+            "elapsedMilliseconds": 1375,
+            "dispatchAccepted": true,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_it"
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 1375,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_it",
+            "matchingWindows": 0,
+            "ownWindowsObserved": 9,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "admin_it",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 8,
+              "admin_it": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "admin_it": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 1625,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_it",
+            "matchingWindows": 1,
+            "ownWindowsObserved": 10,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "quit_it",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": true
+              },
+              {
+                "category": "admin_it",
+                "visible": true,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 8,
+              "quit_it": 1,
+              "admin_it": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "quit_it": 1,
+              "admin_it": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-found",
+            "elapsedMilliseconds": 1625,
+            "processAlive": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_it"
+          },
+          {
+            "phase": "close-dispatched",
+            "elapsedMilliseconds": 2469,
+            "dispatchAccepted": true,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_it"
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 2469,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_it",
+            "matchingWindows": 0,
+            "ownWindowsObserved": 9,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "admin_it",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 8,
+              "admin_it": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "admin_it": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 2719,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_it",
+            "matchingWindows": 1,
+            "ownWindowsObserved": 10,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "quit_it",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": true
+              },
+              {
+                "category": "admin_it",
+                "visible": true,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 8,
+              "quit_it": 1,
+              "admin_it": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "quit_it": 1,
+              "admin_it": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-found",
+            "elapsedMilliseconds": 2719,
+            "processAlive": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_it"
+          },
+          {
+            "phase": "close-dispatched",
+            "elapsedMilliseconds": 4281,
+            "dispatchAccepted": true,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_en"
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 4281,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_en",
+            "matchingWindows": 0,
+            "ownWindowsObserved": 7,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "admin_en",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 6,
+              "admin_en": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "admin_en": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 4531,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_en",
+            "matchingWindows": 1,
+            "ownWindowsObserved": 8,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "quit_en",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": true
+              },
+              {
+                "category": "admin_en",
+                "visible": true,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 6,
+              "quit_en": 1,
+              "admin_en": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "quit_en": 1,
+              "admin_en": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-found",
+            "elapsedMilliseconds": 4531,
+            "processAlive": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_en"
+          },
+          {
+            "phase": "close-dispatched",
+            "elapsedMilliseconds": 4797,
+            "dispatchAccepted": true,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_en"
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 4797,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_en",
+            "matchingWindows": 0,
+            "ownWindowsObserved": 7,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "admin_en",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 6,
+              "admin_en": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "admin_en": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 5047,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_en",
+            "matchingWindows": 1,
+            "ownWindowsObserved": 8,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "quit_en",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": true
+              },
+              {
+                "category": "admin_en",
+                "visible": true,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 6,
+              "quit_en": 1,
+              "admin_en": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "quit_en": 1,
+              "admin_en": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-found",
+            "elapsedMilliseconds": 5047,
+            "processAlive": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_en"
+          }
+        ],
+        "omittedSamples": 0,
+        "last": {
+          "phase": "quit-confirmation-found",
+          "elapsedMilliseconds": 5047,
+          "processAlive": true,
+          "ownerVisible": true,
+          "ownerEnabled": false,
+          "expectedCategory": "quit_en"
+        },
+        "lastWindowSearch": {
+          "phase": "quit-confirmation-search",
+          "elapsedMilliseconds": 5047,
+          "processAlive": true,
+          "ownerExists": true,
+          "ownerVisible": true,
+          "ownerEnabled": false,
+          "expectedCategory": "quit_en",
+          "matchingWindows": 1,
+          "ownWindowsObserved": 8,
+          "windows": [
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": true,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "quit_en",
+              "visible": true,
+              "enabled": true,
+              "minimized": false,
+              "matchesExpectedOwner": true,
+              "matchesExpectedDialog": true
+            },
+            {
+              "category": "admin_en",
+              "visible": true,
+              "enabled": false,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": true,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": true,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": false,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": false,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": false,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            }
+          ],
+          "windowCategoryCounts": {
+            "other_window": 6,
+            "quit_en": 1,
+            "admin_en": 1
+          },
+          "visibleWindowCategoryCounts": {
+            "quit_en": 1,
+            "admin_en": 1
+          }
+        }
+      },
+      "limitations": {
+        "rawHostLogOmitted": true,
+        "doesNotEstablishCauseOfOriginalFailure": true,
+        "globalDesktopDropHitVerified": true,
+        "trayIconRegistered": true
+      }
+    },
+    {
+      "target": "windows/arm64",
+      "workflowRunID": 43476587306,
+      "verificationSource": "cde5f30f9689f18c254f9537038d86c99b45064c",
+      "status": "passed",
+      "scope": "Hosted native shipped-process check with SC_CLOSE and real modal-button notifications; not physical mouse input",
+      "artifactID": 14063453098,
+      "artifactName": "windows-admin-checks-arm64",
+      "artifactSHA256": "ff5e5ec23562682273d573956cb851b8ea5ba380e7d2e235acc621accd19f6af",
+      "githubArtifactDigestVerified": true,
+      "artifactSourceAndRunVerified": true,
+      "reportSHA256": "94bf0ed60c7a9127e2e409447f69679aa25a52fb968d9e2201e30a5474b5b6e8",
+      "sourceExecutableSHA256": "5667f7ae7eb4dc7f1a44bf2078aaa3bf61b0643930799d5a222f567c5748ac09",
+      "shippedExecutableCloseAssertions": {
+        "italianMenuRefreshCompletedBeforeQuitAssertion": true,
+        "italianPreferenceAppliedThroughAuthenticatedAPI": true,
+        "italianNativeWindowAndMenusObserved": true,
+        "italianNativeChooserObserved": true,
+        "italianCloseConfirmationAndCancelObserved": true,
+        "nativeCloseConfirmationRelocalizedWhileOpen": true,
+        "languageChangePreservedHostState": true,
+        "italianNativePreferenceSurvivedProcessRestart": true,
+        "englishNativeLabelsRestoredAtRuntime": true,
+        "cancelKeptProcessAndAdminRunning": true,
+        "cancelPreservedHostPlaybackState": true,
+        "confirmExitedProcessCleanly": true,
+        "confirmClosedAdminListener": true,
+        "confirmDestroyedNativeWindows": true
+      },
+      "closeObservations": {
+        "scope": "Same-process window categories and existing verifier predicates; no native chooserActive readback",
+        "sampleLimit": 96,
+        "windowLimit": 16,
+        "samples": [
+          {
+            "phase": "italian-chooser-cancel-dispatched",
+            "elapsedMilliseconds": 1229,
+            "dispatchAccepted": true,
+            "chooserExists": true,
+            "ownerEnabled": false
+          },
+          {
+            "phase": "italian-chooser-cancel-search",
+            "elapsedMilliseconds": 1229,
+            "chooserExists": true,
+            "ownerEnabled": false,
+            "processAlive": true,
+            "existingCancelPredicateReady": false
+          },
+          {
+            "phase": "italian-chooser-cancel-search",
+            "elapsedMilliseconds": 1480,
+            "chooserExists": true,
+            "ownerEnabled": false,
+            "processAlive": true,
+            "existingCancelPredicateReady": false
+          },
+          {
+            "phase": "italian-chooser-cancel-search",
+            "elapsedMilliseconds": 1730,
+            "chooserExists": true,
+            "ownerEnabled": true,
+            "processAlive": true,
+            "existingCancelPredicateReady": false
+          },
+          {
+            "phase": "italian-chooser-cancel-search",
+            "elapsedMilliseconds": 1981,
+            "chooserExists": false,
+            "ownerEnabled": true,
+            "processAlive": true,
+            "existingCancelPredicateReady": true
+          },
+          {
+            "phase": "italian-chooser-cancel-ready",
+            "elapsedMilliseconds": 1981,
+            "processAlive": true
+          },
+          {
+            "phase": "close-dispatched",
+            "elapsedMilliseconds": 1981,
+            "dispatchAccepted": true,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_it"
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 1981,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_it",
+            "matchingWindows": 0,
+            "ownWindowsObserved": 9,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "admin_it",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 8,
+              "admin_it": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "admin_it": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 2232,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_it",
+            "matchingWindows": 1,
+            "ownWindowsObserved": 10,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "quit_it",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": true
+              },
+              {
+                "category": "admin_it",
+                "visible": true,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 8,
+              "quit_it": 1,
+              "admin_it": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "quit_it": 1,
+              "admin_it": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-found",
+            "elapsedMilliseconds": 2232,
+            "processAlive": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_it"
+          },
+          {
+            "phase": "close-dispatched",
+            "elapsedMilliseconds": 3159,
+            "dispatchAccepted": true,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_it"
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 3159,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_it",
+            "matchingWindows": 0,
+            "ownWindowsObserved": 9,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "admin_it",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 8,
+              "admin_it": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "admin_it": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 3411,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_it",
+            "matchingWindows": 1,
+            "ownWindowsObserved": 10,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "quit_it",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": true
+              },
+              {
+                "category": "admin_it",
+                "visible": true,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 8,
+              "quit_it": 1,
+              "admin_it": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "quit_it": 1,
+              "admin_it": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-found",
+            "elapsedMilliseconds": 3411,
+            "processAlive": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_it"
+          },
+          {
+            "phase": "close-dispatched",
+            "elapsedMilliseconds": 5029,
+            "dispatchAccepted": true,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_en"
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 5029,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_en",
+            "matchingWindows": 0,
+            "ownWindowsObserved": 7,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "admin_en",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 6,
+              "admin_en": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "admin_en": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 5280,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_en",
+            "matchingWindows": 1,
+            "ownWindowsObserved": 8,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "quit_en",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": true
+              },
+              {
+                "category": "admin_en",
+                "visible": true,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 6,
+              "quit_en": 1,
+              "admin_en": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "quit_en": 1,
+              "admin_en": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-found",
+            "elapsedMilliseconds": 5280,
+            "processAlive": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_en"
+          },
+          {
+            "phase": "close-dispatched",
+            "elapsedMilliseconds": 5532,
+            "dispatchAccepted": true,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_en"
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 5532,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": true,
+            "expectedCategory": "quit_en",
+            "matchingWindows": 0,
+            "ownWindowsObserved": 7,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "admin_en",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 6,
+              "admin_en": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "admin_en": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-search",
+            "elapsedMilliseconds": 5783,
+            "processAlive": true,
+            "ownerExists": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_en",
+            "matchingWindows": 1,
+            "ownWindowsObserved": 8,
+            "windows": [
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "quit_en",
+                "visible": true,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": true,
+                "matchesExpectedDialog": true
+              },
+              {
+                "category": "admin_en",
+                "visible": true,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": true,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              },
+              {
+                "category": "other_window",
+                "visible": false,
+                "enabled": false,
+                "minimized": false,
+                "matchesExpectedOwner": false,
+                "matchesExpectedDialog": false
+              }
+            ],
+            "windowCategoryCounts": {
+              "other_window": 6,
+              "quit_en": 1,
+              "admin_en": 1
+            },
+            "visibleWindowCategoryCounts": {
+              "quit_en": 1,
+              "admin_en": 1
+            }
+          },
+          {
+            "phase": "quit-confirmation-found",
+            "elapsedMilliseconds": 5783,
+            "processAlive": true,
+            "ownerVisible": true,
+            "ownerEnabled": false,
+            "expectedCategory": "quit_en"
+          }
+        ],
+        "omittedSamples": 0,
+        "last": {
+          "phase": "quit-confirmation-found",
+          "elapsedMilliseconds": 5783,
+          "processAlive": true,
+          "ownerVisible": true,
+          "ownerEnabled": false,
+          "expectedCategory": "quit_en"
+        },
+        "lastWindowSearch": {
+          "phase": "quit-confirmation-search",
+          "elapsedMilliseconds": 5783,
+          "processAlive": true,
+          "ownerExists": true,
+          "ownerVisible": true,
+          "ownerEnabled": false,
+          "expectedCategory": "quit_en",
+          "matchingWindows": 1,
+          "ownWindowsObserved": 8,
+          "windows": [
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": true,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "quit_en",
+              "visible": true,
+              "enabled": true,
+              "minimized": false,
+              "matchesExpectedOwner": true,
+              "matchesExpectedDialog": true
+            },
+            {
+              "category": "admin_en",
+              "visible": true,
+              "enabled": false,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": true,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": true,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": false,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": false,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            },
+            {
+              "category": "other_window",
+              "visible": false,
+              "enabled": false,
+              "minimized": false,
+              "matchesExpectedOwner": false,
+              "matchesExpectedDialog": false
+            }
+          ],
+          "windowCategoryCounts": {
+            "other_window": 6,
+            "quit_en": 1,
+            "admin_en": 1
+          },
+          "visibleWindowCategoryCounts": {
+            "quit_en": 1,
+            "admin_en": 1
+          }
+        }
+      },
+      "limitations": {
+        "rawHostLogOmitted": true,
+        "doesNotEstablishCauseOfOriginalFailure": true,
+        "globalDesktopDropHitVerified": false,
+        "trayIconRegistered": false
+      }
+    }
+  ],
+  "localObserverCheck": {
+    "status": "passed",
+    "scope": "Linux observer-only Win32 test doubles; not native Windows or physical UI verification",
+    "verificationSource": "cde5f30f9689f18c254f9537038d86c99b45064c",
+    "verifierFile": "scripts/windows_close_checks.py",
+    "verifierSHA256": "1fc8116ccf79346e0e3c209081bc1536aa7c979aa91720b592d8f49f2ce0083a",
+    "localProbeSHA256": "e99574f8b6f918f0e5e76f42beb142a61fc35304aa22f330d40dec80bdb25914",
+    "testsObservedBeforeCommit": true,
+    "testedVerifierBytesMatchCommit": true,
+    "failedUntilContextPersisted": true,
+    "unchangedEightSecondAssertionAndMessageSequence": true,
+    "captionAndClassRedaction": true,
+    "sampleAndWindowBounds": true,
+    "latestFailureAndWindowSearchRetainedAfterCap": true,
+    "pythonSyntaxCheckPassed": true,
+    "diffWhitespaceCheckPassed": true
+  },
+  "interpretation": "Both Windows native Admin and shipped-process close checks passed with unchanged assertions. This recovery workflow is incomplete because macOS ARM64 acquired no hosted runner and its dependent binary-security gate was skipped. It is not an overall pass and does not establish the cause of the earlier Windows timeout.",
+  "monitoring": {
+    "getOnly": true,
+    "noRerunsRequested": true,
+    "collectorCompleted": true
+  },
+  "privateAPIEvidenceSHA256": {
+    "default-build-recovery-run.json": "42050906c221bde45341fc39c5e39edbfd164a449f938bae73d39696e7c582b4",
+    "default-build-recovery-jobs.json": "223fdefaaeca05cc0529874bab1ddb1283522a02503ff4ecbd1a6e584a27c54d",
+    "recovery-mac-arm64-job.json": "51924e45a164b859746497b12ef0a171ba558d22e73fed8cfd3d261141299967",
+    "recovery-mac-arm64-check.json": "44426e7d90198eb967e9ba944cdfd0536a9e3cd74c2fb80b4939b00743ca0a6a",
+    "recovery-mac-arm64-annotations.json": "79af6ec15bc19bcef91a10ee53f455a853133ce04c0e515da9ecb38c98912470"
+  }
+}
