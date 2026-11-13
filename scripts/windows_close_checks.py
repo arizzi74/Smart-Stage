@@ -9,6 +9,40 @@ import time
 from smoke_shutdown import stop_application
 
 
+def _window_category(kind, title):
+    """Report known UI identities without retaining arbitrary window captions."""
+    known = {
+        ("SmartStageAdmin-View", "Smart Stage — Admin"): "admin_en",
+        ("SmartStageAdmin-View", "Smart Stage — Amministrazione"): "admin_it",
+        ("#32770", "Quit Smart Stage?"): "quit_en",
+        ("#32770", "Uscire da Smart Stage?"): "quit_it",
+        ("#32770", "Choose media for Smart Stage — files stay in their original folders"): "media_chooser_en",
+        ("#32770", "Scegli i file per Smart Stage — resteranno nelle cartelle originali"): "media_chooser_it",
+    }
+    return known.get((kind, title), "other_dialog" if kind == "#32770" else "other_window")
+
+
+class _CloseObservations:
+    """Bounded verifier observations, not a native chooser-idle acknowledgement."""
+
+    def __init__(self, report, clock=time.monotonic):
+        self.clock, self.started = clock, clock()
+        self.data = report["closeObservations"] = {
+            "scope": "Same-process window categories and existing verifier predicates; no native chooserActive readback",
+            "sampleLimit": 96, "windowLimit": 16, "samples": [], "omittedSamples": 0,
+        }
+
+    def record(self, phase, **state):
+        sample = {"phase": phase, "elapsedMilliseconds": round((self.clock() - self.started) * 1000), **state}
+        self.data["last"] = sample
+        if "windows" in state:
+            self.data["lastWindowSearch"] = sample
+        if len(self.data["samples"]) < self.data["sampleLimit"]:
+            self.data["samples"].append(sample)
+        else:
+            self.data["omittedSamples"] += 1
+
+
 def shipped_close_confirmation_checks(executable, work, config, media, helpers, report):
     user = ctypes.WinDLL("user32", use_last_error=True)
     callback_type = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
@@ -36,6 +70,7 @@ def shipped_close_confirmation_checks(executable, work, config, media, helpers, 
         function.restype = wintypes.BOOL
 
     process = None
+    observations = _CloseObservations(report)
     log_path = work / "shipped-close.log"
     try:
         admin_port, remote_port = helpers.unused_port(), helpers.unused_port()
@@ -54,23 +89,48 @@ def shipped_close_confirmation_checks(executable, work, config, media, helpers, 
             admin = helpers.Admin(admin_port)
             helpers.wait_for(lambda: admin.get("/api/state")["state"], 40, "the shipped close-test Admin host")
 
-            def windows(kind, title, owner=None):
+            def windows(kind, title, owner=None, observation=None):
                 found = []
+                sampled, total = [], 0
+                category_counts, visible_category_counts = {}, {}
 
                 @callback_type
                 def collect(hwnd, _):
+                    nonlocal total
                     pid = wintypes.DWORD()
                     user.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
-                    if pid.value != process.pid or not user.IsWindowVisible(hwnd):
+                    if pid.value != process.pid:
+                        return True
+                    visible = bool(user.IsWindowVisible(hwnd))
+                    if not visible and observation is None:
                         return True
                     class_name, caption = ctypes.create_unicode_buffer(128), ctypes.create_unicode_buffer(256)
                     user.GetClassNameW(hwnd, class_name, len(class_name))
                     user.GetWindowTextW(hwnd, caption, len(caption))
-                    if class_name.value == kind and caption.value == title and (owner is None or user.GetWindow(hwnd, 4) == owner):
+                    matches_owner = owner is None or user.GetWindow(hwnd, 4) == owner
+                    matches = visible and class_name.value == kind and caption.value == title and matches_owner
+                    if observation is not None:
+                        total += 1
+                        category = _window_category(class_name.value, caption.value)
+                        category_counts[category] = category_counts.get(category, 0) + 1
+                        if visible:
+                            visible_category_counts[category] = visible_category_counts.get(category, 0) + 1
+                        if len(sampled) < observations.data["windowLimit"]:
+                            sampled.append({"category": category,
+                                            "visible": visible, "enabled": bool(user.IsWindowEnabled(hwnd)),
+                                            "minimized": bool(user.IsIconic(hwnd)), "matchesExpectedOwner": matches_owner,
+                                            "matchesExpectedDialog": matches})
+                    if matches:
                         found.append(hwnd)
                     return True
 
                 assert user.EnumWindows(collect, 0), "Could not enumerate shipped app windows"
+                if observation is not None:
+                    observations.record(observation, processAlive=process.poll() is None,
+                                        ownerExists=bool(user.IsWindow(owner)), ownerVisible=bool(user.IsWindowVisible(owner)),
+                                        ownerEnabled=bool(user.IsWindowEnabled(owner)), expectedCategory=_window_category(kind, title),
+                                        matchingWindows=len(found), ownWindowsObserved=total, windows=sampled,
+                                        windowCategoryCounts=category_counts, visibleWindowCategoryCounts=visible_category_counts)
                 assert len(found) <= 1, f"Unexpected duplicate shipped app window: {title}"
                 return found
 
@@ -78,8 +138,21 @@ def shipped_close_confirmation_checks(executable, work, config, media, helpers, 
             original = windows("SmartStageAdmin-View", "Smart Stage — Admin")[0]
 
             def close_prompt(title="Quit Smart Stage?"):
-                assert user.PostMessageW(original, 0x0112, 0xF060, 0), "Could not invoke native window Close"
-                helpers.wait_for(lambda: windows("#32770", title, original), 8, "the shipped quit confirmation")
+                dispatched = bool(user.PostMessageW(original, 0x0112, 0xF060, 0))
+                observations.record("close-dispatched", dispatchAccepted=dispatched, processAlive=process.poll() is None,
+                                    ownerExists=bool(user.IsWindow(original)), ownerEnabled=bool(user.IsWindowEnabled(original)),
+                                    expectedCategory=_window_category("#32770", title))
+                assert dispatched, "Could not invoke native window Close"
+                try:
+                    helpers.wait_for(lambda: windows("#32770", title, original, "quit-confirmation-search"), 8, "the shipped quit confirmation")
+                except Exception:
+                    observations.record("quit-confirmation-failed", processAlive=process.poll() is None,
+                                        ownerExists=bool(user.IsWindow(original)), ownerEnabled=bool(user.IsWindowEnabled(original)),
+                                        expectedCategory=_window_category("#32770", title))
+                    raise
+                observations.record("quit-confirmation-found", processAlive=process.poll() is None,
+                                    ownerVisible=bool(user.IsWindowVisible(original)), ownerEnabled=bool(user.IsWindowEnabled(original)),
+                                    expectedCategory=_window_category("#32770", title))
                 assert user.IsWindowVisible(original) and not user.IsWindowEnabled(original), "Confirmation must own the visible Admin window"
                 return windows("#32770", title, original)[0]
 
@@ -131,8 +204,24 @@ def shipped_close_confirmation_checks(executable, work, config, media, helpers, 
             chooser_title = "Scegli i file per Smart Stage — resteranno nelle cartelle originali"
             helpers.wait_for(lambda: windows("#32770", chooser_title, original), 10, "the Italian native chooser")
             chooser = windows("#32770", chooser_title, original)[0]
-            assert user.PostMessageW(chooser, 0x0111, 2, 0), "Could not cancel the native media chooser"
-            helpers.wait_for(lambda: not user.IsWindow(chooser) and user.IsWindowEnabled(original), 8, "the native chooser to cancel")
+            dispatched = bool(user.PostMessageW(chooser, 0x0111, 2, 0))
+            observations.record("italian-chooser-cancel-dispatched", dispatchAccepted=dispatched,
+                                chooserExists=bool(user.IsWindow(chooser)), ownerEnabled=bool(user.IsWindowEnabled(original)))
+            assert dispatched, "Could not cancel the native media chooser"
+
+            def chooser_cancelled():
+                exists, enabled = bool(user.IsWindow(chooser)), bool(user.IsWindowEnabled(original))
+                ready = not exists and enabled
+                observations.record("italian-chooser-cancel-search", chooserExists=exists, ownerEnabled=enabled,
+                                    processAlive=process.poll() is None, existingCancelPredicateReady=ready)
+                return ready
+
+            try:
+                helpers.wait_for(chooser_cancelled, 8, "the native chooser to cancel")
+            except Exception:
+                observations.record("italian-chooser-cancel-failed", processAlive=process.poll() is None)
+                raise
+            observations.record("italian-chooser-cancel-ready", processAlive=process.poll() is None)
             confirmation = close_prompt("Uscire da Smart Stage?")
             helpers.wait_for(lambda: caption(user.GetDlgItem(confirmation, 2)) == "Annulla", 5, "the Italian Cancel button")
             language("en")
