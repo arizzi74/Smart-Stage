@@ -105,10 +105,13 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
       return { tabsBelowControls: tabs.top >= actions.bottom - 1, gridBelowTabs: grid.top >= tabs.bottom - 1 };
     });
     assert(layout.tabsBelowControls && layout.gridBelowTabs, 'remote tabs sit beneath transport controls and above cue buttons');
-    assert.equal(await page.locator('[data-cue-id="cue-0"]').count(), 0, 'the active cue may remain selected on another tab');
+    assert.equal(await page.locator('#cue-grid [data-cue-id="cue-0"]').count(), 0, 'the active cue may remain selected on another tab');
+    const stableCue = await page.locator('.remote-section-page [data-cue-id="cue-0"]').elementHandle();
+    assert(await stableCue.evaluate(node => node.isConnected && node.closest('.remote-section-page').inert && node.tabIndex === -1), 'off-tab cue nodes persist while their page is inert and removed from the tab order');
     assert.equal(state.activeCueId, 'cue-0');
     await tab(second).tap(); await selected(second);
-    assert.equal(await page.locator('[data-cue-id="cue-0"]').getAttribute('aria-pressed'), 'true');
+    assert.equal(await page.locator('#cue-grid [data-cue-id="cue-0"]').getAttribute('aria-pressed'), 'true');
+    assert(await stableCue.evaluate(node => node === document.querySelector('#cue-grid [data-cue-id="cue-0"]') && !node.closest('.remote-section-page').inert && node.tabIndex === 0), 'committing a page retains the selected cue button node');
     await tab(second).press('Home'); await selected('main');
     await tab('main').press('ArrowRight'); await selected(second);
     await tab(second).press('End'); await selected(empty);
@@ -118,12 +121,26 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
     touch = await page.context().newCDPSession(page);
     await page.evaluate(() => {
       window.__sectionTouches = [];
+      window.__sectionPointerEvents = [];
       window.__sectionTouchHandler = event => window.__sectionTouches.push({ pointerType: event.pointerType, trusted: event.isTrusted });
       document.getElementById('command-view').addEventListener('pointerdown', window.__sectionTouchHandler);
+      for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'lostpointercapture']) document.addEventListener(type, event => window.__sectionPointerEvents.push({type, x: event.clientX, y: event.clientY, trusted: event.isTrusted}), true);
     });
     let pointerID = 70;
-    const gestureStarts = [];
-    const gesture = async ({ target, dx, dy = 0 }) => {
+    const gestureStarts = [], motionSamples = [];
+    const pagerSnapshot = () => page.evaluate(() => {
+      const viewport = document.querySelector('.remote-section-pager'), track = viewport.querySelector('.remote-section-track');
+      const box = viewport.getBoundingClientRect(), selected = document.querySelector('#remote-section-tabs [aria-selected="true"]')?.dataset.sectionId;
+      return { selected, stored: sessionStorage.getItem(`smartstage-section:${location.pathname}`),
+        x: new DOMMatrixReadOnly(getComputedStyle(track).transform).m41, width: box.width,
+        dragging: viewport.classList.contains('is-dragging'), settling: viewport.classList.contains('is-settling'),
+        selectedGridCount: document.querySelectorAll('#cue-grid').length, selectedEmptyCount: document.querySelectorAll('#empty-cues').length,
+        pages: [...track.children].map(page => { const rect = page.getBoundingClientRect(); return { id: page.dataset.sectionId, inert: page.inert, hidden: page.getAttribute('aria-hidden'),
+          overlap: Math.max(0, Math.min(rect.right, box.right) - Math.max(rect.left, box.left)), tabIndices: [...page.querySelectorAll('.cue')].map(node => node.tabIndex) }; }) };
+    });
+    const atRest = () => page.waitForFunction(() => !document.querySelector('.remote-section-pager.is-dragging, .remote-section-pager.is-settling'));
+    const gesture = async ({ target, dx, dy = 0, cancel = false, follow = false, edge = false, reduced = false, live = false }) => {
+      await atRest();
       await target.scrollIntoViewIfNeeded();
       // scrollIntoView can center a cue behind the sticky transport ribbon in
       // a short viewport. Place its top below that ribbon before hit testing.
@@ -151,22 +168,69 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
         `Touch starts on its visible command target between the transport ribbon and seek bar: ${JSON.stringify(start)}`);
       const { x, y } = start, id = ++pointerID;
       gestureStarts.push({ id, dx, dy, ...start });
+      const before = await pagerSnapshot(), samples = [];
       await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id }] });
       for (const part of [.25, .5, .75, 1]) {
         await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + dx * part, y: y + dy * part, id }] });
         await page.waitForTimeout(25);
+        if (follow || edge) {
+          const sample = await pagerSnapshot(); samples.push(sample);
+          assert.equal(sample.selected, before.selected, 'touch motion does not commit the selected tab');
+          assert.equal(sample.stored, before.stored, 'touch motion does not commit section session storage');
+          assert.equal(sample.dragging, true, `held pointer enters dragging: ${JSON.stringify({part, dx, start, sample, events: await page.evaluate(() => window.__sectionPointerEvents.slice(-12))})}`); assert.equal(sample.settling, false);
+          assert.equal(sample.selectedGridCount, 1); assert.equal(sample.selectedEmptyCount, 1);
+          assert(sample.pages.every(panel => panel.inert === (panel.id !== before.selected) && panel.hidden === String(panel.id !== before.selected) && panel.tabIndices.every(index => index === (panel.id === before.selected ? 0 : -1))), 'neighbors remain inaccessible until the page commits');
+          const moved = sample.x - before.x;
+          if (follow) {
+            assert(Math.abs(moved - dx * part) < 2, `the track follows the held finger continuously: ${JSON.stringify({part, moved, expected: dx * part})}`);
+            assert(sample.pages.some(panel => panel.id !== before.selected && panel.overlap > 4), 'an adjacent page is physically visible during the held drag');
+          } else assert(Math.sign(moved) === Math.sign(dx) && Math.abs(moved) > 0 && Math.abs(moved) < Math.abs(dx * part) * .5, 'an outward edge drag resists the finger without wrapping');
+          if (live && part === .5) {
+            state.revision++; broadcast();
+            await page.waitForFunction(revision => state.revision === revision, state.revision);
+            const refreshed = await pagerSnapshot();
+            assert(Math.abs(refreshed.x - sample.x) < 1, 'a live playback event does not reset the held track');
+            assert(await stableCue.evaluate(node => node.isConnected && node === document.querySelector('.remote-section-page [data-cue-id="cue-0"]')), 'a live state event preserves the actual cue node during a drag');
+          }
+        }
       }
-      await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-      await page.waitForTimeout(100);
+      // A short held drag deliberately loses fling velocity; this checks the
+      // distance threshold instead of accidentally exercising a quick fling.
+      if (!dy && Math.abs(dx) < 60) await page.waitForTimeout(120);
+      await touch.send('Input.dispatchTouchEvent', { type: cancel ? 'touchCancel' : 'touchEnd', touchPoints: [] });
+      if (follow || edge) {
+        const released = await pagerSnapshot();
+        if (reduced) assert.equal(released.settling, false, 'reduced motion commits without an animated settling phase');
+        else {
+          assert.equal(released.selected, before.selected, 'the original page remains selected while the released track settles');
+          assert.equal(released.stored, before.stored);
+          assert.equal(released.settling, true, 'the actual track animates from its held position after release');
+          await page.waitForTimeout(60);
+          const snapping = await pagerSnapshot(), destination = cancel || edge ? before.x : before.x + Math.sign(dx) * before.width;
+          assert(Math.abs(snapping.x - destination) < Math.abs(released.x - destination) - 1 && Math.abs(snapping.x - destination) > 1,
+            `the released track visibly travels toward its snap destination: ${JSON.stringify({released: released.x, intermediate: snapping.x, destination})}`);
+          assert.equal(snapping.selected, before.selected, 'selection remains old at an intermediate snap frame');
+        }
+        motionSamples.push({id, dx, cancel, edge, reduced, before: before.x, held: samples.map(sample => sample.x), releasedSelected: released.selected});
+      }
+      await atRest();
       return start.scrollY;
     };
     const navPlays = plays();
-    await gesture({ target: page.locator('[data-cue-id="cue-0"]'), dx: 115 }); await selected('main');
-    await gesture({ target: page.locator('#cue-grid .cue').first(), dx: -115 }); await selected(second);
-    await gesture({ target: page.locator('[data-cue-id="cue-0"]'), dx: -40 }); await selected(second);
+    await gesture({ target: page.locator('#cue-grid [data-cue-id="cue-0"]'), dx: 115, follow: true, live: true }); await selected('main');
+    const mainRest = await pagerSnapshot();
+    await gesture({ target: page.locator('#cue-grid .cue').first(), dx: -115, follow: true, cancel: true }); await selected('main');
+    assert(Math.abs((await pagerSnapshot()).x - mainRest.x) < 1, 'touch cancellation snaps back to the committed page');
+    await gesture({ target: page.locator('#cue-grid .cue').first(), dx: 115, edge: true }); await selected('main');
+    assert(Math.abs((await pagerSnapshot()).x - mainRest.x) < 1, 'the first edge returns to its original transform');
+    await gesture({ target: page.locator('#cue-grid .cue').first(), dx: -115, follow: true }); await selected(second);
+    await gesture({ target: page.locator('#cue-grid [data-cue-id="cue-0"]'), dx: -40 }); await selected(second);
     assert.equal(plays(), navPlays, 'a rejected short touch swipe over a selected cue cannot pause or restart it');
-    await gesture({ target: page.locator('[data-cue-id="cue-0"]'), dx: -115 }); await selected(empty);
-    await gesture({ target: page.locator('#command-view'), dx: 115 }); await selected(second);
+    await gesture({ target: page.locator('#cue-grid [data-cue-id="cue-0"]'), dx: -115, follow: true }); await selected(empty);
+    await gesture({ target: page.locator('.remote-section-pager'), dx: -115, edge: true }); await selected(empty);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await gesture({ target: page.locator('.remote-section-pager'), dx: 115, follow: true, reduced: true }); await selected(second);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
     await tab('main').tap(); await selected('main');
     await page.setViewportSize({ width: 390, height: 360 }); await page.evaluate(() => scrollTo(0, 0));
     const scrollBefore = await gesture({ target: page.locator('#cue-grid .cue').first(), dx: 3, dy: -125 });
@@ -176,8 +240,8 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
     const observedTouch = await page.evaluate(() => window.__sectionTouches);
     const touchDiagnostics = { expectedGestures: gestureStarts.length, observedCount: observedTouch.length,
       pointerTypes: [...new Set(observedTouch.map(event => event.pointerType))], trustedCount: observedTouch.filter(event => event.trusted).length, starts: gestureStarts };
-    console.log('Section touch diagnostics:', JSON.stringify(touchDiagnostics));
-    assert(observedTouch.length >= 6 && observedTouch.every(event => event.pointerType === 'touch' && event.trusted),
+    console.log('Section touch diagnostics:', JSON.stringify({...touchDiagnostics, motionSamples}));
+    assert(observedTouch.length >= gestureStarts.length && observedTouch.every(event => event.pointerType === 'touch' && event.trusted),
       `gestures exercise real browser touch pointer events: ${JSON.stringify(touchDiagnostics)}`);
     await page.setViewportSize(viewport); await page.evaluate(() => scrollTo(0, 0));
     assert.deepEqual(playbackIdentity(), identity, 'section navigation preserves the active transport and timeline');
@@ -242,6 +306,8 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
       sectionCollapsePersistedAndLatestQueuedToggle: true, sectionCollapsePreservesFocusAndCueDraft: true,
       sectionRemoteTabsKeyboardAndRealTouch: true, sectionEmptyTabAndOffTabActiveSelection: true,
       sectionPartialSwipeAndVerticalScrollNeverPlay: true, sectionNavigationPreservesPlayback: true,
+      sectionPagerFingerFollowingAndAdjacentVisibility: true, sectionPagerCancelEdgeAndAnimatedSnap: true,
+      sectionPagerReducedMotionAndStableLiveCueNodes: true, sectionPagerInactivePagesInertAndUntabbable: true,
       sectionEnglishItalianLeavesUserTitlesUntranslated: true, sectionPortableMetadataAndIdentityRemap: true,
       sectionLegacyMainFallback: true, sectionFixtureOnlyNativeExecutionVerified: false };
   } catch (error) {
@@ -255,6 +321,7 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
     for (const key of Object.keys(state)) delete state[key]; Object.assign(state, originalState, { playlistRevision: configRevision, revision: stateRevision });
     broadcast();
     await page.setViewportSize(viewport);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
     await admin.reload(); await admin.locator('.playlist-row').first().waitFor();
     if (await admin.locator('#language-mode').inputValue() !== adminLanguage) await changeLanguage(admin, adminLanguage);
     await page.reload(); await page.locator('#connection.live').waitFor();

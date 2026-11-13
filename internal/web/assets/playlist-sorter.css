@@ -1,0 +1,140 @@
+.playlist-sorter {
+  width: min(700px, calc(100vw - 32px));
+  max-width: 700px;
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #506169;
+  border-radius: 14px;
+  background: #1b2227;
+  color: #edf2f2;
+  box-shadow: 0 24px 80px #0008;
+}
+.playlist-sorter[open] {
+  display: flex;
+  flex-direction: column;
+}
+.playlist-sorter::backdrop { background: #060d12c9; backdrop-filter: blur(5px); }
+.playlist-sorter-header { padding: 18px 20px 14px; border-bottom: 1px solid #303a40; }
+.playlist-sorter-header h2 { margin: 0 0 6px; font-size: 1.2rem; }
+.playlist-sorter-header p {
+  margin: 0;
+  color: #a3b0b7;
+  font-size: .82rem;
+  line-height: 1.5;
+}
+.playlist-sorter-list {
+  min-height: 96px;
+  max-height: 56vh;
+  padding: 12px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+.playlist-sorter-section {
+  margin: 0 0 10px;
+  overflow: hidden;
+  border: 1px solid #35424a;
+  border-radius: 8px;
+  background: #141b20;
+}
+.playlist-sorter-section:last-child { margin-bottom: 0; }
+.playlist-sorter button { width: auto; }
+.playlist-sorter .playlist-sorter-handle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 34px;
+  padding: 7px 11px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-size: .86rem;
+  font-weight: 500;
+  line-height: 1.35;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.playlist-sorter .playlist-sorter-handle:hover { background: #ffffff06; }
+.playlist-sorter .playlist-sorter-handle:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid #adecd1;
+  outline-offset: -3px;
+}
+.playlist-sorter .playlist-sorter-section-handle {
+  min-height: 38px;
+  background: #adecd10a;
+  color: #adecd1;
+  font-weight: 700;
+}
+.playlist-sorter .playlist-sorter-handle[aria-disabled="true"] { opacity: .6; cursor: default; }
+.playlist-sorter-grip { flex: 0 0 auto; color: #89999f; font-size: 1rem; line-height: 1; }
+.playlist-sorter-name { min-width: 0; overflow-wrap: anywhere; }
+.playlist-sorter-cues { min-height: 8px; padding: 3px 0; }
+.playlist-sorter-cue + .playlist-sorter-cue { border-top: 1px solid #ffffff05; }
+.playlist-sorter-cue .playlist-sorter-handle { padding-left: 25px; }
+.playlist-sorter-empty { margin: 0; padding: 10px 25px; color: #89999f; font-size: .78rem; }
+.playlist-sorter-section.is-dragging, .playlist-sorter-cue.is-dragging { opacity: .35; }
+.playlist-sorter.is-dragging, .playlist-sorter.is-dragging .playlist-sorter-handle { cursor: grabbing; }
+.playlist-sorter-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 5;
+  box-sizing: border-box;
+  max-width: calc(100vw - 32px);
+  max-height: 100px;
+  overflow: hidden;
+  padding: 8px 12px;
+  border: 1px solid #adecd1;
+  border-radius: 7px;
+  background: #263b35;
+  color: #edf2f2;
+  box-shadow: 0 7px 20px #0006;
+  font-size: .86rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+.playlist-sorter-drop-marker {
+  height: 3px;
+  margin: 2px 8px;
+  border-radius: 2px;
+  background: #adecd1;
+  pointer-events: none;
+}
+.playlist-sorter-footer { padding: 10px 20px 16px; border-top: 1px solid #303a40; }
+.playlist-sorter-keyboard { margin: 0 0 10px; color: #a3b0b7; font-size: .72rem; line-height: 1.5; }
+.playlist-sorter-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.playlist-sorter-actions button { min-height: 38px; padding: 8px 16px; font-size: .85rem; }
+.playlist-sorter-error, .playlist-sorter-availability {
+  margin: 0 0 10px;
+  font-size: .8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.playlist-sorter-error { color: #ffc3ba; }
+.playlist-sorter-availability { color: #a3b0b7; }
+.playlist-sorter-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .playlist-sorter-header { padding: 14px 14px 11px; }
+  .playlist-sorter-footer { padding: 9px 14px 13px; }
+  .playlist-sorter-list { padding: 8px; }
+  .playlist-sorter .playlist-sorter-handle { min-height: 38px; }
+}

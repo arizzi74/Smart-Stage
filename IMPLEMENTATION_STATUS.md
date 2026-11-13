@@ -9,6 +9,14 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.8.0
 
 ## Implemented
 
+- Remote section pages track horizontal touch motion continuously and reveal
+  adjacent sections, then settle with a short animation. Partial/cancelled
+  gestures return to the selected section; vertical scrolling, live cue state,
+  reduced motion and emergency controls are preserved.
+- Admin **Sort Playlist** opens a compact names-only dialog for pointer dragging
+  whole sections and cues within/across sections. Save applies one guarded
+  transaction; Cancel discards the draft. Metadata and native playback remain
+  independent. The lazy sorter module/styles are served only by local Admin.
 - Playlist sections have saved names, order and collapsed state. Admin can create,
   rename, reorder or remove sections and move cues between them without changing
   native source identities. Removing a section moves its cues to another section;

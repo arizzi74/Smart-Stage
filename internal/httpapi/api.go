@@ -246,6 +246,10 @@ func (a *API) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !strings.HasPrefix(r.URL.Path, "/api/") {
+		if a.role == "command" && (r.URL.Path == "/assets/playlist-sorter.js" || r.URL.Path == "/assets/playlist-sorter.css") {
+			http.NotFound(w, r)
+			return
+		}
 		if a.role == "command" && r.URL.Path == "/" {
 			http.Redirect(w, r, "/command", http.StatusSeeOther)
 			return

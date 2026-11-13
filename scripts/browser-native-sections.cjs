@@ -7,7 +7,7 @@ module.exports = async function nativeSections({admin, command, adminBase, snaps
   apiPath, record, audio, musicCue}) {
   const report = record.sectionsIntegration = {
     status: 'running', audioContinuityVerified: false, physicalRoutingVerified: false,
-    method: 'Real Admin section edits, authenticated portable export and remote tab controls; native source identity and clock checked only when an audio endpoint is available.'
+    method: 'Real Admin section edits, authenticated portable export, remote tab controls and browser mouse sorting through the native host; local-only module delivery and native source/clock continuity checked within their stated scope.'
   };
   if (!audio) report.audioUnavailableReason = 'No enumerated native audio endpoint';
   const initial = await snapshot();
@@ -159,18 +159,67 @@ module.exports = async function nativeSections({admin, command, adminBase, snaps
     await selectedTab.waitFor();
     await selectedTab.tap();
     await command.waitForFunction(id => document.querySelector(`#remote-section-tabs [data-section-id="${id}"]`)?.getAttribute('aria-selected') === 'true', created.id);
-    assert.equal(await command.locator(`[data-cue-id="${musicCue.id}"]`).isVisible(), true,
+    assert.equal(await command.locator(`#cue-grid [data-cue-id="${musicCue.id}"]`).isVisible(), true,
       'Admin collapse must not hide the section on the remote');
     assert.deepEqual(await command.locator('#cue-grid .cue').evaluateAll(nodes => nodes.map(node => node.dataset.cueId)), [musicCue.id]);
     await selectedTab.focus();
     await selectedTab.press('Home');
     await command.waitForFunction(id => document.querySelector(`#remote-section-tabs [data-section-id="${id}"]`)?.getAttribute('aria-selected') === 'true', configured.sections[0].id);
-    assert.equal(await command.locator(`[data-cue-id="${musicCue.id}"]`).count(), 0, 'Remote must show only the selected section');
+    assert.equal(await command.locator(`#cue-grid [data-cue-id="${musicCue.id}"]`).count(), 0, 'Remote must show only the selected section');
     await command.locator('#remote-section-tabs [aria-selected="true"]').press('End');
     await command.waitForFunction(id => document.querySelector(`#remote-section-tabs [data-section-id="${id}"]`)?.getAttribute('aria-selected') === 'true', created.id);
     assert.equal(await selectedTab.evaluate(node => document.activeElement === node), true, 'Keyboard section navigation must retain focused tab');
     report.remoteTapAndKeyboardSelectOnlyRequestedSection = true;
     await assertPlaybackUnchanged();
+
+    const sorterAssets = new Map();
+    const observeSorterAsset = response => {
+      const pathname = new URL(response.url()).pathname;
+      if (['/assets/playlist-sorter.js', '/assets/playlist-sorter.css'].includes(pathname)) {
+        sorterAssets.set(pathname, {status: response.status(), type: response.headers()['content-type'] || ''});
+      }
+    };
+    admin.on('response', observeSorterAsset);
+    try {
+      await admin.locator('#sort-playlist').click();
+      const sorter = admin.locator('#playlist-sorter');
+      await sorter.waitFor({state: 'visible'});
+      for (const [pathname, type] of [['/assets/playlist-sorter.js', 'text/javascript'], ['/assets/playlist-sorter.css', 'text/css']]) {
+        assert.equal(sorterAssets.get(pathname)?.status, 200, 'Real Admin must serve its lazy sorter asset');
+        assert(sorterAssets.get(pathname).type.startsWith(type), 'Sorter assets must have browser-compatible MIME types');
+        const remoteResponse = await command.request.get(new URL(pathname, command.url()).href);
+        assert.equal(remoteResponse.status(), 404, 'The command listener must not serve Admin sorting assets');
+      }
+      assert.equal(await sorter.locator('.playlist-sorter-cue').count(), configured.cues.length,
+        'The compact sorter must include hidden and collapsed-section cues');
+      const beforeSort = editCues(configured.cues);
+      const firstSection = configured.sections[0].id;
+      const handle = sorter.locator(`.playlist-sorter-cue-handle[data-cue-id="${musicCue.id}"]`);
+      const destination = sorter.locator(`.playlist-sorter-cues[data-section-id="${firstSection}"]`);
+      const from = await handle.boundingBox(), to = await destination.boundingBox();
+      assert(from && to, 'Real sorter source and destination must be visible');
+      await admin.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+      await admin.mouse.down();
+      await admin.mouse.move(to.x + 20, to.y + 6, {steps: 12});
+      await admin.mouse.up();
+      await admin.waitForFunction(({cue, section}) => document.querySelector(`.playlist-sorter-cue[data-cue-id="${cue}"]`)?.dataset.sectionId === section,
+        {cue: musicCue.id, section: firstSection});
+      configured = await edit(() => admin.locator('#playlist-sorter-save').click());
+      await sorter.waitFor({state: 'hidden'});
+      assert.equal(configured.cues.find(cue => cue.id === musicCue.id).sectionId, firstSection);
+      for (const cue of editCues(configured.cues)) {
+        const expected = beforeSort.find(item => item.id === cue.id);
+        assert(isDeepStrictEqual({...cue, sectionId: expected.sectionId}, expected),
+          'Sorting must retain every cue property except its requested section membership');
+      }
+      assert.deepEqual(configured.sections, reloaded.sections, 'Sorting must retain section names and collapsed metadata');
+      await assertPlaybackUnchanged();
+      report.adminSorterLazyAssetsAndNativeHostPointerSave = true;
+      report.sorterRetainsCueMetadataWithoutPlaybackCommands = true;
+    } finally {
+      admin.off('response', observeSorterAsset);
+      if (await admin.locator('#playlist-sorter').isVisible()) await admin.locator('#playlist-sorter-cancel').click();
+    }
     if (audio) {
       await until(async () => cueState(await assertPlaybackUnchanged()).elapsed > playing.elapsed + .25,
         'Native music clock did not advance through section moves, collapse, reload and tab navigation');
@@ -216,6 +265,6 @@ module.exports = async function nativeSections({admin, command, adminBase, snaps
     }
   }
   report.status = 'passed';
-  record.checks.push('Real Admin created/renamed a section, moved a cue and retained collapsed metadata after reload and portable export; remote tap/keyboard navigation sent no playback commands; original show restored');
+  record.checks.push('Real Admin section metadata survived reload/export; remote tabs and lazy Admin-only sorter mouse saves sent no playback commands; source continuity checked when audio available; original show restored');
   return restored;
 };

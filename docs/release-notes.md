@@ -1,13 +1,9 @@
-Smart Stage 1.8.0 adds playlist sections and independent audio mixing.
+Smart Stage 1.9.0 adds smooth section swiping and a compact playlist sorter.
 
-- **Do not stop video** keeps the current video playing while the audio cue replaces its soundtrack. The video stays silent after the audio finishes or is paused, until that video ends or is restarted.
-- **Mix audio** plays the cue alongside existing music and video audio. It keeps the video running even when Do not stop video is unchecked. Several audio cues can play together.
-- **Playlist sections** organize cues into named, collapsible groups in Admin. Move cues between sections with their Section selector. Names, order and collapsed state are saved with the show and exported playlist files.
-- The remote displays section tabs below its top controls. Tap a tab or swipe left/right across the cue area; navigation keeps playback running.
-- Each selected audio/video button pauses or resumes its own source. STOP clears every playing cue and returns to the selected background. Per-track volume, master volume and audio fades apply to the mix.
-- Both options appear only on audio cues in Admin, in English or Italian, and are included in saved `.smartstage.json` playlists. Existing playlists keep their previous playback behavior by default.
-
-Builds include the Go 1.26.11 HTTP-server security fixes.
+- The remote cue pages follow your finger while swiping left or right, reveal the adjacent section and smoothly snap into place. Short swipes settle back; vertical scrolling and normal cue taps remain available. Reduced-motion preferences are respected.
+- **Sort Playlist** at the top of Admin → Playlist opens a names-only overview. Drag sections as groups, reorder cues or move them between sections, including empty ones.
+- **Save order** applies the rearrangement together; **Cancel** discards it. Paths, colors, levels, audio options, stage settings and section collapse metadata stay in place. Sorting and section navigation keep playback running.
+- The sorter supports English/Italian, keyboard alternatives and safe revision conflicts. Its assets load only in local Admin; existing public gateways need no changes.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 

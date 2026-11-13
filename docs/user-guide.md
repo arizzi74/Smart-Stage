@@ -322,6 +322,14 @@ name field and Up/Down controls. Use the **Section** selector on a cue to move i
 to another section; its media path, volume and audio options stay with it. Cue
 Up/Down controls change its order within its section.
 
+For a compact overview, click **Sort Playlist** at the top of Playlist. The
+popup lists only section and cue names. Drag a section heading to move its whole
+group, or drag a cue within its section or into another section, including an
+empty one. Changes stay in the popup until **Save order**; **Cancel** discards
+them. File paths, cue options, levels and saved section collapse states are kept.
+You can also focus a name and use **Alt + ↑/↓** to reorder, or **Alt + ←/→** to
+move a cue between sections. Sorting does not interrupt playback.
+
 Click a section heading to collapse or expand it. This choice is saved with the
 show, survives relaunch, and is included in exported `.smartstage.json` files.
 Removing a section moves its cues into the first remaining section and keeps the
@@ -330,7 +338,10 @@ does not interrupt playback.
 
 When there is more than one section, the remote shows their named tabs below the
 top control ribbon. Tap a tab, or swipe left/right across the cue area to change
-sections. Vertical swipes still scroll. Switching sections does not start or
+sections. The pages follow your finger while you drag, reveal the adjacent
+section, then smoothly settle into place or spring back on a short swipe.
+System reduced-motion preferences remove the settling animation. Vertical
+swipes still scroll. Switching sections does not start or
 stop playback; cues in other sections can continue playing, and **STOP** always
 controls the whole show. Empty sections still have a tab.
 

@@ -189,3 +189,14 @@
 
 .remote-page .transport{row-gap:10px}
 .remote-page #command-view{min-height:240px;touch-action:pan-y pinch-zoom}
+.remote-section-pager{overflow:hidden;overflow:clip;min-height:240px;touch-action:pan-y pinch-zoom}
+.remote-section-track{position:relative;width:100%;transform:translate3d(0,0,0)}
+.remote-section-page{position:absolute;top:0;width:100%;min-height:240px;padding:4px}
+.remote-section-page.is-current{position:relative}
+.remote-section-page[inert]{pointer-events:none}
+.remote-section-page .cue-grid{touch-action:pan-y pinch-zoom}
+.remote-section-pager.is-dragging{user-select:none;-webkit-user-select:none}
+.remote-section-pager.is-dragging .remote-section-track,.remote-section-pager.is-settling .remote-section-track{will-change:transform}
+.remote-section-pager.is-settling .remote-section-track{transition:transform .22s cubic-bezier(.22,.75,.25,1)}
+.remote-section-tabs .section-tab{transition:background-color .16s ease,border-color .16s ease,color .16s ease}
+@media(prefers-reduced-motion:reduce){.remote-section-pager.is-settling .remote-section-track,.remote-section-tabs .section-tab{transition:none}}

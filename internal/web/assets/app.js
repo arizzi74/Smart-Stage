@@ -38,6 +38,7 @@ let localSessionBusy = false, localSessionRetry = null;
 let presenceBusy = false, quitBusy = false, appClosed = false, reloadingAdmin = false;
 let adminCapabilities = {}, chooseFilesBusy = false;
 let playlistFileBusy = false, playlistFileRevision = 0;
+let playlistSorter = null, playlistSorterPromise = null, playlistSortOpening = false;
 let remoteLinks = [], selectedRemoteURL = '', remoteRefresh = false;
 let gateway = null, gatewayDirty = false, gatewayFieldsDirty = false, gatewayBusy = false, gatewayRefresh = false, gatewaySequence = 0;
 let updateStatus = null, updateBusy = false, updatePreparing = false, updatePollAt = 0;
@@ -45,6 +46,8 @@ let updateRestartInstance = '', updateRestartComplete = false, updateRestartStar
 const cueButtons = new Map(), playlistRows = new Map();
 const playlistSectionRows = new Map(), pendingSectionCollapses = new Map();
 let sectionCollapseSending = false, remoteSectionId = '', remoteSectionsSignature = '', sectionSwipe = null, suppressCueClick = false;
+let remotePager = null;
+const sectionReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const i18n = window.smartStageI18n;
 const t = (key, values) => i18n.t(key, values);
 const localizedText = (node, read) => i18n.text(node, read);
@@ -623,6 +626,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { can
 function connection(connected) {
   if (appClosed || quitBusy || reloadingAdmin) return;
   online = connected;
+  if (!connected) cancelRemoteSectionMotion();
   localizedText($('connection'), () => connected ? t("Connected to host") : expectingUpdateRestart() ? t("Restarting Smart Stage…") : t("Disconnected · status may be stale"));
   $('connection').className = connected ? 'live' : 'stale';
   renderRemoteStage();
@@ -705,6 +709,7 @@ async function probeClosedAdmin() {
 }
 function showAppClosed() {
   appClosed = true; quitBusy = false; online = false; role = ''; csrf = '';
+  playlistSorter?.destroy(); playlistSorter = null; playlistSorterPromise = null;
   clearTimeout(localSessionRetry);
   disconnectEvents();
   $('page-title').hidden = true; $('admin-view').hidden = true; $('playback-error').hidden = true;
@@ -906,14 +911,15 @@ function renderStatusDetails(next) {
 }
 function renderCues() {
   renderSectionTabs();
-  const visible = state.cues.filter(cue => !cue.hidden && sectionForCue(cue, state) === remoteSectionId);
+  const visible = state.cues.filter(cue => !cue.hidden && (!adminPage || sectionForCue(cue, state) === remoteSectionId));
   const order = visible.map(c => c.id).join('|');
   for (const [id, node] of cueButtons) if (!visible.some(c => c.id === id)) { node.remove(); cueButtons.delete(id); }
   for (const cue of visible) {
     let node = cueButtons.get(cue.id);
     if (!node) {
       node = button('', () => trigger(cue.id), 'cue'); node.dataset.cueId = cue.id;
-      node.append(element('span', '', 'cue-title'), element('span', '', 'cue-meta'));
+      const meta = element('span', '', 'cue-meta'); meta.append(element('span'), element('span'));
+      node.append(element('span', '', 'cue-title'), meta);
       cueButtons.set(cue.id, node);
     }
     localizedText(node.firstChild, () => cue.label);
@@ -930,11 +936,13 @@ function renderCues() {
     if (!cue.background && image) action = t("Press again to stop");
     if (!cue.background && foreground) action = t(playing.paused ? "Press again to resume" : "Press again to pause");
     if (cue.validation !== 'ready' && !active) action = t(cue.validation);
-    node.lastChild.replaceChildren(element('span', () => `${String(cue.position).padStart(2, '0')} · ${cue.background ? t("background ") : ''}${t(cue.kind || 'unchecked')}`), element('span', action));
+    localizedText(node.lastChild.firstChild, () => `${String(cue.position).padStart(2, '0')} · ${cue.background ? t("background ") : ''}${t(cue.kind || 'unchecked')}`);
+    localizedText(node.lastChild.lastChild, action);
     node.classList.toggle('active', active); node.classList.toggle('paused', !cue.background && foreground && playing.paused); node.setAttribute('aria-pressed', String(active));
     node.disabled = !online || updatePending() || sameCueSource(pendingTransport) && pendingTransport.cueId === cue.id || !active && ['missing', 'unsupported', 'error'].includes(cue.validation);
-    if (renderedOrder !== order) $('cue-grid').append(node);
+    if (adminPage && renderedOrder !== order) $('cue-grid').append(node);
   }
+  if (!adminPage) { renderRemoteCuePages(visible); return; }
   renderedOrder = order; $('empty-cues').hidden = visible.length > 0;
   localizedText($('empty-cues'), () => sectionsFor(state).length > 1 ? t("No visible buttons in this section.") : state.cues.length ? t("No visible buttons. Show cue buttons in Admin on the host computer.") : t("Your show is empty. Add cues on the host computer to get started."));
 }
@@ -943,21 +951,134 @@ function sectionsFor(value) {
 }
 function playlistSections() { return sectionsFor(playlist); }
 function sectionForCue(cue, value = playlist) { return cue.sectionId || sectionsFor(value)[0].id; }
+function remoteSectionIndex() { return Math.max(0, sectionsFor(state).findIndex(section => section.id === remoteSectionId)); }
+function positionRemotePager(offset = 0) {
+  if (!remotePager) return;
+  remotePager.offset = offset;
+  remotePager.track.style.transform = `translate3d(calc(${-remoteSectionIndex() * 100}% + ${offset}px), 0, 0)`;
+}
+function clearRemoteSectionAnimation() {
+  if (!remotePager) return;
+  clearTimeout(remotePager.timer); remotePager.timer = null;
+  remotePager.animating = false; remotePager.target = ''; remotePager.focus = false;
+  remotePager.viewport.classList.remove('is-settling');
+}
+function releaseSectionPointer(gesture) {
+  if (gesture && $('command-view').hasPointerCapture(gesture.id)) $('command-view').releasePointerCapture(gesture.id);
+}
+function cancelRemoteSectionMotion(animate = false) {
+  if (!remotePager) { sectionSwipe = null; return; }
+  const gesture = sectionSwipe, moving = gesture?.dragged || remotePager.animating;
+  sectionSwipe = null; releaseSectionPointer(gesture);
+  if (moving) suppressCueClick = true;
+  clearRemoteSectionAnimation(); remotePager.viewport.classList.remove('is-dragging');
+  if (animate && moving && online) settleRemoteSection(remoteSectionId);
+  else positionRemotePager();
+}
+function finishRemoteSection() {
+  if (!remotePager?.animating) return;
+  const id = remotePager.target, focus = remotePager.focus;
+  const previousPage = remotePager.pages.get(remoteSectionId)?.page;
+  const moveFocus = focus || previousPage?.contains(document.activeElement);
+  clearRemoteSectionAnimation();
+  if (sectionsFor(state).some(section => section.id === id)) {
+    remoteSectionId = id;
+    try { sessionStorage.setItem(`smartstage-section:${location.pathname}`, id); } catch {}
+  }
+  if (moveFocus) [...$('remote-section-tabs').children].find(node => node.dataset.sectionId === remoteSectionId)?.focus({ preventScroll: true });
+  // Clear old IDs before exposing the newly committed page. The buttons and
+  // their listeners survive both this change and every live state refresh.
+  renderCues(); positionRemotePager();
+  const tab = [...$('remote-section-tabs').children].find(node => node.dataset.sectionId === remoteSectionId);
+  if (moveFocus) tab?.focus({ preventScroll: true });
+  tab?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: sectionReducedMotion.matches ? 'auto' : 'smooth' });
+}
+function settleRemoteSection(id, focus = false) {
+  if (!remotePager || !sectionsFor(state).some(section => section.id === id)) return;
+  const width = remotePager.viewport.getBoundingClientRect().width;
+  const target = sectionsFor(state).findIndex(section => section.id === id);
+  clearRemoteSectionAnimation(); remotePager.viewport.classList.remove('is-dragging');
+  remotePager.animating = true; remotePager.target = id; remotePager.focus = focus;
+  if (sectionReducedMotion.matches || width <= 0) { finishRemoteSection(); return; }
+  // Flush the finger's final position before enabling the settling transition.
+  void remotePager.track.offsetWidth;
+  remotePager.viewport.classList.add('is-settling');
+  positionRemotePager((remoteSectionIndex() - target) * width);
+  remotePager.timer = setTimeout(finishRemoteSection, 320);
+}
+function renderRemoteCuePages(cues) {
+  if (!remotePager) {
+    const grid = $('cue-grid'), empty = $('empty-cues');
+    const viewport = element('div', '', 'remote-section-pager'), track = element('div', '', 'remote-section-track');
+    grid.removeAttribute('id'); empty.removeAttribute('id');
+    viewport.append(track); $('command-view').append(viewport);
+    remotePager = { viewport, track, pages: new Map(), initialGrid: grid, initialEmpty: empty, offset: 0, order: '', width: 0, animating: false };
+    track.addEventListener('transitionend', event => {
+      if (event.target !== track || event.propertyName !== 'transform' || !remotePager.animating) return;
+      const width = viewport.getBoundingClientRect().width;
+      const target = sectionsFor(state).findIndex(section => section.id === remotePager.target);
+      const translated = track.getBoundingClientRect().left - viewport.getBoundingClientRect().left;
+      // An interrupted transition may already have queued its end event.
+      if (Math.abs(translated + target * width) < 1) finishRemoteSection();
+    });
+    remotePager.resize = new ResizeObserver(entries => {
+      const width = entries[0].contentRect.width;
+      if (remotePager.width && Math.abs(width - remotePager.width) > .5) cancelRemoteSectionMotion();
+      remotePager.width = width;
+    });
+    remotePager.resize.observe(viewport);
+  }
+  const sections = sectionsFor(state), order = sections.map(section => section.id).join('|');
+  if (remotePager.order !== order) { cancelRemoteSectionMotion(); remotePager.order = order; }
+  for (const [id, entry] of remotePager.pages) if (!sections.some(section => section.id === id)) {
+    entry.page.remove(); remotePager.pages.delete(id);
+  }
+  for (const entry of remotePager.pages.values()) { entry.grid.removeAttribute('id'); entry.empty.removeAttribute('id'); }
+  sections.forEach((section, index) => {
+    let entry = remotePager.pages.get(section.id);
+    if (!entry) {
+      const page = element('div', '', 'remote-section-page'); page.dataset.sectionId = section.id;
+      const grid = remotePager.initialGrid || element('div', '', 'cue-grid');
+      const empty = remotePager.initialEmpty || element('p', '', 'empty');
+      remotePager.initialGrid = null; remotePager.initialEmpty = null;
+      page.append(grid, empty); remotePager.track.append(page);
+      entry = { page, grid, empty, order: '' }; remotePager.pages.set(section.id, entry);
+    }
+    const selected = section.id === remoteSectionId, sectionCues = cues.filter(cue => sectionForCue(cue, state) === section.id);
+    const cueOrder = sectionCues.map(cue => cue.id).join('|');
+    if (entry.order !== cueOrder) {
+      for (const cue of sectionCues) entry.grid.append(cueButtons.get(cue.id));
+      entry.order = cueOrder;
+    }
+    entry.page.style.left = `${index * 100}%`;
+    entry.page.classList.toggle('is-current', selected); entry.page.inert = !selected;
+    entry.page.toggleAttribute('inert', !selected);
+    for (const cue of sectionCues) cueButtons.get(cue.id).tabIndex = selected ? 0 : -1;
+    entry.page.setAttribute('aria-hidden', String(!selected));
+    if (selected) { entry.grid.id = 'cue-grid'; entry.empty.id = 'empty-cues'; }
+    entry.empty.hidden = sectionCues.length > 0;
+    localizedText(entry.empty, () => sections.length > 1 ? t('No visible buttons in this section.') : state.cues.length ? t('No visible buttons. Show cue buttons in Admin on the host computer.') : t('Your show is empty. Add cues on the host computer to get started.'));
+  });
+  if (!sectionSwipe && !remotePager.animating) positionRemotePager();
+}
 function selectRemoteSection(id, focus = false) {
   if (!sectionsFor(state).some(section => section.id === id)) return;
-  remoteSectionId = id;
-  try { sessionStorage.setItem(`smartstage-section:${location.pathname}`, id); } catch {}
-  renderCues();
-  const tab = [...$('remote-section-tabs').children].find(node => node.dataset.sectionId === id);
-  tab?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-  if (focus) tab?.focus();
+  if (adminPage || !remotePager) { remoteSectionId = id; renderCues(); return; }
+  if (id === remoteSectionId && !sectionSwipe && !remotePager.animating) {
+    if (focus) [...$('remote-section-tabs').children].find(node => node.dataset.sectionId === id)?.focus();
+    return;
+  }
+  const offset = remotePager.track.getBoundingClientRect().left - remotePager.viewport.getBoundingClientRect().left + remoteSectionIndex() * remotePager.viewport.getBoundingClientRect().width;
+  const gesture = sectionSwipe; sectionSwipe = null; releaseSectionPointer(gesture);
+  clearRemoteSectionAnimation(); positionRemotePager(offset);
+  settleRemoteSection(id, focus);
 }
 function renderSectionTabs() {
   const sections = sectionsFor(state), tabs = $('remote-section-tabs');
   if (!remoteSectionId) {
     try { remoteSectionId = sessionStorage.getItem(`smartstage-section:${location.pathname}`) || ''; } catch {}
   }
-  if (!sections.some(section => section.id === remoteSectionId)) remoteSectionId = sections[0].id;
+  if (!sections.some(section => section.id === remoteSectionId)) { cancelRemoteSectionMotion(); remoteSectionId = sections[0].id; }
   tabs.hidden = adminPage || sections.length < 2 || appClosed;
   const signature = JSON.stringify(sections.map(section => [section.id, section.title]));
   if (signature !== remoteSectionsSignature) {
@@ -987,35 +1108,67 @@ function renderSectionTabs() {
   if (tabs.hidden) { $('command-view').removeAttribute('role'); $('command-view').removeAttribute('aria-labelledby'); }
 }
 $('command-view').addEventListener('pointerdown', event => {
-  suppressCueClick = false;
-  if (adminPage || sectionsFor(state).length < 2 || !event.isPrimary || !['touch', 'pen'].includes(event.pointerType)) return;
-  sectionSwipe = { id: event.pointerId, x: event.clientX, y: event.clientY, section: remoteSectionId };
+  if (adminPage) return;
+  if (!event.isPrimary) { suppressCueClick = true; cancelRemoteSectionMotion(); return; }
+  if (!remotePager || !online || sectionsFor(state).length < 2 || !['touch', 'pen'].includes(event.pointerType)) { suppressCueClick = false; return; }
+  const width = remotePager.viewport.getBoundingClientRect().width, moving = remotePager.animating;
+  const offset = moving ? remotePager.track.getBoundingClientRect().left - remotePager.viewport.getBoundingClientRect().left + remoteSectionIndex() * width : 0;
+  clearRemoteSectionAnimation(); positionRemotePager(offset);
+  suppressCueClick = moving;
+  sectionSwipe = { id: event.pointerId, x: event.clientX, y: event.clientY, section: remoteSectionId, width, base: offset,
+    dragged: moving, lastX: event.clientX, lastTime: performance.now(), velocity: 0 };
+  if (moving) { remotePager.viewport.classList.add('is-dragging'); $('command-view').setPointerCapture(event.pointerId); }
 });
 $('command-view').addEventListener('pointermove', event => {
   if (!sectionSwipe || event.pointerId !== sectionSwipe.id) return;
   const dx = event.clientX - sectionSwipe.x, dy = event.clientY - sectionSwipe.y;
-  if (Math.abs(dx) > 24 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+  if (!sectionSwipe.dragged && Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) { cancelRemoteSectionMotion(); return; }
+  if (!sectionSwipe.dragged && Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) * 1.2) {
     sectionSwipe.dragged = true;
-    if (event.cancelable) event.preventDefault();
+    suppressCueClick = true; remotePager.viewport.classList.add('is-dragging');
+    $('command-view').setPointerCapture(event.pointerId);
   }
+  if (!sectionSwipe.dragged) return;
+  if (event.cancelable) event.preventDefault();
+  const now = performance.now(), elapsed = now - sectionSwipe.lastTime;
+  if (elapsed > 0) sectionSwipe.velocity = (event.clientX - sectionSwipe.lastX) / elapsed;
+  sectionSwipe.lastX = event.clientX; sectionSwipe.lastTime = now;
+  const raw = sectionSwipe.base + dx, index = remoteSectionIndex();
+  const atEdge = raw > 0 && index === 0 || raw < 0 && index === sectionsFor(state).length - 1;
+  const offset = atEdge ? raw * .25 / (1 + Math.abs(raw) / Math.max(1, sectionSwipe.width)) : Math.sign(raw) * Math.min(Math.abs(raw), sectionSwipe.width);
+  positionRemotePager(offset);
 }, { passive: false });
 document.addEventListener('pointerup', event => {
   const gesture = sectionSwipe;
   if (!gesture || event.pointerId !== gesture.id) return;
-  sectionSwipe = null;
-  const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
-  const horizontal = Math.abs(dx) > 24 && Math.abs(dx) > Math.abs(dy) * 1.4;
-  if (!gesture.dragged && !horizontal) return;
-  suppressCueClick = true;
-  if (Math.abs(dx) < 60 || !horizontal || gesture.section !== remoteSectionId) return;
+  sectionSwipe = null; releaseSectionPointer(gesture);
+  if (!gesture.dragged) return;
+  suppressCueClick = true; remotePager.viewport.classList.remove('is-dragging');
+  if (gesture.section !== remoteSectionId) { cancelRemoteSectionMotion(); return; }
   const sections = sectionsFor(state), index = sections.findIndex(section => section.id === remoteSectionId);
-  const next = Math.max(0, Math.min(sections.length - 1, index + (dx < 0 ? 1 : -1)));
-  selectRemoteSection(sections[next].id);
+  const offset = remotePager.offset, velocity = performance.now() - gesture.lastTime < 100 ? gesture.velocity : 0;
+  const commit = Math.abs(offset) >= Math.min(96, gesture.width * .22) || Math.abs(offset) > 28 && Math.abs(velocity) > .5 && Math.sign(velocity) === Math.sign(offset);
+  const next = commit ? Math.max(0, Math.min(sections.length - 1, index + (offset < 0 ? 1 : -1))) : index;
+  settleRemoteSection(sections[next].id);
 });
-document.addEventListener('pointercancel', () => { sectionSwipe = null; });
-window.addEventListener('blur', () => { sectionSwipe = null; });
-$('cue-grid').addEventListener('click', event => {
-  if (suppressCueClick && event.detail !== 0) { suppressCueClick = false; event.preventDefault(); event.stopImmediatePropagation(); }
+document.addEventListener('pointerdown', event => {
+  if (sectionSwipe && event.pointerId !== sectionSwipe.id) { suppressCueClick = true; cancelRemoteSectionMotion(); }
+}, true);
+document.addEventListener('pointercancel', event => {
+  if (sectionSwipe?.id === event.pointerId) { suppressCueClick = true; cancelRemoteSectionMotion(true); }
+});
+$('command-view').addEventListener('lostpointercapture', event => {
+  if (event.target === $('command-view') && sectionSwipe?.id === event.pointerId) cancelRemoteSectionMotion(true);
+});
+window.addEventListener('blur', () => cancelRemoteSectionMotion());
+window.addEventListener('resize', () => cancelRemoteSectionMotion());
+document.addEventListener('visibilitychange', () => { if (document.hidden) cancelRemoteSectionMotion(); });
+sectionReducedMotion.addEventListener('change', () => cancelRemoteSectionMotion());
+$('command-view').addEventListener('click', event => {
+  const page = event.target.closest('.remote-section-page');
+  if (page && page.dataset.sectionId !== remoteSectionId || sectionSwipe?.dragged || remotePager?.animating || suppressCueClick && event.detail !== 0) {
+    event.preventDefault(); event.stopImmediatePropagation();
+  }
 }, true);
 function validCueColor(value) { return /^#[0-9a-f]{6}$/i.test(value || '') ? value : ''; }
 function cueTextColor(color) {
@@ -1289,6 +1442,8 @@ function renderEditAvailability() {
   $('choose-files').hidden = adminCapabilities.chooseFiles !== true;
   $('choose-files').disabled = !online || role !== 'admin' || chooseFilesBusy || quitBusy || appClosed || updatePending() || playlistBusy || playlistFileBusy;
   const fileUnavailable = !online || role !== 'admin' || !playlist || playlistBusy || playlistFileBusy || chooseFilesBusy || quitBusy || appClosed || reloadingAdmin || updatePending();
+  $('sort-playlist').disabled = playlistSortOpening || !playlistSortAvailable();
+  playlistSorter?.setAvailable(playlistSortAvailable());
   $('save-playlist-file').disabled = fileUnavailable || stageSettingsDirty;
   $('load-playlist-file').disabled = fileUnavailable || !['stopped', 'error'].includes(state.state) || state.stageEnabled;
   $('playlist-load-continue').disabled = $('load-playlist-file').disabled;
@@ -1637,6 +1792,60 @@ async function savePlaylist(cues, sections, { preserveRows = false } = {}) {
   } catch (error) { notify(() => t("{0} Your edit was not saved. Reload to use the host version.", {0: errorText(error)}), true); return false; }
   finally { playlistBusy = false; renderEditAvailability(); }
 }
+function playlistSortAvailable() {
+  return Boolean(adminPage && role === 'admin' && online && playlist && !playlistBusy && !playlistFileBusy &&
+    !playlistRefresh && !chooseFilesBusy && !quitBusy && !appClosed && !reloadingAdmin && !updatePending() &&
+    !trackVolumeSending && !trackVolumeGestures.size && !pendingTrackVolumes.size &&
+    !sectionCollapseSending && !pendingSectionCollapses.size);
+}
+async function savePlaylistOrder(plan) {
+  if (!playlistSortAvailable()) throw new Error('Playlist editing is unavailable right now.');
+  if (plan.expectedRevision !== playlist.playlistRevision || state.playlistRevision > plan.expectedRevision) {
+    throw new Error('The playlist changed. Close Sort Playlist and open it again to use the current version.');
+  }
+  const currentCues = new Map(cueEdits().map(cue => [cue.id, cue]));
+  const currentSections = new Map(sectionEdits().map(section => [section.id, section]));
+  if (!Array.isArray(plan.cues) || !Array.isArray(plan.sections) ||
+      plan.cues.length !== currentCues.size || plan.sections.length !== currentSections.size ||
+      new Set(plan.cues.map(cue => cue.id)).size !== currentCues.size ||
+      new Set(plan.sections.map(section => section.id)).size !== currentSections.size ||
+      plan.cues.some(cue => !currentCues.has(cue.id) || !currentSections.has(cue.sectionId)) ||
+      plan.sections.some(section => !currentSections.has(section.id))) {
+    throw new Error('Changes were not saved. Reload the playlist and try again.');
+  }
+  // The dialog supplies order and membership only. Keep all current cue and
+  // section metadata, including media paths, levels, flags and collapse state.
+  const cues = plan.cues.map(({id, sectionId}) => ({...currentCues.get(id), sectionId}));
+  const sections = plan.sections.map(({id}) => ({...currentSections.get(id)}));
+  if (!await savePlaylist(cues, sections)) throw new Error('Changes were not saved. Reload the playlist and try again.');
+  return true;
+}
+async function loadPlaylistSorter() {
+  if (!playlistSorterPromise) playlistSorterPromise = (async () => {
+    // Admin loads its own tools locally. Keep remote asset requests compatible
+    // with the strict allowlist of gateways already deployed by users.
+    const {createPlaylistSorter} = await import('./playlist-sorter.js');
+    const instance = createPlaylistSorter({t, onSave: savePlaylistOrder, formatError: errorText});
+    try { await instance.ready; }
+    catch (error) { instance.destroy(); throw error; }
+    playlistSorter = instance;
+    return instance;
+  })().catch(error => { playlistSorterPromise = null; throw error; });
+  return playlistSorterPromise;
+}
+$('sort-playlist').addEventListener('click', async () => {
+  if (!playlistSortAvailable() || playlistSortOpening) return;
+  playlistSortOpening = true; renderEditAvailability();
+  try {
+    const sorter = await loadPlaylistSorter();
+    if (!playlistSortAvailable()) return;
+    sorter.setAvailable(true);
+    await sorter.open({playlistRevision: playlist.playlistRevision, sections: sectionEdits(), cues: playlist.cues}, $('sort-playlist'));
+  } catch {
+    notify(() => t('Could not open playlist sorting. Try again.'), true);
+  } finally { playlistSortOpening = false; renderEditAvailability(); }
+});
+window.addEventListener('smartstage-languagechange', () => playlistSorter?.refreshLanguage());
 function fileDropMessage(message, error = false) {
   localizedText($('file-drop-message'), () => message);
   $('file-drop-message').classList.toggle('error', error);
@@ -1978,7 +2187,7 @@ async function setStageOutput(enabled) {
 for (const [id, enabled] of [['enable-stage', true], ['disable-stage', false]]) $(id).addEventListener('click', () => { void setStageOutput(enabled); });
 $('remote-stage').addEventListener('click', () => { void setStageOutput(!state?.stageEnabled); });
 document.addEventListener('keydown', event => {
-  if (event.key !== 'Escape' || event.repeat || !csrf || !online || $('pairing').open || $('playlist-load-confirm').open) return;
+  if (event.key !== 'Escape' || event.repeat || !csrf || !online || $('pairing').open || $('playlist-load-confirm').open || playlistSorter?.isOpen()) return;
   event.preventDefault(); cancelSeekGesture(); renderSeek(); cancelMasterVolume(true);
   ++masterVolumeStopPending; renderMasterVolume();
   const sequence = ++controlSequence;

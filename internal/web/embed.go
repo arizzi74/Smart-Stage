@@ -29,6 +29,12 @@ func Handler() http.Handler {
 		case "/assets/wake-lock.js":
 			name = "wake-lock.js"
 			contentType = "text/javascript; charset=utf-8"
+		case "/assets/playlist-sorter.js":
+			name = "playlist-sorter.js"
+			contentType = "text/javascript; charset=utf-8"
+		case "/assets/playlist-sorter.css":
+			name = "playlist-sorter.css"
+			contentType = "text/css; charset=utf-8"
 		case "/assets/style.css":
 			name = "style.css"
 			contentType = "text/css; charset=utf-8"
