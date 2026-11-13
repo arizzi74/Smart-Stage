@@ -42,7 +42,8 @@ module.exports = async function playlistSorterUI({ admin, page, state, config, b
     Object.assign(active, { selected: true, state: 'playing', paused: false, generation: 601, transportRevision: 12, elapsed: 1, seekPending: false });
     Object.assign(state, { activeCueId: active.id, state: 'playing', generation: 601, transportRevision: 12, elapsed: 1, duration: 3, paused: false });
     config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
-    await admin.reload(); await admin.waitForFunction(() => playlist?.sections?.length === 3 && !playlistBusy && !document.getElementById('sort-playlist').disabled);
+    await admin.reload(); await admin.waitForFunction(() => online && playlist?.sections?.length === 3 && !playlistBusy);
+    assert.equal(await launcher.isEnabled(), true, 'the first loaded playlist enables Sort immediately, without waiting for a derived refresh or periodic tick');
     await changeLanguage('en');
     const initial = hostOrder(), playback = identity(), commandCount = commands.length, writeCount = writes().length;
     const metadata = new Map(config.cues.map(({sectionId, ...cue}) => [cue.id, structuredClone(cue)]));
@@ -134,7 +135,8 @@ module.exports = async function playlistSorterUI({ admin, page, state, config, b
     }), 'section title and collapsed metadata survive sorting');
     for (const {sectionId, ...cue} of config.cues) assert.deepEqual(cue, metadata.get(cue.id), `sorting preserves every metadata field for ${cue.id}`);
     assert.deepEqual(identity(), playback, 'sorting preserves the active source and timeline');
-    await admin.reload(); await admin.waitForFunction(() => playlist?.sections?.[0]?.id === 'sort-second' && !document.getElementById('sort-playlist').disabled);
+    await admin.reload(); await admin.waitForFunction(() => online && playlist?.sections?.[0]?.id === 'sort-second' && !playlistBusy);
+    assert.equal(await launcher.isEnabled(), true, 'Sort is immediately available after reloading the saved order');
     assert.equal(await admin.locator('details.playlist-section[data-section-id="sort-second"]').evaluate(node => node.open), false, 'a collapsed section remains collapsed after saving and reloading');
 
     // A server-side race happens after the client has built its save request.
@@ -169,7 +171,7 @@ module.exports = async function playlistSorterUI({ admin, page, state, config, b
     assert.equal(commands.length, commandCount, 'opening, dragging, save, conflict, Cancel, Escape and localization send no playback, stage or validation commands');
     assert.deepEqual(identity(), playback);
     console.log('Playlist sorter diagnostics:', JSON.stringify({mouseDrags, ghostSamples, atomicSaves: 1, rejectedRevisionSaves: 1, adminOnlyAssets: true}));
-    return { playlistSorterLazyAdminOnlyModuleAndStyles: true, playlistSorterRealMouseWithinAcrossEmptyAndWholeSections: true,
+    return { playlistSorterImmediateAvailabilityAfterReload: true, playlistSorterLazyAdminOnlyModuleAndStyles: true, playlistSorterRealMouseWithinAcrossEmptyAndWholeSections: true,
       playlistSorterHeldGhostFollowsMouse: true, playlistSorterCancelEscapeAndKeyboardFocus: true,
       playlistSorterAtomicSavePreservesMetadataAndPlayback: true, playlistSorterPendingSaveGuard: true,
       playlistSorterStaleRevisionRetainsDraftAndHostEdit: true, playlistSorterEnglishItalianUserNamesUntranslated: true,

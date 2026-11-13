@@ -61,12 +61,15 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
     // A collapse save preserves the actual summary node and keyboard focus.
     const summary = section(second).locator('summary');
     await summary.focus(); const summaryNode = await summary.elementHandle(); await summary.press('Enter'); await admin.waitForFunction(id => playlist.sections.find(section => section.id === id)?.collapsed === true && !playlistBusy && !sectionCollapseSending && !pendingSectionCollapses.size, second);
+    assert.equal(await admin.locator('#sort-playlist').isEnabled(), true, 'Sort is immediately available when the collapse acknowledgement clears its pending flags');
     assert.equal(config.sections.find(item => item.id === second).collapsed, true);
     assert(await summaryNode.evaluate(node => node.isConnected && document.activeElement === node), 'collapse acknowledgement retains summary keyboard focus');
     await admin.reload(); await section(second).waitFor();
+    assert.equal(await admin.locator('#sort-playlist').isEnabled(), true, 'Sort is available on the first rendered playlist after a full reload');
     assert.equal(await section(second).evaluate(node => node.open), false, 'saved collapse state survives reload');
     await section(second).locator('summary').click();
     await admin.waitForFunction(id => playlist.sections.find(section => section.id === id)?.collapsed === false && !playlistBusy && !sectionCollapseSending && !pendingSectionCollapses.size, second);
+    assert.equal(await admin.locator('#sort-playlist').isEnabled(), true, 'opening a collapsed section restores Sort immediately after saving');
     const beforeQueue = writes().length;
     gate = responseGate(); setPlaylistWriteGate(gate);
     await section(second).locator('summary').click(); await gate.received;
@@ -77,6 +80,7 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
     const draftNode = await draft.elementHandle(), savedLabel = moved.label;
     await draft.fill('Unsaved label while section collapse saves');
     gate.release(); gate = null; await settled();
+    assert.equal(await admin.locator('#sort-playlist').isEnabled(), true, 'draining the latest queued collapse makes Sort available without a later periodic tick');
     assert.equal(config.sections.find(item => item.id === second).collapsed, false, 'the last toggle queues behind the pending acknowledgement');
     assert.equal(writes().length, beforeQueue + 2, 'two distinct collapse targets save once each');
     assert.equal(await draft.inputValue(), 'Unsaved label while section collapse saves');
@@ -304,6 +308,7 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
 
     return { sectionCreateRenameDeleteAndAtomicMoves: true, sectionMovesPreserveAudioFlagsVolumeAndSourceIdentity: true,
       sectionCollapsePersistedAndLatestQueuedToggle: true, sectionCollapsePreservesFocusAndCueDraft: true,
+      sectionCollapseImmediatelyRestoresSortAvailability: true,
       sectionRemoteTabsKeyboardAndRealTouch: true, sectionEmptyTabAndOffTabActiveSelection: true,
       sectionPartialSwipeAndVerticalScrollNeverPlay: true, sectionNavigationPreservesPlayback: true,
       sectionPagerFingerFollowingAndAdjacentVisibility: true, sectionPagerCancelEdgeAndAnimatedSnap: true,

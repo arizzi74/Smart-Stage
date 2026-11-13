@@ -1723,6 +1723,7 @@ async function saveSectionCollapse() {
     const section = playlistSections().find(item => item.id === id);
     if (section) row.details.open = !(pendingSectionCollapses.get(id) ?? section.collapsed);
   }
+  renderEditAvailability();
   if (pendingSectionCollapses.size) void saveSectionCollapse();
 }
 function renderPlaylistSections() {
@@ -1794,7 +1795,7 @@ async function savePlaylist(cues, sections, { preserveRows = false } = {}) {
 }
 function playlistSortAvailable() {
   return Boolean(adminPage && role === 'admin' && online && playlist && !playlistBusy && !playlistFileBusy &&
-    !playlistRefresh && !chooseFilesBusy && !quitBusy && !appClosed && !reloadingAdmin && !updatePending() &&
+    !chooseFilesBusy && !quitBusy && !appClosed && !reloadingAdmin && !updatePending() &&
     !trackVolumeSending && !trackVolumeGestures.size && !pendingTrackVolumes.size &&
     !sectionCollapseSending && !pendingSectionCollapses.size);
 }
