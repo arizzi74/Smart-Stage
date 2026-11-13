@@ -1,11 +1,11 @@
 # Smart Stage implementation status
 
-The desktop application and Linux gateway are released as **Smart Stage 1.9.1**.
+The desktop application and Linux gateway are released as **Smart Stage 1.9.2**.
 The release channel is separate from test
 coverage: physical acceptance remains incomplete as documented below.
 
 Repository: https://github.com/arizzi74/Smart-Stage
-Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.9.1
+Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.9.2
 
 ## Implemented
 
