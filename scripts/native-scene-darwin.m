@@ -825,7 +825,12 @@ int main(void) {
                     if (sceneBackground.started && sceneBackground.layer.readyForDisplay && sceneBackground.player.volume > .05 && sceneBackground.player.volume < .95) {
                         if (!sceneFadeTimer || sceneVisualTimer || sceneVisualOutgoing || sceneVisualCurrent != sceneBackground ||
                             sceneBackground.layer.opacity != 1 || sceneRetiring != outgoingVideo || outgoingVideo.player.volume <= .05) {
-                            fprintf(stderr, "Background video soundtrack did not use the independent audio fade\n"); ss_quit(); return;
+                            fprintf(stderr, "Background video soundtrack did not use the independent audio fade: audioTimer=%d visualTimer=%d visualOutgoing=%d selectedBackground=%d opacity=%.4f retainedOutgoing=%d incomingGain=%.4f outgoingGain=%.4f outgoingDisposed=%d phaseSeconds=%.4f\n",
+                                (int)(sceneFadeTimer != nil), (int)(sceneVisualTimer != nil), (int)(sceneVisualOutgoing != nil),
+                                (int)(sceneVisualCurrent == sceneBackground), sceneBackground.layer.opacity,
+                                (int)(sceneRetiring == outgoingVideo), sceneBackground.player.volume, outgoingVideo.player.volume,
+                                (int)outgoingVideo.disposed, now - phaseBegan);
+                            ss_quit(); return;
                         }
                         overlap = YES;
                     }

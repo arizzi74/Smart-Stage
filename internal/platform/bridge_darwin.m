@@ -1287,9 +1287,13 @@ static void mixScene(void) {
     if (!currentScene() || sceneApplying) return;
     NSArray<SSScenePlayer *> *players = scenePlayers();
     BOOL waitingForSound = NO, readySound = NO;
-    for (SSScenePlayer *player in players) if (scenePlayerWantsAudio(player) && player.hasAudio && !player.ended) {
-        if (!player.started && !player.paused) waitingForSound = YES;
-        if (player.started && !player.paused) readySound = YES;
+    for (SSScenePlayer *player in players) if (scenePlayerWantsAudio(player) && !player.ended) {
+        // Background track metadata arrives asynchronously. Final eligibility
+        // already tells us that its soundtrack is expected, so keep outgoing
+        // sound until that player is ready instead of fading it during loading.
+        BOOL expectedAudio = player.hasAudio || (player.background && sceneBackgroundAudio);
+        if (expectedAudio && !player.started && !player.paused) waitingForSound = YES;
+        if (player.hasAudio && player.started && !player.paused) readySound = YES;
     }
     waitingForSound = waitingForSound && !readySound;
     BOOL audible = NO;

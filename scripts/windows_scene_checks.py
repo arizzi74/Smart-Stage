@@ -55,4 +55,41 @@ def scene_checks(audio, display):
         assert evidence.get("independentVisualFadeSettingsVerified") is True, "Independent visual fade evidence missing"
         for check in ("independentAudioFadeSettingsVerified", "differentFadeDurationsVerified", "stageOffDualAudioTailVerified"):
             assert evidence.get(check) is bool(audio), f"Independent audio fade evidence does not match endpoint availability: {check}"
+        layer_probe = temporary / "audio-layers.exe"
+        layer_command = [str(root / "scripts/native-layers-windows.cpp") if item == str(root / "scripts/native-scene-windows.cpp")
+                         else str(layer_probe) if item == str(probe) else item for item in command]
+        layer_build = subprocess.run(layer_command, capture_output=True, text=True, timeout=90)
+        assert layer_build.returncode == 0, f"Native audio layer probe compilation failed: {layer_build.stderr}"
+        layer_result = subprocess.run([str(layer_probe), audio["id"] if audio else "-", display["id"],
+                                       str(temporary / "first.wav"), str(temporary / "second.wav"),
+                                       str(root / "testdata/media/video-aac-1080p.mp4")], capture_output=True, text=True, timeout=100)
+        assert layer_result.returncode == 0, f"Native audio layer probe failed ({layer_result.returncode}): {layer_result.stdout}\n{layer_result.stderr}"
+        layer_evidence = json.loads(layer_result.stdout)
+        if audio:
+            assert layer_evidence.get("status") == "passed", layer_evidence
+            observations = {key for observation in layer_evidence["observations"] for key, value in observation.items() if value is True}
+            required = {
+                "mixAudioRetainsVideoPlayerFrameTimelineAndSoundtrack",
+                "replacementPreparationPreservesOutgoingAudioUntilReady",
+                "keepVideoRetainsExactPlayerFrameAndPlayheadWhileReplacingSound",
+                "audioLayerReplacementCrossfadesAndReleasesRetiredDecoder",
+                "mixAdditionPreservesExistingAudioFadeEnvelopes",
+                "audioLayerPauseFreezesOnlyItsOwnDecoderAndClock",
+                "pausedReplacementCannotRestoreVideoOrBackgroundSound",
+                "audioLayerResumeRetainsPlayerAndUsesItsOwnTransportRevision",
+                "masterAndTrackVolumeScaleEveryAudioLayerWithoutRestart",
+                "stageChangesPreserveAllAudioLayersAndKeptVideo",
+                "audioLayerEndReportsOwnIdentityWithoutStoppingOtherSources",
+                "lateSceneCannotResurrectEndedAudioLayer",
+                "stopFadesAndReleasesAllAudioLayers",
+                "mixAudioRetainsOriginalAudioAndIndependentPauseControls",
+                "audioLayerErrorReportsOwnIdentityAndPreservesOtherSources",
+                "foregroundErrorPreservesIndependentMixedLayers",
+                "mixAudioPreservesEligibleBackgroundSoundtrack",
+                "hardStopDuringLayerSeekDisposesAllSourcesAndRejectsLateEvents",
+            }
+            assert required <= observations, f"Native audio layer checks were skipped: {sorted(required - observations)}"
+        else:
+            assert layer_evidence.get("status") == "skipped" and layer_evidence.get("reason"), "Unavailable native audio must be reported explicitly"
+        evidence["audioLayers"] = layer_evidence
         return evidence

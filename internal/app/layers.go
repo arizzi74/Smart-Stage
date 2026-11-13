@@ -223,11 +223,12 @@ func (s *Service) sourceEventLocked(e playback.Event) {
 			s.failLocked(e.Message)
 			return
 		}
-		if source == &s.foreground {
+		if source == &s.foreground && len(s.audioLayers) == 0 && len(s.mixPending) == 0 {
 			s.failLocked(e.Message)
 			return
 		}
-		// A decoder failure belongs to this layer, not to independent sources.
+		// Keep the legacy single-foreground failure policy, while an independent
+		// active/pending mixed source survives failure of another source's decoder.
 		s.removeSourceLocked(e.Generation)
 		s.state.LastError = e.Message
 		s.syncSelectedLocked()

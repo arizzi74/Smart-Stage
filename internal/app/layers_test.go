@@ -738,3 +738,55 @@ func TestMixRetainsPrimaryMusicAndItsPauseDoesNotPauseAddedAudio(t *testing.T) {
 		t.Fatal("added audio ending discarded paused primary music")
 	}
 }
+
+func TestForegroundDecoderFailurePreservesActiveOrPendingMixedSources(t *testing.T) {
+	for _, pending := range []bool{false, true} {
+		t.Run(fmt.Sprint(pending), func(t *testing.T) {
+			s, f, _, paths := sceneSetup(t, model.StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1})
+			foreground := scenePlaying(t, s, f, "video")
+			transportEvent(s, foreground, "progress", 4)
+			setAudioFlags(s, "music", false, true)
+			var layer playback.AudioLayer
+			var gate *sceneInspectGate
+			var release sync.Once
+			if pending {
+				gate = &sceneInspectGate{path: paths["music"], entered: make(chan struct{}), release: make(chan struct{}), completed: make(chan struct{})}
+				f.sceneMu.Lock()
+				f.gate = gate
+				f.sceneMu.Unlock()
+				t.Cleanup(func() { release.Do(func() { close(gate.release) }) })
+				if _, err := play(s, "music", "mix-awaiting-foreground-failure"); err != nil {
+					t.Fatal(err)
+				}
+				<-gate.entered
+			} else {
+				layer = startLayer(t, s, f, "music")
+				s.nativeEvent(playback.Event{Kind: "progress", Generation: layer.ID, TransportRevision: layer.TransportRevision, SceneRevision: f.latest().Revision, Position: 8, Duration: 30, StageEnabled: f.latest().StageEnabled})
+			}
+			before := f.latest()
+			mixed := cueView(t, s, "music")
+			s.nativeEvent(playback.Event{Kind: "error", Generation: foreground.ForegroundID, TransportRevision: foreground.TransportRevision, SceneRevision: before.Revision, Message: "foreground decoder failed", StageEnabled: before.StageEnabled})
+			after := f.latest()
+			remaining := cueView(t, s, "music")
+			if after.ForegroundID != 0 || after.HardStop || after.StageEnabled != before.StageEnabled || !remaining.Selected || remaining.Generation != mixed.Generation || remaining.TransportRevision != mixed.TransportRevision || remaining.Elapsed != mixed.Elapsed || s.Snapshot(true).LastError != "foreground decoder failed" {
+				t.Fatalf("foreground error interrupted independent mix: scene=%+v cue=%+v", after, remaining)
+			}
+			if !pending && !reflect.DeepEqual(after.AudioLayers, before.AudioLayers) {
+				t.Fatal("foreground error restarted active mixed voice")
+			}
+			s.nativeEvent(playback.Event{Kind: "progress", Generation: foreground.ForegroundID, TransportRevision: foreground.TransportRevision, SceneRevision: after.Revision, Position: 7})
+			s.nativeEvent(playback.Event{Kind: "playing", Generation: foreground.ForegroundID, TransportRevision: foreground.TransportRevision, SceneRevision: after.Revision})
+			if !reflect.DeepEqual(after, f.latest()) || cueView(t, s, "video").Selected || cueView(t, s, "music").Elapsed != mixed.Elapsed {
+				t.Fatal("late foreground callback affected surviving mix")
+			}
+			if pending {
+				release.Do(func() { close(gate.release) })
+				<-gate.completed
+				eventually(t, func() bool { return len(f.latest().AudioLayers) == 1 })
+				if f.latest().AudioLayers[0].ID != mixed.Generation {
+					t.Fatal("foreground error replaced pending mixed identity")
+				}
+			}
+		})
+	}
+}

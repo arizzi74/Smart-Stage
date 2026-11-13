@@ -816,6 +816,9 @@ function dedicatedWindowsAdmin(platform, release) {
     record.checks.push('Admin saved/reloaded fade and background soundtrack settings without a pause preference; hidden background video stayed editable; image background button changed only the session background and kept music when an audio endpoint was available');
     record.checks.push('Stage drafts survived background/hidden flag saves in the same Admin document; selected background buttons toggled to default or black and deselected even when equal to the default; independent music generation was preserved when audio was available');
 
+    saved = await require('./browser-native-audio-layers.cjs')({admin, command, adminBase, snapshot, until, sleep,
+      apiPath, record, audio, display, mediaRoot, musicCue, videoCue: backgroundCue}) || saved;
+
     await command.evaluate(() => scrollTo(0, document.body.scrollHeight));
     const bounds = await command.locator('#stop').boundingBox();
     assert(bounds && bounds.y >= 0 && bounds.y + bounds.height <= 844);
