@@ -86,4 +86,34 @@ def scene_checks(devices):
             "backgroundSoundtrackCutsImmediatelyWhileVisualFadeContinues",
         }
         assert required <= observations, f"Native transport checks were skipped: {sorted(required - observations)}"
+        layer_binary = work / "audio-layers-probe"
+        layer_command = [str(root / "scripts/native-layers-darwin.m") if item == str(root / "scripts/native-scene-darwin.m")
+                         else str(layer_binary) if item == str(binary) else item for item in command]
+        layer_build = subprocess.run(layer_command, capture_output=True, text=True, timeout=120)
+        assert layer_build.returncode == 0, f"Native audio layer probe compilation failed: {layer_build.stderr}"
+        layer_result = subprocess.run([str(layer_binary)], env=environment, capture_output=True, text=True, timeout=100)
+        assert layer_result.returncode == 0, f"Native audio layer probe failed: {layer_result.stdout}\n{layer_result.stderr}"
+        layer_reports = [json.loads(line) for line in layer_result.stdout.splitlines() if line.startswith("{")]
+        assert len(layer_reports) == 1 and layer_reports[0]["status"] == "passed", layer_result.stdout
+        layer_observations = {key for observation in layer_reports[0]["observations"] for key, value in observation.items() if value is True}
+        layer_required = {
+            "mixAudioRetainsVideoPlayerFrameTimelineAndSoundtrack",
+            "keepVideoRetainsExactPlayerFrameAndPlayheadWhileReplacingSound",
+            "audioLayerPauseFreezesOnlyItsOwnDecoderAndClock",
+            "audioLayerResumeRetainsPlayerAndUsesItsOwnTransportRevision",
+            "masterAndTrackVolumeScaleEveryAudioLayerWithoutRestart",
+            "audioLayerEndReportsOwnIdentityWithoutStoppingOtherSources",
+            "lateSceneCannotResurrectEndedAudioLayer",
+            "stopFadesAndReleasesAllAudioLayers",
+            "mixAudioRetainsOriginalAudioAndIndependentPauseControls",
+            "audioLayerErrorReportsOwnIdentityAndPreservesOtherSources",
+            "mixAudioPreservesEligibleBackgroundSoundtrack",
+            "hardStopDuringLayerSeekDisposesAllSourcesAndRejectsLateEvents",
+            "audioLayerReplacementCrossfadesAndReleasesRetiredDecoder",
+            "pausedReplacementCannotRestoreVideoOrBackgroundSound",
+            "mixAdditionPreservesExistingAudioFadeEnvelopes",
+            "stageChangesPreserveAllAudioLayersAndKeptVideo",
+        }
+        assert layer_required <= layer_observations, f"Native audio layer checks were skipped: {sorted(layer_required - layer_observations)}"
+        reports[0]["audioLayers"] = layer_reports[0]
         return reports[0]

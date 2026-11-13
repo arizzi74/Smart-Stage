@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.26.10'
+          go-version: '1.26.11'
           cache: false
       - name: Install pinned vulnerability scanner
         run: go install golang.org/x/vuln/cmd/govulncheck@v1.8.0
@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.26.10'
+          go-version: '1.26.11'
           cache: false
       - name: Install proxy configuration validators
         run: sudo apt-get update && sudo apt-get install -y nginx caddy
@@ -104,7 +104,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.26.10'
+          go-version: '1.26.11'
           cache: false
       - name: Install pinned native Windows build toolchain
         if: matrix.os == 'windows'
@@ -237,7 +237,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
         with:
-          go-version: '1.26.10'
+          go-version: '1.26.11'
           cache: false
       - name: Install pinned vulnerability scanner
         run: go install golang.org/x/vuln/cmd/govulncheck@v1.8.0

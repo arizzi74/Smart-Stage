@@ -34,6 +34,8 @@ type PlaylistFileCue struct {
 	Color      string   `json:"color,omitempty"`
 	Hidden     bool     `json:"hidden,omitempty"`
 	Background bool     `json:"background,omitempty"`
+	KeepVideo  bool     `json:"keepVideo,omitempty"`
+	MixAudio   bool     `json:"mixAudio,omitempty"`
 	Volume     *float64 `json:"volume,omitempty"`
 }
 
@@ -118,7 +120,7 @@ func (s *Service) ExportPlaylist() (PlaylistFile, error) {
 	file := PlaylistFile{Format: playlistFileFormat, Version: playlistFileVersion, Stage: s.config.Stage, Cues: make([]PlaylistFileCue, 0, len(s.config.Cues))}
 	for _, cue := range s.config.Cues {
 		volume := cue.PlaybackVolume()
-		file.Cues = append(file.Cues, PlaylistFileCue{ID: cue.ID, Label: cue.Label, Path: cue.Path, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background, Volume: &volume})
+		file.Cues = append(file.Cues, PlaylistFileCue{ID: cue.ID, Label: cue.Label, Path: cue.Path, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background, KeepVideo: cue.KeepVideo, MixAudio: cue.MixAudio, Volume: &volume})
 	}
 	return file, nil
 }
@@ -130,7 +132,7 @@ func (s *Service) canLoadPlaylistLocked(expectedRevision uint64) error {
 	if expectedRevision != s.config.PlaylistRevision || expectedRevision == ^uint64(0) {
 		return problem("revision_conflict", "The playlist changed; reload it before loading a playlist file")
 	}
-	if s.state.State != "stopped" && s.state.State != "error" || s.foreground.id != 0 || s.state.StageEnabled || s.stageDesired || s.stageEnablePending || s.pendingImageID != "" {
+	if s.state.State != "stopped" && s.state.State != "error" || s.foreground.id != 0 || len(s.audioLayers) != 0 || s.newestPendingLocked() != nil || s.state.StageEnabled || s.stageDesired || s.stageEnablePending || s.pendingImageID != "" {
 		return problem("must_stop", "Stop playback and turn Stage off before loading a playlist")
 	}
 	return nil
@@ -168,7 +170,7 @@ func (s *Service) LoadPlaylist(load PlaylistLoad) (model.Config, error) {
 			value := *volume
 			volume = &value
 		}
-		next.Cues = append(next.Cues, model.Cue{ID: id, Label: cue.Label, Path: resolved, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background, Volume: volume, Cache: model.Validation{Status: "unchecked"}})
+		next.Cues = append(next.Cues, model.Cue{ID: id, Label: cue.Label, Path: resolved, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background, KeepVideo: cue.KeepVideo, MixAudio: cue.MixAudio, Volume: volume, Cache: model.Validation{Status: "unchecked"}})
 	}
 	next.Stage = load.Playlist.Stage
 	next.Stage.BackgroundCueID = ids[load.Playlist.Stage.BackgroundCueID]
@@ -196,6 +198,8 @@ func (s *Service) LoadPlaylist(load PlaylistLoad) (model.Config, error) {
 	s.clearActiveLocked()
 	s.clearImageLocked()
 	s.foreground = presentationSource{}
+	s.audioLayers = nil
+	s.backgroundMuted = false
 	s.background = presentationSource{}
 	s.state.BackgroundOverrideCueID = ""
 	s.state.State = "stopped"

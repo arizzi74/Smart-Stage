@@ -1097,13 +1097,14 @@ static void beginPlayback(uint64_t gen, NSString *path, NSString *audio, NSStrin
 }
 
 // The scene path owns its decoders separately from the legacy diagnostic API.
-// One foreground/background and one audio tail are kept. Visual transitions
-// retain at most the displayed source and one outgoing source until completion.
+// Foreground/background and identity-keyed audio layers own their decoders.
+// Retiring audio is bounded; visual transitions retain the displayed source
+// and one outgoing source until completion.
 // Scene revisions order commands; foreground identity survives stage changes.
 static _Atomic(uint64_t) requestedSceneRevision;
 static _Atomic(bool) sceneEmergencyPending;
 static uint64_t appliedSceneRevision, sceneGeneration, sceneEndedForegroundID, sceneTransportRevision;
-static BOOL sceneBackgroundAudio, sceneStoppedPending, sceneApplying;
+static BOOL sceneBackgroundAudio, sceneForegroundMuted, sceneStoppedPending, sceneApplying;
 static double sceneAudioFadeSeconds, sceneVisualFadeSeconds, sceneFadeStarted, sceneFadeDuration;
 static float sceneMasterVolume = 1;
 static dispatch_source_t sceneFadeTimer;
@@ -1117,7 +1118,7 @@ static NSOperationQueue *sceneImageQueue;
 @property(nonatomic) BOOL video, background, hasAudio, observing, started, reported, ended, disposed;
 @property(nonatomic) BOOL paused, seeking, silenced, primed;
 @property(nonatomic) uint64_t transportRevision, seekRevision, completedSeekRevision, seekSerial;
-@property(nonatomic) double seekSeconds;
+@property(nonatomic) double seekSeconds, audioFadeStarted, audioFadeDuration;
 @property(nonatomic) float fadeFrom, fadeTo;
 @property(nonatomic) float fadeGain, trackVolume;
 @property(nonatomic, strong) AVURLAsset *asset;
@@ -1141,6 +1142,13 @@ static NSOperationQueue *sceneImageQueue;
 - (void)teardown;
 @end
 static SSScenePlayer *sceneForeground, *sceneBackground, *sceneRetiring;
+static NSMutableArray<SSScenePlayer *> *sceneAudioLayers, *sceneRetiringAudioLayers;
+// Keep completion identities until the coordinator no longer requests them.
+// A queued stage/volume scene cannot resurrect a completed voice.
+static NSMutableDictionary<NSNumber *, NSDictionary *> *sceneCompletedAudioLayers;
+static BOOL activeScenePlayer(SSScenePlayer *player) {
+    return player && (player == sceneForeground || [sceneAudioLayers containsObject:player]);
+}
 static SSSceneImage *sceneImage, *sceneBackgroundImage;
 // Keeping the owner (not just its layer) preserves moving AVPlayer video during
 // a dissolve. These two slots are independent of the bounded audio tail.
@@ -1154,18 +1162,24 @@ static BOOL audibleScenePlayer(SSScenePlayer *player);
 static BOOL currentScene(void) {
     return sceneMode && !atomic_load(&shuttingDown) && !atomic_load(&sceneEmergencyPending) && appliedSceneRevision == atomic_load(&requestedSceneRevision);
 }
-static void emitScene(uint64_t generation, NSString *kind, NSString *message, double position, double duration) {
+static void emitSceneTransport(uint64_t generation, uint64_t transport, NSString *kind, NSString *message, double position, double duration) {
     if (!currentScene()) return;
     NSDictionary *value = @{ @"generation": @(generation), @"sceneRevision": @(appliedSceneRevision),
-        @"transportRevision": @(sceneTransportRevision),
+        @"transportRevision": @(transport),
         @"kind": kind, @"message": message ?: @"", @"position": @(position), @"duration": @(duration),
         @"stageEnabled": jbool(stageEnabled) };
     NSData *data = [NSJSONSerialization dataWithJSONObject:value options:0 error:NULL];
     if (!data) return;
     pthread_mutex_lock(&eventMutex);
-    if (events.count >= 256) [events removeObjectAtIndex:0];
+    if (events.count >= 4096) [events removeObjectAtIndex:0];
     [events addObject:data];
     pthread_mutex_unlock(&eventMutex);
+}
+static void emitScene(uint64_t generation, NSString *kind, NSString *message, double position, double duration) {
+    emitSceneTransport(generation, sceneTransportRevision, kind, message, position, duration);
+}
+static void emitScenePlayer(SSScenePlayer *player, NSString *kind, NSString *message, double position, double duration) {
+    emitSceneTransport(player.identifier, player.transportRevision, kind, message, position, duration);
 }
 static void hideSceneStage(void) {
     clearSceneVisuals(); blackout();
@@ -1181,6 +1195,8 @@ static NSArray<SSScenePlayer *> *scenePlayers(void) {
     if (sceneForeground) [players addObject:sceneForeground];
     if (sceneBackground) [players addObject:sceneBackground];
     if (sceneRetiring) [players addObject:sceneRetiring];
+    if (sceneAudioLayers.count) [players addObjectsFromArray:sceneAudioLayers];
+    if (sceneRetiringAudioLayers.count) [players addObjectsFromArray:sceneRetiringAudioLayers];
     for (id owner in @[sceneVisualCurrent ?: NSNull.null, sceneVisualOutgoing ?: NSNull.null])
         if ([owner isKindOfClass:SSScenePlayer.class] && ![players containsObject:owner]) [players addObject:owner];
     return players;
@@ -1198,7 +1214,8 @@ static void releaseSceneOwner(id owner) {
     // A video's audio and visual fades can finish in either order. Its decoder
     // survives until both the retiring-audio and outgoing-visual slots release it.
     if (!owner || owner == sceneForeground || owner == sceneBackground || owner == sceneRetiring ||
-        owner == sceneImage || owner == sceneBackgroundImage || owner == sceneVisualCurrent || owner == sceneVisualOutgoing) return;
+        owner == sceneImage || owner == sceneBackgroundImage || owner == sceneVisualCurrent || owner == sceneVisualOutgoing ||
+        [sceneAudioLayers containsObject:owner] || [sceneRetiringAudioLayers containsObject:owner]) return;
     [owner teardown];
 }
 static void clearSceneVisuals(void) {
@@ -1218,7 +1235,11 @@ static void completeSceneFade(void) {
     if (sceneRetiring && sceneRetiring.fadeGain <= 0.001f) {
         SSScenePlayer *old = sceneRetiring; sceneRetiring = nil; releaseSceneOwner(old);
     }
-    if (sceneStoppedPending && !sceneForeground && !audibleScenePlayer(sceneRetiring) && currentScene()) {
+    for (SSScenePlayer *old in [sceneRetiringAudioLayers copy]) if (old.fadeGain <= 0.001f) {
+        [sceneRetiringAudioLayers removeObject:old]; releaseSceneOwner(old);
+    }
+    if (sceneStoppedPending && !sceneForeground && !sceneAudioLayers.count &&
+        !audibleScenePlayer(sceneRetiring) && !sceneRetiringAudioLayers.count && currentScene()) {
         sceneStoppedPending = NO;
         emitScene(sceneGeneration, @"stopped", nil, 0, 0);
     }
@@ -1237,46 +1258,77 @@ static void retireScenePlayer(SSScenePlayer *player) {
         if (old != player) releaseSceneOwner(old);
     } else releaseSceneOwner(player);
 }
+static void retireSceneAudioLayer(SSScenePlayer *player) {
+    if (!player) return;
+    if (audibleScenePlayer(player) && sceneAudioFadeSeconds > 0) {
+        if (!sceneRetiringAudioLayers) sceneRetiringAudioLayers = [NSMutableArray array];
+        // At most one complete previous layer set may fade out. Repeated rapid
+        // commands cannot retain an unbounded number of AVPlayer decoders.
+        if (sceneRetiringAudioLayers.count >= 500) {
+            SSScenePlayer *old = sceneRetiringAudioLayers.firstObject;
+            [sceneRetiringAudioLayers removeObjectAtIndex:0]; releaseSceneOwner(old);
+        }
+        [sceneRetiringAudioLayers addObject:player];
+    } else releaseSceneOwner(player);
+}
+static BOOL scenePlayerWantsAudio(SSScenePlayer *player) {
+    if (player == sceneForeground) return !sceneForegroundMuted;
+    if ([sceneAudioLayers containsObject:player]) return YES;
+    return player == sceneBackground && stageEnabled && sceneBackgroundAudio;
+}
+static float targetSceneGain(SSScenePlayer *player, BOOL waitingForSound) {
+    if (scenePlayerWantsAudio(player) && player.hasAudio && player.started && !player.ended) return 1;
+    // Hold an already audible outgoing source while its replacement prepares.
+    // A suppressed background at zero gain is never made audible by this rule.
+    if (waitingForSound && audibleScenePlayer(player) && !player.silenced) return player.fadeTo;
+    return 0;
+}
 static void mixScene(void) {
-    if (!currentScene()) return;
-    SSScenePlayer *owner = nil;
-    BOOL foregroundWaiting = sceneForeground && sceneForeground.hasAudio && !sceneForeground.started && !sceneForeground.ended;
-    if (sceneForeground.hasAudio && sceneForeground.started && !sceneForeground.ended) owner = sceneForeground;
-    else if (foregroundWaiting && audibleScenePlayer(sceneRetiring)) owner = sceneRetiring;
-    else if (!(sceneForeground.hasAudio && sceneForeground.paused) && stageEnabled && sceneBackgroundAudio && sceneBackground.hasAudio && sceneBackground.started) owner = sceneBackground;
-    else if (!sceneForeground && stageEnabled && sceneBackgroundAudio && sceneBackground && !sceneBackground.started && audibleScenePlayer(sceneRetiring)) owner = sceneRetiring;
+    if (!currentScene() || sceneApplying) return;
     NSArray<SSScenePlayer *> *players = scenePlayers();
-    BOOL changed = NO, audible = NO;
+    BOOL waitingForSound = NO, readySound = NO;
+    for (SSScenePlayer *player in players) if (scenePlayerWantsAudio(player) && player.hasAudio && !player.ended) {
+        if (!player.started && !player.paused) waitingForSound = YES;
+        if (player.started && !player.paused) readySound = YES;
+    }
+    waitingForSound = waitingForSound && !readySound;
+    BOOL audible = NO;
     for (SSScenePlayer *player in players) {
-        // Pause retains the foreground's audio ownership and does not retarget
-        // a running fade. Background sound for a silent video stays independent.
-        player.player.muted = player.silenced || (player == sceneForeground && (player.paused || player.seeking)) ||
-            (player.background && sceneForeground.hasAudio && sceneForeground.paused);
-        float target = player == owner ? 1.0f : 0.0f;
-        if (fabsf(player.fadeTo - target) > 0.0001f) changed = YES;
+        // Each active source owns its transport independently. BackgroundAudio
+        // is the coordinator's final eligibility, including mix/pause policy.
+        player.player.muted = player.silenced || (activeScenePlayer(player) && (player.paused || player.seeking));
         if (audibleScenePlayer(player)) audible = YES;
     }
-    if (!changed && sceneFadeTimer) return;
-    if (!changed) { completeSceneFade(); return; }
-    cancelSceneFade();
-    sceneFadeStarted = NSProcessInfo.processInfo.systemUptime;
-    // Starting from silence is immediate. Only replace/fade audible output.
-    sceneFadeDuration = audible ? sceneAudioFadeSeconds : 0;
+    BOOL pending = NO;
+    double now = NSProcessInfo.processInfo.systemUptime;
     for (SSScenePlayer *player in players) {
-        player.fadeFrom = player.fadeGain;
-        player.fadeTo = player == owner ? 1.0f : 0.0f;
-        if (sceneFadeDuration <= 0) setSceneGain(player, player.fadeTo);
+        float target = targetSceneGain(player, waitingForSound);
+        if (fabsf(player.fadeTo - target) > 0.0001f) {
+            player.fadeFrom = player.fadeGain; player.fadeTo = target;
+            player.audioFadeStarted = now;
+            player.audioFadeDuration = audible ? sceneAudioFadeSeconds : 0;
+            if (player.audioFadeDuration <= 0) setSceneGain(player, target);
+        }
+        if (fabsf(player.fadeGain - player.fadeTo) > 0.0001f) pending = YES;
     }
-    if (sceneFadeDuration <= 0) { completeSceneFade(); return; }
+    if (!pending) { completeSceneFade(); return; }
+    // A newly mixed source gets its own envelope. Existing envelopes keep
+    // their start times, duration and progress across unrelated layer changes.
+    if (sceneFadeTimer) return;
+    sceneFadeStarted = now; sceneFadeDuration = sceneAudioFadeSeconds;
     sceneFadeTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
     dispatch_source_set_timer(sceneFadeTimer, DISPATCH_TIME_NOW, 20 * NSEC_PER_MSEC, 2 * NSEC_PER_MSEC);
     dispatch_source_set_event_handler(sceneFadeTimer, ^{
         @autoreleasepool {
-            if (!currentScene()) return; // A queued newer scene will retarget from current volumes.
-            double progress = MIN(1.0, (NSProcessInfo.processInfo.systemUptime - sceneFadeStarted) / sceneFadeDuration);
-            for (SSScenePlayer *player in scenePlayers())
+            if (!currentScene()) return;
+            double time = NSProcessInfo.processInfo.systemUptime;
+            BOOL complete = YES;
+            for (SSScenePlayer *player in scenePlayers()) {
+                double progress = player.audioFadeDuration <= 0 ? 1 : MIN(1.0, (time - player.audioFadeStarted) / player.audioFadeDuration);
                 setSceneGain(player, player.fadeFrom + (player.fadeTo - player.fadeFrom) * progress);
-            if (progress >= 1) completeSceneFade();
+                if (progress < 1 && fabsf(player.fadeGain - player.fadeTo) > 0.0001f) complete = NO;
+            }
+            if (complete) completeSceneFade();
         }
     });
     dispatch_resume(sceneFadeTimer);
@@ -1354,7 +1406,7 @@ static void renderScene(void) {
 }
 static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
     if (!player || player.disposed) return;
-    if (!currentScene() && (player == sceneForeground || player == sceneBackground)) {
+    if (!currentScene() && (activeScenePlayer(player) || player == sceneBackground)) {
         player.pendingError = message; return;
     }
     if (player == sceneBackground) {
@@ -1368,23 +1420,37 @@ static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
         retireScenePlayer(sceneRetiring);
         emitScene(identifier, @"error", message, 0, 0);
         renderScene(); mixScene();
+    } else if ([sceneAudioLayers containsObject:player]) {
+        if (!sceneCompletedAudioLayers) sceneCompletedAudioLayers = [NSMutableDictionary dictionary];
+        sceneCompletedAudioLayers[@(player.identifier)] = @{@"kind": @"error", @"message": message ?: @"", @"position": @0, @"duration": @0};
+        [sceneAudioLayers removeObject:player]; [player teardown];
+        emitScenePlayer(player, @"error", message, 0, 0);
+        mixScene();
+    } else if ([sceneRetiringAudioLayers containsObject:player]) {
+        [sceneRetiringAudioLayers removeObject:player]; [player teardown]; mixScene();
     } else if (player == sceneRetiring) {
         [player teardown]; sceneRetiring = nil; renderScene(); mixScene();
     } else if (player == sceneVisualCurrent || player == sceneVisualOutgoing) {
         [player teardown]; renderScene(); mixScene();
     }
 }
-static BOOL finishSceneForeground(SSScenePlayer *source) {
-    if (!source || source != sceneForeground || source.disposed || source.paused || source.seeking ||
+static BOOL finishScenePlayer(SSScenePlayer *source) {
+    if (!activeScenePlayer(source) || source.disposed || source.paused || source.seeking ||
         source.seekRevision != source.completedSeekRevision || !currentScene()) return NO;
     double duration = seconds(source.item.duration), position = seconds(source.player.currentTime);
     // A delivered notification can precede a seek. Only the current native
     // clock at the end of this transport intent is allowed to retire the cue.
     if (duration <= 0 || position < duration - .03) return NO;
-    uint64_t identifier = source.identifier;
-    source.ended = YES; sceneEndedForegroundID = identifier;
-    sceneForeground = nil; retireScenePlayer(source);
-    renderScene(); mixScene(); emitScene(identifier, @"ended", nil, position, duration);
+    source.ended = YES;
+    if (source == sceneForeground) {
+        sceneEndedForegroundID = source.identifier;
+        sceneForeground = nil; retireScenePlayer(source);
+    } else {
+        if (!sceneCompletedAudioLayers) sceneCompletedAudioLayers = [NSMutableDictionary dictionary];
+        sceneCompletedAudioLayers[@(source.identifier)] = @{@"kind": @"ended", @"message": @"", @"position": @(position), @"duration": @(duration)};
+        [sceneAudioLayers removeObject:source]; [source teardown];
+    }
+    renderScene(); mixScene(); emitScenePlayer(source, @"ended", nil, position, duration);
     return YES;
 }
 @implementation SSScenePlayer
@@ -1420,7 +1486,7 @@ static BOOL finishSceneForeground(SSScenePlayer *source) {
     if (changed) { self.reported = NO; [self observeTransport]; }
     if (paused) {
         self.player.muted = YES; [self.player pause];
-        for (SSScenePlayer *tail in scenePlayers()) if (tail != self && !tail.background) {
+        for (SSScenePlayer *tail in scenePlayers()) if (self == sceneForeground && !activeScenePlayer(tail) && !tail.background) {
             tail.silenced = YES; tail.player.muted = YES;
             setSceneGain(tail, 0); tail.fadeFrom = 0; tail.fadeTo = 0;
         }
@@ -1435,9 +1501,9 @@ static BOOL finishSceneForeground(SSScenePlayer *source) {
     uint64_t transport = self.transportRevision;
     self.timeObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMake(1, 4) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
         (void)time; SSScenePlayer *source = weakSelf;
-        if (source && source == sceneForeground && !source.disposed && !source.ended && !source.paused &&
+        if (activeScenePlayer(source) && !source.disposed && !source.ended && !source.paused &&
             !source.seeking && source.seekRevision == source.completedSeekRevision && source.transportRevision == transport)
-            emitScene(source.identifier, @"progress", nil, seconds(source.player.currentTime), seconds(source.item.duration));
+            emitScenePlayer(source, @"progress", nil, seconds(source.player.currentTime), seconds(source.item.duration));
     }];
     self.endObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemDidPlayToEndTimeNotification object:self.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
         (void)note; SSScenePlayer *source = weakSelf;
@@ -1448,12 +1514,14 @@ static BOOL finishSceneForeground(SSScenePlayer *source) {
                     if (finished && loop && !loop.disposed && stageEnabled && currentScene()) [loop.player play];
                 });
             }];
-        } else if (source == sceneForeground) {
-            finishSceneForeground(source);
+        } else if (activeScenePlayer(source)) {
+            finishScenePlayer(source);
         } else {
             source.ended = YES;
             if (source == sceneRetiring) { sceneRetiring = nil; releaseSceneOwner(source); mixScene(); }
-            else releaseSceneOwner(source);
+            else if ([sceneRetiringAudioLayers containsObject:source]) {
+                [sceneRetiringAudioLayers removeObject:source]; releaseSceneOwner(source); mixScene();
+            } else releaseSceneOwner(source);
         }
     }];
     self.failureObserver = [NSNotificationCenter.defaultCenter addObserverForName:AVPlayerItemFailedToPlayToEndTimeNotification object:self.item queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
@@ -1464,7 +1532,7 @@ static BOOL finishSceneForeground(SSScenePlayer *source) {
     }];
 }
 - (void)ready {
-    if (self.disposed || !currentScene()) return;
+    if (self.disposed || !currentScene() || sceneApplying) return;
     if (![scenePlayers() containsObject:self]) return;
     if (self.pendingError.length) { scenePlayerFailed(self, self.pendingError); return; }
     if (self.item.status == AVPlayerItemStatusFailed) {
@@ -1472,7 +1540,7 @@ static BOOL finishSceneForeground(SSScenePlayer *source) {
     }
     if (self.item.status != AVPlayerItemStatusReadyToPlay) return;
     if (self.background && !stageEnabled) return;
-    if (self == sceneForeground && self.seekRevision != self.completedSeekRevision) {
+    if (activeScenePlayer(self) && self.seekRevision != self.completedSeekRevision) {
         if (!self.seeking) {
             double duration = seconds(self.item.duration);
             if (!isfinite(self.seekSeconds) || duration <= 0) {
@@ -1485,7 +1553,7 @@ static BOOL finishSceneForeground(SSScenePlayer *source) {
             [self.player seekToTime:CMTimeMakeWithSeconds(target, 60000) toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
                 onMain(^{
                     SSScenePlayer *source = weakSelf;
-                    if (!source || source.disposed || source != sceneForeground || source.seekSerial != serial || source.seekRevision != seek) return;
+                    if (!source || source.disposed || !activeScenePlayer(source) || source.seekSerial != serial || source.seekRevision != seek) return;
                     source.seeking = NO;
                     if (!finished) {
                         scenePlayerFailed(source, @"Native playback could not seek to the requested time"); return;
@@ -1499,8 +1567,8 @@ static BOOL finishSceneForeground(SSScenePlayer *source) {
         }
         renderScene(); mixScene(); return;
     }
-    if (self == sceneForeground && self.seeking) { renderScene(); mixScene(); return; }
-    if (self == sceneForeground && self.paused) {
+    if (activeScenePlayer(self) && self.seeking) { renderScene(); mixScene(); return; }
+    if (activeScenePlayer(self) && self.paused) {
         self.player.muted = YES; [self.player pause];
         // A cue paused while its asset loads still needs its first video frame.
         // Decode at the existing position without briefly starting its clock.
@@ -1512,7 +1580,7 @@ static BOOL finishSceneForeground(SSScenePlayer *source) {
             [self.player seekToTime:frame toleranceBefore:kCMTimeZero toleranceAfter:kCMTimeZero completionHandler:^(BOOL finished) {
                 onMain(^{
                     SSScenePlayer *source = weakSelf;
-                    if (!source || source.disposed || source != sceneForeground || source.seekSerial != serial) return;
+                    if (!source || source.disposed || !activeScenePlayer(source) || source.seekSerial != serial) return;
                     source.seeking = NO;
                     if (!finished) { scenePlayerFailed(source, @"Native playback could not prepare the paused video frame"); return; }
                     [source ready];
@@ -1523,19 +1591,19 @@ static BOOL finishSceneForeground(SSScenePlayer *source) {
         if (self.video && stageEnabled && !self.layer.readyForDisplay) { renderScene(); mixScene(); return; }
         if (!self.reported) {
             self.reported = YES;
-            emitScene(self.identifier, @"paused", nil, seconds(self.player.currentTime), seconds(self.item.duration));
+            emitScenePlayer(self, @"paused", nil, seconds(self.player.currentTime), seconds(self.item.duration));
         }
         renderScene(); mixScene(); return;
     }
-    if (self == sceneForeground && self.started && self.player.rate == 0 && finishSceneForeground(self)) return;
-    if (!self.ended && (!self.started || (self == sceneForeground && self.player.rate == 0))) {
+    if (activeScenePlayer(self) && self.started && self.player.rate == 0 && finishScenePlayer(self)) return;
+    if (!self.ended && (!self.started || (activeScenePlayer(self) && self.player.rate == 0))) {
         self.player.muted = self.silenced; [self.player play];
     }
     if (self.player.timeControlStatus == AVPlayerTimeControlStatusPlaying) {
         self.started = YES;
-        if (self == sceneForeground && !self.reported) {
+        if (activeScenePlayer(self) && !self.reported) {
             self.reported = YES;
-            emitScene(self.identifier, @"playing", nil, seconds(self.player.currentTime), seconds(self.item.duration));
+            emitScenePlayer(self, @"playing", nil, seconds(self.player.currentTime), seconds(self.item.duration));
         }
         mixScene();
     }
@@ -1668,6 +1736,9 @@ static void stopScene(void) {
     [sceneForeground teardown]; sceneForeground = nil;
     [sceneBackground teardown]; sceneBackground = nil;
     [sceneRetiring teardown]; sceneRetiring = nil;
+    for (SSScenePlayer *player in sceneAudioLayers) [player teardown];
+    for (SSScenePlayer *player in sceneRetiringAudioLayers) [player teardown];
+    sceneAudioLayers = nil; sceneRetiringAudioLayers = nil; sceneCompletedAudioLayers = nil;
     [sceneImage teardown]; sceneImage = nil;
     [sceneBackgroundImage teardown]; sceneBackgroundImage = nil;
     [sceneImageQueue cancelAllOperations];
@@ -1708,24 +1779,24 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
     NSString *foregroundKind, BOOL foregroundAudio, NSString *imagePath, NSString *backgroundPath,
     NSString *backgroundKind, BOOL backgroundAudio, NSString *audio, NSString *display, BOOL stage,
     double audioFade, double visualFade, BOOL hardStop, BOOL paused, uint64_t transportRevision, uint64_t seekRevision, double seekSeconds,
-    double masterVolume, double foregroundVolume, double backgroundVolume) {
+    double masterVolume, double foregroundVolume, double backgroundVolume, BOOL foregroundMuted, NSArray<NSDictionary *> *audioLayers) {
     if (revision != atomic_load(&requestedSceneRevision) || atomic_load(&shuttingDown) || atomic_load(&sceneEmergencyPending)) return;
     if (!sceneMode) { stopCurrent(); sceneMode = YES; }
     appliedSceneRevision = revision; sceneGeneration = generation; sceneTransportRevision = transportRevision;
-    sceneBackgroundAudio = backgroundAudio;
+    sceneBackgroundAudio = backgroundAudio; sceneForegroundMuted = foregroundMuted;
     sceneMasterVolume = isfinite(masterVolume) ? MAX(0, MIN(1, masterVolume)) : 0;
     foregroundVolume = isfinite(foregroundVolume) ? MAX(0, MIN(1, foregroundVolume)) : 0;
     backgroundVolume = isfinite(backgroundVolume) ? MAX(0, MIN(1, backgroundVolume)) : 0;
     sceneAudioFadeSeconds = isfinite(audioFade) ? MAX(0, MIN(30, audioFade)) : 0;
     sceneVisualFadeSeconds = isfinite(visualFade) ? MAX(0, MIN(30, visualFade)) : 0;
-    sceneStoppedPending = !foregroundID || !foregroundPath.length;
+    sceneStoppedPending = (!foregroundID || !foregroundPath.length) && !audioLayers.count;
     if (hardStop) {
         stopScene(); hideSceneStage(); emitScene(generation, @"stage", nil, 0, 0);
         emitScene(generation, @"stopped", nil, 0, 0); return;
     }
     if (stage && (!stageEnabled || ![stageDisplayID isEqual:display])) {
         if (!enableStage(display)) {
-            stopScene(); hideSceneStage(); emitScene(generation, @"error", @"Selected stage display is unavailable", 0, 0); return;
+            stopScene(); hideSceneStage(); emitSceneTransport(generation, 0, @"error", @"Selected stage display is unavailable", 0, 0); return;
         }
     } else if (!stage) hideSceneStage();
     // Synchronous ready callbacks must see the complete new scene, not an old
@@ -1743,6 +1814,33 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
     }
     sceneForeground.trackVolume = foregroundVolume;
     [sceneForeground transportPaused:paused revision:transportRevision seekRevision:seekRevision seconds:seekSeconds];
+    NSMutableArray<SSScenePlayer *> *nextLayers = [NSMutableArray arrayWithCapacity:audioLayers.count];
+    NSMutableArray<SSScenePlayer *> *newLayers = [NSMutableArray array];
+    NSMutableSet<NSNumber *> *requestedIDs = [NSMutableSet set];
+    for (NSDictionary *entry in audioLayers) {
+        NSNumber *identifier = entry[@"id"];
+        if (![identifier unsignedLongLongValue] || [identifier unsignedLongLongValue] == foregroundID || [requestedIDs containsObject:identifier]) continue;
+        [requestedIDs addObject:identifier];
+        if (sceneCompletedAudioLayers[identifier]) continue;
+        SSScenePlayer *layer = nil;
+        for (SSScenePlayer *candidate in sceneAudioLayers)
+            if (candidate.identifier == identifier.unsignedLongLongValue && [candidate.path isEqual:entry[@"path"]] && [candidate.audioID isEqual:entry[@"audio"]]) { layer = candidate; break; }
+        if (!layer) {
+            layer = newScenePlayer(identifier.unsignedLongLongValue, entry[@"path"], @"audio", entry[@"audio"], YES, NO, 1);
+            [newLayers addObject:layer];
+        }
+        double level = [entry[@"volume"] doubleValue];
+        layer.trackVolume = isfinite(level) ? MAX(0, MIN(1, level)) : 0;
+        [nextLayers addObject:layer];
+        [layer transportPaused:[entry[@"paused"] boolValue] revision:[entry[@"transport"] unsignedLongLongValue]
+            seekRevision:[entry[@"seek"] unsignedLongLongValue] seconds:[entry[@"position"] doubleValue]];
+    }
+    NSArray<SSScenePlayer *> *oldLayers = sceneAudioLayers;
+    sceneAudioLayers = nextLayers;
+    for (SSScenePlayer *old in oldLayers) if (![nextLayers containsObject:old]) retireSceneAudioLayer(old);
+    for (NSNumber *identifier in [sceneCompletedAudioLayers.allKeys copy])
+        if (![requestedIDs containsObject:identifier]) [sceneCompletedAudioLayers removeObjectForKey:identifier];
+    for (SSScenePlayer *layer in newLayers) [layer prepare];
     BOOL backgroundVideo = [backgroundKind isEqualToString:@"video"] && backgroundPath.length;
     BOOL sameBackground = sceneBackground && backgroundVideo && [backgroundPath isEqual:sceneBackground.path] && (!backgroundAudio || [audio isEqual:sceneBackground.audioID]);
     if (!sameBackground) {
@@ -1754,7 +1852,10 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
     }
     sceneBackground.trackVolume = backgroundVolume;
     if (sceneBackground) {
-        if (!stage) { setSceneGain(sceneBackground, 0); sceneBackground.fadeTo = 0; [sceneBackground.player pause]; }
+        if (!stage) {
+            setSceneGain(sceneBackground, 0); sceneBackground.fadeFrom = sceneBackground.fadeTo = 0;
+            sceneBackground.audioFadeDuration = 0; [sceneBackground.player pause];
+        }
         else if (sceneBackground.started) [sceneBackground.player play];
         else [sceneBackground ready];
     }
@@ -1786,9 +1887,15 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
     for (SSScenePlayer *player in scenePlayers()) setSceneGain(player, player.fadeGain);
     renderScene();
     [sceneForeground ready]; [sceneBackground ready];
+    for (SSScenePlayer *layer in [sceneAudioLayers copy]) [layer ready];
     mixScene();
     emitScene(generation, @"stage", nil, 0, 0);
     if (foregroundID && foregroundID == sceneEndedForegroundID) emitScene(foregroundID, @"ended", nil, 0, 0);
+    for (NSDictionary *entry in audioLayers) {
+        NSDictionary *completion = sceneCompletedAudioLayers[entry[@"id"]];
+        if (completion) emitSceneTransport([entry[@"id"] unsignedLongLongValue], [entry[@"transport"] unsignedLongLongValue],
+            completion[@"kind"], completion[@"message"], [completion[@"position"] doubleValue], [completion[@"duration"] doubleValue]);
+    }
     if (sceneImage.pendingError.length) emitScene(generation, @"background-error", sceneImage.pendingError, 0, 0);
     if (sceneBackgroundImage.pendingError.length) emitScene(generation, @"background-error", sceneBackgroundImage.pendingError, 0, 0);
 }
@@ -1802,7 +1909,15 @@ void ss_scene(const ss_scene_request *request) {
         NSString *audio = copyUTF8(request->audio), *display = copyUTF8(request->display);
         BOOL hasAudio = request->foreground_has_audio, backgroundAudio = request->background_audio;
         BOOL stage = request->stage_enabled, hardStop = request->hard_stop;
-        BOOL paused = request->foreground_paused;
+        BOOL paused = request->foreground_paused, foregroundMuted = request->foreground_muted;
+        NSMutableArray<NSDictionary *> *audioLayers = [NSMutableArray array];
+        uint32_t count = request->audio_layers ? MIN(request->audio_layer_count, 500u) : 0;
+        for (uint32_t i = 0; i < count; ++i) {
+            const ss_audio_layer *layer = &request->audio_layers[i];
+            [audioLayers addObject:@{@"id": @(layer->id), @"path": copyUTF8(layer->path), @"audio": copyUTF8(layer->audio),
+                @"paused": @(layer->paused != 0), @"transport": @(layer->transport_revision), @"seek": @(layer->seek_revision),
+                @"position": @(layer->seek_seconds), @"volume": @(layer->volume)}];
+        }
         uint64_t transportRevision = request->transport_revision, seekRevision = request->seek_revision;
         double seekSeconds = request->seek_seconds;
         double audioFade = request->audio_fade_seconds, visualFade = request->visual_fade_seconds;
@@ -1813,7 +1928,7 @@ void ss_scene(const ss_scene_request *request) {
         atomic_store(&sceneEmergencyPending, false);
         latestCommand = [^{ applyScene(revision, generation, foregroundID, foreground, kind, hasAudio, image,
             background, backgroundKind, backgroundAudio, audio, display, stage, audioFade, visualFade, hardStop,
-            paused, transportRevision, seekRevision, seekSeconds, masterVolume, foregroundVolume, backgroundVolume); } copy];
+            paused, transportRevision, seekRevision, seekSeconds, masterVolume, foregroundVolume, backgroundVolume, foregroundMuted, audioLayers); } copy];
         BOOL wake = !commandScheduled; commandScheduled = YES;
         pthread_mutex_unlock(&commandMutex);
         if (wake) onMain(^{

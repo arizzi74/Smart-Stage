@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -52,7 +53,7 @@ func TestSeekValidatesIdentityBoundsAndIdempotencyBeforeMutation(t *testing.T) {
 			if _, err := s.Play(bad); err == nil {
 				t.Fatal("invalid request accepted")
 			}
-			if f.latest() != before {
+			if !reflect.DeepEqual(f.latest(), before) {
 				t.Fatal("invalid request mutated native scene")
 			}
 		})
@@ -65,7 +66,7 @@ func TestSeekValidatesIdentityBoundsAndIdempotencyBeforeMutation(t *testing.T) {
 	if seek.SeekSeconds != 12 || seek.SeekRevision != 1 || seek.TransportRevision != r.TransportRevision+1 || !s.Snapshot(true).SeekPending {
 		t.Fatalf("seek not queued: %+v", seek)
 	}
-	if again, err := s.Play(r); err != nil || !again.Duplicate || again.TransportRevision != ack.TransportRevision || f.latest() != seek {
+	if again, err := s.Play(r); err != nil || !again.Duplicate || again.TransportRevision != ack.TransportRevision || !reflect.DeepEqual(f.latest(), seek) {
 		t.Fatalf("retry reapplied seek: %+v %v", again, err)
 	}
 	conflict := r
@@ -152,7 +153,7 @@ func TestLoadingPauseIntentDoesNotPausePreviousSourceAndStopCancelsIt(t *testing
 			if _, err := play(s, "video", "loading-second-press"); err != nil {
 				t.Fatal(err)
 			}
-			if state := s.Snapshot(true); !state.Paused || state.State != "loading" || state.ActiveCueID != "video" || f.latest() != old {
+			if state := s.Snapshot(true); !state.Paused || state.State != "loading" || state.ActiveCueID != "video" || !reflect.DeepEqual(f.latest(), old) {
 				t.Fatalf("loading pause changed old source: %+v", state)
 			}
 			if stop {
@@ -226,7 +227,7 @@ func TestConcurrentSeeksAcceptOneRevisionAndStopInvalidatesPendingWork(t *testin
 	if _, err := s.Play(late); err == nil {
 		t.Fatal("pre-STOP transport rearmed playback")
 	}
-	if f.latest() != stopped || !stopped.HardStop || stopped.ForegroundID != 0 || s.Snapshot(true).ActiveCueID != "" || s.Snapshot(true).SeekPending {
+	if !reflect.DeepEqual(f.latest(), stopped) || !stopped.HardStop || stopped.ForegroundID != 0 || s.Snapshot(true).ActiveCueID != "" || s.Snapshot(true).SeekPending {
 		t.Fatal("late seek undid emergency STOP")
 	}
 	scenePlaying(t, s, f, "music")

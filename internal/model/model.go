@@ -27,6 +27,8 @@ type Cue struct {
 	Color      string     `json:"color,omitempty"`
 	Hidden     bool       `json:"hidden,omitempty"`
 	Background bool       `json:"background,omitempty"`
+	KeepVideo  bool       `json:"keepVideo,omitempty"`
+	MixAudio   bool       `json:"mixAudio,omitempty"`
 	Volume     *float64   `json:"volume,omitempty"`
 	Cache      Validation `json:"cache"`
 }

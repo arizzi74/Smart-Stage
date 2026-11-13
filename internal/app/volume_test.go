@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"math"
+	"reflect"
 	"testing"
 
 	"smartstage/internal/model"
@@ -40,7 +41,7 @@ func TestLiveVolumesKeepPlaybackTransportAndIndependentBackground(t *testing.T) 
 	if next.MasterVolume != 0 || next.ForegroundID != before.ForegroundID || next.TransportRevision != before.TransportRevision || s.Snapshot(true).State != "playing" {
 		t.Fatalf("master mute stopped/restarted playback: %+v", next)
 	}
-	if again, err := s.Play(request); err != nil || !again.Duplicate || native.latest() != next {
+	if again, err := s.Play(request); err != nil || !again.Duplicate || !reflect.DeepEqual(native.latest(), next) {
 		t.Fatalf("duplicate master write reapplied: %+v %v", again, err)
 	}
 	if _, err := s.Play(volumeRequest(s, "master-raise-0001", 1)); err != nil {
@@ -78,7 +79,7 @@ func TestInvalidVolumeAndSaveFailureLeaveConfirmedLevel(t *testing.T) {
 	level := .2
 	before := native.latest()
 	storage.fail = true
-	if _, err := s.EditCueVolume(CueVolumeEdit{ExpectedRevision: s.Playlist().PlaylistRevision, CueID: "music", Volume: &level}); err == nil || native.latest() != before || s.Playlist().Cues[0].PlaybackVolume() != .5 {
+	if _, err := s.EditCueVolume(CueVolumeEdit{ExpectedRevision: s.Playlist().PlaylistRevision, CueID: "music", Volume: &level}); err == nil || !reflect.DeepEqual(native.latest(), before) || s.Playlist().Cues[0].PlaybackVolume() != .5 {
 		t.Fatalf("failed persistence changed live/saved level: %v", err)
 	}
 	storage.fail = false

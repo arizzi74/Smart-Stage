@@ -42,13 +42,34 @@ type Start struct {
 	Video      bool
 }
 
+// AudioLayer is one independently controlled audio-only cue. ID is a unique
+// start identity; scene changes preserve its decoder and transport. Events use
+// ID as Generation and must carry its exact TransportRevision.
+type AudioLayer struct {
+	ID                uint64
+	Path              string
+	AudioID           string
+	Paused            bool
+	TransportRevision uint64
+	SeekRevision      uint64
+	SeekSeconds       float64
+	Volume            float64
+}
+
 // Scene is a complete desired presentation. Revision orders native work;
-// ForegroundID identifies one intentional audio/video start and remains stable
+// ForegroundID identifies the primary audio/video start and remains stable
 // across image/background/stage changes. Images never replace foreground sound.
 // TransportRevision changes for each start, pause, resume or seek. Foreground
 // events must carry the applied revision so superseded callbacks can be ignored.
 // SeekRevision is zero until the first seek and changes only for a new seek;
 // applying later scenes with that same revision must not replay the seek.
+// AudioLayers add independent audio-only sources; each has its own identity and
+// transport. ForegroundMuted suppresses a retained video's soundtrack without
+// changing its decoder, timeline or HasAudio validation. BackgroundAudio is the
+// final eligibility decision, including replacement versus mixed-audio policy.
+// Generation orders command epochs and can exceed every currently applied
+// source ID while another source prepares. Stage/image updates preserve all
+// source identities; HardStop disposes the foreground and every audio layer.
 type Scene struct {
 	Revision           uint64
 	Generation         uint64
@@ -56,6 +77,8 @@ type Scene struct {
 	ForegroundPath     string
 	ForegroundKind     string
 	ForegroundHasAudio bool
+	ForegroundMuted    bool
+	AudioLayers        []AudioLayer
 	ForegroundPaused   bool
 	TransportRevision  uint64
 	SeekRevision       uint64
@@ -63,7 +86,7 @@ type Scene struct {
 	ImagePath          string
 	BackgroundPath     string
 	BackgroundKind     string
-	BackgroundAudio    bool
+	BackgroundAudio    bool // final soundtrack eligibility; native must not infer foreground suppression
 	AudioID            string
 	DisplayID          string
 	StageEnabled       bool

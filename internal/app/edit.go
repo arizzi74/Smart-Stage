@@ -18,6 +18,8 @@ type CueEdit struct {
 	Color      *string  `json:"color,omitempty"`
 	Hidden     *bool    `json:"hidden,omitempty"`
 	Background *bool    `json:"background,omitempty"`
+	KeepVideo  *bool    `json:"keepVideo,omitempty"`
+	MixAudio   *bool    `json:"mixAudio,omitempty"`
 	Volume     *float64 `json:"volume,omitempty"`
 }
 type PlaylistEdit struct {
@@ -96,6 +98,13 @@ func (s *Service) editPlaylistTransactionLocked(edit PlaylistEdit, validate bool
 			return model.Config{}, problem("invalid_color", "Cue colors must be empty for the default or use #RRGGBB")
 		}
 		hidden, background := previous.Hidden, previous.Background
+		keepVideo, mixAudio := previous.KeepVideo, previous.MixAudio
+		if item.KeepVideo != nil {
+			keepVideo = *item.KeepVideo
+		}
+		if item.MixAudio != nil {
+			mixAudio = *item.MixAudio
+		}
 		volume := previous.Volume
 		if item.Volume != nil {
 			if !model.ValidVolume(*item.Volume) {
@@ -113,7 +122,7 @@ func (s *Service) editPlaylistTransactionLocked(edit PlaylistEdit, validate bool
 		if background && cache.Status == "ready" && cache.Media.Kind != "image" && cache.Media.Kind != "video" {
 			return model.Config{}, problem("invalid_background", "Only image and video cues can act as background buttons")
 		}
-		next.Cues = append(next.Cues, model.Cue{ID: id, Label: label, Path: path, Color: color, Hidden: hidden, Background: background, Volume: volume, Cache: cache})
+		next.Cues = append(next.Cues, model.Cue{ID: id, Label: label, Path: path, Color: color, Hidden: hidden, Background: background, KeepVideo: keepVideo, MixAudio: mixAudio, Volume: volume, Cache: cache})
 	}
 	removing := map[string]bool{}
 	for id, c := range old {
@@ -133,7 +142,13 @@ func (s *Service) editPlaylistTransactionLocked(edit PlaylistEdit, validate bool
 		s.mu.Unlock()
 		return model.Config{}, problem("revision_conflict", "Playlist changed; reload before editing")
 	}
-	if removing[s.state.ActiveCueID] || removing[s.state.ImageCueID] || removing[s.pendingImageID] {
+	activeRemoved := removing[s.state.ActiveCueID] || removing[s.state.ImageCueID] || removing[s.pendingImageID]
+	for id := range removing {
+		if s.sourceForCueLocked(id) != nil {
+			activeRemoved = true
+		}
+	}
+	if activeRemoved {
 		s.mu.Unlock()
 		return model.Config{}, problem("active_cue", "Stop the active/loading cue before removing or replacing its source")
 	}
@@ -225,7 +240,7 @@ func (s *Service) ConfigureOutputs(ctx context.Context, out model.Outputs) error
 		s.mu.Unlock()
 		return problem("updating", "Wait for the application update before changing outputs")
 	}
-	if s.state.State != "stopped" && s.state.State != "error" {
+	if s.foreground.id != 0 || len(s.audioLayers) != 0 || s.newestPendingLocked() != nil || s.state.State != "stopped" && s.state.State != "error" {
 		s.mu.Unlock()
 		return problem("must_stop", "STOP playback before changing outputs")
 	}

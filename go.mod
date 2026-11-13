@@ -1,6 +1,6 @@
 module smartstage
 
-go 1.26.10
+go 1.26.11
 
 require github.com/piglig/go-qr v1.1.0
 

@@ -52,7 +52,13 @@ void next(unsigned value) { phase = value; phaseStart = GetTickCount64(); }
 void startVisualChecks() { desired = {}; next(200); }
 void apply() {
     desired.master_volume = desired.foreground_volume = desired.background_volume = 1;
-    desired.revision = ++probeRevision; ss_scene(&desired);
+    desired.revision = ++probeRevision;
+    // These legacy single-foreground scenarios store the saved background
+    // preference in desired. Production now sends the coordinator's final
+    // soundtrack eligibility, including foreground suppression.
+    ss_scene_request request = desired;
+    if (request.foreground_id && request.foreground_has_audio) request.background_audio = 0;
+    ss_scene(&request);
 }
 double position(Playback *p) {
     MFTIME value = 0;

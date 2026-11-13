@@ -20,7 +20,10 @@ static void probeApplyFades(uint64_t revision, uint64_t foregroundID, NSString *
     request.foreground_kind = foreground.length ? ([foreground.pathExtension.lowercaseString isEqual:@"mp4"] ? "video" : "audio") : "";
     request.foreground_has_audio = foreground.length != 0 && ![foreground.lastPathComponent isEqual:@"silent-1080p.mp4"];
     request.image_path = image.UTF8String ?: ""; request.background_path = background.UTF8String ?: "";
-    request.background_kind = backgroundKind.UTF8String ?: ""; request.background_audio = backgroundAudio;
+    request.background_kind = backgroundKind.UTF8String ?: "";
+    // The coordinator now supplies final eligibility. Simulate its normal cue
+    // dominance here, including its follow-up scene after a natural end.
+    request.background_audio = backgroundAudio && (!request.foreground_has_audio || foregroundID == sceneEndedForegroundID);
     request.audio = audio.UTF8String; request.display = display.UTF8String;
     request.stage_enabled = stage; request.audio_fade_seconds = audioFade;
     request.visual_fade_seconds = visualFade; request.hard_stop = hard;
@@ -239,13 +242,14 @@ int main(void) {
                     [observations addObject:@{@"latestSceneWinsRapidPlayThenHardStop":@YES,@"hardStopCancelsAllFadesAndHidesStage":@YES}];
                     probeApply(12, 30, shortAudio, nil, background, @"video", YES, audio, display, YES, .4, NO);
                     phase = 11; phaseBegan = now;
-                } else if (phase == 11 && sawEnded && !sceneForeground && sceneBackground.player.volume > .999) {
-                    [observations addObject:@{@"naturalEndReturnsToBackgroundAudio":@YES}];
+                } else if (phase == 11 && sawEnded && !sceneForeground && sceneBackground.player.volume < .001) {
+                    [observations addObject:@{@"nativeEndDoesNotOverrideBackgroundEligibility":@YES}];
                     // Model a stage command already in flight when the native
                     // foreground reaches its end: its ID must never restart.
                     probeApply(13, 30, shortAudio, nil, background, @"video", YES, audio, display, YES, .4, NO);
                     phase = 12; phaseBegan = now;
-                } else if (phase == 12 && now - phaseBegan > .2) {
+                } else if (phase == 12 && now - phaseBegan > .2 && sceneBackground.player.volume > .999) {
+                    [observations addObject:@{@"naturalEndReturnsToBackgroundAudio":@YES}];
                     if (sceneForeground) { fprintf(stderr, "Ended foreground was resurrected by a stage scene\n"); ss_quit(); return; }
                     [observations addObject:@{@"lateStageSceneCannotRestartEndedForeground":@YES}];
                     probeApply(14, 0, nil, nil, nil, nil, NO, audio, display, NO, .4, YES);

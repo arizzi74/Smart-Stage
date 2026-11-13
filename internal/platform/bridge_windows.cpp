@@ -20,6 +20,7 @@
 #include <condition_variable>
 #include <deque>
 #include <memory>
+#include <map>
 #include <mutex>
 #include <optional>
 #include <sstream>
@@ -190,7 +191,7 @@ void emit(uint64_t g, const char *kind, const std::string &message = "", double 
       << ",\"message\":" << quote(message) << ",\"position\":" << pos
       << ",\"duration\":" << duration << ",\"stageEnabled\":" << (stageEnabled ? "true" : "false") << "}";
     std::lock_guard<std::mutex> lock(eventMutex);
-    if (eventQueue.size() >= 256) eventQueue.pop_front();
+    if (eventQueue.size() >= 4096) eventQueue.pop_front();
     eventQueue.push_back(s.str());
 }
 
@@ -297,6 +298,7 @@ struct Playback {
     uint64_t transportRevision = 0, seekRevision = 0;
     bool nativeEnded = false;
     bool paused = false, transportMuted = false;
+    bool awaitingAudioHandoff = false;
     double duration = 0;
     Com<IMFMediaSource> source;
     Com<IMFMediaSession> session;
@@ -315,6 +317,11 @@ std::mutex workerMutex, cleanupMutex;
 std::condition_variable workerCV, cleanupCV;
 std::deque<Request> pending;
 std::array<std::atomic<uint64_t>, 4> sceneTokens{};
+constexpr int audioLayerRole = 4;
+constexpr size_t maxAudioLayers = 500;
+// Loader threads see only immutable identity/token pairs under workerMutex.
+// Live sessions and desired transport state remain confined to the UI thread.
+std::map<uint64_t, uint64_t> audioLayerTokens;
 std::deque<std::unique_ptr<Playback>> retired;
 std::thread loader, cleaner;
 
@@ -404,6 +411,11 @@ void decodeImage(Playback &p, const std::string &path) {
     check(converter->CopyPixels(nullptr, p.imageWidth*4, (UINT)p.pixels.size(), p.pixels.data()), "Decode image pixels");
 }
 bool requestCurrent(const Request &r) {
+    if (r.sceneRole == audioLayerRole) {
+        std::lock_guard<std::mutex> lock(workerMutex);
+        auto found = audioLayerTokens.find(r.gen);
+        return found != audioLayerTokens.end() && found->second == r.token;
+    }
     return r.sceneRole ? r.token == sceneTokens[r.sceneRole].load() : r.gen == generation.load();
 }
 std::unique_ptr<Playback> prepare(const Request &r) {
@@ -476,12 +488,21 @@ void cleanupLoop() {
 
 // Scene playback retains independent foreground sound, stage visuals, and a
 // looping background. Only this UI thread touches live renderer state.
+struct AudioLayer {
+    uint64_t id = 0, transportRevision = 0, seekRevision = 0;
+    std::string path, audio;
+    bool paused = false;
+    double seekSeconds = 0;
+    float volume = 1;
+};
 struct Scene {
     uint64_t revision = 0, gen = 0, foregroundID = 0, transportRevision = 0, seekRevision = 0;
     std::string foregroundPath, foregroundKind, imagePath, backgroundPath, backgroundKind, audio, display;
-    bool foregroundAudio = false, backgroundAudio = false, enabled = false, hardStop = false, foregroundPaused = false;
+    bool foregroundAudio = false, foregroundMuted = false, backgroundAudio = false, enabled = false, hardStop = false, foregroundPaused = false;
     double audioFade = 0, visualFade = 0, seekSeconds = 0;
     float masterVolume = 1, foregroundVolume = 1, backgroundVolume = 1;
+    std::vector<AudioLayer> audioLayers;
+    std::string error;
 };
 std::atomic<uint64_t> sceneRevision{0};
 std::mutex sceneMutex;
@@ -490,9 +511,45 @@ Scene scene;
 bool sceneMode = false;
 uint64_t nextSceneToken = 0, stoppedGeneration = 0;
 uint64_t failedImageToken = 0, failedBackgroundToken = 0, completedForegroundToken = 0;
+uint64_t failedForegroundToken = 0;
 std::string sceneFatalError;
-uint64_t sceneFatalGeneration = 0;
+std::string foregroundFailure;
+uint64_t foregroundFailureID = 0, foregroundFailureTransport = 0;
 std::unique_ptr<Playback> sceneForeground, sceneIncoming, sceneBackground, sceneImage, sceneRetiring, sceneVisualRetiring;
+struct LayerPlayback {
+    AudioLayer desired;
+    uint64_t token = 0;
+    bool completed = false, failed = false;
+    std::unique_ptr<Playback> player;
+};
+std::map<uint64_t, LayerPlayback> sceneAudioLayers;
+std::vector<std::unique_ptr<Playback>> sceneLayerRetiring;
+
+bool transportedPlayback(const Playback &p) { return p.sceneRole == 1 || p.sceneRole == audioLayerRole; }
+bool playbackTokenCurrent(const Playback &p) {
+    if (p.sceneRole == audioLayerRole) {
+        auto found = sceneAudioLayers.find(p.gen);
+        return found != sceneAudioLayers.end() && found->second.token == p.token && !found->second.completed && !found->second.failed;
+    }
+    return p.sceneRole > 0 && p.sceneRole < audioLayerRole && p.token == sceneTokens[p.sceneRole].load() &&
+        (p.sceneRole != 1 || p.token != failedForegroundToken);
+}
+struct Transport {
+    uint64_t revision = 0, seekRevision = 0;
+    bool paused = false;
+    double seekSeconds = 0;
+};
+Transport desiredTransport(const Playback &p) {
+    if (p.sceneRole == audioLayerRole) {
+        auto found = sceneAudioLayers.find(p.gen);
+        if (found != sceneAudioLayers.end()) {
+            const auto &layer = found->second.desired;
+            return {layer.transportRevision, layer.seekRevision, layer.paused, layer.seekSeconds};
+        }
+        return {};
+    }
+    return {scene.transportRevision, scene.seekRevision, scene.foregroundPaused, scene.seekSeconds};
+}
 
 // The EVR continues to decode and play both videos during a transition. Only
 // the short crossfade is composited in software; normal playback goes straight
@@ -600,7 +657,7 @@ void emitScene(uint64_t g, const char *kind, const std::string &message = "", do
       << ",\"position\":" << pos << ",\"duration\":" << duration
       << ",\"stageEnabled\":" << (stageEnabled ? "true" : "false") << "}";
     std::lock_guard<std::mutex> lock(eventMutex);
-    if (eventQueue.size() >= 256) eventQueue.pop_front();
+    if (eventQueue.size() >= 4096) eventQueue.pop_front();
     eventQueue.push_back(s.str());
 }
 bool sceneCurrent() { return scene.revision == sceneRevision.load() && !quitting.load(); }
@@ -628,7 +685,10 @@ void ramp(Playback &p, float target, double seconds) {
     p.rampStarted = GetTickCount64();
     if (!p.hasAudio || seconds <= 0 || std::abs(target-p.gain) < 0.0001f) {
         p.rampSeconds = 0;
-        if (!volume(p, target)) { sceneFatalError = "Cannot update native audio gain"; sceneFatalGeneration = scene.gen; }
+        if (!volume(p, target)) {
+            if (p.sceneRole == audioLayerRole) p.error = "Cannot update native audio gain";
+            else { sceneFatalError = "Cannot update native audio gain"; }
+        }
     }
 }
 bool advanceRamp(Playback &p) {
@@ -640,7 +700,50 @@ bool advanceRamp(Playback &p) {
 }
 bool audible(const Playback *p) { return p && p->playing && !p->paused && !p->transportMuted && p->hasAudio && p->gain > 0.0001f; }
 bool anySceneAudio() {
-    return audible(sceneForeground.get()) || audible(sceneBackground.get()) || audible(sceneRetiring.get()) || audible(sceneVisualRetiring.get());
+    if (audible(sceneForeground.get()) || audible(sceneBackground.get()) || audible(sceneRetiring.get()) || audible(sceneVisualRetiring.get())) return true;
+    for (const auto &entry : sceneAudioLayers) if (audible(entry.second.player.get())) return true;
+    for (const auto &p : sceneLayerRetiring) if (audible(p.get())) return true;
+    return false;
+}
+bool pendingAudioHandoff() {
+    bool pendingStart = false;
+    if (!scene.foregroundPath.empty() && !scene.foregroundMuted && !scene.foregroundPaused) {
+        if (sceneForeground && sceneForeground->gen == scene.foregroundID && sceneForeground->playing) return false;
+        pendingStart = completedForegroundToken != sceneTokens[1].load() && failedForegroundToken != sceneTokens[1].load();
+    }
+    for (const auto &wanted : scene.audioLayers) {
+        if (wanted.paused) continue;
+        auto found = sceneAudioLayers.find(wanted.id);
+        if (found == sceneAudioLayers.end()) { pendingStart = true; continue; }
+        const auto &layer = found->second;
+        if (layer.completed || layer.failed) continue;
+        if (layer.player && layer.player->playing) return false;
+        pendingStart = true;
+    }
+    return pendingStart;
+}
+void retireAudioLayer(std::unique_ptr<Playback> &p) {
+    if (!p) return;
+    bool hold = pendingAudioHandoff();
+    if (audible(p.get()) && (scene.audioFade > 0 || hold)) {
+        // Bound independent fade tails even during repeated clear/add commands.
+        if (sceneLayerRetiring.size() == maxAudioLayers) {
+            halt(sceneLayerRetiring.front()); sceneLayerRetiring.erase(sceneLayerRetiring.begin());
+        }
+        p->awaitingAudioHandoff = hold;
+        ramp(*p, hold ? p->gain : 0, hold ? 0 : scene.audioFade);
+        sceneLayerRetiring.push_back(std::move(p));
+    } else halt(p);
+}
+void settleAudioHandoffs() {
+    if (pendingAudioHandoff()) return;
+    for (auto &p : sceneLayerRetiring) if (p->awaitingAudioHandoff) {
+        p->awaitingAudioHandoff = false;
+        ramp(*p, 0, scene.audioFade);
+    }
+    if (sceneForeground && sceneForeground->gen == scene.foregroundID && scene.foregroundMuted &&
+        (sceneForeground->gain > 0 || sceneForeground->rampTo != 0))
+        ramp(*sceneForeground, 0, scene.audioFade);
 }
 void freezeVisualTransition() {
     if (visualTransition.active && !visualTransition.mixed.empty()) {
@@ -695,7 +798,7 @@ Playback *requestedVisual(bool &pendingVisual) {
     if (!scene.foregroundPath.empty() && scene.foregroundKind == "video") {
         if (sceneForeground && sceneForeground->gen == scene.foregroundID && sceneForeground->video && sceneForeground->playing)
             return sceneForeground.get();
-        if (completedForegroundToken != sceneTokens[1].load()) { pendingVisual = true; return nullptr; }
+        if (completedForegroundToken != sceneTokens[1].load() && failedForegroundToken != sceneTokens[1].load()) { pendingVisual = true; return nullptr; }
     }
     if (!scene.backgroundPath.empty()) {
         if (sceneBackground && sceneBackground->path == scene.backgroundPath &&
@@ -820,10 +923,6 @@ void paintImage(HDC dc, HWND window) {
     StretchDIBits(dc, (bounds.right-width)/2, (bounds.bottom-height)/2, width, height,
                   0, 0, p->imageWidth, p->imageHeight, p->pixels.data(), &info, DIB_RGB_COLORS, SRCCOPY);
 }
-bool foregroundOwnsAudio() {
-    return (sceneForeground && sceneForeground->playing && sceneForeground->hasAudio) ||
-        (!scene.foregroundPath.empty() && scene.foregroundPaused && scene.foregroundAudio);
-}
 void silencePausedTails() {
     if (!scene.foregroundPaused) return;
     if (sceneForeground && sceneForeground->gen != scene.foregroundID) {
@@ -837,12 +936,12 @@ void silencePausedTails() {
     }
     // A paused audio owner completes background suppression immediately even
     // if its entrance crossfade was still running. Silent video owns no audio.
-    if (scene.foregroundAudio && sceneBackground) ramp(*sceneBackground, 0, 0);
+    if (!scene.backgroundAudio && sceneBackground) ramp(*sceneBackground, 0, 0);
 }
 void backgroundGain(bool transition = true) {
     if (!sceneBackground || !sceneBackground->playing) return;
-    bool foregroundSound = foregroundOwnsAudio();
-    float target = stageEnabled && scene.backgroundAudio && !foregroundSound ? 1.0f : 0.0f;
+    float target = stageEnabled && scene.backgroundAudio ? 1.0f : 0.0f;
+    if (target == 0 && stageEnabled && pendingAudioHandoff()) return;
     double duration = transition && (target == 0 || anySceneAudio()) ? scene.audioFade : 0;
     ramp(*sceneBackground, target, duration);
 }
@@ -850,8 +949,13 @@ void clearScene(bool hide) {
     cancelVisualTransition();
     for (int role=1; role<=3; ++role) sceneTokens[role].store(++nextSceneToken);
     { std::lock_guard<std::mutex> lock(workerMutex);
+      audioLayerTokens.clear();
       pending.erase(std::remove_if(pending.begin(), pending.end(), [](const Request &r) { return r.sceneRole != 0; }), pending.end()); }
     halt(sceneIncoming); halt(sceneForeground); halt(sceneBackground); halt(sceneImage); halt(sceneRetiring); halt(sceneVisualRetiring);
+    for (auto &entry : sceneAudioLayers) halt(entry.second.player);
+    sceneAudioLayers.clear();
+    for (auto &p : sceneLayerRetiring) halt(p);
+    sceneLayerRetiring.clear();
     stoppedGeneration = 0;
     if (hide) hideStageWindow();
 }
@@ -865,6 +969,70 @@ bool queueScene(int role, const std::string &path, bool image, bool video, bool 
       pending.erase(std::remove_if(pending.begin(), pending.end(), [role](const Request &old) { return old.sceneRole == role; }), pending.end());
       pending.push_back(r); }
     workerCV.notify_one(); return true;
+}
+void cancelAudioLayer(uint64_t id) {
+    std::lock_guard<std::mutex> lock(workerMutex);
+    audioLayerTokens.erase(id);
+    pending.erase(std::remove_if(pending.begin(), pending.end(), [id](const Request &r) {
+        return r.sceneRole == audioLayerRole && r.gen == id;
+    }), pending.end());
+}
+void queueAudioLayer(LayerPlayback &layer) {
+    const auto &source = layer.desired;
+    { std::lock_guard<std::mutex> lock(cleanupMutex);
+      if (retired.size() >= 8) {
+          layer.failed = true;
+          emitScene(source.id, "error", "Native cleanup is busy; stop and retry this audio cue", 0, 0, source.transportRevision);
+          return;
+      } }
+    Request r{Request::Play, source.id, source.path, source.audio, ""};
+    r.sceneRole = audioLayerRole; r.token = layer.token = ++nextSceneToken;
+    { std::lock_guard<std::mutex> lock(workerMutex);
+      audioLayerTokens[source.id] = r.token; pending.push_back(std::move(r)); }
+    workerCV.notify_one();
+}
+void reconcileAudioLayers() {
+    for (auto it = sceneAudioLayers.begin(); it != sceneAudioLayers.end();) {
+        auto wanted = std::find_if(scene.audioLayers.begin(), scene.audioLayers.end(), [&](const AudioLayer &layer) { return layer.id == it->first; });
+        if (wanted == scene.audioLayers.end()) {
+            cancelAudioLayer(it->first); retireAudioLayer(it->second.player);
+            it = sceneAudioLayers.erase(it);
+        } else ++it;
+    }
+    for (const auto &wanted : scene.audioLayers) {
+        auto [it, inserted] = sceneAudioLayers.try_emplace(wanted.id);
+        auto &layer = it->second;
+        bool changedSource = !inserted && (wanted.path != layer.desired.path || wanted.audio != layer.desired.audio);
+        if (changedSource) {
+            cancelAudioLayer(wanted.id); retireAudioLayer(layer.player);
+            layer.completed = layer.failed = false;
+        }
+        bool changedTransport = wanted.transportRevision != layer.desired.transportRevision;
+        layer.desired = wanted;
+        if (inserted || changedSource) queueAudioLayer(layer);
+        if (layer.player) {
+            auto &p = *layer.player;
+            p.trackVolume = wanted.volume;
+            if (p.transportRevision != wanted.transportRevision) p.transportMuted = true;
+            if (!volume(p, p.gain)) {
+                emitScene(wanted.id, "error", "Cannot update audio layer volume", 0, 0, wanted.transportRevision);
+                cancelAudioLayer(wanted.id); halt(layer.player); layer.failed = true;
+            }
+        } else if (layer.completed && changedTransport) {
+            emitScene(wanted.id, "ended", "", 0, 0, wanted.transportRevision);
+        }
+    }
+}
+void failForeground(uint64_t id, const std::string &message, uint64_t transport) {
+    if (id != scene.foregroundID) return;
+    failedForegroundToken = ++nextSceneToken;
+    sceneTokens[1].store(failedForegroundToken);
+    { std::lock_guard<std::mutex> lock(workerMutex);
+      pending.erase(std::remove_if(pending.begin(), pending.end(), [](const Request &r) { return r.sceneRole == 1; }), pending.end()); }
+    halt(sceneIncoming); halt(sceneForeground);
+    // A failed video/audio source must not tear down independent mixed voices.
+    settleAudioHandoffs(); backgroundGain(); sceneVisuals();
+    emitScene(id, "error", message, 0, 0, transport);
 }
 template<size_t N> HWND availableSceneWindow(HWND (&windows)[N]) {
     auto owned = [](HWND window) {
@@ -901,10 +1069,13 @@ void processSceneCommand() {
     if (scene.hardStop) {
         clearScene(true); emitScene(scene.gen, "stage"); emitScene(scene.gen, "stopped"); return;
     }
+    if (!scene.error.empty()) {
+        clearScene(true); emitScene(scene.gen, "error", scene.error); return;
+    }
     if (scene.enabled) {
         if (!stageEnabled || stageDisplay != scene.display) {
             if (!enableStage(scene.display)) {
-                clearScene(true); emitScene(scene.gen, "error", "Selected stage display is unavailable", 0, 0, scene.transportRevision); return;
+                clearScene(true); emitScene(scene.gen, "error", "Selected stage display is unavailable"); return;
             }
             resizeSceneRenderers();
         }
@@ -912,16 +1083,17 @@ void processSceneCommand() {
         hideStageWindow();
     }
     emitScene(scene.gen, "stage");
-    if (scene.foregroundPath.empty() && scene.gen != previous.gen) stoppedGeneration = scene.gen;
+    if (scene.foregroundPath.empty() && scene.audioLayers.empty() && scene.gen != previous.gen) stoppedGeneration = scene.gen;
+    if (!scene.foregroundPath.empty() || !scene.audioLayers.empty()) stoppedGeneration = 0;
     if (scene.foregroundID != previous.foregroundID || scene.foregroundPath != previous.foregroundPath || (scene.foregroundAudio && scene.audio != previous.audio)) {
         halt(sceneIncoming); sceneTokens[1].store(++nextSceneToken);
         if (scene.foregroundPath.empty()) {
-            retireWithFade(sceneForeground, scene.audioFade); stoppedGeneration = scene.gen;
+            retireWithFade(sceneForeground, scene.audioFade); if (scene.audioLayers.empty()) stoppedGeneration = scene.gen;
         } else {
             HWND target = availableSceneWindow(sceneVideoWindows);
             if ((!target && scene.foregroundKind == "video") ||
                 !queueScene(1, scene.foregroundPath, false, scene.foregroundKind == "video", !scene.foregroundAudio, scene.foregroundID, target)) {
-                clearScene(true); emitScene(scene.foregroundID, "error", "Native cleanup is busy; stop and retry", 0, 0, scene.transportRevision); return;
+                failForeground(scene.foregroundID, "Native cleanup is busy; stop and retry", scene.transportRevision);
             }
         }
     }
@@ -932,6 +1104,7 @@ void processSceneCommand() {
         // at that request's revision rather than leaving a paused empty cue.
         emitScene(scene.foregroundID, "ended", "", 0, 0, scene.transportRevision);
     }
+    reconcileAudioLayers();
     if (scene.imagePath != previous.imagePath) {
         retireWithFade(sceneImage, scene.audioFade); sceneTokens[3].store(++nextSceneToken);
         if (!scene.imagePath.empty() && !queueScene(3, scene.imagePath, true, false, true, scene.gen, nullptr)) {
@@ -962,29 +1135,46 @@ void processSceneCommand() {
         // envelope is retained and resumes without starting another fade.
         sceneForeground->transportMuted = true;
         if (!volume(*sceneForeground, sceneForeground->gain)) {
-            sceneFatalError = "Cannot silence foreground transport"; sceneFatalGeneration = scene.foregroundID;
+            sceneFatalError = "Cannot silence foreground transport";
         }
     }
     silencePausedTails();
+    if (sceneForeground && sceneForeground->gen == scene.foregroundID && previous.foregroundMuted != scene.foregroundMuted && !pendingAudioHandoff())
+        ramp(*sceneForeground, scene.foregroundMuted || !sceneForeground->hasAudio ? 0.0f : 1.0f, scene.audioFade);
+    settleAudioHandoffs();
     backgroundGain(); sceneVisuals();
     // Volume is separate from the fade envelope; keep transport and ramp clocks.
     if (sceneForeground && sceneForeground->gen == scene.foregroundID) sceneForeground->trackVolume = scene.foregroundVolume;
     if (sceneIncoming) sceneIncoming->trackVolume = scene.foregroundVolume;
     if (sceneBackground) sceneBackground->trackVolume = scene.backgroundVolume;
     for (Playback *p : {sceneForeground.get(), sceneIncoming.get(), sceneBackground.get(), sceneRetiring.get(), sceneVisualRetiring.get()}) {
-        if (p && !volume(*p, p->gain)) { sceneFatalError = "Cannot update native audio volume"; sceneFatalGeneration = scene.gen; }
+        if (p && !volume(*p, p->gain)) { sceneFatalError = "Cannot update native audio volume"; }
+    }
+    for (auto &p : sceneLayerRetiring) {
+        if (!volume(*p, p->gain)) { volume(*p, 0); p->rampSeconds = 0; }
     }
 }
 void sceneReady(std::unique_ptr<Playback> p) {
     processSceneCommand();
-    if (!sceneMode || quitting.load() || p->token != sceneTokens[p->sceneRole].load()) { retire(std::move(p)); return; }
+    if (!sceneMode || quitting.load() || !playbackTokenCurrent(*p)) { retire(std::move(p)); return; }
+    if (p->sceneRole == audioLayerRole) {
+        auto &layer = sceneAudioLayers.at(p->gen);
+        if (!p->error.empty()) {
+            layer.failed = true;
+            emitScene(p->gen, "error", p->error, 0, 0, layer.desired.transportRevision);
+            cancelAudioLayer(p->gen); retire(std::move(p)); return;
+        }
+        p->trackVolume = layer.desired.volume;
+        halt(layer.player); layer.player = std::move(p); return;
+    }
     if (!p->error.empty()) {
         uint64_t failedGen = p->gen; int role = p->sceneRole; std::string error = p->error;
         if (role == 2) failedBackgroundToken = p->token;
         if (role == 3) failedImageToken = p->token;
         retire(std::move(p));
-        if (role == 1) clearScene(true); else sceneVisuals();
-        emitScene(role == 1 ? failedGen : scene.gen, role == 1 ? "error" : "background-error", error, 0, 0, role == 1 ? scene.transportRevision : 0); return;
+        if (role == 1) failForeground(failedGen, error, scene.transportRevision);
+        else { sceneVisuals(); emitScene(scene.gen, "background-error", error); }
+        return;
     }
     p->trackVolume = p->sceneRole == 1 ? scene.foregroundVolume : scene.backgroundVolume;
     if (p->sceneRole == 1) { halt(sceneIncoming); sceneIncoming = std::move(p); }
@@ -999,22 +1189,23 @@ double scenePosition(const Playback &p) {
     return p.duration > 0 ? std::min(seconds, p.duration) : seconds;
 }
 bool foregroundCurrent(const Playback &p) {
-    return sceneCurrent() && !scene.hardStop && p.sceneRole == 1 &&
-        p.gen == scene.foregroundID && p.token == sceneTokens[1].load();
+    return sceneCurrent() && !scene.hardStop && transportedPlayback(p) && playbackTokenCurrent(p) &&
+        (p.sceneRole == audioLayerRole || p.gen == scene.foregroundID);
 }
 void emitForeground(const Playback &p, const char *kind) {
-    if (!foregroundCurrent(p) || p.transportRevision != scene.transportRevision ||
+    if (!foregroundCurrent(p) || p.transportRevision != desiredTransport(p).revision ||
         p.transportOperation != Playback::TransportOperation::None) return;
     emitScene(p.gen, kind, "", scenePosition(p), p.duration, p.transportRevision);
 }
 bool startScenePlayback(Playback &p) {
-    if (!sceneCurrent() || p.token != sceneTokens[p.sceneRole].load()) return false;
+    if (!sceneCurrent() || !playbackTokenCurrent(p)) return false;
     PROPVARIANT start; PropVariantInit(&start); start.vt = VT_I8; start.hVal.QuadPart = 0;
-    if (p.sceneRole == 1) {
+    if (transportedPlayback(p)) {
+        const auto wanted = desiredTransport(p);
         if (p.transportOperation != Playback::TransportOperation::None) return false;
-        p.operationRevision = scene.transportRevision;
-        p.operationSeekRevision = scene.seekRevision;
-        bool seeking = scene.seekRevision != p.seekRevision;
+        p.operationRevision = wanted.revision;
+        p.operationSeekRevision = wanted.seekRevision;
+        bool seeking = wanted.seekRevision != p.seekRevision;
         if (seeking) {
             DWORD capabilities = 0;
             check(p.session->GetSessionCapabilities(&capabilities), "Read native seek capabilities");
@@ -1023,17 +1214,17 @@ bool startScenePlayback(Playback &p) {
         p.nativeEnded = false;
         if (p.nativeStarted && !seeking) start.vt = VT_EMPTY; // resume exact native clock
         else if (seeking && p.duration > 0) {
-            double target = std::clamp(scene.seekSeconds, 0.0, p.duration);
+            double target = std::clamp(wanted.seekSeconds, 0.0, p.duration);
             // Leave one presentation tick at EOF so a paused seek can reach
             // MESessionPaused instead of ending before Pause is processed.
-            if (scene.foregroundPaused) target = std::min(target, std::max(0.0, p.duration-.1));
+            if (wanted.paused) target = std::min(target, std::max(0.0, p.duration-.1));
             start.hVal.QuadPart = (LONGLONG)std::llround(target*10000000.0);
         }
         p.transportMuted = true;
         check(volume(p, p.gain) ? S_OK : E_FAIL, "Silence foreground transport");
     }
     check(p.session->Start(&GUID_NULL, &start), "Start native scene playback");
-    if (p.sceneRole == 1) p.transportOperation = Playback::TransportOperation::Start;
+    if (transportedPlayback(p)) p.transportOperation = Playback::TransportOperation::Start;
     p.startRequested = true; return true;
 }
 // Called only after the event queue has drained. A stale acknowledgement is
@@ -1042,24 +1233,25 @@ bool startScenePlayback(Playback &p) {
 void reconcileForegroundTransport(Playback &p) {
     if (!foregroundCurrent(p) || !p.topologyReady ||
         p.transportOperation != Playback::TransportOperation::None) return;
-    if (!p.nativeStarted || p.seekRevision != scene.seekRevision) {
+    const auto wanted = desiredTransport(p);
+    if (!p.nativeStarted || p.seekRevision != wanted.seekRevision) {
         startScenePlayback(p); return;
     }
-    if (p.paused != scene.foregroundPaused) {
-        if (!scene.foregroundPaused) { startScenePlayback(p); return; }
+    if (p.paused != wanted.paused) {
+        if (!wanted.paused) { startScenePlayback(p); return; }
         DWORD capabilities = 0;
         check(p.session->GetSessionCapabilities(&capabilities), "Read native transport capabilities");
         if (!(capabilities & MFSESSIONCAP_PAUSE)) throw std::string("This media cannot be paused");
         p.transportMuted = true;
         check(volume(p, p.gain) ? S_OK : E_FAIL, "Silence paused foreground");
         check(p.session->Pause(), "Pause native scene playback");
-        p.operationRevision = scene.transportRevision;
-        p.operationSeekRevision = scene.seekRevision;
+        p.operationRevision = wanted.revision;
+        p.operationSeekRevision = wanted.seekRevision;
         p.transportOperation = Playback::TransportOperation::Pause;
         return;
     }
-    bool changed = p.transportRevision != scene.transportRevision || !p.playing;
-    p.transportRevision = scene.transportRevision;
+    bool changed = p.transportRevision != wanted.revision || !p.playing;
+    p.transportRevision = wanted.revision;
     p.transportMuted = p.paused;
     check(volume(p, p.gain) ? S_OK : E_FAIL, "Restore foreground transport gain");
     // Initial activation owns its own acknowledgement and crossfade.
@@ -1082,23 +1274,26 @@ bool configureScenePlayback(Playback &p) {
     Com<IMFClock> clock;
     if (SUCCEEDED(p.session->GetClock(clock.out()))) clock->QueryInterface(__uuidof(IMFPresentationClock), (void**)p.clock.out());
     p.topologyReady = true;
-    return p.sceneRole == 1 ? true : startScenePlayback(p);
+    return transportedPlayback(p) ? true : startScenePlayback(p);
 }
 void activateScenePlayback(Playback &p, bool incoming) {
-    if (p.playing || !p.nativeStarted || !sceneCurrent() || p.token != sceneTokens[p.sceneRole].load()) return;
-    if (p.sceneRole == 1 && (p.transportOperation != Playback::TransportOperation::None ||
-        p.transportRevision != scene.transportRevision || p.paused != scene.foregroundPaused)) return;
+    if (p.playing || !p.nativeStarted || !sceneCurrent() || !playbackTokenCurrent(p)) return;
+    const auto wanted = desiredTransport(p);
+    if (transportedPlayback(p) && (p.transportOperation != Playback::TransportOperation::None ||
+        p.transportRevision != wanted.revision || p.paused != wanted.paused)) return;
     p.playing = true;
     bool wasAudible = anySceneAudio();
     if (incoming) {
         retireWithFade(sceneForeground, scene.audioFade);
-        ramp(p, p.hasAudio ? 1.0f : 0.0f, wasAudible ? scene.audioFade : 0);
-        if (sceneBackground) ramp(*sceneBackground, p.hasAudio ? 0.0f : (stageEnabled && scene.backgroundAudio ? 1.0f : 0.0f), wasAudible ? scene.audioFade : 0);
+        ramp(p, p.hasAudio && !scene.foregroundMuted ? 1.0f : 0.0f, wasAudible ? scene.audioFade : 0);
+        if (sceneBackground) ramp(*sceneBackground, stageEnabled && scene.backgroundAudio ? 1.0f : 0.0f, wasAudible ? scene.audioFade : 0);
         silencePausedTails();
         emitForeground(p, p.paused ? "paused" : "playing");
+    } else if (p.sceneRole == audioLayerRole) {
+        ramp(p, p.hasAudio ? 1.0f : 0.0f, wasAudible ? scene.audioFade : 0);
+        emitForeground(p, p.paused ? "paused" : "playing");
     } else if (p.sceneRole == 2) {
-        bool foregroundSound = foregroundOwnsAudio();
-        ramp(p, stageEnabled && scene.backgroundAudio && !foregroundSound ? 1.0f : 0.0f, wasAudible ? scene.audioFade : 0);
+        ramp(p, stageEnabled && scene.backgroundAudio ? 1.0f : 0.0f, wasAudible ? scene.audioFade : 0);
         sceneVisuals();
     }
 }
@@ -1112,7 +1307,8 @@ void restartSceneLoop(Playback &p) {
 bool pumpScene(Playback &p, bool incoming) {
     if (!p.session || !sceneCurrent()) return false;
     try {
-        if (p.sceneRole != 1 && p.topologyReady && !p.startRequested && !startScenePlayback(p)) return false;
+        const auto wanted = desiredTransport(p);
+        if (!transportedPlayback(p) && p.topologyReady && !p.startRequested && !startScenePlayback(p)) return false;
         restartSceneLoop(p);
         bool drained = false;
         for (int i=0; i<32; ++i) {
@@ -1122,12 +1318,12 @@ bool pumpScene(Playback &p, bool incoming) {
             check(hr, "Read native scene event");
             MediaEventType type; HRESULT status;
             check(event->GetType(&type), "Read native event type"); check(event->GetStatus(&status), "Read native event result");
-            bool startAck = p.sceneRole == 1 && type == MESessionStarted &&
+            bool startAck = transportedPlayback(p) && type == MESessionStarted &&
                 p.transportOperation == Playback::TransportOperation::Start;
-            bool pauseAck = p.sceneRole == 1 && type == MESessionPaused &&
+            bool pauseAck = transportedPlayback(p) && type == MESessionPaused &&
                 p.transportOperation == Playback::TransportOperation::Pause;
-            if (p.sceneRole == 1 && ((type == MESessionStarted && !startAck) || (type == MESessionPaused && !pauseAck))) continue;
-            bool staleAck = (startAck || pauseAck) && p.operationRevision != scene.transportRevision;
+            if (transportedPlayback(p) && ((type == MESessionStarted && !startAck) || (type == MESessionPaused && !pauseAck))) continue;
+            bool staleAck = (startAck || pauseAck) && p.operationRevision != wanted.revision;
             if (FAILED(status) && staleAck) {
                 p.transportOperation = Playback::TransportOperation::None;
                 continue;
@@ -1136,7 +1332,7 @@ bool pumpScene(Playback &p, bool incoming) {
             if (type == MESessionTopologyStatus && MFGetAttributeUINT32(event.p, MF_EVENT_TOPOLOGY_STATUS, 0) == MF_TOPOSTATUS_READY) {
                 if (!p.topologyReady && !configureScenePlayback(p)) return false;
             } else if (type == MESessionStarted) {
-                if (p.sceneRole == 1) {
+                if (transportedPlayback(p)) {
                     if (!startAck) continue;
                     p.nativeStarted = true; p.paused = false;
                     p.seekRevision = p.operationSeekRevision;
@@ -1150,14 +1346,14 @@ bool pumpScene(Playback &p, bool incoming) {
                 p.paused = true;
                 p.transportOperation = Playback::TransportOperation::None;
             } else if (type == MESessionEnded) {
-                if (p.sceneRole == 1) {
+                if (transportedPlayback(p)) {
                     // End notifications from before an outstanding seek/pause
                     // must not complete the current intent. A terminal clock
                     // check also rejects delayed events from an earlier seek.
                     MFCLOCK_STATE state = MFCLOCK_STATE_INVALID;
                     bool stoppedClock = p.clock && SUCCEEDED(p.clock->GetState(0, &state)) && state == MFCLOCK_STATE_STOPPED;
                     if (!foregroundCurrent(p) || p.transportOperation != Playback::TransportOperation::None ||
-                        p.seekRevision != scene.seekRevision || scene.foregroundPaused ||
+                        p.seekRevision != wanted.seekRevision || wanted.paused ||
                         (!stoppedClock && p.duration > 0 && scenePosition(p) < p.duration-.15)) continue;
                     p.nativeEnded = true;
                 }
@@ -1166,15 +1362,23 @@ bool pumpScene(Playback &p, bool incoming) {
                 } else return true;
             }
         }
-        if (p.sceneRole == 1 && drained) reconcileForegroundTransport(p);
+        if (transportedPlayback(p) && drained) reconcileForegroundTransport(p);
         activateScenePlayback(p, incoming);
-        if (p.nativeEnded && foregroundCurrent(p) && p.transportRevision == scene.transportRevision &&
-            !scene.foregroundPaused && p.transportOperation == Playback::TransportOperation::None) {
+        if (p.nativeEnded && foregroundCurrent(p) && p.transportRevision == wanted.revision &&
+            !wanted.paused && p.transportOperation == Playback::TransportOperation::None) {
             emitForeground(p, "ended"); return true;
         }
     } catch (const std::string &error) {
-        if (p.sceneRole == 1) {
-            if (p.gen == scene.foregroundID) { sceneFatalError = error; sceneFatalGeneration = p.gen; }
+        if (p.sceneRole == audioLayerRole) {
+            if (foregroundCurrent(p)) {
+                emitScene(p.gen, "error", error, 0, 0, desiredTransport(p).revision);
+                sceneAudioLayers.at(p.gen).failed = true;
+            }
+        } else if (p.sceneRole == 1) {
+            if (foregroundCurrent(p)) {
+                foregroundFailure = error; foregroundFailureID = p.gen;
+                foregroundFailureTransport = desiredTransport(p).revision;
+            }
         } else emitScene(scene.gen, "background-error", error);
         return true;
     }
@@ -1209,18 +1413,48 @@ void pumpRetiringPlayback(Playback &p) {
 void tickScene() {
     processSceneCommand();
     if (!sceneMode || !sceneCurrent()) return;
-    if (!sceneFatalError.empty()) { clearScene(true); emitScene(sceneFatalGeneration, "error", sceneFatalError, 0, 0, scene.transportRevision); sceneFatalError.clear(); return; }
+    auto globalFailure = [] {
+        if (sceneFatalError.empty()) return false;
+        std::string message = std::move(sceneFatalError); sceneFatalError.clear();
+        clearScene(true); emitScene(scene.gen, "error", message); return true;
+    };
+    auto sourceFailure = [] {
+        if (foregroundFailure.empty()) return;
+        std::string message = std::move(foregroundFailure); foregroundFailure.clear();
+        failForeground(foregroundFailureID, message, foregroundFailureTransport);
+    };
+    if (globalFailure()) return;
     if (sceneIncoming && pumpScene(*sceneIncoming, true)) halt(sceneIncoming);
-    if (!sceneFatalError.empty()) { clearScene(true); emitScene(sceneFatalGeneration, "error", sceneFatalError, 0, 0, scene.transportRevision); sceneFatalError.clear(); return; }
+    sourceFailure();
+    if (globalFailure()) return;
     if (sceneIncoming && sceneIncoming->playing) {
         halt(sceneForeground); sceneForeground = std::move(sceneIncoming); sceneVisuals();
     }
     if (sceneForeground && pumpScene(*sceneForeground, false)) {
-        completedForegroundToken = sceneForeground->token;
-        retireWithFade(sceneForeground, scene.audioFade);
-        if (!sceneFatalError.empty()) { clearScene(true); emitScene(sceneFatalGeneration, "error", sceneFatalError, 0, 0, scene.transportRevision); sceneFatalError.clear(); return; }
+        if (foregroundFailure.empty()) {
+            completedForegroundToken = sceneForeground->token;
+            retireWithFade(sceneForeground, scene.audioFade);
+        }
+        sourceFailure();
+        if (globalFailure()) return;
         backgroundGain(); sceneVisuals();
     }
+    for (auto &entry : sceneAudioLayers) {
+        auto &layer = entry.second;
+        if (!layer.player) continue;
+        if (!layer.player->error.empty()) {
+            emitScene(entry.first, "error", layer.player->error, 0, 0, layer.desired.transportRevision);
+            layer.failed = true;
+        }
+        if (layer.failed || pumpScene(*layer.player, false)) {
+            layer.completed = layer.player->nativeEnded && !layer.failed;
+            cancelAudioLayer(entry.first); halt(layer.player);
+        } else if (!advanceRamp(*layer.player)) {
+            emitScene(entry.first, "error", "Cannot update native audio fade", 0, 0, layer.desired.transportRevision);
+            layer.failed = true; cancelAudioLayer(entry.first); halt(layer.player);
+        }
+    }
+    settleAudioHandoffs(); backgroundGain();
     if (sceneBackground && pumpScene(*sceneBackground, false)) {
         failedBackgroundToken = sceneBackground->token;
         retireWithFade(sceneBackground, scene.audioFade); sceneVisuals();
@@ -1229,18 +1463,30 @@ void tickScene() {
     if (sceneVisualRetiring) pumpRetiringPlayback(*sceneVisualRetiring);
     for (Playback *p : {sceneForeground.get(), sceneBackground.get(), sceneRetiring.get(), sceneVisualRetiring.get()}) {
         if (p && !advanceRamp(*p)) {
-            clearScene(true); emitScene(scene.gen, "error", "Cannot update native audio fade", 0, 0, scene.transportRevision); return;
+            clearScene(true); emitScene(scene.gen, "error", "Cannot update native audio fade"); return;
         }
     }
+    for (auto &p : sceneLayerRetiring) {
+        if (!p->error.empty() || !advanceRamp(*p)) { volume(*p, 0); p->awaitingAudioHandoff = false; p->rampSeconds = 0; }
+    }
+    sceneLayerRetiring.erase(std::remove_if(sceneLayerRetiring.begin(), sceneLayerRetiring.end(), [](std::unique_ptr<Playback> &p) {
+        if (p->awaitingAudioHandoff || p->rampSeconds > 0) return false;
+        halt(p); return true;
+    }), sceneLayerRetiring.end());
     tickVisualTransition();
     if (sceneRetiring && sceneRetiring->rampSeconds <= 0) halt(sceneRetiring);
     if (sceneVisualRetiring && !retainedVisual(sceneVisualRetiring.get())) releaseRetiringVisual();
-    if (stoppedGeneration && !sceneForeground && !sceneIncoming && !sceneRetiring && !sceneVisualRetiring) {
+    if (stoppedGeneration && !sceneForeground && !sceneIncoming && !sceneRetiring && !sceneVisualRetiring &&
+        sceneAudioLayers.empty() && sceneLayerRetiring.empty()) {
         emitScene(stoppedGeneration, "stopped"); stoppedGeneration = 0;
     }
     static ULONGLONG lastProgress = 0;
-    if (sceneForeground && sceneForeground->playing && sceneForeground->clock && GetTickCount64()-lastProgress >= 250) {
-        emitForeground(*sceneForeground, "progress");
+    if (GetTickCount64()-lastProgress >= 250) {
+        if (sceneForeground && sceneForeground->playing && sceneForeground->clock) emitForeground(*sceneForeground, "progress");
+        for (const auto &entry : sceneAudioLayers) {
+            const auto &p = entry.second.player;
+            if (p && p->playing && p->clock) emitForeground(*p, "progress");
+        }
         lastProgress = GetTickCount64();
     }
 }
@@ -1313,6 +1559,12 @@ void checkDevices() {
         bool lostAudio = false;
         std::vector<std::string> requiredAudio;
         for (Playback *p : {sceneForeground.get(), sceneIncoming.get(), sceneRetiring.get(), sceneVisualRetiring.get()})
+            if (p && p->hasAudio && !p->audio.empty()) requiredAudio.push_back(p->audio);
+        for (const auto &entry : sceneAudioLayers) {
+            const auto &p = entry.second.player;
+            if (p && p->hasAudio && !p->audio.empty()) requiredAudio.push_back(p->audio);
+        }
+        for (const auto &p : sceneLayerRetiring)
             if (p && p->hasAudio && !p->audio.empty()) requiredAudio.push_back(p->audio);
         if (scene.backgroundAudio && stageEnabled && sceneBackground && sceneBackground->hasAudio && !sceneBackground->audio.empty())
             requiredAudio.push_back(sceneBackground->audio);
@@ -1611,12 +1863,31 @@ extern "C" void ss_scene(const ss_scene_request *r) {
     s->imagePath = text(r->image_path); s->backgroundPath = text(r->background_path); s->backgroundKind = text(r->background_kind);
     s->audio = text(r->audio); s->display = text(r->display);
     s->foregroundAudio = r->foreground_has_audio != 0; s->backgroundAudio = r->background_audio != 0;
+    s->foregroundMuted = r->foreground_muted != 0;
     s->enabled = r->stage_enabled != 0; s->hardStop = r->hard_stop != 0;
     s->audioFade = std::isfinite(r->audio_fade_seconds) ? std::clamp(r->audio_fade_seconds, 0.0, 30.0) : 0;
     s->visualFade = std::isfinite(r->visual_fade_seconds) ? std::clamp(r->visual_fade_seconds, 0.0, 30.0) : 0;
     s->masterVolume = std::isfinite(r->master_volume) ? (float)std::clamp(r->master_volume, 0.0, 1.0) : 0;
     s->foregroundVolume = std::isfinite(r->foreground_volume) ? (float)std::clamp(r->foreground_volume, 0.0, 1.0) : 0;
     s->backgroundVolume = std::isfinite(r->background_volume) ? (float)std::clamp(r->background_volume, 0.0, 1.0) : 0;
+    if (r->audio_layer_count > maxAudioLayers || (r->audio_layer_count && !r->audio_layers)) {
+        s->error = "Invalid native audio layer collection";
+    } else {
+        std::map<uint64_t, bool> ids;
+        for (uint32_t i = 0; i < r->audio_layer_count; ++i) {
+            const auto &source = r->audio_layers[i];
+            AudioLayer layer;
+            layer.id = source.id; layer.path = text(source.path); layer.audio = text(source.audio);
+            layer.paused = source.paused != 0;
+            layer.transportRevision = source.transport_revision; layer.seekRevision = source.seek_revision;
+            layer.seekSeconds = std::isfinite(source.seek_seconds) ? std::max(0.0, source.seek_seconds) : 0;
+            layer.volume = std::isfinite(source.volume) ? (float)std::clamp(source.volume, 0.0, 1.0) : 0;
+            if (!layer.id || layer.id == s->foregroundID || layer.path.empty() || !ids.emplace(layer.id, true).second) {
+                s->error = "Audio layers require unique source IDs and nonempty media paths"; break;
+            }
+            s->audioLayers.push_back(std::move(layer));
+        }
+    }
     bool wake = false;
     { std::lock_guard<std::mutex> lock(sceneMutex);
       if (r->revision <= sceneRevision.load()) return;

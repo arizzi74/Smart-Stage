@@ -9,12 +9,20 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.7.2
 
 ## Implemented
 
+- Audio cues have saved **Do not stop video** and **Mix audio** options. The first
+  preserves the exact video decoder/timeline and keeps its soundtrack muted for
+  that video's lifetime. Mixing retains existing audio/video sources and sound.
+  Every selected cue has independent transport identity, pause/resume, progress
+  and track volume; STOP clears the complete foreground mix. Both flags round-trip
+  through current configuration and exported playlist files, defaulting off for
+  older shows. Admin exposes them only for audio cues, with EN/IT labels.
+
 - Update checks read the public website manifest without a GitHub account or
   token. The updater contacts GitHub for official archives/checksums only when
   installing a newer eligible version. Website errors never fall back to the
   GitHub API. Release automation refreshes and anonymously verifies the manifest
   through protected main before testing actual automatic updates. Builds use
-  Go 1.26.10.
+  Go 1.26.11.
 
 - Cloudflare Quick Tunnels provide an account-free remote mode, default on
   supported hosts without configured gateway settings. Saved gateway and LAN

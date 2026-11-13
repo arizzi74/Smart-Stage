@@ -473,9 +473,21 @@ function notify(message, error = false) {
   localizedText($('notice'), () => message); $('notice').classList.toggle('error', error);
 }
 function playbackPaused() { return Boolean(state?.paused ?? (state?.state === 'paused')); }
+function cuePlayback(cueId) {
+  const cue = state?.cues.find(item => item.id === cueId);
+  if (!cue || !['audio', 'video'].includes(cue.kind)) return null;
+  const selected = typeof cue.selected === 'boolean' ? cue.selected : state.activeCueId === cueId && ['loading', 'playing', 'paused'].includes(state.state);
+  if (!selected) return null;
+  return { ...cue, state: cue.state || state.state, paused: cue.paused ?? playbackPaused(),
+    generation: cue.generation ?? state.generation, transportRevision: cue.transportRevision ?? state.transportRevision };
+}
+function sameCueSource(value) {
+  const cue = value && cuePlayback(value.cueId);
+  return Boolean(cue && value.instanceId === state.instanceId && value.stopEpoch === state.stopEpoch && value.generation === cue.generation);
+}
 function activeMediaCue() {
   if (!state || !['loading', 'playing', 'paused'].includes(state.state)) return null;
-  return state.cues.find(cue => cue.id === state.activeCueId && ['audio', 'video'].includes(cue.kind)) || null;
+  return cuePlayback(state.activeCueId);
 }
 function transportIdentity() {
   return { instanceId: state.instanceId, stopEpoch: state.stopEpoch, cueId: state.activeCueId,
@@ -614,8 +626,8 @@ function connection(connected) {
   renderRemoteStage();
   for (const [id, node] of cueButtons) {
     const cue = state?.cues.find(c => c.id === id);
-    const selected = cue?.background ? state?.backgroundOverrideCueId === id : [state?.activeCueId, state?.imageCueId].includes(id);
-    node.disabled = !connected || updatePending() || !cue || sameForeground(pendingTransport) && pendingTransport.cueId === id || !selected && ['missing', 'unsupported', 'error'].includes(cue.validation);
+    const selected = cue?.background ? state?.backgroundOverrideCueId === id : Boolean(cuePlayback(id)) || state?.imageCueId === id;
+    node.disabled = !connected || updatePending() || !cue || sameCueSource(pendingTransport) && pendingTransport.cueId === id || !selected && ['missing', 'unsupported', 'error'].includes(cue.validation);
   }
   if (adminPage) { renderUpdateStatus(); renderEditAvailability(); }
   renderLanguageControls(); renderSeek(); renderMasterVolume();
@@ -906,18 +918,18 @@ function renderCues() {
     node.classList.toggle('custom-color', Boolean(color));
     if (color) { node.style.setProperty('--cue-fill', color); node.style.setProperty('--cue-ink', cueTextColor(color)); }
     else { node.style.removeProperty('--cue-fill'); node.style.removeProperty('--cue-ink'); }
-    const foreground = state.activeCueId === cue.id && ['loading', 'playing', 'paused'].includes(state.state);
+    const playing = cuePlayback(cue.id), foreground = Boolean(playing);
     const image = state.stageEnabled && state.imageCueId === cue.id;
     const background = Boolean(cue.background && state.backgroundOverrideCueId === cue.id);
     const active = cue.background ? background : foreground || image;
     let action = cue.background ? t("Set background ↗") : cue.kind === 'image' ? t("Show image ↗") : t("Start cue ↗");
     if (background) action = t(state.stage?.backgroundCueId ? "Restore default" : "Deselect background");
     if (!cue.background && image) action = t("Press again to stop");
-    if (!cue.background && foreground) action = ['video', 'audio'].includes(cue.kind) ? t(playbackPaused() ? "Press again to resume" : "Press again to pause") : t(state.state);
+    if (!cue.background && foreground) action = t(playing.paused ? "Press again to resume" : "Press again to pause");
     if (cue.validation !== 'ready' && !active) action = t(cue.validation);
     node.lastChild.replaceChildren(element('span', () => `${String(cue.position).padStart(2, '0')} · ${cue.background ? t("background ") : ''}${t(cue.kind || 'unchecked')}`), element('span', action));
-    node.classList.toggle('active', active); node.classList.toggle('paused', !cue.background && foreground && Boolean(state.paused)); node.setAttribute('aria-pressed', String(active));
-    node.disabled = !online || updatePending() || sameForeground(pendingTransport) && pendingTransport.cueId === cue.id || !active && ['missing', 'unsupported', 'error'].includes(cue.validation);
+    node.classList.toggle('active', active); node.classList.toggle('paused', !cue.background && foreground && playing.paused); node.setAttribute('aria-pressed', String(active));
+    node.disabled = !online || updatePending() || sameCueSource(pendingTransport) && pendingTransport.cueId === cue.id || !active && ['missing', 'unsupported', 'error'].includes(cue.validation);
     if (renderedOrder !== order) $('cue-grid').append(node);
   }
   renderedOrder = order; $('empty-cues').hidden = visible.length > 0;
@@ -942,10 +954,10 @@ async function trigger(cueId) {
   if (!online || Date.now() - lastSeen > 18000 || !state) { connection(false); notify(() => t("Disconnected: PLAY was not sent. Reconnect before triggering a cue."), true); return; }
   const request = { requestId: requestID(), instanceId: state.instanceId, stopEpoch: state.stopEpoch, cueId };
   const cue = state.cues.find(item => item.id === cueId);
-  const foreground = activeMediaCue();
-  if (!cue?.background && foreground?.id === cueId && Number.isSafeInteger(state.transportRevision)) {
-    if (sameForeground(pendingTransport) && pendingTransport.cueId === cueId) return;
-    Object.assign(request, transportIdentity(), { action: playbackPaused() ? 'resume' : 'pause' });
+  const playing = cuePlayback(cueId);
+  if (!cue?.background && playing && Number.isSafeInteger(playing.transportRevision)) {
+    if (sameCueSource(pendingTransport) && pendingTransport.cueId === cueId) return;
+    Object.assign(request, { generation: playing.generation, transportRevision: playing.transportRevision, action: playing.paused ? 'resume' : 'pause' });
     pendingTransport = request;
   }
   cancelSeekGesture(); renderSeek(); renderCues(); renderEditAvailability();
@@ -1217,10 +1229,10 @@ function renderEditAvailability() {
   for (const id of ['audio-output', 'display-output', 'allow-primary']) $(id).disabled = pending;
   for (const [id, row] of playlistRows) {
     row.input.disabled = pending;
-    row.play.disabled = pending || !online || sameForeground(pendingTransport) && pendingTransport.cueId === id;
+    row.play.disabled = pending || !online || sameCueSource(pendingTransport) && pendingTransport.cueId === id;
     row.up.disabled = pending || row.first;
     row.down.disabled = pending || row.last;
-    row.remove.disabled = pending || id === state.activeCueId;
+    row.remove.disabled = pending || Boolean(cuePlayback(id));
     row.color.disabled = pending;
     row.resetColor.disabled = pending || !row.customColor;
     row.hidden.disabled = pending || playlistBusy;
@@ -1233,14 +1245,19 @@ function renderEditAvailability() {
       row.volume.value = volumePercent(cue?.volume);
     }
     renderTrackVolume(row.volume, row.volumeValue);
-    const foreground = state.activeCueId === id && ['loading', 'playing', 'paused'].includes(state.state);
+    const playing = cuePlayback(id), foreground = Boolean(playing);
     const image = state.stageEnabled && state.imageCueId === id;
     const background = Boolean(cue?.background && state.backgroundOverrideCueId === id);
     const selected = cue?.background ? background : foreground || image;
     row.play.setAttribute('aria-pressed', String(Boolean(selected)));
-    localizedText(row.play, () => cue?.background ? t(background ? state.stage?.backgroundCueId ? "Restore default" : "Deselect background" : "Set background") : cue?.cache.media.kind === 'image' ? t(image ? "Hide image" : "Show image") : foreground && ['video', 'audio'].includes(cue?.cache.media.kind) ? t(playbackPaused() ? "Resume" : "Pause") : t("Play"));
+    localizedText(row.play, () => cue?.background ? t(background ? state.stage?.backgroundCueId ? "Restore default" : "Deselect background" : "Set background") : cue?.cache.media.kind === 'image' ? t(image ? "Hide image" : "Show image") : foreground ? t(playing.paused ? "Resume" : "Pause") : t("Play"));
     row.background.disabled = pending || playlistBusy || !['image', 'video'].includes(cue?.cache.media.kind);
     row.backgroundLabel.hidden = !['image', 'video'].includes(cue?.cache.media.kind) && !cue?.background;
+    const audioCue = cue?.cache.media.kind === 'audio';
+    row.keepVideoLabel.hidden = !audioCue;
+    row.mixAudioLabel.hidden = !audioCue;
+    row.keepVideo.disabled = pending || playlistBusy || !audioCue;
+    row.mixAudio.disabled = pending || playlistBusy || !audioCue;
   }
   // A newer host revision can arrive during our PUT. Recheck when its busy
   // flag clears as well as on state events, even if no further event follows.
@@ -1442,7 +1459,7 @@ async function refreshValidationDetails() {
     } while (validationRefreshPending && !quitBusy && !appClosed && !reloadingAdmin);
   } finally { validationRefresh = false; renderStageSettings(); renderEditAvailability(); }
 }
-function cueEdits() { return playlist.cues.map(({ id, label, path, color, hidden, background, volume }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background), volume: Number.isFinite(volume) ? volume : .5 })); }
+function cueEdits() { return playlist.cues.map(({ id, label, path, color, hidden, background, keepVideo, mixAudio, volume }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background), keepVideo: Boolean(keepVideo), mixAudio: Boolean(mixAudio), volume: Number.isFinite(volume) ? volume : .5 })); }
 async function savePlaylist(cues) {
   if (updatePending()) { notify(() => t("Smart Stage is preparing an update. Wait before editing the show.")); return false; }
   if (playlistBusy || playlistFileBusy) { notify(() => t("An edit is being saved. Wait before making another edit."), true); return false; }
@@ -1629,7 +1646,17 @@ function renderPlaylist() {
     background.addEventListener('change', () => { const edited = cueEdits(); edited[index].background = background.checked; void savePlaylist(edited); });
     backgroundLabel.append(background, localizedNode(() => t("Background button")));
     localizedAttribute(backgroundLabel, 'title', () => t("Pressing this button changes the stage background and keeps music playing. Press it again to restore the saved default, or black."));
-    options.append(hiddenLabel, backgroundLabel); info.append(options);
+    const keepVideoLabel = element('label', undefined, 'check'), keepVideo = element('input'); keepVideo.type = 'checkbox'; keepVideo.checked = Boolean(cue.keepVideo);
+    localizedAttribute(keepVideo, 'aria-label', () => t("Do not stop video for cue {0}", {0: index + 1}));
+    keepVideo.addEventListener('change', () => { const edited = cueEdits(); edited[index].keepVideo = keepVideo.checked; void savePlaylist(edited); });
+    keepVideoLabel.append(keepVideo, localizedNode(() => t("Do not stop video")));
+    localizedAttribute(keepVideoLabel, 'title', () => t("Keep the current video playing. Its soundtrack stays muted until that video ends or is restarted. With Mix audio enabled, existing sound is preserved."));
+    const mixAudioLabel = element('label', undefined, 'check'), mixAudio = element('input'); mixAudio.type = 'checkbox'; mixAudio.checked = Boolean(cue.mixAudio);
+    localizedAttribute(mixAudio, 'aria-label', () => t("Mix audio for cue {0}", {0: index + 1}));
+    mixAudio.addEventListener('change', () => { const edited = cueEdits(); edited[index].mixAudio = mixAudio.checked; void savePlaylist(edited); });
+    mixAudioLabel.append(mixAudio, localizedNode(() => t("Mix audio")));
+    localizedAttribute(mixAudioLabel, 'title', () => t("Play this audio together with the current music and video soundtrack. Press its button again to pause or resume only this cue."));
+    options.append(hiddenLabel, backgroundLabel, keepVideoLabel, mixAudioLabel); info.append(options);
     if (counts.get(cue.label) > 1) info.append(element('p', () => t("Duplicate label — use cue position to distinguish."), 'hint'));
     const tools = element('div', undefined, 'cue-tools');
     const move = delta => { const edited = cueEdits(); [edited[index], edited[index + delta]] = [edited[index + delta], edited[index]]; void savePlaylist(edited); };
@@ -1640,7 +1667,7 @@ function renderPlaylist() {
     const play = button(() => t("Play"), () => trigger(cue.id));
     tools.append(play, up, down, remove);
     row.append(element('span', String(index + 1).padStart(2, '0'), 'position'), info, tools);
-    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, hidden, background, backgroundLabel, volume, volumeValue, volumeControls, volumeGesture, volumePath: cue.path, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
+    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, hidden, background, backgroundLabel, keepVideo, keepVideoLabel, mixAudio, mixAudioLabel, volume, volumeValue, volumeControls, volumeGesture, volumePath: cue.path, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
   });
   renderStageSettings(); renderEditAvailability();
 }

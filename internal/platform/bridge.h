@@ -22,6 +22,12 @@ void ss_start(uint64_t generation, const char *path, const char *audio,
 void ss_stop(uint64_t generation);
 void ss_stage(uint64_t generation, const char *display, int enabled);
 typedef struct {
+    uint64_t id, transport_revision, seek_revision;
+    const char *path, *audio;
+    int paused;
+    double seek_seconds, volume;
+} ss_audio_layer;
+typedef struct {
     uint64_t revision, generation, foreground_id;
     uint64_t transport_revision, seek_revision;
     const char *foreground_path, *foreground_kind, *image_path;
@@ -30,13 +36,20 @@ typedef struct {
     int foreground_paused;
     double audio_fade_seconds, visual_fade_seconds, seek_seconds;
     double master_volume, foreground_volume, background_volume;
+    int foreground_muted;
+    const ss_audio_layer *audio_layers;
+    uint32_t audio_layer_count;
 } ss_scene_request;
 /* Complete, latest-revision-wins scene. All pointed-to strings are copied.
  * Foreground events use foreground_id as generation; stopped uses generation.
  * stage/background-error events include sceneRevision. Foreground events also
  * include transportRevision; paused/playing acknowledge transport application.
  * Seek only when seek_revision changes (zero means no seek). Pausing retains
- * the foreground's audio dominance, source identity and video frame. */
+ * the foreground's audio dominance, source identity and video frame.
+ * audio_layers (at most 500) have independent immutable IDs and transports;
+ * all layer entries and their strings are copied before ss_scene returns.
+ * background_audio is final eligibility, including any foreground suppression.
+ * foreground_muted preserves the source/timeline while silencing its sound. */
 void ss_scene(const ss_scene_request *request);
 #if defined(__APPLE__) || defined(_WIN32)
 /* OS UI language preference, narrowed to the first supported language (en/it).

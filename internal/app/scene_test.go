@@ -28,6 +28,7 @@ type sceneInspectGate struct {
 	path                        string
 	entered, release, completed chan struct{}
 	once                        sync.Once
+	err                         error
 }
 
 func (f *sceneNative) ApplyScene(scene playback.Scene) error {
@@ -49,6 +50,9 @@ func (f *sceneNative) Inspect(_ context.Context, path string) (playback.Media, e
 			<-gate.release
 			close(gate.completed)
 		})
+		if gate.err != nil {
+			return playback.Media{}, gate.err
+		}
 	}
 	switch filepath.Ext(path) {
 	case ".wav":
@@ -182,7 +186,7 @@ func TestSceneBackgroundSwitchStopToggleAndEmergency(t *testing.T) {
 	}
 	eventually(t, func() bool { return f.latest().BackgroundPath == paths["background-video"] })
 	background := f.latest()
-	if background.ForegroundID != music.ForegroundID || !background.BackgroundAudio || s.Snapshot(true).ActiveCueID != "music" {
+	if background.ForegroundID != music.ForegroundID || background.BackgroundAudio || s.Snapshot(true).ActiveCueID != "music" {
 		t.Fatalf("background switch replaced music: %+v", background)
 	}
 	if s.Playlist().Stage.BackgroundCueID != "backdrop" || s.Snapshot(true).BackgroundCueID != "background-video" {

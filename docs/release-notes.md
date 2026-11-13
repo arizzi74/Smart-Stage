@@ -1,13 +1,11 @@
-Smart Stage 1.7.2 improves Cloudflare connections on networks that block QUIC.
+Smart Stage 1.8.0 adds two saved options for audio cues.
 
-- Cloudflare still tries QUIC first, but switches to HTTP/2 sooner when connection attempts fail. Previously the app's startup timeout could restart the helper before it reached that fallback.
-- Admin retains a clear connection-timeout notice while retrying instead of immediately replacing it with a generic connecting message. The notice clears when connected or when you explicitly reconnect/change modes. English and Italian are supported.
-- Admin stays local; helper verification, encrypted connections, gateway settings and Windows ARM64 availability are unchanged. Networks must still permit Cloudflare Tunnel traffic on UDP or TCP port 7844; the app does not bypass network policy or disable TLS checks.
+- **Do not stop video** keeps the current video playing while the audio cue replaces its soundtrack. The video stays silent after the audio finishes or is paused, until that video ends or is restarted.
+- **Mix audio** plays the cue alongside existing music and video audio. It keeps the video running even when Do not stop video is unchecked. Several audio cues can play together.
+- Each selected audio/video button pauses or resumes its own source. STOP clears every playing cue and returns to the selected background. Per-track volume, master volume and audio fades apply to the mix.
+- Both options appear only on audio cues in Admin, in English or Italian, and are included in saved `.smartstage.json` playlists. Existing playlists keep their previous playback behavior by default.
 
-The v1.7.1 build did not publish because verification failed. This release also
-corrects test synchronization around playlist reloads and establishes video
-motion before measuring a native crossfade; playback code and assertions remain
-unchanged.
+Builds include the Go 1.26.11 HTTP-server security fixes.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 

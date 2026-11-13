@@ -153,6 +153,9 @@ func (n *native) ApplyScene(s playback.Scene) error {
 		return err
 	}
 	defer n.work.Done()
+	if len(s.AudioLayers) > 500 {
+		return errors.New("Too many concurrent audio cues")
+	}
 	values := []string{s.ForegroundPath, s.ForegroundKind, s.ImagePath, s.BackgroundPath, s.BackgroundKind, s.AudioID, s.DisplayID}
 	strings := make([]*C.char, len(values))
 	for i, value := range values {
@@ -165,6 +168,25 @@ func (n *native) ApplyScene(s playback.Scene) error {
 		}
 		return 0
 	}
+	var layers *C.ss_audio_layer
+	if len(s.AudioLayers) != 0 {
+		memory := C.calloc(C.size_t(len(s.AudioLayers)), C.size_t(C.sizeof_ss_audio_layer))
+		if memory == nil {
+			return errors.New("Could not prepare native audio cues")
+		}
+		defer C.free(memory)
+		layers = (*C.ss_audio_layer)(memory)
+		entries := unsafe.Slice(layers, len(s.AudioLayers))
+		for i, layer := range s.AudioLayers {
+			path, audio := C.CString(layer.Path), C.CString(layer.AudioID)
+			defer C.free(unsafe.Pointer(path))
+			defer C.free(unsafe.Pointer(audio))
+			entries[i] = C.ss_audio_layer{
+				id: C.uint64_t(layer.ID), transport_revision: C.uint64_t(layer.TransportRevision), seek_revision: C.uint64_t(layer.SeekRevision),
+				path: path, audio: audio, paused: bit(layer.Paused), seek_seconds: C.double(layer.SeekSeconds), volume: C.double(layer.Volume),
+			}
+		}
+	}
 	request := C.ss_scene_request{
 		revision: C.uint64_t(s.Revision), generation: C.uint64_t(s.Generation), foreground_id: C.uint64_t(s.ForegroundID),
 		transport_revision: C.uint64_t(s.TransportRevision), seek_revision: C.uint64_t(s.SeekRevision), foreground_paused: bit(s.ForegroundPaused), seek_seconds: C.double(s.SeekSeconds),
@@ -172,6 +194,7 @@ func (n *native) ApplyScene(s playback.Scene) error {
 		foreground_has_audio: bit(s.ForegroundHasAudio), background_audio: bit(s.BackgroundAudio), stage_enabled: bit(s.StageEnabled), hard_stop: bit(s.HardStop),
 		audio_fade_seconds: C.double(s.AudioFadeSeconds), visual_fade_seconds: C.double(s.VisualFadeSeconds),
 		master_volume: C.double(s.MasterVolume), foreground_volume: C.double(s.ForegroundVolume), background_volume: C.double(s.BackgroundVolume),
+		foreground_muted: bit(s.ForegroundMuted), audio_layers: layers, audio_layer_count: C.uint32_t(len(s.AudioLayers)),
 	}
 	C.ss_scene(&request)
 	return nil

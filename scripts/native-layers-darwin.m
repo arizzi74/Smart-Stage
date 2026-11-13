@@ -1,0 +1,286 @@
+// Own-process observation of production AVPlayer sources. No test hooks are
+// compiled into the shipped app, and no physical audio measurement is claimed.
+#import "../internal/platform/bridge_darwin.m"
+#include <assert.h>
+#include <string.h>
+
+static NSString *probeAudio, *probeDisplay, *probeFirst, *probeSecond, *probeVideo;
+static uint64_t probeRevision;
+static NSMutableDictionary *probeForeground;
+static NSMutableArray<NSMutableDictionary *> *probeLayers;
+static BOOL probeBackgroundSound, probeStage = YES;
+static double probeMaster = 1, probeFade = .35;
+
+static NSMutableDictionary *voice(uint64_t identifier, NSString *path, uint64_t transport) {
+    return [@{@"id": @(identifier), @"path": path, @"transport": @(transport),
+        @"paused": @NO, @"seek": @0, @"position": @0, @"volume": @1, @"muted": @NO} mutableCopy];
+}
+static void apply(BOOL hard) {
+    ss_scene_request request = {0};
+    request.revision = ++probeRevision; request.generation = 1000 + probeRevision;
+    request.master_volume = probeMaster;
+    request.foreground_volume = [probeForeground[@"volume"] doubleValue];
+    request.background_volume = 1;
+    request.foreground_id = [probeForeground[@"id"] unsignedLongLongValue];
+    request.foreground_path = [probeForeground[@"path"] UTF8String] ?: "";
+    request.foreground_kind = probeForeground ? ([probeForeground[@"path"] isEqual:probeVideo] ? "video" : "audio") : "";
+    request.foreground_has_audio = probeForeground != nil;
+    request.foreground_muted = [probeForeground[@"muted"] boolValue];
+    request.foreground_paused = [probeForeground[@"paused"] boolValue];
+    request.transport_revision = [probeForeground[@"transport"] unsignedLongLongValue];
+    request.seek_revision = [probeForeground[@"seek"] unsignedLongLongValue];
+    request.seek_seconds = [probeForeground[@"position"] doubleValue];
+    request.background_path = probeVideo.UTF8String;
+    request.background_kind = "video";
+    request.background_audio = probeBackgroundSound;
+    request.audio = probeAudio.UTF8String; request.display = probeDisplay.UTF8String;
+    request.stage_enabled = probeStage; request.hard_stop = hard;
+    request.audio_fade_seconds = probeFade; request.visual_fade_seconds = .1;
+    ss_audio_layer layers[16] = {0};
+    assert(probeLayers.count <= 16);
+    for (NSUInteger i = 0; i < probeLayers.count; ++i) {
+        NSDictionary *entry = probeLayers[i];
+        layers[i].id = [entry[@"id"] unsignedLongLongValue];
+        layers[i].path = [entry[@"path"] UTF8String]; layers[i].audio = probeAudio.UTF8String;
+        layers[i].paused = [entry[@"paused"] boolValue];
+        layers[i].transport_revision = [entry[@"transport"] unsignedLongLongValue];
+        layers[i].seek_revision = [entry[@"seek"] unsignedLongLongValue];
+        layers[i].seek_seconds = [entry[@"position"] doubleValue];
+        layers[i].volume = [entry[@"volume"] doubleValue];
+    }
+    request.audio_layers = layers; request.audio_layer_count = (uint32_t)probeLayers.count;
+    ss_scene(&request);
+    // The bridge must own a copy before returning, including the stack array.
+    memset(layers, 0, sizeof layers);
+}
+static SSScenePlayer *layer(uint64_t identifier) {
+    for (SSScenePlayer *source in sceneAudioLayers) if (source.identifier == identifier) return source;
+    return nil;
+}
+static BOOL playing(SSScenePlayer *source) {
+    return source && source.started && source.player.rate > 0 && !source.player.muted && source.player.volume > .99;
+}
+static BOOL quietBackground(void) {
+    return !sceneBackground || sceneBackground.player.volume < .001 || sceneBackground.player.muted;
+}
+
+int main(void) {
+    @autoreleasepool {
+        NSString *(^environment)(const char *) = ^NSString *(const char *name) {
+            return [NSString stringWithUTF8String:getenv(name) ?: ""];
+        };
+        probeAudio = environment("SMARTSTAGE_SCENE_PROBE_AUDIO");
+        probeDisplay = environment("SMARTSTAGE_SCENE_PROBE_DISPLAY");
+        probeFirst = environment("SMARTSTAGE_SCENE_PROBE_FIRST");
+        probeSecond = environment("SMARTSTAGE_SCENE_PROBE_SECOND");
+        probeVideo = environment("SMARTSTAGE_SCENE_PROBE_BACKGROUND");
+        if (!probeAudio.length || !probeDisplay.length || !probeFirst.length || !probeSecond.length || !probeVideo.length) return 2;
+        char *failure = ss_init();
+        if (failure) { fprintf(stderr, "%s\n", failure); ss_free(failure); return 3; }
+        probeLayers = [NSMutableArray array];
+        probeForeground = voice(10, probeVideo, 1);
+        __block NSUInteger phase = 0;
+        __block BOOL passed = NO, replacementOverlap = NO, stopFade = NO, stopSeekPending = NO, mixedDuringFade = NO;
+        __block double preservedFadeStart = 0, preservedFadeDuration = 0;
+        __block uint64_t hardStopRevision = 0;
+        __block double began = NSProcessInfo.processInfo.systemUptime, phaseBegan = began;
+        __block double videoBefore = 0, firstBefore = 0, secondBefore = 0;
+        __block SSScenePlayer *video, *first, *second, *retiring;
+        __block AVPlayer *videoPlayer, *firstPlayer, *secondPlayer;
+        __block AVPlayerItem *videoItem;
+        NSMutableArray *observations = [NSMutableArray array];
+        NSMutableSet<NSString *> *transportEvents = [NSMutableSet set];
+        dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+        dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 20 * NSEC_PER_MSEC), 20 * NSEC_PER_MSEC, NSEC_PER_MSEC);
+        dispatch_source_set_event_handler(timer, ^{
+            @autoreleasepool {
+                if (passed || atomic_load(&shuttingDown)) return;
+                double now = NSProcessInfo.processInfo.systemUptime;
+                if (now - began > 55) {
+                    fprintf(stderr, "Native layer probe timed out: phase=%lu active=%lu retiring=%lu foreground=%llu\n",
+                        (unsigned long)phase, (unsigned long)sceneAudioLayers.count, (unsigned long)sceneRetiringAudioLayers.count,
+                        (unsigned long long)sceneForeground.identifier);
+                    ss_quit(); return;
+                }
+                char *raw;
+                while ((raw = ss_poll())) {
+                    NSDictionary *event = [NSJSONSerialization JSONObjectWithData:[[NSString stringWithUTF8String:raw] dataUsingEncoding:NSUTF8StringEncoding] options:0 error:NULL];
+                    ss_free(raw);
+                    uint64_t identifier = [event[@"generation"] unsignedLongLongValue];
+                    NSString *kind = event[@"kind"];
+                    [transportEvents addObject:[NSString stringWithFormat:@"%@:%@:%@", event[@"generation"], event[@"transportRevision"] ?: @0, kind]];
+                    if (([kind isEqual:@"error"] && identifier != 53) || [kind isEqual:@"background-error"] || [kind isEqual:@"device-lost"] ||
+                        (hardStopRevision && [event[@"sceneRevision"] unsignedLongLongValue] >= hardStopRevision && ([kind isEqual:@"playing"] || [kind isEqual:@"paused"] || [kind isEqual:@"progress"] || [kind isEqual:@"ended"]))) {
+                        fprintf(stderr, "Unexpected layer event: %s\n", event.description.UTF8String); ss_quit(); return;
+                    }
+                }
+                if (phase == 0 && playing(sceneForeground) && sceneForeground.layer.readyForDisplay && !sceneVisualTimer && seconds(sceneForeground.player.currentTime) > .1) {
+                    video = sceneForeground; videoPlayer = video.player; videoItem = video.item; videoBefore = seconds(videoPlayer.currentTime);
+                    [probeLayers addObject:voice(20, probeFirst, 41)]; apply(NO);
+                    phase = 1; phaseBegan = now;
+                } else if (phase == 1 && playing(layer(20)) && !sceneFadeTimer) {
+                    if (sceneForeground != video || video.player != videoPlayer || video.item != videoItem || !playing(video) ||
+                        seconds(videoPlayer.currentTime) <= videoBefore || sceneVisualCurrent != video || sceneVisualTimer || !quietBackground()) {
+                        fprintf(stderr, "MixAudio restarted video or replaced its soundtrack\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"mixAudioRetainsVideoPlayerFrameTimelineAndSoundtrack": @YES}];
+                    retiring = layer(20); videoBefore = seconds(videoPlayer.currentTime);
+                    probeForeground[@"muted"] = @YES;
+                    [probeLayers removeAllObjects]; [probeLayers addObject:voice(30, probeSecond, 51)]; apply(NO);
+                    phase = 2; phaseBegan = now;
+                } else if (phase == 2) {
+                    if (layer(30).player.volume > .05 && layer(30).player.volume < .95 && retiring.player.volume > .05) {
+                        replacementOverlap = YES;
+                        if (!mixedDuringFade) {
+                            mixedDuringFade = YES;
+                            preservedFadeStart = layer(30).audioFadeStarted;
+                            preservedFadeDuration = layer(30).audioFadeDuration;
+                            [probeLayers addObject:voice(32, probeFirst, 62)]; apply(NO);
+                        }
+                    }
+                    if (playing(layer(30)) && !sceneFadeTimer && !sceneRetiringAudioLayers.count) {
+                        if (!replacementOverlap || !mixedDuringFade || layer(30).audioFadeStarted != preservedFadeStart ||
+                            layer(30).audioFadeDuration != preservedFadeDuration || sceneForeground != video || video.player != videoPlayer || video.item != videoItem ||
+                            seconds(videoPlayer.currentTime) <= videoBefore || video.player.volume > .001 || sceneVisualCurrent != video ||
+                            video.layer.hidden || !retiring.disposed || retiring.player || !quietBackground()) {
+                            fprintf(stderr, "KeepVideo failed identity/playhead, replacement fade, or soundtrack suppression\n"); ss_quit(); return;
+                        }
+                        [observations addObject:@{@"keepVideoRetainsExactPlayerFrameAndPlayheadWhileReplacingSound": @YES,
+                            @"audioLayerReplacementCrossfadesAndReleasesRetiredDecoder": @YES,
+                            @"mixAdditionPreservesExistingAudioFadeEnvelopes": @YES}];
+                        // Hold the short fixture video's existing frame while the
+                        // remaining independent audio transport checks execute.
+                        probeForeground[@"paused"] = @YES; probeForeground[@"transport"] = @2;
+                        [probeLayers removeObjectAtIndex:1];
+                        [probeLayers addObject:voice(31, probeFirst, 61)]; apply(NO);
+                        phase = 3; phaseBegan = now;
+                    }
+                } else if (phase == 3 && playing(layer(30)) && playing(layer(31)) && !sceneFadeTimer && video.player.rate == 0) {
+                    first = layer(30); second = layer(31); firstPlayer = first.player; secondPlayer = second.player;
+                    firstBefore = seconds(firstPlayer.currentTime); secondBefore = seconds(secondPlayer.currentTime);
+                    probeLayers[0][@"paused"] = @YES; probeLayers[0][@"transport"] = @52; apply(NO);
+                    phase = 4; phaseBegan = now;
+                } else if (phase == 4 && now - phaseBegan > .2 && [transportEvents containsObject:@"30:52:paused"]) {
+                    if (first.player != firstPlayer || second.player != secondPlayer || firstPlayer.rate != 0 || !firstPlayer.muted ||
+                        fabs(seconds(firstPlayer.currentTime) - firstBefore) > .09 || !playing(second) ||
+                        seconds(secondPlayer.currentTime) < secondBefore + .08 || video.player != videoPlayer || video.player.volume > .001 || !quietBackground()) {
+                        fprintf(stderr, "Pausing one layer affected another source or resumed background audio\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"audioLayerPauseFreezesOnlyItsOwnDecoderAndClock": @YES,
+                        @"pausedReplacementCannotRestoreVideoOrBackgroundSound": @YES}];
+                    probeLayers[0][@"paused"] = @NO; probeLayers[0][@"transport"] = @53; apply(NO);
+                    phase = 5; phaseBegan = now;
+                } else if (phase == 5 && playing(first) && now - phaseBegan > .15 && [transportEvents containsObject:@"30:53:playing"]) {
+                    if (first.player != firstPlayer || seconds(firstPlayer.currentTime) <= firstBefore + .07 || second.player != secondPlayer || !playing(second)) {
+                        fprintf(stderr, "Layer resume replaced or interrupted a decoder\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"audioLayerResumeRetainsPlayerAndUsesItsOwnTransportRevision": @YES}];
+                    probeMaster = .4; probeLayers[0][@"volume"] = @0.5; probeLayers[1][@"volume"] = @0.75; apply(NO);
+                    phase = 6; phaseBegan = now;
+                } else if (phase == 6 && now - phaseBegan > .1) {
+                    if (first.player != firstPlayer || second.player != secondPlayer || fabs(firstPlayer.volume - .2) > .001 ||
+                        fabs(secondPlayer.volume - .3) > .001 || first.fadeGain != 1 || second.fadeGain != 1 || sceneFadeTimer || !quietBackground()) {
+                        fprintf(stderr, "Layer master/track volumes restarted or mis-scaled playback\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"masterAndTrackVolumeScaleEveryAudioLayerWithoutRestart": @YES}];
+                    firstBefore = seconds(firstPlayer.currentTime); secondBefore = seconds(secondPlayer.currentTime);
+                    probeStage = NO; apply(NO); phase = 17; phaseBegan = now;
+                } else if (phase == 17 && now - phaseBegan > .15) {
+                    if (stageEnabled || stageWindow.isVisible || first.player != firstPlayer || second.player != secondPlayer ||
+                        firstPlayer.rate <= 0 || secondPlayer.rate <= 0 || seconds(firstPlayer.currentTime) < firstBefore + .05 ||
+                        seconds(secondPlayer.currentTime) < secondBefore + .05 || !quietBackground()) {
+                        fprintf(stderr, "Stage-off interrupted an audio layer\n"); ss_quit(); return;
+                    }
+                    probeStage = YES; apply(NO); phase = 18; phaseBegan = now;
+                } else if (phase == 18 && stageEnabled && stageWindow.isVisible && now - phaseBegan > .1) {
+                    if (first.player != firstPlayer || second.player != secondPlayer || video.player != videoPlayer ||
+                        video.player.rate != 0 || video.player.volume > .001 || fabs(firstPlayer.volume - .2) > .001 ||
+                        fabs(secondPlayer.volume - .3) > .001 || !quietBackground()) {
+                        fprintf(stderr, "Stage-on changed layer transport, gain or preserved video frame\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"stageChangesPreserveAllAudioLayersAndKeptVideo": @YES}];
+                    probeMaster = 1; probeLayers[0][@"volume"] = @1; probeLayers[1][@"volume"] = @1;
+                    probeLayers[0][@"transport"] = @54; probeLayers[0][@"seek"] = @1; probeLayers[0][@"position"] = @19.7;
+                    apply(NO); phase = 7; phaseBegan = now;
+                } else if (phase == 7 && [transportEvents containsObject:@"30:54:ended"]) {
+                    if (layer(30) || !first.disposed || first.player || layer(31) != second || !playing(second) || video.player != videoPlayer || !quietBackground()) {
+                        fprintf(stderr, "Layer natural end affected another decoder or restored suppressed sound\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"audioLayerEndReportsOwnIdentityWithoutStoppingOtherSources": @YES}];
+                    apply(NO); phase = 8; phaseBegan = now;
+                } else if (phase == 8 && now - phaseBegan > .15) {
+                    if (layer(30) || sceneAudioLayers.count != 1 || layer(31) != second || !playing(second) || !quietBackground()) {
+                        fprintf(stderr, "An ended audio layer was resurrected by a later scene\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"lateSceneCannotResurrectEndedAudioLayer": @YES}];
+                    [probeLayers removeAllObjects]; probeForeground = nil; probeFade = .35; apply(NO);
+                    phase = 9; phaseBegan = now;
+                } else if (phase == 9) {
+                    if (second.player.volume > .05 && second.player.volume < .95) stopFade = YES;
+                    if (!sceneAudioLayers.count && !sceneRetiringAudioLayers.count && !sceneFadeTimer && now - phaseBegan > .1) {
+                        if (!stopFade || !second.disposed || second.player || sceneForeground || !quietBackground()) {
+                            fprintf(stderr, "STOP did not fade and release all audio layers\n"); ss_quit(); return;
+                        }
+                        [observations addObject:@{@"stopFadesAndReleasesAllAudioLayers": @YES}];
+                        probeFade = .15; probeForeground = voice(50, probeFirst, 70);
+                        [probeLayers addObject:voice(51, probeSecond, 71)]; [probeLayers addObject:voice(52, probeFirst, 72)]; apply(NO);
+                        phase = 10; phaseBegan = now;
+                    }
+                } else if (phase == 10 && playing(sceneForeground) && playing(layer(51)) && playing(layer(52)) && !sceneFadeTimer) {
+                    first = layer(51); second = layer(52); firstPlayer = first.player; secondPlayer = second.player;
+                    firstBefore = seconds(firstPlayer.currentTime); secondBefore = seconds(secondPlayer.currentTime);
+                    probeForeground[@"paused"] = @YES; probeForeground[@"transport"] = @73; apply(NO);
+                    phase = 11; phaseBegan = now;
+                } else if (phase == 11 && now - phaseBegan > .2 && [transportEvents containsObject:@"50:73:paused"]) {
+                    if (!playing(first) || !playing(second) || seconds(firstPlayer.currentTime) < firstBefore + .08 ||
+                        seconds(secondPlayer.currentTime) < secondBefore + .08 || sceneForeground.player.rate != 0 || !quietBackground()) {
+                        fprintf(stderr, "Pausing original audio silenced its independent mixed layers\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"mixAudioRetainsOriginalAudioAndIndependentPauseControls": @YES}];
+                    [probeLayers addObject:voice(53, [probeFirst stringByAppendingString:@".missing"], 74)]; apply(NO);
+                    phase = 12; phaseBegan = now;
+                } else if (phase == 12 && [transportEvents containsObject:@"53:74:error"]) {
+                    if (layer(53) || layer(51) != first || layer(52) != second || !playing(first) || !playing(second) || !quietBackground()) {
+                        fprintf(stderr, "Layer error stopped or unmuted an unrelated source\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"audioLayerErrorReportsOwnIdentityAndPreservesOtherSources": @YES}];
+                    probeForeground = nil; [probeLayers removeAllObjects]; probeBackgroundSound = YES;
+                    [probeLayers addObject:voice(70, probeFirst, 81)]; [probeLayers addObject:voice(71, probeSecond, 82)]; apply(NO);
+                    phase = 13; phaseBegan = now;
+                } else if (phase == 13 && playing(sceneBackground) && playing(layer(70)) && playing(layer(71)) && !sceneFadeTimer) {
+                    first = layer(70); second = layer(71); firstPlayer = first.player; secondPlayer = second.player;
+                    firstBefore = seconds(firstPlayer.currentTime); secondBefore = seconds(secondPlayer.currentTime);
+                    probeLayers[0][@"paused"] = @YES; probeLayers[0][@"transport"] = @83; apply(NO);
+                    phase = 14; phaseBegan = now;
+                } else if (phase == 14 && now - phaseBegan > .2 && [transportEvents containsObject:@"70:83:paused"]) {
+                    if (!playing(sceneBackground) || !playing(second) || firstPlayer.rate != 0 || !firstPlayer.muted ||
+                        seconds(secondPlayer.currentTime) < secondBefore + .08) {
+                        fprintf(stderr, "MixAudio did not preserve eligible background soundtrack during independent pause\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"mixAudioPreservesEligibleBackgroundSoundtrack": @YES}];
+                    probeLayers[1][@"transport"] = @84; probeLayers[1][@"seek"] = @1; probeLayers[1][@"position"] = @8;
+                    apply(NO);
+                    onMain(^{
+                        stopSeekPending = layer(71).seeking;
+                        probeStage = NO; probeForeground = nil; [probeLayers removeAllObjects]; apply(YES);
+                        hardStopRevision = probeRevision;
+                    });
+                    phase = 16; phaseBegan = now;
+                } else if (phase == 16 && now - phaseBegan > .25) {
+                    if (!stopSeekPending || sceneForeground || sceneBackground || sceneRetiring || sceneAudioLayers.count || sceneRetiringAudioLayers.count ||
+                        sceneVisualCurrent || sceneVisualOutgoing || sceneFadeTimer || sceneVisualTimer || stageEnabled || stageWindow.isVisible ||
+                        !first.disposed || !second.disposed || first.player || second.player) {
+                        fprintf(stderr, "Hard STOP left a native audio layer or late seek alive\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"hardStopDuringLayerSeekDisposesAllSourcesAndRejectsLateEvents": @YES}];
+                    passed = YES; dispatch_source_cancel(timer);
+                    NSData *report = [NSJSONSerialization dataWithJSONObject:@{@"status": @"passed", @"observations": observations,
+                        @"method": @"Production Cocoa bridge; actual AVPlayer identity, native clocks, gain, state and event observations. No physical audio measurement."} options:0 error:NULL];
+                    puts([[NSString alloc] initWithData:report encoding:NSUTF8StringEncoding].UTF8String); fflush(stdout); ss_quit();
+                }
+            }
+        });
+        dispatch_resume(timer); apply(NO); ss_run(); dispatch_source_cancel(timer);
+        return passed ? 0 : 1;
+    }
+}

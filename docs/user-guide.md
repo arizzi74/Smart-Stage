@@ -288,7 +288,7 @@ acceptance testing.
    unsaved stage choices stay in place. If another Admin session changes those
    same settings, use **Discard draft and reload** in this section
    to recover without restarting the app.
-6. Tap an audio/video cue to play it. An audio cue returns the stage to its
+6. Tap an audio/video cue to play it. By default, an audio cue returns the stage to its
    background; an image cue changes the picture while the music and its selected
    button stay active. Press the selected audio/video button again to **pause**;
    press it once more to **resume** at the same position. A paused video keeps
@@ -305,7 +305,7 @@ acceptance testing.
    there. The preview fades away on release. Seeking while paused stays paused.
    The slider is unavailable while loading or when duration is unknown. Keyboard
    arrows move one second, Page Up/Down ten seconds, and Home/End go to either end.
-7. **STOP** ends the foreground cue and clears the image overlay, returning to
+7. **STOP** ends every foreground and mixed audio cue and clears the image overlay, returning to
    the current background and its optional soundtrack. Enabled fades crossfade
    outgoing images/videos to the next visual or background, or fade them to
    black. Sound crossfades to the next sound or fades to silence. Starting from
@@ -313,6 +313,30 @@ acceptance testing.
    audio. Stage off mutes the background soundtrack. **Escape** immediately
    stops all sound and closes the stage, cancelling any transition. Stage off
    also hides the visuals immediately. **Disconnect** is in the top bar.
+
+## Audio cue options
+
+Each audio file in **Admin → Playlist** has two saved options, both off by default:
+
+- **Do not stop video** keeps the current video running at the same position
+  while this audio replaces its soundtrack. Other foreground music is replaced.
+  The video stays silent when this audio finishes or is paused, until the video
+  ends or is restarted.
+- **Mix audio** adds this audio to the music and video soundtrack already playing.
+  It also keeps the video running even if **Do not stop video** is off. If both
+  options are selected, mixing preserves the existing sound. A video that was
+  already silenced stays silent.
+
+Several audio buttons can stay selected together. Press a selected button again
+to pause that cue, then once more to resume it; other cues continue. **STOP**
+clears all of them and returns to the selected background. Each track's volume
+and the remote's master volume apply to the mix. The bottom seek bar controls
+the most recently selected cue. Starting an ordinary replacement cue returns to
+the usual single-foreground behavior.
+
+These options are stored in the current show and in exported `.smartstage.json`
+playlist files. They apply only to audio files; video and image buttons retain
+their existing controls.
 
 ## Volume
 

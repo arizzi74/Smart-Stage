@@ -15,6 +15,8 @@ type presentationSource struct {
 	id                              uint64
 	cueID, path, kind, audioID      string
 	hasAudio                        bool
+	muted, mixAudio                 bool
+	state                           string
 	duration                        float64
 	position                        float64
 	paused                          bool
@@ -46,9 +48,13 @@ func imageFile(path string) bool {
 
 func (s *Service) applySceneLocked(hard bool) error {
 	s.sceneRevision++
+	s.sceneGeneration = s.generationSequence
 	audio := s.foreground.audioID
 	if audio == "" {
 		audio = s.background.audioID
+	}
+	if audio == "" && len(s.audioLayers) != 0 {
+		audio = s.audioLayers[len(s.audioLayers)-1].audioID
 	}
 	audioFade, visualFade := 0.0, 0.0
 	if s.config.Stage.AudioFadeEnabled && !hard {
@@ -58,14 +64,15 @@ func (s *Service) applySceneLocked(hard bool) error {
 		visualFade = s.config.Stage.VisualFadeSeconds
 	}
 	scene := playback.Scene{
-		Revision: s.sceneRevision, Generation: s.state.Generation,
+		Revision: s.sceneRevision, Generation: s.generationSequence,
 		ForegroundID: s.foreground.id, ForegroundPath: s.foreground.path,
 		ForegroundKind: s.foreground.kind, ForegroundHasAudio: s.foreground.hasAudio,
+		ForegroundMuted: s.foreground.muted, AudioLayers: s.sceneAudioLayersLocked(),
 		ForegroundPaused: s.foreground.paused, TransportRevision: s.foreground.transportRevision,
 		SeekRevision: s.foreground.seekRevision, SeekSeconds: s.foreground.seekSeconds,
 		ImagePath: s.image.path, BackgroundPath: s.background.path,
 		BackgroundKind:  s.background.kind,
-		BackgroundAudio: s.config.Stage.BackgroundAudio && s.background.hasAudio,
+		BackgroundAudio: s.backgroundAudioEligibleLocked(),
 		AudioID:         audio, DisplayID: s.config.Outputs.DisplayID,
 		StageEnabled: s.stageDesired, AudioFadeSeconds: audioFade, VisualFadeSeconds: visualFade, HardStop: hard,
 		MasterVolume: s.state.MasterVolume, ForegroundVolume: s.trackVolumeLocked(s.foreground.cueID), BackgroundVolume: s.trackVolumeLocked(s.background.cueID),
@@ -125,11 +132,15 @@ func (s *Service) clearImageLocked() {
 
 func (s *Service) stopImageLocked() {
 	s.clearImageLocked()
-	if s.foreground.kind == "video" {
+	if s.foreground.kind == "video" && len(s.audioLayers) == 0 {
 		// Images can cover a running video. Removing that image should return
 		// to the selected background or black, not uncover the old video.
 		s.stopForegroundLocked(false, false)
 		return
+	}
+	if s.foreground.kind == "video" {
+		s.foreground = presentationSource{}
+		s.syncSelectedLocked()
 	}
 	// Invalidate delayed PLAY requests without cancelling independent music or
 	// changing its native identity, timeline, or loading/playing state.
@@ -152,6 +163,7 @@ func (s *Service) selectImageLocked(cue model.Cue) {
 
 func (s *Service) selectBackgroundLocked(id string) {
 	s.backgroundSequence++
+	s.backgroundMuted = false
 	if s.backgroundCancel != nil {
 		s.backgroundCancel()
 		s.backgroundCancel = nil
