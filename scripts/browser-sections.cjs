@@ -25,6 +25,10 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
     await admin.waitForFunction(count => playlist.sections?.length === count && !playlistBusy, before + 1); await settled();
     return config.sections.find(item => item.title === title).id;
   };
+  const navigationRequests = [];
+  const recordNavigation = request => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) navigationRequests.push({ method: request.method(), path: new URL(request.url()).pathname });
+  };
   let gate, touch, testError;
   try {
     await settled();
@@ -123,25 +127,42 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
     await tab(empty).press('ArrowLeft'); await selected(second);
 
     touch = await page.context().newCDPSession(page);
+    page.on('request', recordNavigation);
     await page.evaluate(() => {
       window.__sectionTouches = [];
       window.__sectionPointerEvents = [];
       window.__sectionTouchHandler = event => window.__sectionTouches.push({ pointerType: event.pointerType, trusted: event.isTrusted });
+      window.__sectionHeightNodes = [...document.querySelectorAll('.remote-section-page')].map(page => ({ page, cues: [...page.querySelectorAll('.cue')] }));
       document.getElementById('command-view').addEventListener('pointerdown', window.__sectionTouchHandler);
       for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'lostpointercapture']) document.addEventListener(type, event => window.__sectionPointerEvents.push({type, x: event.clientX, y: event.clientY, trusted: event.isTrusted}), true);
     });
     let pointerID = 70;
-    const gestureStarts = [], motionSamples = [];
+    const gestureStarts = [], motionSamples = [], heightSamples = [];
     const pagerSnapshot = () => page.evaluate(() => {
       const viewport = document.querySelector('.remote-section-pager'), track = viewport.querySelector('.remote-section-track');
       const box = viewport.getBoundingClientRect(), selected = document.querySelector('#remote-section-tabs [aria-selected="true"]')?.dataset.sectionId;
       return { selected, stored: sessionStorage.getItem(`smartstage-section:${location.pathname}`),
-        x: new DOMMatrixReadOnly(getComputedStyle(track).transform).m41, width: box.width,
+        x: new DOMMatrixReadOnly(getComputedStyle(track).transform).m41, width: box.width, height: box.height,
+        stableNodes: window.__sectionHeightNodes.every(({page, cues}) => page.isConnected && page.parentNode === track && cues.every(cue => cue.isConnected && cue.closest('.remote-section-page') === page)),
         dragging: viewport.classList.contains('is-dragging'), settling: viewport.classList.contains('is-settling'),
         selectedGridCount: document.querySelectorAll('#cue-grid').length, selectedEmptyCount: document.querySelectorAll('#empty-cues').length,
-        pages: [...track.children].map(page => { const rect = page.getBoundingClientRect(); return { id: page.dataset.sectionId, inert: page.inert, hidden: page.getAttribute('aria-hidden'),
+        pages: [...track.children].map(page => { const rect = page.getBoundingClientRect(), cues = [...page.querySelectorAll('.cue')];
+          const bottomCue = cues.map(cue => ({id: cue.dataset.cueId, bottom: cue.getBoundingClientRect().bottom - box.top})).sort((a, b) => b.bottom - a.bottom)[0];
+          const empty = page.querySelector('.empty'), contentBottom = bottomCue?.bottom ?? (empty && !empty.hidden ? empty.getBoundingClientRect().bottom - box.top : rect.bottom - box.top);
+          return { id: page.dataset.sectionId, inert: page.inert, hidden: page.getAttribute('aria-hidden'), height: rect.height, contentBottom, bottomCue,
           overlap: Math.max(0, Math.min(rect.right, box.right) - Math.max(rect.left, box.left)), tabIndices: [...page.querySelectorAll('.cue')].map(node => node.tabIndex) }; }) };
     });
+    const fullHeight = (snapshot, phase, expectedHeight) => {
+      assert(snapshot.stableNodes, `${phase}: all preloaded page and cue nodes stay connected in their original pages`);
+      for (const panel of snapshot.pages) {
+        assert(panel.contentBottom <= snapshot.height + 1 && panel.height <= snapshot.height + 1,
+          `${phase}: preloaded section ${panel.id} must fit the pager vertically, including its actual bottom cue: ${JSON.stringify({pagerHeight: snapshot.height, panel})}`);
+      }
+      if (expectedHeight !== undefined) assert(Math.abs(snapshot.height - expectedHeight) < 1,
+        `${phase}: selection and horizontal movement must not change the tallest-page height (${snapshot.height} vs ${expectedHeight})`);
+      heightSamples.push({phase, selected: snapshot.selected, height: snapshot.height, maximumPageHeight: Math.max(...snapshot.pages.map(panel => panel.height)),
+        bottomCues: snapshot.pages.filter(panel => panel.bottomCue).map(panel => ({section: panel.id, ...panel.bottomCue}))});
+    };
     const atRest = () => page.waitForFunction(() => !document.querySelector('.remote-section-pager.is-dragging, .remote-section-pager.is-settling'));
     const gesture = async ({ target, dx, dy = 0, cancel = false, follow = false, edge = false, reduced = false, live = false }) => {
       await atRest();
@@ -173,12 +194,14 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
       const { x, y } = start, id = ++pointerID;
       gestureStarts.push({ id, dx, dy, ...start });
       const before = await pagerSnapshot(), samples = [];
+      let expectedHeight = before.height;
       await touch.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id }] });
       for (const part of [.25, .5, .75, 1]) {
         await touch.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + dx * part, y: y + dy * part, id }] });
         await page.waitForTimeout(25);
         if (follow || edge) {
           const sample = await pagerSnapshot(); samples.push(sample);
+          fullHeight(sample, `held-${id}-${part}`, expectedHeight);
           assert.equal(sample.selected, before.selected, 'touch motion does not commit the selected tab');
           assert.equal(sample.stored, before.stored, 'touch motion does not commit section session storage');
           assert.equal(sample.dragging, true, `held pointer enters dragging: ${JSON.stringify({part, dx, start, sample, events: await page.evaluate(() => window.__sectionPointerEvents.slice(-12))})}`); assert.equal(sample.settling, false);
@@ -190,9 +213,16 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
             assert(sample.pages.some(panel => panel.id !== before.selected && panel.overlap > 4), 'an adjacent page is physically visible during the held drag');
           } else assert(Math.sign(moved) === Math.sign(dx) && Math.abs(moved) > 0 && Math.abs(moved) < Math.abs(dx * part) * .5, 'an outward edge drag resists the finger without wrapping');
           if (live && part === .5) {
-            state.revision++; broadcast();
+            // A real host state update changes an off-tab label while the
+            // finger is held. The fixture preserves cue/source identities.
+            const growing = state.cues.find(cue => cue.sectionId === 'main');
+            const longLabel = 'A long off-tab cue label that must remain fully laid out before the section is selected. '.repeat(5);
+            growing.label = longLabel; config.cues.find(cue => cue.id === growing.id).label = longLabel;
+            config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
             await page.waitForFunction(revision => state.revision === revision, state.revision);
             const refreshed = await pagerSnapshot();
+            assert(refreshed.height > sample.height + 20, 'changing an off-tab long label genuinely grows the shared pager while held');
+            fullHeight(refreshed, `live-height-growth-${id}`); expectedHeight = refreshed.height;
             assert(Math.abs(refreshed.x - sample.x) < 1, 'a live playback event does not reset the held track');
             assert(await stableCue.evaluate(node => node.isConnected && node === document.querySelector('.remote-section-page [data-cue-id="cue-0"]')), 'a live state event preserves the actual cue node during a drag');
           }
@@ -204,6 +234,7 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
       await touch.send('Input.dispatchTouchEvent', { type: cancel ? 'touchCancel' : 'touchEnd', touchPoints: [] });
       if (follow || edge) {
         const released = await pagerSnapshot();
+        fullHeight(released, `released-${id}`, expectedHeight);
         if (reduced) assert.equal(released.settling, false, 'reduced motion commits without an animated settling phase');
         else {
           assert.equal(released.selected, before.selected, 'the original page remains selected while the released track settles');
@@ -211,6 +242,7 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
           assert.equal(released.settling, true, 'the actual track animates from its held position after release');
           await page.waitForTimeout(60);
           const snapping = await pagerSnapshot(), destination = cancel || edge ? before.x : before.x + Math.sign(dx) * before.width;
+          fullHeight(snapping, `settling-${id}`, expectedHeight);
           assert(Math.abs(snapping.x - destination) < Math.abs(released.x - destination) - 1 && Math.abs(snapping.x - destination) > 1,
             `the released track visibly travels toward its snap destination: ${JSON.stringify({released: released.x, intermediate: snapping.x, destination})}`);
           assert.equal(snapping.selected, before.selected, 'selection remains old at an intermediate snap frame');
@@ -218,9 +250,13 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
         motionSamples.push({id, dx, cancel, edge, reduced, before: before.x, held: samples.map(sample => sample.x), releasedSelected: released.selected});
       }
       await atRest();
+      if (follow || edge) fullHeight(await pagerSnapshot(), `settled-${id}`, expectedHeight);
       return start.scrollY;
     };
     const navPlays = plays();
+    const unequalPages = await pagerSnapshot();
+    assert(Math.max(...unequalPages.pages.map(panel => panel.height)) - Math.min(...unequalPages.pages.map(panel => panel.height)) > 100,
+      'the regression uses genuinely unequal short, tall and empty section pages');
     await gesture({ target: page.locator('#cue-grid [data-cue-id="cue-0"]'), dx: 115, follow: true, live: true }); await selected('main');
     const mainRest = await pagerSnapshot();
     await gesture({ target: page.locator('#cue-grid .cue').first(), dx: -115, follow: true, cancel: true }); await selected('main');
@@ -235,6 +271,14 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await gesture({ target: page.locator('.remote-section-pager'), dx: 115, follow: true, reduced: true }); await selected(second);
     await page.emulateMedia({ reducedMotion: 'no-preference' });
+    // Rotation reflows every preloaded page, including long labels off-tab.
+    // Recheck both directions at the new width rather than measuring only
+    // the selected page after its settling animation has finished.
+    await page.setViewportSize({width: 844, height: 390}); await atRest();
+    fullHeight(await pagerSnapshot(), 'landscape-before-swipe');
+    await gesture({target: page.locator('#cue-grid [data-cue-id="cue-0"]'), dx: 150, follow: true}); await selected('main');
+    await gesture({target: page.locator('#cue-grid .cue').first(), dx: -150, follow: true}); await selected(second);
+    await page.setViewportSize(viewport); await atRest(); fullHeight(await pagerSnapshot(), 'portrait-after-rotation');
     await tab('main').tap(); await selected('main');
     await page.setViewportSize({ width: 390, height: 360 }); await page.evaluate(() => scrollTo(0, 0));
     const scrollBefore = await gesture({ target: page.locator('#cue-grid .cue').first(), dx: 3, dy: -125 });
@@ -244,13 +288,21 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
     const observedTouch = await page.evaluate(() => window.__sectionTouches);
     const touchDiagnostics = { expectedGestures: gestureStarts.length, observedCount: observedTouch.length,
       pointerTypes: [...new Set(observedTouch.map(event => event.pointerType))], trustedCount: observedTouch.filter(event => event.trusted).length, starts: gestureStarts };
-    console.log('Section touch diagnostics:', JSON.stringify({...touchDiagnostics, motionSamples}));
+    console.log('Section touch diagnostics:', JSON.stringify({...touchDiagnostics, motionSamples, heightSamples}));
     assert(observedTouch.length >= gestureStarts.length && observedTouch.every(event => event.pointerType === 'touch' && event.trusted),
       `gestures exercise real browser touch pointer events: ${JSON.stringify(touchDiagnostics)}`);
     await page.setViewportSize(viewport); await page.evaluate(() => scrollTo(0, 0));
+    assert.deepEqual(navigationRequests, [], 'preloaded section taps, keyboard navigation, live updates and touch gestures send no GET navigation or reload');
+    page.off('request', recordNavigation);
     assert.deepEqual(playbackIdentity(), identity, 'section navigation preserves the active transport and timeline');
     assert.equal(plays(), playCount, 'section CRUD, collapse, moves and navigation never start playback');
     assert.equal(commands.length, commandCount, 'section edits and navigation send no playback, stage or validation command');
+
+    // The live-height fixture changed host metadata while Admin could still
+    // have a playlist field focused. Respect its external-edit protection:
+    // load that acknowledged revision before the later independent edits.
+    await admin.locator('#reload-playlist').click();
+    await admin.waitForFunction(revision => playlist.playlistRevision === revision && !playlistRefresh && !playlistBusy, config.playlistRevision);
 
     await changeLanguage(admin, 'it');
     assert.equal(await admin.getByRole('button', { name: 'Aggiungi sezione', exact: true }).isVisible(), true);
@@ -313,6 +365,9 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
       sectionPartialSwipeAndVerticalScrollNeverPlay: true, sectionNavigationPreservesPlayback: true,
       sectionPagerFingerFollowingAndAdjacentVisibility: true, sectionPagerCancelEdgeAndAnimatedSnap: true,
       sectionPagerReducedMotionAndStableLiveCueNodes: true, sectionPagerInactivePagesInertAndUntabbable: true,
+      sectionPagerUnequalHeightsUnclippedHeldAndSettlingBothDirections: true,
+      sectionPagerTallestHeightStableAcrossSelectionAndEmptyPages: true,
+      sectionPagerLongLabelLiveHeightAndOrientationReflow: true, sectionPagerNavigationNeverLoadsDocument: true,
       sectionEnglishItalianLeavesUserTitlesUntranslated: true, sectionPortableMetadataAndIdentityRemap: true,
       sectionLegacyMainFallback: true, sectionFixtureOnlyNativeExecutionVerified: false };
   } catch (error) {
@@ -320,6 +375,7 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
   } finally {
    try {
     gate?.release();
+    page.off('request', recordNavigation);
     if (touch) await touch.detach().catch(() => {});
     const configRevision = config.playlistRevision + 1, stateRevision = state.revision + 1;
     for (const key of Object.keys(config)) delete config[key]; Object.assign(config, originalConfig, { playlistRevision: configRevision });

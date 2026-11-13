@@ -1,9 +1,7 @@
-Smart Stage 1.9.0 adds smooth section swiping and a compact playlist sorter.
+Smart Stage 1.9.1 fixes clipped buttons when swiping between sections of different heights.
 
-- The remote cue pages follow your finger while swiping left or right, reveal the adjacent section and smoothly snap into place. Short swipes settle back; vertical scrolling and normal cue taps remain available. Reduced-motion preferences are respected.
-- **Sort Playlist** at the top of Admin → Playlist opens a names-only overview. Drag sections as groups, reorder cues or move them between sections, including empty ones.
-- **Save order** applies the rearrangement together; **Cancel** discards it. Paths, colors, levels, audio options, stage settings and section collapse metadata stay in place. Sorting and section navigation keep playback running.
-- The sorter supports English/Italian, keyboard alternatives and safe revision conflicts. Its assets load only in local Admin; existing public gateways need no changes.
+- All section pages are laid out in advance with room for the tallest section. Swiping from fewer buttons to more buttons keeps every row available throughout the transition, without a height jump when the swipe ends.
+- Pages and their cue buttons stay loaded while switching sections. Playback, vertical scrolling, normal taps and reduced-motion preferences are preserved.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 

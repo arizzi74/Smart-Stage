@@ -190,9 +190,11 @@
 .remote-page .transport{row-gap:10px}
 .remote-page #command-view{min-height:240px;touch-action:pan-y pinch-zoom}
 .remote-section-pager{overflow:hidden;overflow:clip;min-height:240px;touch-action:pan-y pinch-zoom}
-.remote-section-track{position:relative;width:100%;transform:translate3d(0,0,0)}
-.remote-section-page{position:absolute;top:0;width:100%;min-height:240px;padding:4px}
-.remote-section-page.is-current{position:relative}
+/* Preloaded pages share an intrinsic row, keeping every section's full height
+   available before, during and after a swipe. Their left offsets only move them
+   horizontally; selecting a page never changes the pager's clipping height. */
+.remote-section-track{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;position:relative;width:100%;transform:translate3d(0,0,0)}
+.remote-section-page{grid-area:1/1;position:relative;top:0;width:100%;min-width:0;min-height:240px;padding:4px}
 .remote-section-page[inert]{pointer-events:none}
 .remote-section-page .cue-grid{touch-action:pan-y pinch-zoom}
 .remote-section-pager.is-dragging{user-select:none;-webkit-user-select:none}
