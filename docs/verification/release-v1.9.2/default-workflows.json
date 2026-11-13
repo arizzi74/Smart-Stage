@@ -1,0 +1,168 @@
+{
+  "defaultPinSource": "056b6f25fedaa210d1beae9bf7c859ff3b23a440",
+  "checkedAtUTC": "2026-11-13T23:02:51.117371+00:00",
+  "scope": "Source-bound GET-only snapshot of automatic default-pin workflows, separate from completed tagged release verification. This snapshot does not verify installer/updater report archives or claim uncompleted checks passed. Workflow links remain live.",
+  "status": "snapshot-only",
+  "allFourWorkflowConclusionsSuccessful": false,
+  "distributionReportArchivesIndependentlyVerified": false,
+  "expectedWorkflows": 4,
+  "observedWorkflows": 4,
+  "workflows": [
+    {
+      "run": 43524057261,
+      "path": ".github/workflows/install-windows.yml",
+      "source": "056b6f25fedaa210d1beae9bf7c859ff3b23a440",
+      "attempt": 1,
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057261",
+      "jobs": [
+        {
+          "id": 132225291218,
+          "name": "install (windows-11-arm, arm64)",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057261/job/132225291218",
+          "failedSteps": []
+        },
+        {
+          "id": 132225291613,
+          "name": "install (windows-2025, amd64)",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057261/job/132225291613",
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "run": 43524057294,
+      "path": ".github/workflows/build.yml",
+      "source": "056b6f25fedaa210d1beae9bf7c859ff3b23a440",
+      "attempt": 1,
+      "status": "queued",
+      "conclusion": null,
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057294",
+      "jobs": [
+        {
+          "id": 132225290688,
+          "name": "gateway",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057294/job/132225290688",
+          "failedSteps": []
+        },
+        {
+          "id": 132225291006,
+          "name": "shared",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057294/job/132225291006",
+          "failedSteps": []
+        },
+        {
+          "id": 132225291025,
+          "name": "native (macos-15-intel, darwin, amd64)",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057294/job/132225291025",
+          "failedSteps": []
+        },
+        {
+          "id": 132225291032,
+          "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057294/job/132225291032",
+          "failedSteps": []
+        },
+        {
+          "id": 132225291103,
+          "name": "native (macos-15, darwin, arm64)",
+          "status": "queued",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057294/job/132225291103",
+          "failedSteps": []
+        },
+        {
+          "id": 132225291105,
+          "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057294/job/132225291105",
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "run": 43524057216,
+      "path": ".github/workflows/install-macos.yml",
+      "source": "056b6f25fedaa210d1beae9bf7c859ff3b23a440",
+      "attempt": 1,
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057216",
+      "jobs": [
+        {
+          "id": 132225291123,
+          "name": "install (macos-15-intel, amd64)",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057216/job/132225291123",
+          "failedSteps": []
+        },
+        {
+          "id": 132225291316,
+          "name": "install (macos-15, arm64)",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057216/job/132225291316",
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "run": 43524057232,
+      "path": ".github/workflows/update.yml",
+      "source": "056b6f25fedaa210d1beae9bf7c859ff3b23a440",
+      "attempt": 1,
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057232",
+      "jobs": [
+        {
+          "id": 132225290728,
+          "name": "update (windows-11-arm, windows, arm64)",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057232/job/132225290728",
+          "failedSteps": []
+        },
+        {
+          "id": 132225291203,
+          "name": "update (macos-15, darwin, arm64)",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057232/job/132225291203",
+          "failedSteps": []
+        },
+        {
+          "id": 132225291210,
+          "name": "update (macos-15-intel, darwin, amd64)",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057232/job/132225291210",
+          "failedSteps": []
+        },
+        {
+          "id": 132225291380,
+          "name": "update (windows-2025, windows, amd64)",
+          "status": "in_progress",
+          "conclusion": null,
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43524057232/job/132225291380",
+          "failedSteps": []
+        }
+      ]
+    }
+  ]
+}

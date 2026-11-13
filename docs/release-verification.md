@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.9.1 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.9.2 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,27 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.9.2: independent vertical scrolling for remote sections
+
+Source `cf527c002bdc50300234fbdc7307bf97f80a7e23` bounds the remote to the
+viewport and gives each retained section its own vertical scroll area. Switching
+from a long section's bottom to a short one reveals its buttons immediately;
+returning retains the long section's offset while the document remains open.
+The top controls and seek bar stay outside the scrollers. Existing horizontal
+swipes preserve preloaded pages, button identity and playback.
+
+The full Chromium fixture suite passed 16 trusted touch gestures and 85 viewport
+samples. Focused Chromium/WebKit checks cover resizing and simulated pairing
+keyboard geometry, without claiming physical keyboard or touch acceptance.
+All 25 tagged jobs passed on attempt 1. All six native-host browser reports pass
+the new scroll checks, including both Mac WebKit reports; broader WebKit feature
+coverage remains explicitly limited. All 50 public digests, eight checksum pairs,
+six manifest pairs, sixteen report archives, four startup updates and six
+installer reports were verified. Public defaults select v1.9.2. The separate
+default-pin workflow snapshot does not claim unfinished checks passed. See the
+[verification record](verification/release-v1.9.2/README.md); physical output and
+clean-machine acceptance remain open.
 
 ### Version 1.9.1: full-height preloaded section pages
 

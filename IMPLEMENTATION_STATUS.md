@@ -226,6 +226,19 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.9.2
 
 ## Built and automatically tested
 
+Version 1.9.2 is source `cf527c002bdc50300234fbdc7307bf97f80a7e23`. Remote
+sections retain independent vertical scroll positions while the page is open.
+The old document-scroll failure was reproduced; the final full Chromium suite
+passed 16 trusted touch gestures and 85 viewport samples. All 25 tagged checks
+passed on attempt 1. All six browser reports against native hosts pass the new
+scroll scenario, including both Mac WebKit reports. Sixteen artifact archives,
+four actual startup updates, six installer reports and ten installed-byte
+matches were verified. All 50 public digests, eight checksum pairs and website
+manifest pairs passed. Public installer defaults select 1.9.2; automatic
+pin-change workflows have a separate timestamped snapshot. Physical touch,
+output routing and clean-machine acceptance remain open. See the
+[v1.9.2 verification record](docs/verification/release-v1.9.2/README.md).
+
 Version 1.9.1 is source `6ff2f2efa74cf81266f1a325bfe076795f3ae637`. The old
 section layout reproduced a 240px clip around an incoming 570px page. The fixed
 full Chromium suite passed eleven trusted touch gestures and 65 height samples;

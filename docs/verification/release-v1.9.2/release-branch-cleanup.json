@@ -1,0 +1,14 @@
+{
+  "release": "v1.9.2",
+  "source": "cf527c002bdc50300234fbdc7307bf97f80a7e23",
+  "checkedAtUTC": "2026-11-13T23:03:08.052497+00:00",
+  "temporaryRemoteBranch": "refs/heads/release/v1.9.2",
+  "expectedBranchSource": "cf527c002bdc50300234fbdc7307bf97f80a7e23",
+  "deletionUsedExactRefLease": true,
+  "remoteBranchAbsentAfterDeletion": true,
+  "mainSourcePreserved": "056b6f25fedaa210d1beae9bf7c859ff3b23a440",
+  "annotatedTagObjectPreserved": "6cbb6225304e78e8322ac9c7ee2ade46c255dea3",
+  "tagCommitPreserved": "cf527c002bdc50300234fbdc7307bf97f80a7e23",
+  "localReleaseBranchCreated": false,
+  "scope": "Only the task-created temporary remote release branch was removed after verified publication and a successful main push. Immutable release tag and main remain intact."
+}

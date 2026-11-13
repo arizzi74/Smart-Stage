@@ -1,0 +1,140 @@
+{
+  "source": "cf527c002bdc50300234fbdc7307bf97f80a7e23",
+  "checkedAtUTC": "2026-11-13T22:38:58.543957+00:00",
+  "status": "passed",
+  "runtimeChangedPaths": [
+    "internal/web/assets/app.js",
+    "internal/web/assets/style.css"
+  ],
+  "baseline": {
+    "passed": false,
+    "expectedRegressionFailure": true,
+    "source": "v1.9.1",
+    "assertion": "trusted vertical dragging must scroll only the current section, not the document",
+    "sectionScrollBefore": 0,
+    "sectionScrollAfter": 0,
+    "documentScrollBefore": 0,
+    "documentScrollAfter": 165,
+    "pagerHeight": 570,
+    "viewportHeight": 844,
+    "testSha256": "67edda8e7d61d72d6d492175e07e5643767cf08098f2d6f0100c14c64d7b2948",
+    "logSha256": "b3619d2c87d918af94ea6f6528731cf18a2b16de23ddc4cab36fc1129b19981e",
+    "nativeExecutionVerified": false,
+    "physicalDeviceVerified": false
+  },
+  "chromiumFullSuite": {
+    "passed": true,
+    "browser": "153.0.8010.12",
+    "trustedGestures": 16,
+    "motionCases": 11,
+    "viewportSamples": 85,
+    "sourceUnchangedThroughoutRun": true,
+    "sourceSha256": {
+      "scripts/browser-sections.cjs": "0f80e7d425f55e6969061620b4e7c56127a3eceb8fc341ea1cb3ba448510222e",
+      "scripts/browser-smoke.cjs": "998bb356887a1c5ce044b3f381b64d1dadd8dc0ec10a25b0f72b4f72a5cde79e",
+      "internal/web/assets/app.js": "c94883d87ea1c0e37cf4648ef4ed96f02721b69ed15ede898639e8cd95360201",
+      "internal/web/assets/style.css": "8ab6df9833d9b15ca9791efe3bd8c703d6ab4e5e0590d500c20f1e59e06af0d7",
+      "internal/web/assets/index.html": "dca7c86398c6334b8e8abdec8269a53f0db95b6c3e91886d0051e9f46b26efb6"
+    },
+    "reportSha256": "4f13663d9b7b6b88f5c4e182aa2ccfff676d5b75648d705b7f8d916f36de3b58",
+    "logSha256": "dc56719fa0b33d6f114d51b8153fbf99c48e94e7355e89366a532ee4ddf96527",
+    "physicalDeviceVerified": false,
+    "nativeExecutionVerified": false
+  },
+  "scrollPositions": [
+    {
+      "phase": "long-bottom-to-short-by-swipe",
+      "scrollTop": 0,
+      "scrollHeight": 468,
+      "documentScroll": 0
+    },
+    {
+      "phase": "long-position-restored-by-swipe",
+      "scrollTop": 102,
+      "scrollHeight": 570,
+      "documentScroll": 0
+    },
+    {
+      "phase": "long-bottom-to-short-by-tab",
+      "scrollTop": 0,
+      "scrollHeight": 468,
+      "documentScroll": 0
+    },
+    {
+      "phase": "long-position-restored-by-keyboard",
+      "scrollTop": 102,
+      "scrollHeight": 570,
+      "documentScroll": 0
+    },
+    {
+      "phase": "long-bottom-to-short-by-keyboard",
+      "scrollTop": 0,
+      "scrollHeight": 468,
+      "documentScroll": 0
+    },
+    {
+      "phase": "short-boundary-drag-up",
+      "scrollTop": 0,
+      "mainScrollTop": 102,
+      "documentScroll": 0
+    },
+    {
+      "phase": "short-boundary-drag-down",
+      "scrollTop": 0,
+      "mainScrollTop": 102,
+      "documentScroll": 0
+    }
+  ],
+  "boundaryDragEndpointsInsideSameButton": true,
+  "sectionChecks": {
+    "sectionCreateRenameDeleteAndAtomicMoves": true,
+    "sectionMovesPreserveAudioFlagsVolumeAndSourceIdentity": true,
+    "sectionCollapsePersistedAndLatestQueuedToggle": true,
+    "sectionCollapsePreservesFocusAndCueDraft": true,
+    "sectionCollapseImmediatelyRestoresSortAvailability": true,
+    "sectionRemoteTabsKeyboardAndRealTouch": true,
+    "sectionEmptyTabAndOffTabActiveSelection": true,
+    "sectionPartialSwipeAndVerticalScrollNeverPlay": true,
+    "sectionNavigationPreservesPlayback": true,
+    "sectionPagerFingerFollowingAndAdjacentVisibility": true,
+    "sectionPagerCancelEdgeAndAnimatedSnap": true,
+    "sectionPagerReducedMotionAndStableLiveCueNodes": true,
+    "sectionPagerInactivePagesInertAndUntabbable": true,
+    "sectionPagerFixedViewportHeldAndSettlingBothDirections": true,
+    "sectionPagerIndependentTrustedVerticalScrollAndStableDocument": true,
+    "sectionPagerShortBoundaryVerticalDragsNeverScrollNeighborsOrPlay": true,
+    "sectionPagerLongBottomToShortTopSwipeTabAndKeyboard": true,
+    "sectionPagerRevisitRestoresOwnScrollPosition": true,
+    "sectionPagerLongLabelLiveScrollExtentAndOrientationReflow": true,
+    "sectionPagerNavigationNeverLoadsDocument": true,
+    "sectionEnglishItalianLeavesUserTitlesUntranslated": true,
+    "sectionPortableMetadataAndIdentityRemap": true,
+    "sectionLegacyMainFallback": true,
+    "sectionFixtureOnlyNativeExecutionVerified": false
+  },
+  "focusedPairingAndViewport": [
+    {
+      "engine": "chromium",
+      "browserVersion": "153.0.8010.12",
+      "reportSHA256": "f3aaa30d0505f36b815218620196099fac7a43ef8eb2585ab50b09b2504764eb",
+      "passed": true,
+      "immediateResizeSamples": 5,
+      "scope": "Loopback synthetic HTTP using production assets; browser-only; simulated VisualViewport, not physical keyboard; no native host execution",
+      "noPlaybackCommands": true,
+      "shortScreenLongErrorsLeaveSmallPositivePane": true
+    },
+    {
+      "engine": "webkit",
+      "browserVersion": "26.6",
+      "reportSHA256": "341c38b33845ea752d6a8831d6f54c215a6bd6a01824095221ace92869c79d2f",
+      "passed": true,
+      "immediateResizeSamples": 5,
+      "scope": "Loopback synthetic HTTP using production assets; browser-only; simulated VisualViewport, not physical keyboard; no native host execution",
+      "noPlaybackCommands": true,
+      "shortScreenLongErrorsLeaveSmallPositivePane": true
+    }
+  ],
+  "resizeCorrection": "An intermediate version used a JavaScript-reported body height. Existing immediate resize assertions failed in two runs; final main layout uses CSS viewport units, retaining unchanged assertions. VisualViewport affects only pairing-dialog occlusion and positioning, not the main layout. Earlier results/logs remain private.",
+  "physicalDeviceOrNativeWindowInputVerified": false,
+  "scope": "Production browser assets through synthetic HTTP fixtures. Trusted Chromium touch and simulated VisualViewport checks are not native playback or physical keyboard/device acceptance; native served-host checks are recorded separately in CI."
+}
