@@ -27,6 +27,83 @@ async function until(check, message, timeout = 30000) {
   throw new Error(message);
 }
 
+// Diagnostic observer only: it neither changes requests nor filters page errors.
+// Fixed endpoint/phase labels avoid recording URLs, credentials or host paths.
+function observeTrackFlow(pages, adminOrigin, record) {
+  const endpoints = ['/api/playlist/volume', '/api/admin-presence', '/api/remote-control',
+    '/api/local-session', '/api/stage-settings', '/api/playlist', '/api/gateway',
+    '/api/update', '/api/devices', '/api/language', '/api/state', '/api/events', '/api/quit', '/admin', '/command'];
+  const report = record.trackFlowDiagnostics = {
+    scope: 'Bounded browser observations only; request paths are allowlisted, with no payloads, headers, URLs or raw error text.',
+    events: [], pageErrors: [], droppedEvents: 0, droppedPageErrors: 0, untrackedRequests: 0
+  };
+  const began = Date.now(), epochs = new Map(), metadata = new WeakMap(), pending = new Map(), listeners = [];
+  let phase = 'bootstrap', sequence = 0;
+  const endpoint = value => {
+    try { const pathname = new URL(value).pathname; return endpoints.includes(pathname) ? pathname : '[other]'; }
+    catch { return '[unknown]'; }
+  };
+  const reason = value => /access control checks/i.test(value) ? 'access_control'
+    : /cancelled|canceled|AbortError/i.test(value) ? 'cancelled'
+    : /timed? ?out|timeout/i.test(value) ? 'timeout' : 'other';
+  const emit = (type, page, data = {}) => {
+    if (report.events.length >= 256) { report.events.shift(); ++report.droppedEvents; }
+    const entry = {elapsedMs: Date.now() - began, phase, type, page,
+      documentEpoch: epochs.get(page) || 0, ...data};
+    report.events.push(entry);
+    if (type === 'pageerror') {
+      if (report.pageErrors.length < 16) report.pageErrors.push(entry);
+      else ++report.droppedPageErrors;
+    }
+  };
+  const bind = (page, event, callback) => { page.on(event, callback); listeners.push(() => page.off(event, callback)); };
+  for (const [name, page] of pages) {
+    epochs.set(name, 0);
+    bind(page, 'framenavigated', frame => {
+      if (frame !== page.mainFrame()) return;
+      epochs.set(name, epochs.get(name) + 1);
+      emit('navigation', name, {path: endpoint(frame.url())});
+    });
+    bind(page, 'request', request => {
+      const pathname = endpoint(request.url());
+      if (pathname === '[other]' || pathname === '[unknown]') return;
+      if (pending.size >= 128) { ++report.untrackedRequests; return; }
+      const info = {requestID: ++sequence, path: pathname, method: request.method(),
+        adminOrigin: new URL(request.url()).origin === adminOrigin,
+        startedPhase: phase, startedDocumentEpoch: epochs.get(name)};
+      metadata.set(request, info); pending.set(info.requestID, {...info, page: name});
+      emit('request', name, info);
+    });
+    bind(page, 'response', response => {
+      const info = metadata.get(response.request());
+      if (info) emit('response', name, {...info, status: response.status()});
+    });
+    bind(page, 'requestfinished', request => {
+      const info = metadata.get(request);
+      if (info) { pending.delete(info.requestID); emit('requestfinished', name, info); }
+    });
+    bind(page, 'requestfailed', request => {
+      const info = metadata.get(request);
+      if (info) {
+        pending.delete(info.requestID);
+        emit('requestfailed', name, {...info, reason: reason(request.failure()?.errorText || '')});
+      }
+    });
+    bind(page, 'pageerror', error => {
+      const message = String(error.message || '');
+      emit('pageerror', name, {reason: reason(message), path: endpoints.find(path => message.includes(path)) || '[unknown]'});
+    });
+  }
+  return {
+    phase(next) { phase = next; emit('phase', 'observer', {pendingRequestCount: pending.size}); },
+    finish() {
+      report.finalPhase = phase;
+      report.pendingAtFinish = [...pending.values()];
+      for (const remove of listeners) remove();
+    }
+  };
+}
+
 function nativeValidationFailure(current, playlist, fixtureNames) {
   if (current.validationJob.running) return null;
   const unsupported = new Set(current.cues.filter(cue => cue.validation === 'unsupported').map(cue => cue.id));
@@ -112,7 +189,7 @@ function dedicatedWindowsAdmin(platform, release) {
     physicalRoutingVerified: false, desktopNativeWindowMouseForwardingVerified: false, checks: [] };
   const errors = [];
   let adminBase = '';
-  let stderr = '', browser, admin, command;
+  let stderr = '', browser, admin, command, trackFlow;
   let application, lines, exited = false, startError = null, exitCode = null, launchLog = '';
   function startApplication(ports = ['--port', '0', '--admin-port', '0', '--no-browser']) {
     exited = false; startError = null; exitCode = null; launchLog = ''; stderr = '';
@@ -150,6 +227,7 @@ function dedicatedWindowsAdmin(platform, release) {
     const adminContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     const commandContext = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
     admin = await adminContext.newPage(); command = await commandContext.newPage();
+    if (trackDragOnly) trackFlow = observeTrackFlow([['admin', admin], ['command', command]], adminBase, record);
     const adminRequests = [];
     admin.on('request', request => adminRequests.push(new URL(request.url()).pathname));
     for (const page of [admin, command]) page.on('pageerror', error => errors.push(error.message));
@@ -248,6 +326,7 @@ function dedicatedWindowsAdmin(platform, release) {
       }
     }
     async function verifyNativeTrackDrag(cue, {target = 70, outside = true} = {}) {
+      trackFlow?.phase(outside ? 'drag-outside-start' : 'drag-inside-start');
       const trackWriteCount = () => adminRequests.filter(path => path === '/api/playlist/volume').length;
       const before = {count:trackWriteCount(), revision:(await snapshot()).playlistRevision};
       const range = admin.locator(`#track-volume-${cue.id}`);
@@ -279,6 +358,7 @@ function dedicatedWindowsAdmin(platform, release) {
               pointerEvents:style.pointerEvents, touchAction:style.touchAction, height:style.height, padding:style.padding, borderWidth:style.borderWidth}};
         }, {x:x(start), y:box.y + box.height / 2})};
       (record.trackMouseDrags ||= []).push(observation);
+      trackFlow?.phase(outside ? 'drag-outside-held' : 'drag-inside-held');
       await admin.mouse.move(x(start), box.y + box.height / 2); await admin.mouse.down();
       for (let step = 1; step <= 5; step++) {
         await admin.mouse.move(x(start + (target - start) * step / 5), box.y + box.height / 2, {steps:3}); await admin.waitForTimeout(70);
@@ -298,6 +378,7 @@ function dedicatedWindowsAdmin(platform, release) {
       if (outside) await admin.mouse.move(x(target), box.y + box.height + 35, {steps:3});
       raw = Number(await range.inputValue());
       const changed = admin.waitForResponse(response => apiPath(response) === '/api/playlist/volume' && response.request().method() === 'PUT' && response.request().postDataJSON()?.volume === raw / 100);
+      trackFlow?.phase(outside ? 'drag-outside-release' : 'drag-inside-release');
       await admin.mouse.up(); const response = await changed;
       assert.equal(response.status(), 200); const confirmed = await response.json();
       await admin.waitForFunction(() => !trackVolumeSending);
@@ -327,6 +408,7 @@ function dedicatedWindowsAdmin(platform, release) {
       const cue = saved.cues.find(cue => ['audio', 'video'].includes(cue.cache?.media?.kind)); assert(cue);
       saved = await verifyNativeTrackDrag(cue, {target:72, outside:false});
       saved = await verifyNativeTrackDrag(cue, {target:28, outside:true});
+      trackFlow?.phase('cancel-drag');
       const range = admin.locator(`#track-volume-${cue.id}`), savedRaw = await range.inputValue();
       const beforeAbort = adminRequests.filter(path => path === '/api/playlist/volume').length;
       const revisionBeforeAbort = saved.playlistRevision;
@@ -344,9 +426,12 @@ function dedicatedWindowsAdmin(platform, release) {
       assert.equal(await range.inputValue(), savedRaw, 'Native range cancellation prevents hover drift after release');
       assert.equal(adminRequests.filter(path => path === '/api/playlist/volume').length, beforeAbort, 'Cancellation creates no fallback playlist write');
       assert.equal((await snapshot()).playlistRevision, revisionBeforeAbort);
+      trackFlow?.phase('reload');
       await admin.reload(); await admin.locator('#connection.live').waitFor();
+      trackFlow?.phase('reload-verification');
       assert.equal(await range.inputValue(), savedRaw, 'The released track level persists through Admin reload');
       assert.deepEqual(errors, []);
+      trackFlow?.phase('quit');
       await quitFromAdmin();
       record.trackMouseControls = {heldDragAndStationaryHoldDoNotSave:true, insideAndOutsideReleaseSingleSavedRevision:true, hoverAfterReleaseDoesNotChangeValue:true, pointerCaptureCleared:true, stateRefreshPreservesDOMAndFocus:true, cancelledNativeDragRestoresSavedValueWithoutDelayedWrite:true, releasedTrackPersistsAfterReload:true, authenticatedQuitClosesBothListeners:true};
       record.passed = true;
@@ -931,6 +1016,7 @@ function dedicatedWindowsAdmin(platform, release) {
     }
     throw error;
   } finally {
+    trackFlow?.finish();
     if (browser) await browser.close();
     if (!exited) application.kill(process.platform === 'win32' ? 'SIGKILL' : 'SIGINT');
     await until(() => exited || startError, 'Application did not exit after browser test', 10000).catch(() => application.kill('SIGKILL'));
