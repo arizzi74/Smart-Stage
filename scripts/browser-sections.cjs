@@ -130,7 +130,7 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
       await target.evaluate(async element => {
         const ribbon = document.querySelector('header.transport').getBoundingClientRect();
         const box = element.getBoundingClientRect();
-        if (box.top < ribbon.bottom + 12) scrollBy(0, box.top - ribbon.bottom - 12);
+        if (innerHeight <= 400 || box.top < ribbon.bottom + 12) scrollBy(0, box.top - ribbon.bottom - 4);
         await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       });
       const start = await target.evaluate((element, { dx }) => {
