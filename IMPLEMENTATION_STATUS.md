@@ -12,9 +12,11 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.9.1
 - Remote section pages track horizontal touch motion continuously and reveal
   adjacent sections, then settle with a short animation. Partial/cancelled
   gestures return to the selected section; vertical scrolling, live cue state,
-  reduced motion and emergency controls are preserved. All preloaded pages
-  contribute to a shared intrinsic height, so taller sections remain fully laid
-  out during swipes without changing height when selection commits.
+  reduced motion and emergency controls are preserved. Preloaded pages share a
+  bounded viewport and each retains its own vertical scroll position. Switching
+  away from a long section does not carry its offset into shorter sections.
+  Header and seek controls remain outside the page scrollers; portrait and
+  landscape sizing uses CSS viewport units without waiting for a resize event.
 - Admin **Sort Playlist** opens a compact names-only dialog for pointer dragging
   whole sections and cues within/across sections. Save applies one guarded
   transaction; Cancel discards the draft. Metadata and native playback remain

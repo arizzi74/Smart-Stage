@@ -1,7 +1,8 @@
-Smart Stage 1.9.1 fixes clipped buttons when swiping between sections of different heights.
+Smart Stage 1.9.2 gives each remote section independent vertical scrolling.
 
-- All section pages are laid out in advance with room for the tallest section. Swiping from fewer buttons to more buttons keeps every row available throughout the transition, without a height jump when the swipe ends.
-- Pages and their cue buttons stay loaded while switching sections. Playback, vertical scrolling, normal taps and reduced-motion preferences are preserved.
+- Scrolling stays inside the selected section. Switching from the bottom of a long section to a shorter one shows its buttons immediately; returning restores the long section's previous scroll position.
+- Sections and buttons stay loaded while swiping or tapping tabs. The top controls and playback-position bar remain visible, and the layout fits portrait and landscape screens.
+- Scroll positions are remembered while that remote page stays open. Playback and playlist settings are unaffected by navigation.
 
 Quit Smart Stage fully and reopen it to receive the desktop update before playback starts. Saved shows, language and connection settings are preserved.
 

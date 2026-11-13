@@ -108,6 +108,21 @@ if (!adminPage) { languageMode = remoteLanguageMode(); applyRemoteLanguage(); }
 renderLanguageControls();
 document.body.classList.toggle('remote-page', !adminPage);
 document.body.classList.toggle('admin-page', adminPage);
+function fitRemotePairingViewport() {
+  if (adminPage) return;
+  const viewport = window.visualViewport;
+  // Only the pairing dialog needs software-keyboard geometry. Keep the main
+  // layout in CSS so rotation never waits for a queued viewport event.
+  if (viewport && Math.abs(viewport.scale - 1) > .01) return;
+  document.documentElement.style.setProperty('--remote-keyboard-height', `${Math.max(0, innerHeight - (viewport?.height || innerHeight))}px`);
+  document.documentElement.style.setProperty('--remote-viewport-top', `${Math.max(0, viewport?.offsetTop || 0)}px`);
+}
+if (!adminPage) {
+  fitRemotePairingViewport();
+  window.addEventListener('resize', fitRemotePairingViewport);
+  window.visualViewport?.addEventListener('resize', fitRemotePairingViewport);
+  window.visualViewport?.addEventListener('scroll', fitRemotePairingViewport);
+}
 $('page-title').hidden = !adminPage;
 $('master-volume-control').hidden = adminPage;
 function configurePublicPairing() {
@@ -952,6 +967,13 @@ function sectionsFor(value) {
 function playlistSections() { return sectionsFor(playlist); }
 function sectionForCue(cue, value = playlist) { return cue.sectionId || sectionsFor(value)[0].id; }
 function remoteSectionIndex() { return Math.max(0, sectionsFor(state).findIndex(section => section.id === remoteSectionId)); }
+function revealRemoteSectionTab(tab) {
+  if (!tab) return;
+  const strip = $('remote-section-tabs'), bounds = strip.getBoundingClientRect(), box = tab.getBoundingClientRect();
+  const left = bounds.left + strip.clientLeft, right = left + strip.clientWidth;
+  const distance = box.left < left ? box.left - left : box.right > right ? box.right - right : 0;
+  if (distance) strip.scrollBy({ left: distance, behavior: sectionReducedMotion.matches ? 'auto' : 'smooth' });
+}
 function positionRemotePager(offset = 0) {
   if (!remotePager) return;
   remotePager.offset = offset;
@@ -991,7 +1013,7 @@ function finishRemoteSection() {
   renderCues(); positionRemotePager();
   const tab = [...$('remote-section-tabs').children].find(node => node.dataset.sectionId === remoteSectionId);
   if (moveFocus) tab?.focus({ preventScroll: true });
-  tab?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: sectionReducedMotion.matches ? 'auto' : 'smooth' });
+  revealRemoteSectionTab(tab);
 }
 function settleRemoteSection(id, focus = false) {
   if (!remotePager || !sectionsFor(state).some(section => section.id === id)) return;
@@ -1065,7 +1087,10 @@ function selectRemoteSection(id, focus = false) {
   if (!sectionsFor(state).some(section => section.id === id)) return;
   if (adminPage || !remotePager) { remoteSectionId = id; renderCues(); return; }
   if (id === remoteSectionId && !sectionSwipe && !remotePager.animating) {
-    if (focus) [...$('remote-section-tabs').children].find(node => node.dataset.sectionId === id)?.focus();
+    if (focus) {
+      const tab = [...$('remote-section-tabs').children].find(node => node.dataset.sectionId === id);
+      tab?.focus({ preventScroll: true }); revealRemoteSectionTab(tab);
+    }
     return;
   }
   const offset = remotePager.track.getBoundingClientRect().left - remotePager.viewport.getBoundingClientRect().left + remoteSectionIndex() * remotePager.viewport.getBoundingClientRect().width;

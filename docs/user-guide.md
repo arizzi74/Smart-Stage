@@ -340,10 +340,13 @@ When there is more than one section, the remote shows their named tabs below the
 top control ribbon. Tap a tab, or swipe left/right across the cue area to change
 sections. The pages follow your finger while you drag, reveal the adjacent
 section, then smoothly settle into place or spring back on a short swipe.
-All sections stay laid out in advance, with enough height for the tallest one,
-so moving to a section with more buttons does not cut off its lower rows.
+All sections stay loaded in advance. Each one scrolls vertically inside its own
+panel and retains its position while the remote page stays open. Moving from
+the bottom of a long section to a shorter one shows that section at its own
+position; returning restores the long section's offset. The top controls and
+playback-position bar stay outside the scrolling panels.
 System reduced-motion preferences remove the settling animation. Vertical
-swipes still scroll. Switching sections does not start or
+swipes scroll only the selected section. Switching sections does not start or
 stop playback; cues in other sections can continue playing, and **STOP** always
 controls the whole show. Empty sections still have a tab.
 

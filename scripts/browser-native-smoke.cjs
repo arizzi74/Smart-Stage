@@ -430,6 +430,14 @@ function dedicatedWindowsAdmin(platform, release) {
       await admin.reload(); await admin.locator('#connection.live').waitFor();
       trackFlow?.phase('reload-verification');
       assert.equal(await range.inputValue(), savedRaw, 'The released track level persists through Admin reload');
+      trackFlow?.phase('section-scroll');
+      const pairing = command.waitForResponse(response => apiPath(response) === '/api/pair');
+      await command.goto(link.url, {waitUntil: 'domcontentloaded'});
+      const pairingResponse = await pairing; assert.equal(pairingResponse.status(), 200);
+      secrets.add((await pairingResponse.json()).csrfToken);
+      for (const cookie of await commandContext.cookies()) secrets.add(cookie.value);
+      await command.locator('#connection.live').waitFor();
+      saved = await require('./browser-native-section-scroll.cjs')({admin, command, record});
       assert.deepEqual(errors, []);
       trackFlow?.phase('quit');
       await quitFromAdmin();
@@ -905,8 +913,9 @@ function dedicatedWindowsAdmin(platform, release) {
       apiPath, record, audio, display, mediaRoot, musicCue, videoCue: backgroundCue}) || saved;
     saved = await require('./browser-native-sections.cjs')({admin, command, adminBase, snapshot, until,
       apiPath, record, audio, musicCue}) || saved;
+    saved = await require('./browser-native-section-scroll.cjs')({admin, command, record});
 
-    await command.evaluate(() => scrollTo(0, document.body.scrollHeight));
+    await command.locator('.remote-section-page.is-current').evaluate(page => {page.scrollTop = page.scrollHeight;});
     const bounds = await command.locator('#stop').boundingBox();
     assert(bounds && bounds.y >= 0 && bounds.y + bounds.height <= 844);
     assert(await command.evaluate(() => document.documentElement.scrollWidth <= innerWidth));

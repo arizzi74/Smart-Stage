@@ -187,14 +187,23 @@
 .remote-section-tabs:focus-within{outline-offset:3px}
 @media(max-width:450px){.playlist-section-cues{padding:0 10px}.playlist-section-tools{padding:8px 10px}.remote-section-tabs .section-tab{min-height:34px;padding:6px 12px;font-size:.8rem}}
 
-.remote-page .transport{row-gap:10px}
-.remote-page #command-view{min-height:240px;touch-action:pan-y pinch-zoom}
-.remote-section-pager{overflow:hidden;overflow:clip;min-height:240px;touch-action:pan-y pinch-zoom}
-/* Preloaded pages share an intrinsic row, keeping every section's full height
-   available before, during and after a swipe. Their left offsets only move them
-   horizontally; selecting a page never changes the pager's clipping height. */
-.remote-section-track{display:grid;grid-template-columns:minmax(0,1fr);align-items:start;position:relative;width:100%;transform:translate3d(0,0,0)}
-.remote-section-page{grid-area:1/1;position:relative;top:0;width:100%;min-width:0;min-height:240px;padding:4px}
+.remote-page{--remote-window-height:100vh;display:flex;flex-direction:column;height:var(--remote-window-height);min-height:0;overflow:hidden}
+@supports(height:100dvh){.remote-page{--remote-window-height:100dvh}}
+.remote-page .transport{position:relative;flex:0 0 auto;row-gap:10px}
+.remote-page #current-cue{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.remote-page main{display:flex;flex:1 1 0;flex-direction:column;min-height:0;width:100%;margin:0 auto;overflow:hidden;padding:8px max(16px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.remote-page.has-seek-bar main{padding-bottom:8px}
+.remote-page main>footer{display:none}
+.remote-page #notice.error,.remote-page #playback-error{flex:0 0 auto;max-height:30%;overflow:auto}
+.remote-page #app-closed{min-height:0;overflow:auto}
+.remote-page .seek-bar{position:relative;flex:0 0 auto;bottom:auto;left:auto;right:auto}
+.remote-page #pairing{position:fixed;top:calc(var(--remote-viewport-top,0px) + (var(--remote-window-height) - var(--remote-keyboard-height,0px)) * .5);bottom:auto;margin-top:0;margin-bottom:0;transform:translateY(-50%);max-height:calc(var(--remote-window-height) - var(--remote-keyboard-height,0px) - 24px);overflow-y:auto;overscroll-behavior-y:contain}
+.remote-page #command-view{position:relative;flex:1 1 0;min-height:0;touch-action:pan-y pinch-zoom}
+/* Keep every page loaded in one bounded viewport. Each persistent page owns
+   its vertical scrolling, so switching sections retains independent offsets. */
+.remote-section-pager{position:absolute;inset:0;min-height:0;overflow:hidden;overflow:clip;touch-action:pan-y pinch-zoom}
+.remote-section-track{position:relative;width:100%;height:100%;transform:translate3d(0,0,0)}
+.remote-section-page{position:absolute;top:0;width:100%;height:100%;min-width:0;min-height:0;padding:4px;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;touch-action:pan-y pinch-zoom;-webkit-overflow-scrolling:touch}
 .remote-section-page[inert]{pointer-events:none}
 .remote-section-page .cue-grid{touch-action:pan-y pinch-zoom}
 .remote-section-pager.is-dragging{user-select:none;-webkit-user-select:none}
@@ -202,3 +211,16 @@
 .remote-section-pager.is-settling .remote-section-track{transition:transform .22s cubic-bezier(.22,.75,.25,1)}
 .remote-section-tabs .section-tab{transition:background-color .16s ease,border-color .16s ease,color .16s ease}
 @media(prefers-reduced-motion:reduce){.remote-section-pager.is-settling .remote-section-track,.remote-section-tabs .section-tab{transition:none}}
+@media(max-height:500px){
+  .remote-page .transport{padding-top:6px;padding-bottom:6px;row-gap:4px}
+  .remote-page .transport>.now{display:flex;align-items:center;gap:6px}
+  .remote-page #play-state,.remote-page #time{flex:0 0 auto;font-size:.6rem}
+  .remote-page #current-cue{display:block;flex:1;min-width:0;white-space:nowrap;text-overflow:ellipsis;font-size:.85rem}
+  .remote-page .transport-tools{display:grid;grid-template-columns:1fr 1fr;gap:3px}
+  .remote-page .awake-control{grid-column:1/-1;flex-direction:row;align-items:center;gap:4px}
+  .remote-page .transport-tools button{min-height:24px;padding:3px 5px;font-size:.65rem}
+  .remote-page .transport-actions .stop{min-height:48px;padding:6px 10px;font-size:1.3rem}
+  .remote-page .language-control{margin-top:2px}
+  .remote-page .language-control select{min-height:24px}
+  .remote-page .remote-section-tabs .section-tab{min-height:30px;padding:4px 10px}
+}

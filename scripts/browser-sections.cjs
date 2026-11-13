@@ -137,12 +137,14 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
       for (const type of ['pointerdown', 'pointermove', 'pointerup', 'pointercancel', 'lostpointercapture']) document.addEventListener(type, event => window.__sectionPointerEvents.push({type, x: event.clientX, y: event.clientY, trusted: event.isTrusted}), true);
     });
     let pointerID = 70;
-    const gestureStarts = [], motionSamples = [], heightSamples = [];
+    const gestureStarts = [], motionSamples = [], heightSamples = [], scrollSamples = [];
     const pagerSnapshot = () => page.evaluate(() => {
       const viewport = document.querySelector('.remote-section-pager'), track = viewport.querySelector('.remote-section-track');
       const box = viewport.getBoundingClientRect(), selected = document.querySelector('#remote-section-tabs [aria-selected="true"]')?.dataset.sectionId;
+      const seek = document.getElementById('seek-bar'), availableBottom = seek && !seek.hidden ? seek.getBoundingClientRect().top : innerHeight;
       return { selected, stored: sessionStorage.getItem(`smartstage-section:${location.pathname}`),
         x: new DOMMatrixReadOnly(getComputedStyle(track).transform).m41, width: box.width, height: box.height,
+        top: box.top, bottom: box.bottom, viewportHeight: innerHeight, availableBottom, documentScroll: scrollY, documentElementScroll: document.scrollingElement.scrollTop,
         stableNodes: window.__sectionHeightNodes.every(({page, cues}) => page.isConnected && page.parentNode === track && cues.every(cue => cue.isConnected && cue.closest('.remote-section-page') === page)),
         dragging: viewport.classList.contains('is-dragging'), settling: viewport.classList.contains('is-settling'),
         selectedGridCount: document.querySelectorAll('#cue-grid').length, selectedEmptyCount: document.querySelectorAll('#empty-cues').length,
@@ -150,31 +152,36 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
           const bottomCue = cues.map(cue => ({id: cue.dataset.cueId, bottom: cue.getBoundingClientRect().bottom - box.top})).sort((a, b) => b.bottom - a.bottom)[0];
           const empty = page.querySelector('.empty'), contentBottom = bottomCue?.bottom ?? (empty && !empty.hidden ? empty.getBoundingClientRect().bottom - box.top : rect.bottom - box.top);
           return { id: page.dataset.sectionId, inert: page.inert, hidden: page.getAttribute('aria-hidden'), height: rect.height, contentBottom, bottomCue,
+          clientHeight: page.clientHeight, scrollHeight: page.scrollHeight, scrollTop: page.scrollTop, overflowY: getComputedStyle(page).overflowY,
           overlap: Math.max(0, Math.min(rect.right, box.right) - Math.max(rect.left, box.left)), tabIndices: [...page.querySelectorAll('.cue')].map(node => node.tabIndex) }; }) };
     });
-    const fullHeight = (snapshot, phase, expectedHeight) => {
+    const fixedViewport = (snapshot, phase, expectedHeight) => {
       assert(snapshot.stableNodes, `${phase}: all preloaded page and cue nodes stay connected in their original pages`);
+      assert(snapshot.height > 0 && snapshot.top >= 0 && snapshot.bottom <= Math.min(snapshot.viewportHeight, snapshot.availableBottom) + 1,
+        `${phase}: the fixed pager fits the visible remote viewport: ${JSON.stringify(snapshot)}`);
+      assert(Math.abs(snapshot.documentScroll) < 1 && Math.abs(snapshot.documentElementScroll) < 1, `${phase}: section navigation does not scroll the document`);
       for (const panel of snapshot.pages) {
-        assert(panel.contentBottom <= snapshot.height + 1 && panel.height <= snapshot.height + 1,
-          `${phase}: preloaded section ${panel.id} must fit the pager vertically, including its actual bottom cue: ${JSON.stringify({pagerHeight: snapshot.height, panel})}`);
+        assert(Math.abs(panel.height - snapshot.height) <= 1 && Math.abs(panel.clientHeight - snapshot.height) <= 1 && /auto|scroll/.test(panel.overflowY),
+          `${phase}: each preloaded section owns a viewport-height vertical scroller: ${JSON.stringify({pagerHeight: snapshot.height, panel})}`);
       }
       if (expectedHeight !== undefined) assert(Math.abs(snapshot.height - expectedHeight) < 1,
-        `${phase}: selection and horizontal movement must not change the tallest-page height (${snapshot.height} vs ${expectedHeight})`);
+        `${phase}: selection and horizontal movement must not change the viewport height (${snapshot.height} vs ${expectedHeight})`);
       heightSamples.push({phase, selected: snapshot.selected, height: snapshot.height, maximumPageHeight: Math.max(...snapshot.pages.map(panel => panel.height)),
-        bottomCues: snapshot.pages.filter(panel => panel.bottomCue).map(panel => ({section: panel.id, ...panel.bottomCue}))});
+        pages: snapshot.pages.map(({id, clientHeight, scrollHeight, scrollTop}) => ({id, clientHeight, scrollHeight, scrollTop}))});
     };
     const atRest = () => page.waitForFunction(() => !document.querySelector('.remote-section-pager.is-dragging, .remote-section-pager.is-settling'));
-    const gesture = async ({ target, dx, dy = 0, cancel = false, follow = false, edge = false, reduced = false, live = false }) => {
+    const scrollRest = async () => assert(await page.evaluate(() => new Promise(resolve => {
+      let previous = '', stable = 0; const deadline = performance.now() + 2500;
+      const frame = () => {
+        const current = JSON.stringify([scrollY, ...[...document.querySelectorAll('.remote-section-page')].map(page => page.scrollTop)]);
+        stable = current === previous ? stable + 1 : 0; previous = current;
+        if (stable >= 6) resolve(true); else if (performance.now() >= deadline) resolve(false); else requestAnimationFrame(frame);
+      }; requestAnimationFrame(frame);
+    })), 'native touch scrolling settles before comparing saved page positions');
+    const gesture = async ({ target, dx, dy = 0, cancel = false, follow = false, edge = false, reduced = false, live = false, preserveScroll = false }) => {
       await atRest();
-      await target.scrollIntoViewIfNeeded();
-      // scrollIntoView can center a cue behind the sticky transport ribbon in
-      // a short viewport. Place its top below that ribbon before hit testing.
-      await target.evaluate(async element => {
-        const ribbon = document.querySelector('header.transport').getBoundingClientRect();
-        const box = element.getBoundingClientRect();
-        if (innerHeight <= 400 || box.top < ribbon.bottom + 12) scrollBy(0, box.top - ribbon.bottom - 4);
-        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      });
+      if (!preserveScroll) await target.scrollIntoViewIfNeeded();
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       const start = await target.evaluate((element, { dx }) => {
         const box = element.getBoundingClientRect(), area = document.getElementById('command-view');
         const bounds = area.getBoundingClientRect(), ribbon = document.querySelector('header.transport').getBoundingClientRect();
@@ -201,12 +208,13 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
         await page.waitForTimeout(25);
         if (follow || edge) {
           const sample = await pagerSnapshot(); samples.push(sample);
-          fullHeight(sample, `held-${id}-${part}`, expectedHeight);
+          fixedViewport(sample, `held-${id}-${part}`, expectedHeight);
           assert.equal(sample.selected, before.selected, 'touch motion does not commit the selected tab');
           assert.equal(sample.stored, before.stored, 'touch motion does not commit section session storage');
           assert.equal(sample.dragging, true, `held pointer enters dragging: ${JSON.stringify({part, dx, start, sample, events: await page.evaluate(() => window.__sectionPointerEvents.slice(-12))})}`); assert.equal(sample.settling, false);
           assert.equal(sample.selectedGridCount, 1); assert.equal(sample.selectedEmptyCount, 1);
           assert(sample.pages.every(panel => panel.inert === (panel.id !== before.selected) && panel.hidden === String(panel.id !== before.selected) && panel.tabIndices.every(index => index === (panel.id === before.selected ? 0 : -1))), 'neighbors remain inaccessible until the page commits');
+          for (const panel of sample.pages.filter(panel => !live || panel.id !== 'main')) assert(Math.abs(panel.scrollTop - before.pages.find(previous => previous.id === panel.id).scrollTop) < 1, 'horizontal motion preserves each page’s independent vertical position');
           const moved = sample.x - before.x;
           if (follow) {
             assert(Math.abs(moved - dx * part) < 2, `the track follows the held finger continuously: ${JSON.stringify({part, moved, expected: dx * part})}`);
@@ -221,8 +229,10 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
             config.playlistRevision++; state.playlistRevision = config.playlistRevision; state.revision++; broadcast();
             await page.waitForFunction(revision => state.revision === revision, state.revision);
             const refreshed = await pagerSnapshot();
-            assert(refreshed.height > sample.height + 20, 'changing an off-tab long label genuinely grows the shared pager while held');
-            fullHeight(refreshed, `live-height-growth-${id}`); expectedHeight = refreshed.height;
+            const previousMain = sample.pages.find(panel => panel.id === 'main'), grownMain = refreshed.pages.find(panel => panel.id === 'main');
+            assert(grownMain.scrollHeight > previousMain.scrollHeight + 20, 'changing an off-tab long label genuinely grows its own scroll extent');
+            fixedViewport(refreshed, `live-height-growth-${id}`, expectedHeight);
+            for (const panel of refreshed.pages.filter(panel => panel.id !== 'main')) assert.equal(panel.scrollTop, sample.pages.find(before => before.id === panel.id).scrollTop, 'off-tab growth does not move another section');
             assert(Math.abs(refreshed.x - sample.x) < 1, 'a live playback event does not reset the held track');
             assert(await stableCue.evaluate(node => node.isConnected && node === document.querySelector('.remote-section-page [data-cue-id="cue-0"]')), 'a live state event preserves the actual cue node during a drag');
           }
@@ -234,7 +244,7 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
       await touch.send('Input.dispatchTouchEvent', { type: cancel ? 'touchCancel' : 'touchEnd', touchPoints: [] });
       if (follow || edge) {
         const released = await pagerSnapshot();
-        fullHeight(released, `released-${id}`, expectedHeight);
+        fixedViewport(released, `released-${id}`, expectedHeight);
         if (reduced) assert.equal(released.settling, false, 'reduced motion commits without an animated settling phase');
         else {
           assert.equal(released.selected, before.selected, 'the original page remains selected while the released track settles');
@@ -242,7 +252,7 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
           assert.equal(released.settling, true, 'the actual track animates from its held position after release');
           await page.waitForTimeout(60);
           const snapping = await pagerSnapshot(), destination = cancel || edge ? before.x : before.x + Math.sign(dx) * before.width;
-          fullHeight(snapping, `settling-${id}`, expectedHeight);
+          fixedViewport(snapping, `settling-${id}`, expectedHeight);
           assert(Math.abs(snapping.x - destination) < Math.abs(released.x - destination) - 1 && Math.abs(snapping.x - destination) > 1,
             `the released track visibly travels toward its snap destination: ${JSON.stringify({released: released.x, intermediate: snapping.x, destination})}`);
           assert.equal(snapping.selected, before.selected, 'selection remains old at an intermediate snap frame');
@@ -250,13 +260,63 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
         motionSamples.push({id, dx, cancel, edge, reduced, before: before.x, held: samples.map(sample => sample.x), releasedSelected: released.selected});
       }
       await atRest();
-      if (follow || edge) fullHeight(await pagerSnapshot(), `settled-${id}`, expectedHeight);
-      return start.scrollY;
+      if (dy) await scrollRest();
+      const after = await pagerSnapshot();
+      if (follow || edge) fixedViewport(after, `settled-${id}`, expectedHeight);
+      return {before, after};
     };
     const navPlays = plays();
+    const currentPage = () => page.locator('.remote-section-page.is-current');
+    await tab('main').tap(); await selected('main');
+    const vertical = await gesture({ target: currentPage(), dx: 3, dy: -180, preserveScroll: true });
+    const scrolledMain = vertical.after.pages.find(panel => panel.id === 'main');
+    assert(scrolledMain.scrollTop > vertical.before.pages.find(panel => panel.id === 'main').scrollTop + 10 && Math.abs(vertical.after.documentScroll - vertical.before.documentScroll) < 1,
+      `trusted vertical dragging must scroll only the current section, not the document: ${JSON.stringify(vertical)}`);
+    for (const panel of vertical.after.pages.filter(panel => panel.id !== 'main')) assert.equal(panel.scrollTop, vertical.before.pages.find(before => before.id === panel.id).scrollTop, 'vertical dragging leaves all inactive page offsets unchanged');
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const panel = (await pagerSnapshot()).pages.find(panel => panel.id === 'main');
+      if (panel.scrollHeight - panel.clientHeight - panel.scrollTop < 2) break;
+      await gesture({ target: currentPage(), dx: 2, dy: -180, preserveScroll: true });
+    }
+    const bottom = await pagerSnapshot(), mainBottom = bottom.pages.find(panel => panel.id === 'main');
+    assert(mainBottom.scrollTop > 10 && mainBottom.scrollHeight - mainBottom.clientHeight - mainBottom.scrollTop < 2, 'trusted vertical gestures reach the actual bottom of the long section');
+    assert(mainBottom.bottomCue && mainBottom.bottomCue.bottom <= bottom.height + 1 && mainBottom.bottomCue.bottom > 0, 'the actual final cue is inside the page viewport after scrolling to its bottom');
+    fixedViewport(bottom, 'long-section-at-bottom');
+    const ownPosition = async (id, expected, phase) => {
+      const snapshot = await pagerSnapshot(), panel = snapshot.pages.find(panel => panel.id === id);
+      assert.equal(snapshot.selected, id); fixedViewport(snapshot, phase);
+      assert(Math.abs(panel.scrollTop - expected) < 1, `${phase}: the section restores its own saved scroll position (${panel.scrollTop} vs ${expected})`);
+      if (id === second) {
+        assert(Math.abs(panel.scrollHeight - panel.clientHeight) <= 1, `${phase}: a short section has no inherited blank scroll extent from its taller neighbor`);
+        const first = await page.locator('#cue-grid .cue').first().boundingBox();
+        assert(first && first.y >= snapshot.top - 1 && first.y < snapshot.bottom - 20, `${phase}: the short section shows its first cue immediately instead of empty space`);
+      }
+      scrollSamples.push({phase, selected: id, scrollTop: panel.scrollTop, scrollHeight: panel.scrollHeight, documentScroll: snapshot.documentScroll});
+    };
+    await gesture({ target: currentPage(), dx: -115, follow: true, preserveScroll: true }); await selected(second);
+    await ownPosition(second, 0, 'long-bottom-to-short-by-swipe');
+    await gesture({ target: currentPage(), dx: 115, follow: true, preserveScroll: true }); await selected('main');
+    await ownPosition('main', mainBottom.scrollTop, 'long-position-restored-by-swipe');
+    await tab(second).tap(); await selected(second); await ownPosition(second, 0, 'long-bottom-to-short-by-tab');
+    await tab(second).press('Home'); await selected('main'); await ownPosition('main', mainBottom.scrollTop, 'long-position-restored-by-keyboard');
+    await tab('main').press('ArrowRight'); await selected(second); await ownPosition(second, 0, 'long-bottom-to-short-by-keyboard');
+    // A short section has nowhere to scroll. Trusted drags over its cue must
+    // still remain gestures rather than clicks, without chaining to a neighbor.
+    for (const dy of [-60, 60]) {
+      const beforeCommands = commands.length;
+      const boundary = await gesture({ target: page.locator('#cue-grid [data-cue-id="cue-0"]'), dx: 3, dy, preserveScroll: true });
+      const start = gestureStarts.at(-1);
+      assert(start.y + dy > start.targetTop && start.y + dy < start.targetBottom, 'the boundary drag ends inside the same cue button, so leaving its hit area cannot mask an accidental click');
+      assert.equal(boundary.after.selected, second, 'vertical dragging at a short-page boundary cannot change sections');
+      assert.equal(boundary.after.documentScroll, 0); assert.equal(boundary.after.documentElementScroll, 0);
+      for (const panel of boundary.after.pages) assert.equal(panel.scrollTop, boundary.before.pages.find(before => before.id === panel.id).scrollTop, 'a short-page boundary drag cannot scroll the current page or any neighbor');
+      assert.equal(boundary.after.pages.find(panel => panel.id === second).scrollTop, 0);
+      assert.equal(commands.length, beforeCommands, 'vertical dragging over a nonoverflowing cue cannot emit PLAY or any other command');
+      scrollSamples.push({phase: dy < 0 ? 'short-boundary-drag-up' : 'short-boundary-drag-down', selected: second, scrollTop: 0, mainScrollTop: boundary.after.pages.find(panel => panel.id === 'main').scrollTop, documentScroll: boundary.after.documentScroll});
+    }
     const unequalPages = await pagerSnapshot();
-    assert(Math.max(...unequalPages.pages.map(panel => panel.height)) - Math.min(...unequalPages.pages.map(panel => panel.height)) > 100,
-      'the regression uses genuinely unequal short, tall and empty section pages');
+    assert(Math.max(...unequalPages.pages.map(panel => panel.scrollHeight)) - Math.min(...unequalPages.pages.map(panel => panel.scrollHeight)) > 80,
+      'the regression uses genuinely unequal short, tall and empty content in equal-height scrolling pages');
     await gesture({ target: page.locator('#cue-grid [data-cue-id="cue-0"]'), dx: 115, follow: true, live: true }); await selected('main');
     const mainRest = await pagerSnapshot();
     await gesture({ target: page.locator('#cue-grid .cue').first(), dx: -115, follow: true, cancel: true }); await selected('main');
@@ -275,20 +335,20 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
     // Recheck both directions at the new width rather than measuring only
     // the selected page after its settling animation has finished.
     await page.setViewportSize({width: 844, height: 390}); await atRest();
-    fullHeight(await pagerSnapshot(), 'landscape-before-swipe');
+    fixedViewport(await pagerSnapshot(), 'landscape-before-swipe');
     await gesture({target: page.locator('#cue-grid [data-cue-id="cue-0"]'), dx: 150, follow: true}); await selected('main');
     await gesture({target: page.locator('#cue-grid .cue').first(), dx: -150, follow: true}); await selected(second);
-    await page.setViewportSize(viewport); await atRest(); fullHeight(await pagerSnapshot(), 'portrait-after-rotation');
+    await page.setViewportSize(viewport); await atRest(); fixedViewport(await pagerSnapshot(), 'portrait-after-rotation');
     await tab('main').tap(); await selected('main');
     await page.setViewportSize({ width: 390, height: 360 }); await page.evaluate(() => scrollTo(0, 0));
-    const scrollBefore = await gesture({ target: page.locator('#cue-grid .cue').first(), dx: 3, dy: -125 });
+    const compactScroll = await gesture({ target: page.locator('#cue-grid .cue').first(), dx: 3, dy: -125 });
     await selected('main');
-    assert(await page.evaluate(before => scrollY > before, scrollBefore), 'vertical touch drag scrolls the actual remote page');
+    assert(compactScroll.after.pages.find(panel => panel.id === 'main').scrollTop > compactScroll.before.pages.find(panel => panel.id === 'main').scrollTop && Math.abs(compactScroll.after.documentScroll - compactScroll.before.documentScroll) < 1, 'vertical touch drag scrolls only the selected section in a short viewport');
     assert.equal(plays(), navPlays, 'tab, keyboard, horizontal touch and vertical scrolling send no PLAY request');
     const observedTouch = await page.evaluate(() => window.__sectionTouches);
     const touchDiagnostics = { expectedGestures: gestureStarts.length, observedCount: observedTouch.length,
       pointerTypes: [...new Set(observedTouch.map(event => event.pointerType))], trustedCount: observedTouch.filter(event => event.trusted).length, starts: gestureStarts };
-    console.log('Section touch diagnostics:', JSON.stringify({...touchDiagnostics, motionSamples, heightSamples}));
+    console.log('Section touch diagnostics:', JSON.stringify({...touchDiagnostics, motionSamples, heightSamples, scrollSamples}));
     assert(observedTouch.length >= gestureStarts.length && observedTouch.every(event => event.pointerType === 'touch' && event.trusted),
       `gestures exercise real browser touch pointer events: ${JSON.stringify(touchDiagnostics)}`);
     await page.setViewportSize(viewport); await page.evaluate(() => scrollTo(0, 0));
@@ -365,9 +425,11 @@ module.exports = async function sectionsUI({ admin, page, state, config, broadca
       sectionPartialSwipeAndVerticalScrollNeverPlay: true, sectionNavigationPreservesPlayback: true,
       sectionPagerFingerFollowingAndAdjacentVisibility: true, sectionPagerCancelEdgeAndAnimatedSnap: true,
       sectionPagerReducedMotionAndStableLiveCueNodes: true, sectionPagerInactivePagesInertAndUntabbable: true,
-      sectionPagerUnequalHeightsUnclippedHeldAndSettlingBothDirections: true,
-      sectionPagerTallestHeightStableAcrossSelectionAndEmptyPages: true,
-      sectionPagerLongLabelLiveHeightAndOrientationReflow: true, sectionPagerNavigationNeverLoadsDocument: true,
+      sectionPagerFixedViewportHeldAndSettlingBothDirections: true,
+      sectionPagerIndependentTrustedVerticalScrollAndStableDocument: true,
+      sectionPagerShortBoundaryVerticalDragsNeverScrollNeighborsOrPlay: true,
+      sectionPagerLongBottomToShortTopSwipeTabAndKeyboard: true, sectionPagerRevisitRestoresOwnScrollPosition: true,
+      sectionPagerLongLabelLiveScrollExtentAndOrientationReflow: true, sectionPagerNavigationNeverLoadsDocument: true,
       sectionEnglishItalianLeavesUserTitlesUntranslated: true, sectionPortableMetadataAndIdentityRemap: true,
       sectionLegacyMainFallback: true, sectionFixtureOnlyNativeExecutionVerified: false };
   } catch (error) {
