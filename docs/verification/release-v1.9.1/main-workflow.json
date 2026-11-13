@@ -1,0 +1,408 @@
+{
+  "workflow": {
+    "id": 43491334547,
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43491334547",
+    "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+    "branch": "main",
+    "event": "push",
+    "path": ".github/workflows/build.yml",
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "failure",
+    "createdAtUTC": "2026-11-13T19:20:51Z",
+    "updatedAtUTC": "2026-11-13T19:37:58Z"
+  },
+  "checkedAtUTC": "2026-11-13T19:38:10.800832Z",
+  "requiredGateCount": 7,
+  "passedRequiredGates": 5,
+  "allRequiredGatesPassed": false,
+  "missingRequiredGates": [],
+  "jobs": [
+    {
+      "id": 132112988583,
+      "gate": "gateway",
+      "name": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43491334547/job/132112988583",
+      "startedAtUTC": "2026-11-13T19:20:53Z",
+      "completedAtUTC": "2026-11-13T19:25:16Z",
+      "executedStepCount": 15,
+      "runnerAssigned": true,
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 7,
+          "name": "Exercise real HTTPS remote, QR and browser commands",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 8,
+          "name": "Exercise authenticated WebSocket remote in a real browser",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Verify bilingual Admin, preserved edits and independent remote language",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132112988861,
+      "gate": "shared",
+      "name": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43491334547/job/132112988861",
+      "startedAtUTC": "2026-11-13T19:20:53Z",
+      "completedAtUTC": "2026-11-13T19:22:24Z",
+      "executedStepCount": 12,
+      "runnerAssigned": true,
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 5,
+          "name": "Reject known vulnerabilities in imported Go packages",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 6,
+          "name": "Run go test -race ./...",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132112989066,
+      "gate": "darwin/arm64",
+      "name": "native (macos-15, darwin, arm64)",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43491334547/job/132112989066",
+      "startedAtUTC": "2026-11-13T19:26:05Z",
+      "completedAtUTC": "2026-11-13T19:28:22Z",
+      "executedStepCount": 23,
+      "runnerAssigned": true,
+      "currentStep": null,
+      "failedSteps": [
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ],
+      "verificationSteps": [
+        {
+          "number": 7,
+          "name": "Verify the official native Cloudflare helper and launch arguments",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "failure"
+        },
+        {
+          "number": 12,
+          "name": "Verify the ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 13,
+          "name": "Verify embedded icon and optional Finder app",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 14,
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 16,
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 17,
+          "name": "Verify track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ]
+    },
+    {
+      "id": 132112989145,
+      "gate": "darwin/amd64",
+      "name": "native (macos-15-intel, darwin, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43491334547/job/132112989145",
+      "startedAtUTC": "2026-11-13T19:20:54Z",
+      "completedAtUTC": "2026-11-13T19:28:10Z",
+      "executedStepCount": 23,
+      "runnerAssigned": true,
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 7,
+          "name": "Verify the official native Cloudflare helper and launch arguments",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 12,
+          "name": "Verify the ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 13,
+          "name": "Verify embedded icon and optional Finder app",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 14,
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 16,
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 17,
+          "name": "Verify track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 132112989185,
+      "gate": "windows/arm64",
+      "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43491334547/job/132112989185",
+      "startedAtUTC": "2026-11-13T19:20:54Z",
+      "completedAtUTC": "2026-11-13T19:37:57Z",
+      "executedStepCount": 23,
+      "runnerAssigned": true,
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 7,
+          "name": "Verify the official native Cloudflare helper and launch arguments",
+          "status": "completed",
+          "conclusion": "skipped"
+        },
+        {
+          "number": 9,
+          "name": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 12,
+          "name": "Verify the ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 13,
+          "name": "Verify embedded icon and optional Finder app",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 14,
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 16,
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 17,
+          "name": "Verify track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ]
+    },
+    {
+      "id": 132112989326,
+      "gate": "windows/amd64",
+      "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43491334547/job/132112989326",
+      "startedAtUTC": "2026-11-13T19:20:53Z",
+      "completedAtUTC": "2026-11-13T19:26:50Z",
+      "executedStepCount": 23,
+      "runnerAssigned": true,
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": [
+        {
+          "number": 7,
+          "name": "Verify the official native Cloudflare helper and launch arguments",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 9,
+          "name": "Exercise the real Windows Admin WebView, chooser and original-file drops",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 12,
+          "name": "Verify the ZIP, automatic Admin window and local server",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 13,
+          "name": "Verify embedded icon and optional Finder app",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 14,
+          "name": "Exercise current-user Windows installation and native app lifecycle",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 16,
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "success"
+        },
+        {
+          "number": 17,
+          "name": "Verify track dragging with WebKit on Mac",
+          "status": "completed",
+          "conclusion": "skipped"
+        }
+      ]
+    },
+    {
+      "id": 132122314455,
+      "gate": "binary-security",
+      "name": "binary-security",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43491334547/job/132122314455",
+      "startedAtUTC": "2026-11-13T19:37:57Z",
+      "completedAtUTC": "2026-11-13T19:37:57Z",
+      "executedStepCount": 0,
+      "runnerAssigned": false,
+      "currentStep": null,
+      "failedSteps": [],
+      "verificationSteps": []
+    }
+  ],
+  "conditionalReleaseJobs": [
+    {
+      "id": 132122315014,
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132122315386,
+      "name": "verify-download",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132122316264,
+      "name": "verify-windows-install",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132122316319,
+      "name": "verify-macos-install",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132122316377,
+      "name": "verify-update",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132122316569,
+      "name": "verify-browser",
+      "status": "completed",
+      "conclusion": "skipped"
+    },
+    {
+      "id": 132122316745,
+      "name": "publish-site",
+      "status": "completed",
+      "conclusion": "skipped"
+    }
+  ],
+  "scope": "Automatic main push build recorded independently from the immutable tagged release. This does not replace tagged publication or public-byte checks; no physical routing claim.",
+  "privacyScope": "Public workflow/job identities and bounded step outcomes only; no logs, machine paths, process IDs, session values or signed URLs."
+}

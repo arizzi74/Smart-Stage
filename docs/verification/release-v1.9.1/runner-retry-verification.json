@@ -1,0 +1,146 @@
+{
+  "checkedAtUTC": "2026-11-13T19:59:24.845515+00:00",
+  "helper": {
+    "source": "c90e30bb98532c39008ea0aa77517aa765440f22",
+    "runID": 43496981702,
+    "branch": "ci/retry-v1.9.1-43491334177",
+    "path": ".github/workflows/retry-v1.9.1.yml",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43496981702",
+    "status": "completed",
+    "conclusion": "success",
+    "attempt": 1,
+    "jobID": 132132539052,
+    "fixedGuardStep": {
+      "number": 2,
+      "name": "Verify the fixed Start prerequisite failure and retry only its tagged job",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "changedPathsFromRelease": [
+      ".github/workflows/retry-v1.9.1.yml"
+    ]
+  },
+  "fixedRetryMarker": {
+    "retryRequested": true,
+    "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+    "tag": "v1.9.1",
+    "run": 43491334177,
+    "job": 132112988864,
+    "expectedAttempt": 1,
+    "requestedAttempt": 2,
+    "failedStep": 14,
+    "assertion": "Windows Start component did not initialize before the firewall baseline",
+    "timeoutSeconds": 120,
+    "causeEstablished": false,
+    "assertionsOrTimeoutsRelaxed": false,
+    "reviewedFailureReceiptSHA256": "41da52308eff1df2db8de87db22daa24fd42dd2e0ddde376502ac679b7be0ab7",
+    "reviewedArtifactID": 14070422169
+  },
+  "target": {
+    "runID": 43491334177,
+    "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+    "tag": "v1.9.1",
+    "gitRef": "refs/tags/v1.9.1",
+    "tagCommit": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+    "tagObjectType": "tag",
+    "acceptedAttempt": 2,
+    "status": "in_progress"
+  },
+  "failureEvidenceVerification": {
+    "method": "reviewed_failure_receipt_and_live_original_artifact_metadata",
+    "ciParsedOriginalJobLog": false,
+    "reviewedFailureReceiptSHA256": "41da52308eff1df2db8de87db22daa24fd42dd2e0ddde376502ac679b7be0ab7",
+    "reviewedArtifactID": 14070422169,
+    "reviewedArtifactDigest": "sha256:4920596e4d2d412660bd6cfaeb02561bfb6622b660121f2b37b7e06b94934600",
+    "reviewedArtifactBytes": 13791149,
+    "liveSourceJobStepAndArtifactGuardsPassed": true,
+    "causeEstablished": false,
+    "assertionsOrTimeoutsRelaxed": false
+  },
+  "earlierAttemptReceipts": [
+    {
+      "path": "earlier-tag-workflow.json",
+      "sha256": "de08daf6b57999efc4cc29044a85bff510dd81fc8e7bbcc93a59346a3ee8187f"
+    },
+    {
+      "path": "tag-attempt1-windows-start-failure.json",
+      "sha256": "41da52308eff1df2db8de87db22daa24fd42dd2e0ddde376502ac679b7be0ab7"
+    }
+  ],
+  "earlierHelperFailureReceipts": [
+    {
+      "path": "retry-helper-first-failure.json",
+      "sha256": "d533cb8c332f110e5b27a3dbd9b1938d8a6b16f0b62881ac122d3123553b9111"
+    },
+    {
+      "path": "retry-helper-second-failure.json",
+      "sha256": "c0cd832afc3dbd35ef2161ca8b4307e170b228b8459772a67515bd01d3eed673"
+    }
+  ],
+  "jobAccounting": {
+    "effectiveExpectedJobs": 25,
+    "reusedSuccessfulJobs": 5,
+    "newExecutionExpectedJobsInAttempt2": 20,
+    "reusedJobs": [
+      {
+        "jobID": 132132642471,
+        "key": "gateway",
+        "jobAttempt": 2,
+        "executionAttempt": 1,
+        "previousJobID": 132112988682,
+        "startedAtUTC": "2026-11-13T19:20:54Z",
+        "completedAtUTC": "2026-11-13T19:25:39Z",
+        "stepCount": 15,
+        "stepTimelineSHA256": "13f7b13d6647987b15e9adb07ecd6fa6dd6a3fdc04aabc0ca2b5560757ec1b46"
+      },
+      {
+        "jobID": 132132721271,
+        "key": "native/darwin/amd64",
+        "jobAttempt": 2,
+        "executionAttempt": 1,
+        "previousJobID": 132112989068,
+        "startedAtUTC": "2026-11-13T19:20:55Z",
+        "completedAtUTC": "2026-11-13T19:26:09Z",
+        "stepCount": 23,
+        "stepTimelineSHA256": "815e9321bd0acb8e6d37b9e9a9c78e84b6ac294181d9b7295a57d058dc06dfd4"
+      },
+      {
+        "jobID": 132132708163,
+        "key": "native/darwin/arm64",
+        "jobAttempt": 2,
+        "executionAttempt": 1,
+        "previousJobID": 132112988618,
+        "startedAtUTC": "2026-11-13T19:20:54Z",
+        "completedAtUTC": "2026-11-13T19:25:04Z",
+        "stepCount": 23,
+        "stepTimelineSHA256": "4ab494bab6f141160287c37df53391804a0cc6708e623e8baf65f05896c73e53"
+      },
+      {
+        "jobID": 132132691465,
+        "key": "native/windows/amd64",
+        "jobAttempt": 2,
+        "executionAttempt": 1,
+        "previousJobID": 132112988675,
+        "startedAtUTC": "2026-11-13T19:20:53Z",
+        "completedAtUTC": "2026-11-13T19:25:15Z",
+        "stepCount": 23,
+        "stepTimelineSHA256": "1107b3684c432fc2c05eafdff07c1614ca5bd1bd8523442bea308e7a5cbd5564"
+      },
+      {
+        "jobID": 132132641451,
+        "key": "shared",
+        "jobAttempt": 2,
+        "executionAttempt": 1,
+        "previousJobID": 132112988412,
+        "startedAtUTC": "2026-11-13T19:20:54Z",
+        "completedAtUTC": "2026-11-13T19:22:22Z",
+        "stepCount": 12,
+        "stepTimelineSHA256": "cee337f1e2bdeeccedc49d2fdfdc8b9303b27c5b02080b61c18cbd9cf1829135"
+      }
+    ],
+    "scope": "Five retained physical successes are proven by complete identical step arrays and timestamps; twenty additional successes are expected, not yet claimed."
+  },
+  "privateHelperLogSHA256": "686c6654ae7f0f977f671bcae5b445e10cfc5a78812eea177c9403c289b4afbb",
+  "scope": "Observed successful isolated helper and accepted attempt2 at the unchanged tag/source. The helper verified live original job/step and artifact metadata, bound to a previously reviewed exact failure receipt; it did not parse the original job log in CI. Earlier failures remain explicit.",
+  "privacyScope": "Fixed markers, public source/run/job IDs and verified digests only; raw logs and machine paths remain private."
+}

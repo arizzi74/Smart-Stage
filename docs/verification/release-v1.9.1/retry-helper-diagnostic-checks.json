@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "helperSource": "be33d89487e8e868f76734694ba4948bdafed4b8",
+  "earlierHelperSource": "a796b2242dcfa34c38b4a014a81f3dd7a195df3b",
+  "changedPaths": [
+    ".github/workflows/retry-v1.9.1.yml"
+  ],
+  "changeScope": "Sanitized failed-request diagnostic output only; no guard, source/tag, timeout, retry or mutation endpoint changes.",
+  "getOnlyDryRunPassed": true,
+  "dryRunLogSHA256": "09ed4b42d04c2d7d1df90243afc50e663b9534a756b75fdf127f959d660401d2",
+  "independentReadOnlyReviewPassed": true,
+  "rawErrorOutputEmitted": false,
+  "localAPIMutations": false,
+  "helperDefinitionSHA256": "7baace67368a6a121c45bcedc155589ae9965789c5a4eefab56537785738cb9b",
+  "helperDefinitionFile": "runner-retry-workflow-second.yml"
+}

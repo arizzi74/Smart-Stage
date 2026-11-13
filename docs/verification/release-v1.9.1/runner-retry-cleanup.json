@@ -1,0 +1,40 @@
+{
+  "status": "passed",
+  "checkedAtUTC": "2026-11-13T20:42:04.730448+00:00",
+  "release": "v1.9.1",
+  "branch": "ci/retry-v1.9.1-43491334177",
+  "deletedRemoteRefExpectedSource": "816a37bb059b668ce4928e17f4e4e376ae8ce82a",
+  "remoteDeletionUsedExactForceWithLease": true,
+  "remoteRefAbsent": true,
+  "localRefDeletedWithExpectedSource": true,
+  "ownCleanTemporaryWorktreeRemoved": true,
+  "helperCommitsNeverMergedIntoMain": true,
+  "archivedHelpers": [
+    {
+      "file": "runner-retry-workflow-first.yml",
+      "source": "a796b2242dcfa34c38b4a014a81f3dd7a195df3b",
+      "sha256": "d9a22c70f436f555485b7d740c17b1720cd19426a7a3c6c0a1563a714930fb35",
+      "matchesExactHelperSource": true
+    },
+    {
+      "file": "runner-retry-workflow-second.yml",
+      "source": "be33d89487e8e868f76734694ba4948bdafed4b8",
+      "sha256": "7baace67368a6a121c45bcedc155589ae9965789c5a4eefab56537785738cb9b",
+      "matchesExactHelperSource": true
+    },
+    {
+      "file": "runner-retry-workflow.yml",
+      "source": "c90e30bb98532c39008ea0aa77517aa765440f22",
+      "sha256": "43a8c398d36b2a0b83324334c0032b82fd970f92db3e70ceacd9f04ad8ce4720",
+      "matchesExactHelperSource": true
+    },
+    {
+      "file": "runner-retry-postchecks-workflow.yml",
+      "source": "816a37bb059b668ce4928e17f4e4e376ae8ce82a",
+      "sha256": "7216c2e80bb1fa42bb802ba5333ad551e76c174a1cb4016ccd2cc5d8e37dd01f",
+      "matchesExactHelperSource": true
+    }
+  ],
+  "taggedVerificationSHA256": "a035d3ca414c6f8fdbbd65e8a33aede88b32ccee2964c62f9d3016e90ef546f9",
+  "scope": "Only the task-created isolated CI helper branch/worktree was removed. Annotated release tag, application source and published assets are unchanged."
+}

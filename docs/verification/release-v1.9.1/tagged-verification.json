@@ -1,0 +1,852 @@
+{
+  "status": "passed",
+  "release": "v1.9.1",
+  "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+  "run": 43491334177,
+  "workflowURL": "https://github.com/arizzi74/Smart-Stage/actions/runs/43491334177",
+  "workflowConclusion": "success",
+  "passedJobs": 25,
+  "runAttempt": 3,
+  "effectiveJobCount": 25,
+  "retainedExecutionCount": 24,
+  "newExecutionCount": 1,
+  "allEffectiveJobsNewlyExecuted": false,
+  "executionCountsByAttempt": {
+    "1": 5,
+    "3": 1,
+    "2": 19
+  },
+  "retainedExecutionCountsByAttempt": {
+    "1": 5,
+    "2": 19
+  },
+  "priorAttempts": [
+    {
+      "attempt": 1,
+      "status": "completed",
+      "conclusion": "failure",
+      "recordedJobs": 14,
+      "successfulEntries": 5
+    },
+    {
+      "attempt": 2,
+      "status": "completed",
+      "conclusion": "failure",
+      "recordedJobs": 25,
+      "successfulEntries": 24
+    }
+  ],
+  "finalTagWorkflowReceiptSHA256": "2534485f50852c7cbec1390bc812871f33c1bb30adb6e312a544f8abd6e713c5",
+  "jobExecutions": [
+    {
+      "jobID": 132151566100,
+      "key": "binary-security",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141376283,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141376283,
+      "stepTimelineSHA256": "8916109b8c29ec9f553bf9d588d318f985886f80aae7b3c4b9801e40271be818"
+    },
+    {
+      "jobID": 132151504231,
+      "key": "gateway",
+      "jobAttempt": 3,
+      "executionAttempt": 1,
+      "physicalExecutionJobID": 132112988682,
+      "reusedFromAttempt": 1,
+      "previousJobID": 132112988682,
+      "stepTimelineSHA256": "13f7b13d6647987b15e9adb07ecd6fa6dd6a3fdc04aabc0ca2b5560757ec1b46"
+    },
+    {
+      "jobID": 132151580280,
+      "key": "native/darwin/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 1,
+      "physicalExecutionJobID": 132112989068,
+      "reusedFromAttempt": 1,
+      "previousJobID": 132112989068,
+      "stepTimelineSHA256": "815e9321bd0acb8e6d37b9e9a9c78e84b6ac294181d9b7295a57d058dc06dfd4"
+    },
+    {
+      "jobID": 132151504989,
+      "key": "native/darwin/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 1,
+      "physicalExecutionJobID": 132112988618,
+      "reusedFromAttempt": 1,
+      "previousJobID": 132112988618,
+      "stepTimelineSHA256": "4ab494bab6f141160287c37df53391804a0cc6708e623e8baf65f05896c73e53"
+    },
+    {
+      "jobID": 132151581546,
+      "key": "native/windows/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 1,
+      "physicalExecutionJobID": 132112988675,
+      "reusedFromAttempt": 1,
+      "previousJobID": 132112988675,
+      "stepTimelineSHA256": "1107b3684c432fc2c05eafdff07c1614ca5bd1bd8523442bea308e7a5cbd5564"
+    },
+    {
+      "jobID": 132151573025,
+      "key": "native/windows/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132132639645,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132132639645,
+      "stepTimelineSHA256": "e9cf91b3f807add281feb571f64534437789654d9cf1de0f585b96d56fe19fbc"
+    },
+    {
+      "jobID": 132151506448,
+      "key": "publish",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141734241,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141734241,
+      "stepTimelineSHA256": "96927854736d7cd6b6055a0ba4934605d0c0e2f190adb59992ca47546f4833b7"
+    },
+    {
+      "jobID": 132151506201,
+      "key": "publish-site",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141984409,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141984409,
+      "stepTimelineSHA256": "53c39fa6b9101867092492e0f47e4f851e09d9efe2bf5f94d9ca62a576d8e7dd"
+    },
+    {
+      "jobID": 132151584036,
+      "key": "shared",
+      "jobAttempt": 3,
+      "executionAttempt": 1,
+      "physicalExecutionJobID": 132112988412,
+      "reusedFromAttempt": 1,
+      "previousJobID": 132112988412,
+      "stepTimelineSHA256": "cee337f1e2bdeeccedc49d2fdfdc8b9303b27c5b02080b61c18cbd9cf1829135"
+    },
+    {
+      "jobID": 132151506140,
+      "key": "verify-browser/darwin/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141985031,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141985031,
+      "stepTimelineSHA256": "6762dabe6faffeb7bef47a442522c10f3d52a32051aeef874e74663880f6ae07"
+    },
+    {
+      "jobID": 132151506498,
+      "key": "verify-browser/darwin/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141984811,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141984811,
+      "stepTimelineSHA256": "df03b60ba84ed77d35360299994b20501ee2681d8d4308e136871fd84eaee343"
+    },
+    {
+      "jobID": 132151506908,
+      "key": "verify-browser/windows/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141984842,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141984842,
+      "stepTimelineSHA256": "1ece4fd1bb50248918987ece7a4ad7a955cafd1e13477e7f0fb09730fd570d3d"
+    },
+    {
+      "jobID": 132151507693,
+      "key": "verify-browser/windows/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141984820,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141984820,
+      "stepTimelineSHA256": "0d6a64a2e68e0ea2373e3015777808ffc5f38f33803714ebc6902530bfb4bcd5"
+    },
+    {
+      "jobID": 132151506346,
+      "key": "verify-download/darwin/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141984626,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141984626,
+      "stepTimelineSHA256": "70bee0093961b37f426f39d8254deb4e7490f705174494d04d237c0714a8cd8b"
+    },
+    {
+      "jobID": 132151504665,
+      "key": "verify-download/darwin/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 3,
+      "physicalExecutionJobID": 132151504665,
+      "reusedFromAttempt": null,
+      "previousJobID": null,
+      "stepTimelineSHA256": "15e6268d31b424cd6db8e424b3f0915dad933ca04cda41d15f3028499911fb16"
+    },
+    {
+      "jobID": 132151506292,
+      "key": "verify-download/windows/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141984770,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141984770,
+      "stepTimelineSHA256": "14e7b3981fde9308f78c62480269f4381f540f7a3291a558b0151918f65d62eb"
+    },
+    {
+      "jobID": 132151506297,
+      "key": "verify-download/windows/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141984642,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141984642,
+      "stepTimelineSHA256": "d4d78daf2b811363c0a24b9ca1d6e262b6715e4d39791de162290de0a04adccf"
+    },
+    {
+      "jobID": 132151506405,
+      "key": "verify-macos-install/darwin/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141985161,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141985161,
+      "stepTimelineSHA256": "945f4dc83f06a6561ff71080dca99691f911b51893488932403472358c80f786"
+    },
+    {
+      "jobID": 132151506184,
+      "key": "verify-macos-install/darwin/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141985146,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141985146,
+      "stepTimelineSHA256": "30367ac46178140a2cbfc8864a7c149e9eb91c00da7a3b5957549f9143c3e9dd"
+    },
+    {
+      "jobID": 132151507254,
+      "key": "verify-update/darwin/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132142782553,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132142782553,
+      "stepTimelineSHA256": "86a9e205d671d265004cbbd7d2d40a3742a46ce717a4ebde058f62ef73b86c8f"
+    },
+    {
+      "jobID": 132151506889,
+      "key": "verify-update/darwin/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132142782647,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132142782647,
+      "stepTimelineSHA256": "b2726f13eae910c838d36d750efe0aeaa7e24dd162744b0da43e7bc5f033d0f4"
+    },
+    {
+      "jobID": 132151507888,
+      "key": "verify-update/windows/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132142782236,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132142782236,
+      "stepTimelineSHA256": "91c3345b26c6ba0c5f50d6525c5d24003d4664f7c4d5396adafe73b585b1522d"
+    },
+    {
+      "jobID": 132151507666,
+      "key": "verify-update/windows/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132142782304,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132142782304,
+      "stepTimelineSHA256": "0ab448ac8c7c5512e63d53c0e7b52ee7b110884ff05d3801eb4860b7df64966f"
+    },
+    {
+      "jobID": 132151506358,
+      "key": "verify-windows-install/windows/amd64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141985384,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141985384,
+      "stepTimelineSHA256": "3ee0e10b0ddb3616005effcb3363576393728e9cb77040e695766f7517a66090"
+    },
+    {
+      "jobID": 132151507338,
+      "key": "verify-windows-install/windows/arm64",
+      "jobAttempt": 3,
+      "executionAttempt": 2,
+      "physicalExecutionJobID": 132141985230,
+      "reusedFromAttempt": 2,
+      "previousJobID": 132141985230,
+      "stepTimelineSHA256": "201615282155fab3f713860bf44acec246db803ff2d2d2cffc298ef31ce58898"
+    }
+  ],
+  "reviewedRecoveryReceipts": [
+    {
+      "path": "runner-retry-verification.json",
+      "sha256": "74ddb5a4c99f9073b9cbc4fa7a603b14aa698b8ece338300e37aa3e08a61b9d4",
+      "acceptedAttempt": 2,
+      "earlierAttemptReceipts": [
+        {
+          "path": "earlier-tag-workflow.json",
+          "sha256": "de08daf6b57999efc4cc29044a85bff510dd81fc8e7bbcc93a59346a3ee8187f"
+        },
+        {
+          "path": "tag-attempt1-windows-start-failure.json",
+          "sha256": "41da52308eff1df2db8de87db22daa24fd42dd2e0ddde376502ac679b7be0ab7"
+        }
+      ],
+      "earlierHelperFailureReceipts": [
+        {
+          "path": "retry-helper-first-failure.json",
+          "sha256": "d533cb8c332f110e5b27a3dbd9b1938d8a6b16f0b62881ac122d3123553b9111"
+        },
+        {
+          "path": "retry-helper-second-failure.json",
+          "sha256": "c0cd832afc3dbd35ef2161ca8b4307e170b228b8459772a67515bd01d3eed673"
+        }
+      ],
+      "failureEvidenceVerification": {
+        "method": "reviewed_failure_receipt_and_live_original_artifact_metadata",
+        "ciParsedOriginalJobLog": false,
+        "reviewedFailureReceiptSHA256": "41da52308eff1df2db8de87db22daa24fd42dd2e0ddde376502ac679b7be0ab7",
+        "reviewedArtifactID": 14070422169,
+        "reviewedArtifactDigest": "sha256:4920596e4d2d412660bd6cfaeb02561bfb6622b660121f2b37b7e06b94934600",
+        "reviewedArtifactBytes": 13791149,
+        "liveSourceJobStepAndArtifactGuardsPassed": true,
+        "causeEstablished": false,
+        "assertionsOrTimeoutsRelaxed": false
+      }
+    },
+    {
+      "path": "runner-retry-postchecks-verification.json",
+      "sha256": "948d6f3d278054afa3e1b38e0f7fe95942a1a7c4c51ffe6232a1f07f526d3350",
+      "acceptedAttempt": 3,
+      "earlierAttemptReceipts": [
+        {
+          "path": "earlier-tag-workflow.json",
+          "sha256": "de08daf6b57999efc4cc29044a85bff510dd81fc8e7bbcc93a59346a3ee8187f"
+        },
+        {
+          "path": "tag-attempt2-workflow.json",
+          "sha256": "75b5651e90dac65d6ce044feb263c41bd2d4675710e770114c8cee36a3c2cfaa"
+        },
+        {
+          "path": "tag-attempt2-capacity-failure.json",
+          "sha256": "280dbad340183ab50d9b18e8b7794aa428e08a7617d9faee97a444089277c49b"
+        },
+        {
+          "path": "runner-retry-verification.json",
+          "sha256": "74ddb5a4c99f9073b9cbc4fa7a603b14aa698b8ece338300e37aa3e08a61b9d4"
+        }
+      ],
+      "publishedAssetGuard": {
+        "releaseID": 444690683,
+        "assetCount": 50,
+        "assetFingerprint": "e08c33b07a61b028b3340356488f4f958763064dae5c1bb981674a3bba72346a",
+        "publicAuditReceipt": "public-audit.json",
+        "publicAuditSHA256": "36000f26a7e9c5827131879c9660d365d14d9e0c25080ff57f9eca70ea921779",
+        "metadataStillMatchesAtCheck": true
+      }
+    }
+  ],
+  "checkedAtUTC": "2026-11-13T20:39:53.577541+00:00",
+  "artifactArchivesDigestVerified": 16,
+  "actualStartupUpdatesPassed": 4,
+  "nativeInstallerReportsPassed": 6,
+  "nativeBrowserReportsPassed": 6,
+  "browserAudioLayerReportsPassed": 2,
+  "browserSectionsReportsPassed": 4,
+  "browserSectionAudioContinuityReportsPassed": 2,
+  "browserFeatureReportsNotExercised": 2,
+  "installedExecutableHashesMatchPublicAudit": 10,
+  "installerBootstrapSource": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+  "bootstrapSHA256": {
+    "install.sh": "6528b3ed9ac947f80adb201a954cad8f586b9a129ff2da462844f7ca01cab0a5",
+    "install.ps1": "b621e88a86a701ff96fff3ac56169aa4d01ab60c1e1f6613958f533a0c9eb721"
+  },
+  "artifacts": [
+    {
+      "id": 14072704354,
+      "name": "auto-update-darwin-amd64",
+      "archiveSHA256": "bd9abbdb4bf3e13c5eb61e22a6d15b4fb82b9d26a84217af9a845f553c2b058a",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14072913977,
+      "name": "auto-update-darwin-arm64",
+      "archiveSHA256": "86f7a5ffd23855941dfe51556c1302891198bc06d4ff5f3b3a2b110ce97482dc",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14073059101,
+      "name": "auto-update-windows-amd64",
+      "archiveSHA256": "9711c170085899e2d3ebee34ce069014085777b90efa6db19236b0d2ac279bbe",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14072729336,
+      "name": "auto-update-windows-arm64",
+      "archiveSHA256": "8edb4baae0790d0a78a6d12738e261e0a2695c8d4b8d6b050a54715e501616dc",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14074290183,
+      "name": "browser-native-darwin-amd64",
+      "archiveSHA256": "a5aa10eb54ec296b3e93a8bd98c1958fa0c57f1412b62cbcb85e8c89bc668c35",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14073537149,
+      "name": "browser-native-darwin-arm64",
+      "archiveSHA256": "8c418291994292d5d57459120144c9ff4cfd05d28694416ea7e414eca986388e",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14073681881,
+      "name": "browser-native-windows-amd64",
+      "archiveSHA256": "296caa5a197fc7ed374cb77685d8a783f16c3458e45735e41e2bca153369a534",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14073826474,
+      "name": "browser-native-windows-arm64",
+      "archiveSHA256": "b93a83f758846a3826b6666085679b61181862f076db64d5a2cce60e19d93334",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14072144357,
+      "name": "mac-app-install-amd64",
+      "archiveSHA256": "22234342fee7dba9c9093eedb42a94ddb5d5ce16563b0561378b09a9908230e8",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14073526681,
+      "name": "mac-app-install-arm64",
+      "archiveSHA256": "e59ed8f87a363fb90327b5e1cf4c7dfdc475905c740c1477f1c5ea494ee5d2c4",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14068429871,
+      "name": "update-fixture-darwin-amd64",
+      "archiveSHA256": "553e3a9256e624b842c2548064e909dd09165bd028ab3ee568264513c512ffed",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14069886355,
+      "name": "update-fixture-darwin-arm64",
+      "archiveSHA256": "d9b675eae2171c9d2329035266c0b51903617085207b4346a3810d244b5cfa2e",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14069871578,
+      "name": "update-fixture-windows-amd64",
+      "archiveSHA256": "96289d40123e97d565cc5646079fbe832956d5e04df66727b19e5f15997f1556",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14073761157,
+      "name": "update-fixture-windows-arm64",
+      "archiveSHA256": "d86c45712b77202c9fc9a1a35fcded06ce439e2784811a1bdde13089f91aadbc",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14072708713,
+      "name": "windows-app-install-amd64",
+      "archiveSHA256": "91d2ff818a4ffefef9a4b6473ab83241f441f7eb681f3d1abdc5727aa567e72b",
+      "githubDigestAndSizeVerified": true
+    },
+    {
+      "id": 14074485882,
+      "name": "windows-app-install-arm64",
+      "archiveSHA256": "5115cc522cb43ed0a3a371651daf77469e391931c95a0e41cebadc853acd48ed",
+      "githubDigestAndSizeVerified": true
+    }
+  ],
+  "reports": [
+    {
+      "kind": "native-browser",
+      "target": "darwin/amd64",
+      "engine": "chromium",
+      "status": "passed",
+      "artifactID": 14074290183,
+      "reportSHA256": "e7f20946e7f7497df23f4fb890d6aa1e7f66a9e13f601fe43320b074ec61d0b0",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 17,
+      "featureScope": "audio_layers_and_sections",
+      "audioAvailabilityAssessed": true,
+      "audioEndpointCount": 1,
+      "displayCount": 1,
+      "audioLayersIntegration": {
+        "nativeAudioGainsMeasuredHere": false,
+        "physicalRoutingVerified": false,
+        "status": "passed",
+        "checks": {
+          "adminFlagsSavedAndReloaded": true,
+          "twoIndependentNativeAudioSourcesAcknowledged": true,
+          "keepVideoPreservedNativeSourceIdentity": true,
+          "retainedVideoClockAdvancedWithBothAudioLayers": true,
+          "remotePauseResumeUsesEachSourceIdentityAndTransport": true,
+          "pausingEitherLayerPreservesTheOtherNativeClock": true,
+          "globalStopClearsAllNativeSelections": true,
+          "playlistFlagsAndSettingsRestored": true
+        }
+      },
+      "sectionsIntegration": {
+        "status": "passed",
+        "checks": {
+          "adminCreatedAndRenamedSection": true,
+          "adminMovedExistingCueWithoutPlaybackCommand": true,
+          "collapseSavePreservesSummaryFocus": true,
+          "sectionNameMembershipAndCollapseSurviveAdminReload": true,
+          "portableExportIncludesSectionsCollapseAndCueMembership": true,
+          "remoteTapAndKeyboardSelectOnlyRequestedSection": true,
+          "sectionEditsAndNavigationSendNoPlaybackCommands": true,
+          "originalCueAndSectionSettingsRestoredTogether": true,
+          "adminSorterLazyAssetsAndNativeHostPointerSave": true,
+          "sorterRetainsCueMetadataWithoutPlaybackCommands": true,
+          "nativeSourceGenerationTransportAndAdvancingClockPreserved": true
+        },
+        "audioContinuityVerified": true,
+        "physicalRoutingVerified": false
+      }
+    },
+    {
+      "kind": "native-browser",
+      "target": "darwin/amd64",
+      "engine": "webkit",
+      "status": "passed",
+      "artifactID": 14074290183,
+      "reportSHA256": "1caee3cf73c16a9022d036d16bb9d1af39b73be30d41859860686c6421cf414c",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 2,
+      "featureScope": "track_drag_only",
+      "audioAvailabilityAssessed": false,
+      "audioLayersIntegration": {
+        "status": "not_exercised",
+        "reason": "track_drag_only_report",
+        "checks": {},
+        "nativeAudioGainsMeasuredHere": false,
+        "physicalRoutingVerified": false
+      },
+      "sectionsIntegration": {
+        "status": "not_exercised",
+        "reason": "track_drag_only_report",
+        "checks": {},
+        "audioContinuityVerified": false,
+        "physicalRoutingVerified": false
+      }
+    },
+    {
+      "kind": "native-browser",
+      "target": "darwin/arm64",
+      "engine": "chromium",
+      "status": "passed",
+      "artifactID": 14073537149,
+      "reportSHA256": "399de4c1a2b0d9b73a7c13044805cda736107c81d3adf07872dd444427887cc3",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 17,
+      "featureScope": "audio_layers_and_sections",
+      "audioAvailabilityAssessed": true,
+      "audioEndpointCount": 2,
+      "displayCount": 1,
+      "audioLayersIntegration": {
+        "nativeAudioGainsMeasuredHere": false,
+        "physicalRoutingVerified": false,
+        "status": "passed",
+        "checks": {
+          "adminFlagsSavedAndReloaded": true,
+          "twoIndependentNativeAudioSourcesAcknowledged": true,
+          "keepVideoPreservedNativeSourceIdentity": true,
+          "retainedVideoClockAdvancedWithBothAudioLayers": true,
+          "remotePauseResumeUsesEachSourceIdentityAndTransport": true,
+          "pausingEitherLayerPreservesTheOtherNativeClock": true,
+          "globalStopClearsAllNativeSelections": true,
+          "playlistFlagsAndSettingsRestored": true
+        }
+      },
+      "sectionsIntegration": {
+        "status": "passed",
+        "checks": {
+          "adminCreatedAndRenamedSection": true,
+          "adminMovedExistingCueWithoutPlaybackCommand": true,
+          "collapseSavePreservesSummaryFocus": true,
+          "sectionNameMembershipAndCollapseSurviveAdminReload": true,
+          "portableExportIncludesSectionsCollapseAndCueMembership": true,
+          "remoteTapAndKeyboardSelectOnlyRequestedSection": true,
+          "sectionEditsAndNavigationSendNoPlaybackCommands": true,
+          "originalCueAndSectionSettingsRestoredTogether": true,
+          "adminSorterLazyAssetsAndNativeHostPointerSave": true,
+          "sorterRetainsCueMetadataWithoutPlaybackCommands": true,
+          "nativeSourceGenerationTransportAndAdvancingClockPreserved": true
+        },
+        "audioContinuityVerified": true,
+        "physicalRoutingVerified": false
+      }
+    },
+    {
+      "kind": "native-browser",
+      "target": "darwin/arm64",
+      "engine": "webkit",
+      "status": "passed",
+      "artifactID": 14073537149,
+      "reportSHA256": "9b5cdd0ab845cb5b987a42bc480dfec5e072ceae7c36fe92446f6cd4b1d259e7",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 2,
+      "featureScope": "track_drag_only",
+      "audioAvailabilityAssessed": false,
+      "audioLayersIntegration": {
+        "status": "not_exercised",
+        "reason": "track_drag_only_report",
+        "checks": {},
+        "nativeAudioGainsMeasuredHere": false,
+        "physicalRoutingVerified": false
+      },
+      "sectionsIntegration": {
+        "status": "not_exercised",
+        "reason": "track_drag_only_report",
+        "checks": {},
+        "audioContinuityVerified": false,
+        "physicalRoutingVerified": false
+      }
+    },
+    {
+      "kind": "native-browser",
+      "target": "windows/amd64",
+      "engine": "chromium",
+      "status": "passed",
+      "artifactID": 14073681881,
+      "reportSHA256": "350479c32e98004ffc9111b4d6fd3e0940343513c8321b6c6ebb4e7402c0ed69",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 16,
+      "featureScope": "audio_layers_and_sections",
+      "audioAvailabilityAssessed": true,
+      "audioEndpointCount": 0,
+      "displayCount": 1,
+      "audioLayersIntegration": {
+        "nativeAudioGainsMeasuredHere": false,
+        "physicalRoutingVerified": false,
+        "status": "unavailable",
+        "reason": "no_native_audio_endpoint",
+        "checks": {}
+      },
+      "sectionsIntegration": {
+        "status": "passed",
+        "checks": {
+          "adminCreatedAndRenamedSection": true,
+          "adminMovedExistingCueWithoutPlaybackCommand": true,
+          "collapseSavePreservesSummaryFocus": true,
+          "sectionNameMembershipAndCollapseSurviveAdminReload": true,
+          "portableExportIncludesSectionsCollapseAndCueMembership": true,
+          "remoteTapAndKeyboardSelectOnlyRequestedSection": true,
+          "sectionEditsAndNavigationSendNoPlaybackCommands": true,
+          "originalCueAndSectionSettingsRestoredTogether": true,
+          "adminSorterLazyAssetsAndNativeHostPointerSave": true,
+          "sorterRetainsCueMetadataWithoutPlaybackCommands": true
+        },
+        "audioContinuityVerified": false,
+        "physicalRoutingVerified": false,
+        "audioUnavailableReason": "no_native_audio_endpoint"
+      }
+    },
+    {
+      "kind": "native-browser",
+      "target": "windows/arm64",
+      "engine": "chromium",
+      "status": "passed",
+      "artifactID": 14073826474,
+      "reportSHA256": "ed01882afbc37ec14db3b8b150924a28429cc089df32b0d35a067f80829aa8fb",
+      "expectedSourceAndVersionVerified": true,
+      "publishedChecksumValidationStepVerified": true,
+      "reportedChecks": 16,
+      "featureScope": "audio_layers_and_sections",
+      "audioAvailabilityAssessed": true,
+      "audioEndpointCount": 0,
+      "displayCount": 1,
+      "audioLayersIntegration": {
+        "nativeAudioGainsMeasuredHere": false,
+        "physicalRoutingVerified": false,
+        "status": "unavailable",
+        "reason": "no_native_audio_endpoint",
+        "checks": {}
+      },
+      "sectionsIntegration": {
+        "status": "passed",
+        "checks": {
+          "adminCreatedAndRenamedSection": true,
+          "adminMovedExistingCueWithoutPlaybackCommand": true,
+          "collapseSavePreservesSummaryFocus": true,
+          "sectionNameMembershipAndCollapseSurviveAdminReload": true,
+          "portableExportIncludesSectionsCollapseAndCueMembership": true,
+          "remoteTapAndKeyboardSelectOnlyRequestedSection": true,
+          "sectionEditsAndNavigationSendNoPlaybackCommands": true,
+          "originalCueAndSectionSettingsRestoredTogether": true,
+          "adminSorterLazyAssetsAndNativeHostPointerSave": true,
+          "sorterRetainsCueMetadataWithoutPlaybackCommands": true
+        },
+        "audioContinuityVerified": false,
+        "physicalRoutingVerified": false,
+        "audioUnavailableReason": "no_native_audio_endpoint"
+      }
+    },
+    {
+      "kind": "native-installer",
+      "target": "darwin/amd64",
+      "shell": "sh",
+      "status": "passed",
+      "artifactID": 14072144357,
+      "reportSHA256": "8af52de8e7cb656e0349fb9329f669ef3e6317582e8bbb6795e1a968adb65d9c",
+      "installedExecutableSHA256": "97ed110e3a08f537d3f4ded6d0155bf04e7e6695862ac29e291002c861e2d9d6",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.sh",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 22,
+      "firewallSnapshotsComparedWithoutExemptions": false
+    },
+    {
+      "kind": "native-installer",
+      "target": "darwin/arm64",
+      "shell": "sh",
+      "status": "passed",
+      "artifactID": 14073526681,
+      "reportSHA256": "9e53d507fb423e7d8bf881e049506a3dff07fabc719cadbd877bb47915ce9534",
+      "installedExecutableSHA256": "ef2bb0d1f38514f218b5c4226c34b7a01284c22f02fb03749723a7b819b3c999",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.sh",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 22,
+      "firewallSnapshotsComparedWithoutExemptions": false
+    },
+    {
+      "kind": "native-installer",
+      "target": "windows/amd64",
+      "shell": "powershell5.1",
+      "status": "passed",
+      "artifactID": 14072708713,
+      "reportSHA256": "364cb34b9f57550357c1beef43d691c00371bcc605f80ed9720067f4be4b2292",
+      "installedExecutableSHA256": "1ea5bc9790af9f9741b1ccf62b96ff8caf56106a91f0bb6efa4ef460f170ea49",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.ps1",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 20,
+      "firewallSnapshotsComparedWithoutExemptions": true
+    },
+    {
+      "kind": "native-installer",
+      "target": "windows/amd64",
+      "shell": "powershell7",
+      "status": "passed",
+      "artifactID": 14072708713,
+      "reportSHA256": "e152c81972ddd7451706ef6a918c471eea1d3f2daf5dd0177f914c62911d80be",
+      "installedExecutableSHA256": "1ea5bc9790af9f9741b1ccf62b96ff8caf56106a91f0bb6efa4ef460f170ea49",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.ps1",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 20,
+      "firewallSnapshotsComparedWithoutExemptions": true
+    },
+    {
+      "kind": "native-installer",
+      "target": "windows/arm64",
+      "shell": "powershell5.1",
+      "status": "passed",
+      "artifactID": 14074485882,
+      "reportSHA256": "cb8db345c8a190765e09b4373e72dac1f52fd4c23d7981f2b65cf2d00f4a2a03",
+      "installedExecutableSHA256": "e4c5f037f65096d5999246b8d735f06c6b71896068e4dddcced8a1642f48a277",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.ps1",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 20,
+      "firewallSnapshotsComparedWithoutExemptions": true
+    },
+    {
+      "kind": "native-installer",
+      "target": "windows/arm64",
+      "shell": "powershell7",
+      "status": "passed",
+      "artifactID": 14074485882,
+      "reportSHA256": "72a236939dfe6805b6ad037ec877c5b5733fe47ad0f7c94ef382d80fb352932e",
+      "installedExecutableSHA256": "e4c5f037f65096d5999246b8d735f06c6b71896068e4dddcced8a1642f48a277",
+      "publicBytesMatched": true,
+      "bootstrapScript": "install.ps1",
+      "bootstrapMatchesTaggedSource": true,
+      "requiredChecksPassed": 20,
+      "firewallSnapshotsComparedWithoutExemptions": true
+    },
+    {
+      "kind": "startup-update",
+      "target": "darwin/amd64",
+      "status": "passed",
+      "artifactID": 14072704354,
+      "reportSHA256": "ec41550ef204d437651a9b549c3030a0b77cfbfcbcce9e72802ddbf9d75575da",
+      "installedExecutableSHA256": "97ed110e3a08f537d3f4ded6d0155bf04e7e6695862ac29e291002c861e2d9d6",
+      "publicBytesMatched": true,
+      "fixtureArtifactID": 14068429871,
+      "fixtureSourceAndArchiveHashesVerified": true,
+      "manualHTTPInstallRequests": 0,
+      "requiredChecksPassed": 16
+    },
+    {
+      "kind": "startup-update",
+      "target": "darwin/arm64",
+      "status": "passed",
+      "artifactID": 14072913977,
+      "reportSHA256": "e6a1f70fd20611e92c7502f979cc91bf49285131fb11a6bfb71304e50bc7d264",
+      "installedExecutableSHA256": "ef2bb0d1f38514f218b5c4226c34b7a01284c22f02fb03749723a7b819b3c999",
+      "publicBytesMatched": true,
+      "fixtureArtifactID": 14069886355,
+      "fixtureSourceAndArchiveHashesVerified": true,
+      "manualHTTPInstallRequests": 0,
+      "requiredChecksPassed": 16
+    },
+    {
+      "kind": "startup-update",
+      "target": "windows/amd64",
+      "status": "passed",
+      "artifactID": 14073059101,
+      "reportSHA256": "d97c14c1b6c23df90a0c55bba8a3f305b930beb1a5a87cb5babf47fe336201f5",
+      "installedExecutableSHA256": "1ea5bc9790af9f9741b1ccf62b96ff8caf56106a91f0bb6efa4ef460f170ea49",
+      "publicBytesMatched": true,
+      "fixtureArtifactID": 14069871578,
+      "fixtureSourceAndArchiveHashesVerified": true,
+      "manualHTTPInstallRequests": 0,
+      "requiredChecksPassed": 16
+    },
+    {
+      "kind": "startup-update",
+      "target": "windows/arm64",
+      "status": "passed",
+      "artifactID": 14072729336,
+      "reportSHA256": "4865caca508fea308779f65b40cd54fcc15386d27effcffbbdefd5cd040b6cff",
+      "installedExecutableSHA256": "e4c5f037f65096d5999246b8d735f06c6b71896068e4dddcced8a1642f48a277",
+      "publicBytesMatched": true,
+      "fixtureArtifactID": 14073761157,
+      "fixtureSourceAndArchiveHashesVerified": true,
+      "manualHTTPInstallRequests": 0,
+      "requiredChecksPassed": 16
+    }
+  ],
+  "scope": "Tagged-source receipts only. Effective job outcomes are distinct from new executions; retained successes are checked against every prior attempt using identical complete step arrays and timestamps, choosing the earliest successful physical execution; each reviewed recovery receipt remains attached to its historical attempt. The final tag monitor must agree with the API's exact source, run, attempt and job IDs. Four real startup updates, six native installer shell reports and six Chromium/WebKit reports. Feature receipts distinguish full browser scenarios from WebKit track-drag-only coverage; audio-layer success and Sections audio continuity require matching native device availability. Updater fixtures use exact tagged source with older version metadata. Ten installed executables match independently audited public bytes; browser jobs separately passed public archive checksum validation. Windows firewall comparisons retain every rule. Raw machine paths/rules/logs stay in private artifact ZIPs. Physical routing and dedicated native-window mouse forwarding are not asserted. Floating default-source verification is separate.",
+  "privacy": {
+    "checked": true,
+    "strictWhitelistedReportFields": true,
+    "rawMachinePathsIncluded": false,
+    "firewallRuleListsIncluded": false,
+    "privateSessionURLsIncluded": false,
+    "sessionSecretsIncluded": false
+  },
+  "independentPublicAuditSHA256": "36000f26a7e9c5827131879c9660d365d14d9e0c25080ff57f9eca70ea921779"
+}

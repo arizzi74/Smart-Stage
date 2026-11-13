@@ -1,0 +1,46 @@
+{
+  "status": "failed",
+  "helper": {
+    "source": "be33d89487e8e868f76734694ba4948bdafed4b8",
+    "runID": 43495791507,
+    "jobID": 132128420072,
+    "branch": "ci/retry-v1.9.1-43491334177",
+    "path": ".github/workflows/retry-v1.9.1.yml",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "failure"
+  },
+  "failedSteps": [
+    {
+      "number": 2,
+      "name": "Verify the fixed Start prerequisite failure and retry only its tagged job",
+      "status": "completed",
+      "conclusion": "failure"
+    }
+  ],
+  "requestFailure": {
+    "requestFailed": true,
+    "method": "GET",
+    "path": "/actions/jobs/132112988864/logs",
+    "exitCode": 1,
+    "httpStatus": null,
+    "errorCategories": [
+      "unclassified"
+    ]
+  },
+  "failedRequestIdentified": true,
+  "causeEstablished": false,
+  "retryRequestReached": false,
+  "retryRequestedMarkerObserved": false,
+  "targetAtCheck": {
+    "runID": 43491334177,
+    "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+    "tag": "v1.9.1",
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "failure"
+  },
+  "privateJobLogSHA256": "e78135006135a07ee15e17317652e6907f56558fcc9c7fe0ce19128d015e64e8",
+  "checkedAtUTC": "2026-11-13T19:50:59.632722+00:00",
+  "scope": "The isolated helper failed while reading the old job log, before its fixed retry POST. No HTTP status or cause was identified. Target remains attempt1 at this observation; no successful recovery is claimed."
+}

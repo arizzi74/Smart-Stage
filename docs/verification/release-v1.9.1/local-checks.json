@@ -1,0 +1,62 @@
+{
+  "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+  "checkedAtUTC": "2026-11-13T19:23:41.351663+00:00",
+  "status": "passed",
+  "runtimeChangedPaths": [
+    "internal/web/assets/style.css"
+  ],
+  "baseline": {
+    "source": "bb40227b9694f3f0290d30aaec21f5b532a5eac7",
+    "cssSHA256": "af2ca3ecf4df7cebd4da28de90543bc7a6686e25ef6e2c028012ca06b2355eaf",
+    "testSHA256": "b960bd18dbd9138ac41343ee7967e034c787c89bc45cffc308dec8f3cbd48098",
+    "logSHA256": "6ff6ff24b87ddc71c37285e91e08dcdb7779f9069644a74ef05f49eedba03b59",
+    "observedPagerHeight": 240,
+    "observedIncomingPageHeight": 570,
+    "observedBottomCueOffset": 566,
+    "observedHorizontalOverlap": 28.75
+  },
+  "current": {
+    "cssSHA256": "040419dfc1733f764e83330bedc3231b7a60a3d94313a265218c16a483122f71",
+    "testSHA256": "4da3f67026164bee2ac56a65f0c645c1fbe8edc1fc875518b9f9b904e5c892c5",
+    "reportSHA256": "3b29eacf18e5c5e22a4b2981d305e89fe93254fa2efece34facc9829e6b01b57",
+    "fullSuitePassed": true,
+    "browser": "153.0.8010.12",
+    "trustedTouchGestures": 11,
+    "heldMotionCases": 9,
+    "heightObservations": 65,
+    "checkedFlags": {
+      "sectionPartialSwipeAndVerticalScrollNeverPlay": true,
+      "sectionNavigationPreservesPlayback": true,
+      "sectionPagerFingerFollowingAndAdjacentVisibility": true,
+      "sectionPagerCancelEdgeAndAnimatedSnap": true,
+      "sectionPagerReducedMotionAndStableLiveCueNodes": true,
+      "sectionPagerInactivePagesInertAndUntabbable": true,
+      "sectionPagerUnequalHeightsUnclippedHeldAndSettlingBothDirections": true,
+      "sectionPagerTallestHeightStableAcrossSelectionAndEmptyPages": true,
+      "sectionPagerLongLabelLiveHeightAndOrientationReflow": true,
+      "sectionPagerNavigationNeverLoadsDocument": true
+    }
+  },
+  "fixtureCorrection": "The first fixed-CSS run passed geometry but reached a later stale Admin revision after the synthetic external label change. The final test uses the existing Reload UI and waits for its revision before later independent Admin writes. The original expected clipping assertion and all touch/settling assertions are retained.",
+  "behavior": "All pages share the maximum intrinsic height. Short pages intentionally retain blank space below their cues; document scrolling stays available and section changes do not add custom per-page scroll restoration.",
+  "chromiumScope": "Chromium real trusted touch and UI geometry against synthetic host data; no native playback or physical-screen claim",
+  "webkit": {
+    "passed": true,
+    "engine": "webkit",
+    "browser": "26.6",
+    "baselineSource": "2eba7f4815db98430bad940aea227fef484e88df",
+    "baselineCSSSHA256": "af2ca3ecf4df7cebd4da28de90543bc7a6686e25ef6e2c028012ca06b2355eaf",
+    "fixedCSSSHA256": "040419dfc1733f764e83330bedc3231b7a60a3d94313a265218c16a483122f71",
+    "reportSHA256": "3a004205d5aaecc2603865a207eb859450ada0a53d3bc7aea18792b8385b1fa5",
+    "scope": "Linux WebKit with shipped CSS and representative remote DOM; layout/transition geometry, not actual native Mac window or trusted touch integration",
+    "cases": [
+      "old short-to-tall clipping reproduced",
+      "all pages contained before/during/after settling",
+      "same page nodes retained",
+      "off-tab label growth",
+      "390px portrait, 844px landscape and 320px narrow reflow"
+    ]
+  },
+  "physicalPhoneOrNativeWindowTouchVerified": false,
+  "scope": "Exact CSS/test source bytes and saved local browser reports verified. Browser fixtures do not establish native playback or physical display/input acceptance; published native results are separate."
+}

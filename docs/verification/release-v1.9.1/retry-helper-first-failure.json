@@ -1,0 +1,37 @@
+{
+  "status": "failed",
+  "helper": {
+    "source": "a796b2242dcfa34c38b4a014a81f3dd7a195df3b",
+    "runID": 43494769761,
+    "jobID": 132124879952,
+    "branch": "ci/retry-v1.9.1-43491334177",
+    "path": ".github/workflows/retry-v1.9.1.yml",
+    "event": "push",
+    "attempt": 1,
+    "conclusion": "failure"
+  },
+  "failedSteps": [
+    {
+      "number": 2,
+      "name": "Verify the fixed Start prerequisite failure and retry only its tagged job",
+      "status": "completed",
+      "conclusion": "failure"
+    }
+  ],
+  "diagnostic": "GitHub request rejected",
+  "httpStatusAvailable": false,
+  "failedRequestIdentified": false,
+  "causeEstablished": false,
+  "retryRequestedMarkerObserved": false,
+  "targetAtCheck": {
+    "runID": 43491334177,
+    "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+    "tag": "v1.9.1",
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "failure"
+  },
+  "privateJobLogSHA256": "bd401ae996796ec626f0e59308152f61112ff000ea30e1f39d3df9394b725c21",
+  "checkedAtUTC": "2026-11-13T19:45:51.560091+00:00",
+  "scope": "The isolated helper failed without emitting an accepted retry marker. Its captured error did not disclose the failing request or cause. Target remains attempt1 at this observation; no successful recovery is claimed."
+}

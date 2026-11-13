@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.9.0 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.9.1 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,33 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.9.1: full-height preloaded section pages
+
+Source `6ff2f2efa74cf81266f1a325bfe076795f3ae637` fixes clipping while swiping
+from shorter sections into taller ones. All pages contribute to a shared
+intrinsic height, retaining existing buttons and avoiding a resize at selection
+commit. Short pages retain common-height blank space. Eleven trusted touch
+gestures and 65 geometry samples cover held/settling motion, both directions,
+live labels, empty pages, rotation and no document navigation. A separate Linux
+WebKit component probe passed without claiming physical/native-window input.
+
+All 25 effective tagged jobs passed: five physical executions from attempt 1,
+nineteen from attempt 2 and one from attempt 3. The
+[verification record](verification/release-v1.9.1/README.md) preserves the original
+Windows Start prerequisite failure, two unsuccessful helper requests and the
+Mac job cancelled before runner acquisition. Retry evidence binds immutable
+source, reviewed failure/artifact identity and unchanged public assets. A
+separate main Mac video-inspection failure remains unexplained and is not
+counted as a pass. No application assertion, timeout or publication requirement
+was bypassed.
+
+All 50 public asset digests, eight checksum pairs and website manifest pairs
+passed. Sixteen tagged artifact archives, four actual startup updates, six
+installer shell reports and six browser reports were independently verified.
+All three public installer defaults select v1.9.1; automatic default-pin
+workflows have a separate source-bound snapshot without claiming unfinished
+checks passed. Physical output and clean-machine acceptance remain open.
 
 ### Version 1.9.0: continuous section swipes and compact playlist sorting
 

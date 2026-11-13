@@ -1,0 +1,43 @@
+{
+  "status": "failed",
+  "release": "v1.9.1",
+  "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+  "run": 43491334177,
+  "attempt": 2,
+  "workflowConclusion": "failure",
+  "effectiveJobs": 25,
+  "successfulEffectiveJobs": 24,
+  "reason": "hosted_runner_acquisition_failure",
+  "jobID": 132141984668,
+  "jobName": "verify-download / download (macos-15, darwin, arm64)",
+  "target": "darwin/arm64",
+  "conclusion": "cancelled",
+  "runnerAssigned": false,
+  "executedStepCount": 0,
+  "downloadOrApplicationTestExecuted": false,
+  "startedAtUTC": "2026-11-13T20:14:31Z",
+  "completedAtUTC": "2026-11-13T20:29:32Z",
+  "annotationCategories": {
+    "hosted_runner_not_acquired": 1,
+    "macos_arm64_capacity_constraints": 3
+  },
+  "annotations": [
+    {
+      "level": "failure",
+      "message": "The job was not acquired by Runner of type hosted even after multiple attempts",
+      "count": 1
+    },
+    {
+      "level": "notice",
+      "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.",
+      "count": 3
+    }
+  ],
+  "earlierAttemptReceipt": {
+    "path": "tag-attempt2-workflow.json",
+    "sha256": "75b5651e90dac65d6ce044feb263c41bd2d4675710e770114c8cee36a3c2cfaa"
+  },
+  "taggedVerificationEmitted": false,
+  "checkedAtUTC": "2026-11-13T20:30:41.299225+00:00",
+  "scope": "All24other effective checks succeeded; this one hosted Mac download job was capacity-cancelled without a runner or executed step. It is not counted as a pass. Existing release/public audit success is separate."
+}

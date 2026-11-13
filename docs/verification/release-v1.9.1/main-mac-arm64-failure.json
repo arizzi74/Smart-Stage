@@ -1,0 +1,50 @@
+{
+  "status": "failed",
+  "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+  "run": 43491334547,
+  "attempt": 1,
+  "branch": "main",
+  "jobID": 132112989066,
+  "target": "darwin/arm64",
+  "step": {
+    "number": 11,
+    "name": "Native executable startup",
+    "conclusion": "failure"
+  },
+  "phase": "native_harness_fixture_inspection",
+  "fixture": "silent-1080p.mp4",
+  "operation": "--inspect",
+  "exitCode": 1,
+  "stderr": [
+    "IOServiceMatchingfailed for: AppleM2ScalerParavirtDriver",
+    "Cannot Decode"
+  ],
+  "runnerAssigned": true,
+  "executedStepCount": 23,
+  "nativeSmokeCompleted": false,
+  "partialNativeSmokeRecordCount": 4,
+  "partialNativeSmokeSHA256": "3b5645f5bc92d4dd5af9267578e9757647681620ca70179e0df15533eca8b427",
+  "nativeSceneProbeReached": false,
+  "causeEstablished": false,
+  "privateJobLogSHA256": "691033998c4ed9c1873fa1a737b2415de4fbb677e0c0aadd44fe015fa1444802",
+  "artifact": {
+    "id": 14069384978,
+    "name": "native-darwin-arm64",
+    "archiveSHA256": "1ffa616496341195ea48ad070ad5730ab15c2d3fa7ce21df1ed181ad59f01e15",
+    "bytes": 15832412,
+    "githubDigestAndSizeVerified": true,
+    "fullToolchainSourceVerified": true
+  },
+  "independentTaggedJob": {
+    "run": 43491334177,
+    "attempt": 1,
+    "jobID": 132112988618,
+    "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+    "version": "v1.9.1",
+    "conclusion": "success",
+    "nativeStartupPassed": true
+  },
+  "checkedAtUTC": "2026-11-13T19:31:46.841343+00:00",
+  "scope": "Separate automatic main build failed during native media inspection. The same source passed this target in the tagged workflow. The stderr is preserved without attributing a proven cause or counting the failed main job as a pass. No retries or code changes were made.",
+  "privacyScope": "Fixed fixture basename, source/run/job identity, bounded stderr and digests only; raw logs, machine paths and artifact bytes remain private."
+}

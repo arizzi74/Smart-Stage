@@ -1,0 +1,50 @@
+{
+  "status": "failed",
+  "release": "v1.9.1",
+  "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+  "run": 43491334177,
+  "attempt": 1,
+  "jobID": 132112988864,
+  "target": "windows/arm64",
+  "step": {
+    "number": 14,
+    "name": "Exercise current-user Windows installation and native app lifecycle",
+    "conclusion": "failure"
+  },
+  "phase": "windows_shell_initialization_before_firewall_baseline",
+  "assertion": "Windows Start component did not initialize before the firewall baseline",
+  "configuredWaitSeconds": 120,
+  "runnerAssigned": true,
+  "executedStepCount": 23,
+  "installerScenarioReached": false,
+  "firewallBaselineCaptured": false,
+  "nativeAdminStepPassedBeforeFailure": true,
+  "nativeStartupStepPassedBeforeFailure": true,
+  "causeEstablished": false,
+  "privateJobLogSHA256": "d1f7b15a3b28162b541baf93fbc03e2435196a4ab2ea49577034fb9fdbfbeafd",
+  "artifact": {
+    "id": 14070422169,
+    "name": "native-windows-arm64",
+    "archiveSHA256": "4920596e4d2d412660bd6cfaeb02561bfb6622b660121f2b37b7e06b94934600",
+    "bytes": 13791149,
+    "githubDigestAndSizeVerified": true,
+    "fullToolchainSourceVerified": true
+  },
+  "partialInstallerReport": {
+    "status": "incomplete",
+    "sha256": "80c05ec12bc6027d1c21edaec7c4f2cf651e3921d5bfdf27a0e534f77d249aae",
+    "releaseAndTargetVerified": true,
+    "passed": false
+  },
+  "nativeAdminReportSHA256": "2cbc906567490fd4b5e97ddf7ebbd34072bd033455067ba07a7b981f4b7080f2",
+  "nativeSmokeReportSHA256": "4f377621f652cb46765ab91741f39c6bf6c979d12a6f839687bc4380648931cc",
+  "earlierAttemptReceipt": {
+    "path": "earlier-tag-workflow.json",
+    "sha256": "de08daf6b57999efc4cc29044a85bff510dd81fc8e7bbcc93a59346a3ee8187f"
+  },
+  "publicationSkipped": true,
+  "binarySecuritySkipped": true,
+  "checkedAtUTC": "2026-11-13T19:36:26.916985+00:00",
+  "scope": "Tagged verification failed during Windows Start-component preparation before the installer scenario and firewall baseline. Earlier native Admin and startup steps passed. Underlying cause remains unproven; no failed job is promoted to a pass.",
+  "privacyScope": "Fixed assertion, phases, source/run/job identity and verified digests only. Raw reports/logs/archives and machine paths remain private."
+}

@@ -1,0 +1,391 @@
+{
+  "checkedAtUTC": "2026-11-13T20:34:36.076674+00:00",
+  "helper": {
+    "source": "816a37bb059b668ce4928e17f4e4e376ae8ce82a",
+    "runID": 43502431708,
+    "branch": "ci/retry-v1.9.1-43491334177",
+    "path": ".github/workflows/retry-v1.9.1.yml",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43502431708",
+    "status": "completed",
+    "conclusion": "success",
+    "attempt": 1,
+    "jobID": 132151397040,
+    "fixedGuardStep": {
+      "number": 2,
+      "name": "Verify the single capacity cancellation and retry only Mac download verification",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "changedPathsFromRelease": [
+      ".github/workflows/retry-v1.9.1.yml"
+    ]
+  },
+  "fixedRetryMarker": {
+    "retryRequested": true,
+    "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+    "tag": "v1.9.1",
+    "run": 43491334177,
+    "job": 132141984668,
+    "expectedAttempt": 2,
+    "requestedAttempt": 3,
+    "releaseID": 444690683,
+    "assetCount": 50,
+    "assetFingerprint": "e08c33b07a61b028b3340356488f4f958763064dae5c1bb981674a3bba72346a",
+    "publicAuditSHA256": "36000f26a7e9c5827131879c9660d365d14d9e0c25080ff57f9eca70ea921779"
+  },
+  "target": {
+    "runID": 43491334177,
+    "source": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+    "tag": "v1.9.1",
+    "gitRef": "refs/tags/v1.9.1",
+    "tagCommit": "6ff2f2efa74cf81266f1a325bfe076795f3ae637",
+    "tagObjectType": "tag",
+    "acceptedAttempt": 3,
+    "status": "completed"
+  },
+  "publishedAssetGuard": {
+    "releaseID": 444690683,
+    "assetCount": 50,
+    "assetFingerprint": "e08c33b07a61b028b3340356488f4f958763064dae5c1bb981674a3bba72346a",
+    "publicAuditReceipt": "public-audit.json",
+    "publicAuditSHA256": "36000f26a7e9c5827131879c9660d365d14d9e0c25080ff57f9eca70ea921779",
+    "metadataStillMatchesAtCheck": true
+  },
+  "earlierAttemptReceipts": [
+    {
+      "path": "earlier-tag-workflow.json",
+      "sha256": "de08daf6b57999efc4cc29044a85bff510dd81fc8e7bbcc93a59346a3ee8187f"
+    },
+    {
+      "path": "tag-attempt2-workflow.json",
+      "sha256": "75b5651e90dac65d6ce044feb263c41bd2d4675710e770114c8cee36a3c2cfaa"
+    },
+    {
+      "path": "tag-attempt2-capacity-failure.json",
+      "sha256": "280dbad340183ab50d9b18e8b7794aa428e08a7617d9faee97a444089277c49b"
+    },
+    {
+      "path": "runner-retry-verification.json",
+      "sha256": "74ddb5a4c99f9073b9cbc4fa7a603b14aa698b8ece338300e37aa3e08a61b9d4"
+    }
+  ],
+  "jobAccounting": {
+    "effectiveExpectedJobs": 25,
+    "reusedSuccessfulJobs": 24,
+    "retainedPhysicalExecutionsByAttempt": {
+      "1": 5,
+      "2": 19
+    },
+    "newExecutionExpectedJobsInAttempt3": 1,
+    "reusedJobs": [
+      {
+        "jobID": 132151566100,
+        "key": "binary-security",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141376283,
+        "startedAtUTC": "2026-11-13T20:13:27Z",
+        "completedAtUTC": "2026-11-13T20:14:04Z",
+        "stepCount": 11,
+        "stepTimelineSHA256": "8916109b8c29ec9f553bf9d588d318f985886f80aae7b3c4b9801e40271be818"
+      },
+      {
+        "jobID": 132151504231,
+        "key": "gateway",
+        "jobAttempt": 3,
+        "executionAttempt": 1,
+        "reusedFromAttempt": 1,
+        "previousJobID": 132112988682,
+        "startedAtUTC": "2026-11-13T19:20:54Z",
+        "completedAtUTC": "2026-11-13T19:25:39Z",
+        "stepCount": 15,
+        "stepTimelineSHA256": "13f7b13d6647987b15e9adb07ecd6fa6dd6a3fdc04aabc0ca2b5560757ec1b46"
+      },
+      {
+        "jobID": 132151580280,
+        "key": "native/darwin/amd64",
+        "jobAttempt": 3,
+        "executionAttempt": 1,
+        "reusedFromAttempt": 1,
+        "previousJobID": 132112989068,
+        "startedAtUTC": "2026-11-13T19:20:55Z",
+        "completedAtUTC": "2026-11-13T19:26:09Z",
+        "stepCount": 23,
+        "stepTimelineSHA256": "815e9321bd0acb8e6d37b9e9a9c78e84b6ac294181d9b7295a57d058dc06dfd4"
+      },
+      {
+        "jobID": 132151504989,
+        "key": "native/darwin/arm64",
+        "jobAttempt": 3,
+        "executionAttempt": 1,
+        "reusedFromAttempt": 1,
+        "previousJobID": 132112988618,
+        "startedAtUTC": "2026-11-13T19:20:54Z",
+        "completedAtUTC": "2026-11-13T19:25:04Z",
+        "stepCount": 23,
+        "stepTimelineSHA256": "4ab494bab6f141160287c37df53391804a0cc6708e623e8baf65f05896c73e53"
+      },
+      {
+        "jobID": 132151581546,
+        "key": "native/windows/amd64",
+        "jobAttempt": 3,
+        "executionAttempt": 1,
+        "reusedFromAttempt": 1,
+        "previousJobID": 132112988675,
+        "startedAtUTC": "2026-11-13T19:20:53Z",
+        "completedAtUTC": "2026-11-13T19:25:15Z",
+        "stepCount": 23,
+        "stepTimelineSHA256": "1107b3684c432fc2c05eafdff07c1614ca5bd1bd8523442bea308e7a5cbd5564"
+      },
+      {
+        "jobID": 132151573025,
+        "key": "native/windows/arm64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132132639645,
+        "startedAtUTC": "2026-11-13T19:57:22Z",
+        "completedAtUTC": "2026-11-13T20:13:25Z",
+        "stepCount": 23,
+        "stepTimelineSHA256": "e9cf91b3f807add281feb571f64534437789654d9cf1de0f585b96d56fe19fbc"
+      },
+      {
+        "jobID": 132151506448,
+        "key": "publish",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141734241,
+        "startedAtUTC": "2026-11-13T20:14:06Z",
+        "completedAtUTC": "2026-11-13T20:14:31Z",
+        "stepCount": 9,
+        "stepTimelineSHA256": "96927854736d7cd6b6055a0ba4934605d0c0e2f190adb59992ca47546f4833b7"
+      },
+      {
+        "jobID": 132151506201,
+        "key": "publish-site",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141984409,
+        "startedAtUTC": "2026-11-13T20:14:33Z",
+        "completedAtUTC": "2026-11-13T20:15:58Z",
+        "stepCount": 5,
+        "stepTimelineSHA256": "53c39fa6b9101867092492e0f47e4f851e09d9efe2bf5f94d9ca62a576d8e7dd"
+      },
+      {
+        "jobID": 132151584036,
+        "key": "shared",
+        "jobAttempt": 3,
+        "executionAttempt": 1,
+        "reusedFromAttempt": 1,
+        "previousJobID": 132112988412,
+        "startedAtUTC": "2026-11-13T19:20:54Z",
+        "completedAtUTC": "2026-11-13T19:22:22Z",
+        "stepCount": 12,
+        "stepTimelineSHA256": "cee337f1e2bdeeccedc49d2fdfdc8b9303b27c5b02080b61c18cbd9cf1829135"
+      },
+      {
+        "jobID": 132151506140,
+        "key": "verify-browser/darwin/amd64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141985031,
+        "startedAtUTC": "2026-11-13T20:14:35Z",
+        "completedAtUTC": "2026-11-13T20:17:18Z",
+        "stepCount": 10,
+        "stepTimelineSHA256": "6762dabe6faffeb7bef47a442522c10f3d52a32051aeef874e74663880f6ae07"
+      },
+      {
+        "jobID": 132151506498,
+        "key": "verify-browser/darwin/arm64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141984811,
+        "startedAtUTC": "2026-11-13T20:14:40Z",
+        "completedAtUTC": "2026-11-13T20:16:05Z",
+        "stepCount": 10,
+        "stepTimelineSHA256": "df03b60ba84ed77d35360299994b20501ee2681d8d4308e136871fd84eaee343"
+      },
+      {
+        "jobID": 132151506908,
+        "key": "verify-browser/windows/amd64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141984842,
+        "startedAtUTC": "2026-11-13T20:14:34Z",
+        "completedAtUTC": "2026-11-13T20:15:50Z",
+        "stepCount": 10,
+        "stepTimelineSHA256": "1ece4fd1bb50248918987ece7a4ad7a955cafd1e13477e7f0fb09730fd570d3d"
+      },
+      {
+        "jobID": 132151507693,
+        "key": "verify-browser/windows/arm64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141984820,
+        "startedAtUTC": "2026-11-13T20:14:34Z",
+        "completedAtUTC": "2026-11-13T20:16:34Z",
+        "stepCount": 10,
+        "stepTimelineSHA256": "0d6a64a2e68e0ea2373e3015777808ffc5f38f33803714ebc6902530bfb4bcd5"
+      },
+      {
+        "jobID": 132151506346,
+        "key": "verify-download/darwin/amd64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141984626,
+        "startedAtUTC": "2026-11-13T20:14:35Z",
+        "completedAtUTC": "2026-11-13T20:15:10Z",
+        "stepCount": 7,
+        "stepTimelineSHA256": "70bee0093961b37f426f39d8254deb4e7490f705174494d04d237c0714a8cd8b"
+      },
+      {
+        "jobID": 132151506292,
+        "key": "verify-download/windows/amd64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141984770,
+        "startedAtUTC": "2026-11-13T20:14:33Z",
+        "completedAtUTC": "2026-11-13T20:15:15Z",
+        "stepCount": 7,
+        "stepTimelineSHA256": "14e7b3981fde9308f78c62480269f4381f540f7a3291a558b0151918f65d62eb"
+      },
+      {
+        "jobID": 132151506297,
+        "key": "verify-download/windows/arm64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141984642,
+        "startedAtUTC": "2026-11-13T20:14:34Z",
+        "completedAtUTC": "2026-11-13T20:15:30Z",
+        "stepCount": 7,
+        "stepTimelineSHA256": "d4d78daf2b811363c0a24b9ca1d6e262b6715e4d39791de162290de0a04adccf"
+      },
+      {
+        "jobID": 132151506405,
+        "key": "verify-macos-install/darwin/amd64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141985161,
+        "startedAtUTC": "2026-11-13T20:14:35Z",
+        "completedAtUTC": "2026-11-13T20:15:31Z",
+        "stepCount": 6,
+        "stepTimelineSHA256": "945f4dc83f06a6561ff71080dca99691f911b51893488932403472358c80f786"
+      },
+      {
+        "jobID": 132151506184,
+        "key": "verify-macos-install/darwin/arm64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141985146,
+        "startedAtUTC": "2026-11-13T20:15:12Z",
+        "completedAtUTC": "2026-11-13T20:15:41Z",
+        "stepCount": 6,
+        "stepTimelineSHA256": "30367ac46178140a2cbfc8864a7c149e9eb91c00da7a3b5957549f9143c3e9dd"
+      },
+      {
+        "jobID": 132151507254,
+        "key": "verify-update/darwin/amd64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132142782553,
+        "startedAtUTC": "2026-11-13T20:16:03Z",
+        "completedAtUTC": "2026-11-13T20:16:36Z",
+        "stepCount": 8,
+        "stepTimelineSHA256": "86a9e205d671d265004cbbd7d2d40a3742a46ce717a4ebde058f62ef73b86c8f"
+      },
+      {
+        "jobID": 132151506889,
+        "key": "verify-update/darwin/arm64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132142782647,
+        "startedAtUTC": "2026-11-13T20:16:07Z",
+        "completedAtUTC": "2026-11-13T20:16:30Z",
+        "stepCount": 8,
+        "stepTimelineSHA256": "b2726f13eae910c838d36d750efe0aeaa7e24dd162744b0da43e7bc5f033d0f4"
+      },
+      {
+        "jobID": 132151507888,
+        "key": "verify-update/windows/amd64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132142782236,
+        "startedAtUTC": "2026-11-13T20:16:01Z",
+        "completedAtUTC": "2026-11-13T20:16:49Z",
+        "stepCount": 8,
+        "stepTimelineSHA256": "91c3345b26c6ba0c5f50d6525c5d24003d4664f7c4d5396adafe73b585b1522d"
+      },
+      {
+        "jobID": 132151507666,
+        "key": "verify-update/windows/arm64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132142782304,
+        "startedAtUTC": "2026-11-13T20:16:01Z",
+        "completedAtUTC": "2026-11-13T20:16:48Z",
+        "stepCount": 8,
+        "stepTimelineSHA256": "0ab448ac8c7c5512e63d53c0e7b52ee7b110884ff05d3801eb4860b7df64966f"
+      },
+      {
+        "jobID": 132151506358,
+        "key": "verify-windows-install/windows/amd64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141985384,
+        "startedAtUTC": "2026-11-13T20:14:33Z",
+        "completedAtUTC": "2026-11-13T20:15:48Z",
+        "stepCount": 7,
+        "stepTimelineSHA256": "3ee0e10b0ddb3616005effcb3363576393728e9cb77040e695766f7517a66090"
+      },
+      {
+        "jobID": 132151507338,
+        "key": "verify-windows-install/windows/arm64",
+        "jobAttempt": 3,
+        "executionAttempt": 2,
+        "reusedFromAttempt": 2,
+        "previousJobID": 132141985230,
+        "startedAtUTC": "2026-11-13T20:14:33Z",
+        "completedAtUTC": "2026-11-13T20:24:06Z",
+        "stepCount": 7,
+        "stepTimelineSHA256": "201615282155fab3f713860bf44acec246db803ff2d2d2cffc298ef31ce58898"
+      }
+    ],
+    "priorAttempts": [
+      {
+        "attempt": 1,
+        "status": "completed",
+        "conclusion": "failure",
+        "recordedJobs": 14,
+        "successfulEntries": 5
+      },
+      {
+        "attempt": 2,
+        "status": "completed",
+        "conclusion": "failure",
+        "recordedJobs": 25,
+        "successfulEntries": 24
+      }
+    ],
+    "scope": "Twenty-four retained physical successes are proven against the earliest complete identical step arrays and timestamps; the one new Mac download outcome is recorded separately by the final monitor."
+  },
+  "privateHelperLogSHA256": "b69337e331bfea5e3a29f43762b07dda5f0df03aa4011892ff4475e5ae470cd7",
+  "scope": "Observed successful single-job capacity recovery and accepted attempt3 at unchanged tag/source/public asset identities. Original executed failure, capacity cancellation, prior recovery and failed helpers remain separately hash-bound. Publication and successful jobs were not rerun.",
+  "privacyScope": "Fixed markers, public source/run/job IDs and verified digests only; raw logs and machine paths remain private."
+}

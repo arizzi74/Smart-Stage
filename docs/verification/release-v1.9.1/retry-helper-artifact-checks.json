@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "helperSource": "c90e30bb98532c39008ea0aa77517aa765440f22",
+  "helperDefinitionFile": "runner-retry-workflow.yml",
+  "helperDefinitionSHA256": "43a8c398d36b2a0b83324334c0032b82fd970f92db3e70ceacd9f04ad8ce4720",
+  "getOnlyDryRunPassed": true,
+  "dryRunLogSHA256": "d2f9ca7c9f90a688afa9544a515526012060b4fbe89eebc50c23461c7b00424f",
+  "reviewedFailureReceiptFile": "tag-attempt1-windows-start-failure.json",
+  "reviewedFailureReceiptSHA256": "41da52308eff1df2db8de87db22daa24fd42dd2e0ddde376502ac679b7be0ab7",
+  "evidenceMethod": "Root reviewed the original log and incomplete installer report via GET-only credentials, then bound that exact failure proof to live original artifact metadata. Two prior helpers failed without an accepted retry: the first generic error did not identify its request; the second identified a failed GET of the old CI log. The final helper does not parse the original log in CI.",
+  "preservedLiveGuards": [
+    "exact repository/context/annotated tag/source/run",
+    "complete original 14-job set and 5 successes",
+    "only fixed Windows ARM64 job failed at step14",
+    "original artifact ID/name/size/digest/source/run/repository/expiry",
+    "no published release",
+    "final source/attempt recheck",
+    "one allowlisted job-rerun POST"
+  ],
+  "testAssertionsOrTimeoutsChanged": false,
+  "productOrTagChanged": false,
+  "localAPIMutations": false
+}

@@ -1,0 +1,149 @@
+name: Retry v1.9.1 Windows Start prerequisite on a fresh runner
+on:
+  push:
+    branches: [ci/retry-v1.9.1-43491334177]
+    paths: ['.github/workflows/retry-v1.9.1.yml']
+permissions:
+  contents: read
+jobs:
+  retry:
+    if: github.repository == 'arizzi74/Smart-Stage' && github.ref == 'refs/heads/ci/retry-v1.9.1-43491334177' && github.run_attempt == '1'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Verify the fixed Start prerequisite failure and retry only its tagged job
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          import json, os, re, subprocess, sys
+
+          REPO = "arizzi74/Smart-Stage"
+          SOURCE = "6ff2f2efa74cf81266f1a325bfe076795f3ae637"
+          TAG = "v1.9.1"
+          RUN = 43491334177
+          JOB = 132112988864
+          BRANCH = "ci/retry-v1.9.1-43491334177"
+          ASSERTION = "Windows Start component did not initialize before the firewall baseline"
+          EXPECTED = {
+              132112988412: ("shared", "success"),
+              132112988618: ("native (macos-15, darwin, arm64)", "success"),
+              132112988675: ("native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...", "success"),
+              132112988682: ("gateway", "success"),
+              132112988864: ("native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...", "failure"),
+              132112989068: ("native (macos-15-intel, darwin, amd64)", "success"),
+              132119726159: ("binary-security", "skipped"),
+              132119726682: ("publish", "skipped"),
+              132119727161: ("verify-macos-install", "skipped"),
+              132119727507: ("verify-browser", "skipped"),
+              132119727770: ("verify-download", "skipped"),
+              132119728215: ("publish-site", "skipped"),
+              132119728315: ("verify-windows-install", "skipped"),
+              132119729493: ("verify-update", "skipped"),
+          }
+          VERIFY_ONLY = os.environ.get("SMARTSTAGE_RETRY_VERIFY_ONLY") == "1"
+          mutation_ready = False
+
+          def require(condition, message):
+              if not condition:
+                  raise SystemExit(message)
+
+          def api(method, path, missing_ok=False, raw=False):
+              require(method == "GET" or (method == "POST" and mutation_ready and not VERIFY_ONLY
+                  and path == f"/actions/jobs/{JOB}/rerun"), "Unexpected mutation")
+              result = subprocess.run(["gh", "api", "--hostname", "github.com", "--method", method,
+                  "--header", "Accept: application/vnd.github+json",
+                  "--header", "X-GitHub-Api-Version: 2026-03-10", "repos/" + REPO + path],
+                  capture_output=True)
+              if result.returncode:
+                  if missing_ok and method == "GET" and b"HTTP 404" in result.stderr:
+                      return None
+                  status = re.search(rb"HTTP\s+(\d{3})", result.stderr)
+                  raise SystemExit("GitHub request rejected" + (" (HTTP " + status.group(1).decode() + ")" if status else ""))
+              if raw:
+                  require(len(result.stdout) <= 16 * 1024 * 1024, "Job log exceeds its verification bound")
+                  return result.stdout
+              return json.loads(result.stdout) if result.stdout.strip() else None
+
+          def tagged_run():
+              ref = api("GET", "/git/ref/tags/" + TAG)
+              require(ref["ref"] == "refs/tags/" + TAG and ref["object"]["type"] == "tag", "Unexpected release tag")
+              tag = api("GET", "/git/tags/" + ref["object"]["sha"])
+              require(tag["tag"] == TAG and tag["object"]["type"] == "commit"
+                  and tag["object"]["sha"] == SOURCE, "Immutable release source changed")
+              run = api("GET", f"/actions/runs/{RUN}")
+              require(run["id"] == RUN and run["repository"]["full_name"] == REPO
+                  and run["head_repository"]["full_name"] == REPO and run["head_sha"] == SOURCE
+                  and run["head_branch"] == TAG and run["event"] == "push"
+                  and run["path"] == ".github/workflows/build.yml", "Unexpected tagged workflow identity")
+              return run
+
+          def failed_first_attempt(run):
+              require(run["run_attempt"] == 1 and run["status"] == "completed" and run["conclusion"] == "failure",
+                  "Expected the terminal first tagged attempt")
+
+          require(os.environ.get("GITHUB_REPOSITORY") == REPO, "Unexpected repository")
+          require(os.environ.get("GITHUB_REF") == "refs/heads/" + BRANCH, "Unexpected helper branch")
+          require(os.environ.get("GITHUB_EVENT_NAME") == "push" and os.environ.get("GITHUB_RUN_ATTEMPT") == "1",
+              "Only the first push-triggered helper attempt is permitted")
+          require(os.environ.get("GITHUB_WORKFLOW_REF") == REPO + "/.github/workflows/retry-v1.9.1.yml@refs/heads/" + BRANCH,
+              "Unexpected helper workflow identity")
+          run = tagged_run()
+          if run["run_attempt"] == 2:
+              print(json.dumps({"retryAlreadyRequested": True, "source": SOURCE, "tag": TAG, "run": RUN, "attempt": 2}))
+              sys.exit(0)
+          failed_first_attempt(run)
+          response = api("GET", f"/actions/runs/{RUN}/jobs?per_page=100")
+          jobs = response["jobs"]
+          require(response["total_count"] == len(jobs) == len({j["id"] for j in jobs}) == 14
+              and {j["id"] for j in jobs} == set(EXPECTED), "Expected the complete original 14-job set")
+          require(all(j["run_id"] == RUN and j["head_sha"] == SOURCE and j["run_attempt"] == 1
+              and j["status"] == "completed" and (j["name"], j["conclusion"]) == EXPECTED[j["id"]] for j in jobs),
+              "Original job identities or outcomes changed")
+          require(sum(j["conclusion"] == "success" for j in jobs) == 5
+              and [j["id"] for j in jobs if j["conclusion"] not in ("success", "skipped")] == [JOB],
+              "Only the fixed installer prerequisite failure is eligible")
+          job = api("GET", f"/actions/jobs/{JOB}")
+          listed = next(j for j in jobs if j["id"] == JOB)
+          require(job == listed and job["runner_id"] > 0 and bool(job["runner_name"]), "Expected the executed fixed target job")
+          failed = [{k: s[k] for k in ("number", "name", "status", "conclusion")} for s in job["steps"]
+              if s["conclusion"] in ("failure", "cancelled", "timed_out")]
+          require(failed == [{"number": 14, "name": "Exercise current-user Windows installation and native app lifecycle",
+              "status": "completed", "conclusion": "failure"}], "The installer prerequisite must be the only failed step")
+
+          raw = api("GET", f"/actions/jobs/{JOB}/logs", raw=True)
+          tail = raw.decode("utf-8-sig").splitlines()[-200:]
+          lines = [re.sub(r"^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d+Z\s*", "", line).strip() for line in tail]
+          starts = [i for i, line in enumerate(lines) if line == "Traceback (most recent call last):"]
+          require(bool(starts), "The bounded job-log tail lacks the installer traceback")
+          trace = lines[starts[-1]:]
+          require(sum(line == "AssertionError: " + ASSERTION for line in trace) == 1,
+              "The exact Windows Start prerequisite assertion is required")
+          frames = [(int(match[1]), match[2]) for line in trace
+              if (match := re.fullmatch(r'File "[^"\r\n]{1,1024}[\\/]verify-windows-install\.py", line (352|274|120), in (main|initialize_windows_shell|until)', line))]
+          require(frames == [(352, "main"), (274, "initialize_windows_shell"), (120, "until")],
+              "The exact pre-install prerequisite traceback is required")
+          require("report['windowsShellInitialization'] = initialize_windows_shell(paths['programs'])" in trace
+              and "until(rule_ready, '" + ASSERTION + "', timeout=120)" in trace
+              and "raise AssertionError(description)" in trace, "The original 120-second prerequisite call must be unchanged")
+          errors = [line for line in trace if re.match(r"^[A-Za-z_][A-Za-z0-9_]*(?:Error|Exception):", line)]
+          require(errors == ["AssertionError: " + ASSERTION]
+              and "##[error]Process completed with exit code 1." in trace, "Unexpected terminal failure in job-log tail")
+          require(api("GET", "/releases/tags/" + TAG, missing_ok=True) is None, "Release publication must not have happened")
+          run = tagged_run()
+          if run["run_attempt"] == 2:
+              print(json.dumps({"retryAlreadyRequested": True, "source": SOURCE, "tag": TAG, "run": RUN, "attempt": 2}))
+              sys.exit(0)
+          failed_first_attempt(run)
+          marker = {"source": SOURCE, "tag": TAG, "run": RUN, "job": JOB, "expectedAttempt": 1,
+              "requestedAttempt": 2, "failedStep": 14, "assertion": ASSERTION, "timeoutSeconds": 120,
+              "causeEstablished": False, "assertionsOrTimeoutsRelaxed": False}
+          if VERIFY_ONLY:
+              print(json.dumps({"guardsVerified": True, **marker, "noMutation": True}))
+              sys.exit(0)
+          mutation_ready = True
+          api("POST", f"/actions/jobs/{JOB}/rerun")
+          print(json.dumps({"retryRequested": True, **marker}))

@@ -12,7 +12,9 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.9.1
 - Remote section pages track horizontal touch motion continuously and reveal
   adjacent sections, then settle with a short animation. Partial/cancelled
   gestures return to the selected section; vertical scrolling, live cue state,
-  reduced motion and emergency controls are preserved.
+  reduced motion and emergency controls are preserved. All preloaded pages
+  contribute to a shared intrinsic height, so taller sections remain fully laid
+  out during swipes without changing height when selection commits.
 - Admin **Sort Playlist** opens a compact names-only dialog for pointer dragging
   whole sections and cues within/across sections. Save applies one guarded
   transaction; Cancel discards the draft. Metadata and native playback remain
@@ -221,6 +223,20 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.9.1
   device Auto-Lock/Screen timeout settings remain the alternative for that URL.
 
 ## Built and automatically tested
+
+Version 1.9.1 is source `6ff2f2efa74cf81266f1a325bfe076795f3ae637`. The old
+section layout reproduced a 240px clip around an incoming 570px page. The fixed
+full Chromium suite passed eleven trusted touch gestures and 65 height samples;
+a separate Linux WebKit layout probe passed. All 25 effective tagged checks
+passed, with retained executions distinguished across three attempts. All 50
+public asset digests, eight checksum pairs, six desktop variants and website
+update discovery passed. Four actual startup updates, six installer shell
+reports and six browser reports match audited public bytes. The original Windows
+Start prerequisite failure, unstarted Mac capacity cancellation and separate
+main Mac decoder failure remain recorded; their causes/scopes are not relabelled
+as successes. Public installer scripts select 1.9.1, while default-pin workflow
+outcomes remain a separate timestamped snapshot. See the
+[v1.9.1 verification record](docs/verification/release-v1.9.1/README.md).
 
 Version 1.9.0 is source `2eba7f4815db98430bad940aea227fef484e88df`. All seven
 candidate gates and 25 effective tagged checks passed. Remote gestures track the
