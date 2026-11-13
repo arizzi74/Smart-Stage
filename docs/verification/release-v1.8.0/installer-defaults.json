@@ -1,0 +1,33 @@
+{
+  "source": "948e0ba6b0a2345d4860407a51424fa2b2a4101a",
+  "release": "v1.8.0",
+  "checkedAtUTC": "2026-11-13T15:06:40.715311+00:00",
+  "scripts": [
+    {
+      "script": "install.sh",
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.sh",
+      "sha256": "3a2ddfbc3171923d6421c50c19bc067f1019f129083c0fe10f3092f155b42da0",
+      "matchesCheckout": true,
+      "defaultVersion": "v1.8.0",
+      "defaultSelectionVerified": true
+    },
+    {
+      "script": "install.ps1",
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install.ps1",
+      "sha256": "3acb349c2c68a8b4c51ff487bb82184723340fe3ce348ef1ab6b11c60b7733b3",
+      "matchesCheckout": true,
+      "defaultVersion": "v1.8.0",
+      "defaultSelectionVerified": true
+    },
+    {
+      "script": "install-gateway.sh",
+      "url": "https://raw.githubusercontent.com/arizzi74/Smart-Stage/main/install-gateway.sh",
+      "sha256": "4ed7a2798547513e28ab4ea59df88d746bca5305a2c5cfe2b89c75a4aacb6091",
+      "matchesCheckout": true,
+      "defaultVersion": "v1.8.0",
+      "defaultSelectionVerified": true,
+      "matchesAuditedPublishedGatewayBootstrap": true
+    }
+  ],
+  "scope": "Anonymous public main bootstrap bytes match exact default-source commit and select the expected release. Published gateway bootstrap also matches independent public audit."
+}

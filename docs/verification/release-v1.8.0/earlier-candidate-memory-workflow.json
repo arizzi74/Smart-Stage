@@ -1,0 +1,41 @@
+{
+  "source": "594acb8553af46bc9a0678814f04ba4f7d6b93ac",
+  "workflow": {
+    "id": 43431296903,
+    "status": "completed",
+    "conclusion": "cancelled",
+    "attempt": 1,
+    "event": "push",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431296903"
+  },
+  "checkedAtUTC": "2026-11-13T14:21:16.629701Z",
+  "jobs": [
+    {
+      "id": 131905177426,
+      "name": "profile (macos-15-intel, amd64)",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431296903/job/131905177426",
+      "failedSteps": [
+        {
+          "name": "Repeat native transitions with GC and OS memory diagnostics",
+          "conclusion": "cancelled"
+        }
+      ]
+    },
+    {
+      "id": 131905177917,
+      "name": "profile (macos-15, arm64)",
+      "status": "completed",
+      "conclusion": "cancelled",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431296903/job/131905177917",
+      "failedSteps": [
+        {
+          "name": "Repeat native transitions with GC and OS memory diagnostics",
+          "conclusion": "cancelled"
+        }
+      ]
+    }
+  ],
+  "scope": "Source-specific auxiliary hosted Mac memory workflow. Kept separate from candidate gates; cancellation does not establish a memory regression. No physical display/audio routing claim."
+}

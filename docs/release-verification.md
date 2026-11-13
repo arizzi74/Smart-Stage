@@ -1,6 +1,6 @@
 # Release verification
 
-Release channel: **v1.7.2 stable**. Physical/clean-machine acceptance is still
+Release channel: **v1.8.0 stable**. Physical/clean-machine acceptance is still
 incomplete. CI executes real native APIs but cannot verify what a human sees or
 hears on event hardware. Stable publication does not mark these open checks passed.
 
@@ -131,6 +131,33 @@ and native browser checks run for the explicit new release tag. These checks do
 not establish physical output routing or clean-machine acceptance.
 
 ## Recorded evidence
+
+### Version 1.8.0: saved playlist sections and independent audio layers
+
+Release source is `59d329fa5066b2d1b82ca0efddd2f1fbbb6913eb`. Seven candidate
+gates and all 25 tagged jobs passed. The [verification record](verification/release-v1.8.0/README.md)
+retains earlier failures, exact source identity, native observations, artifact
+receipts and the independent public asset audit. All 50 asset digests, eight
+checksum pairs and the anonymous website update manifest passed.
+
+Admin creates named, collapsible sections, moves cues between them, and saves
+section metadata in the show and portable playlist files. Remote tabs and touch
+swipes select sections without playback commands. Audio cues can retain a video
+while replacing its soundtrack or mix with existing sound. Both Macs passed 20
+native source/clock/gain observations plus browser integration and section
+continuity. Windows passed section UI/API and repeated native decoding checks;
+hosted runners had no audio endpoint, so Windows mixing and section audio
+continuity remain unverified. WebKit's separate browser reports cover track
+dragging only.
+
+Four actual startup updates, six installer-shell reports and six native browser
+reports passed for the published release. Current-default verification adds ten
+installer/updater receipts and seven build gates using explicitly separate pin,
+diagnostic and comment-only retry sources. The original default WebKit API errors
+remain unexplained; a runner-capacity cancellation ran no installer steps.
+Neither is relabelled as a pass. Application and bootstrap identity across the
+verification-only recovery commits is recorded. Physical output and dedicated
+WebView acceptance remain open.
 
 ### Version 1.7.2: Cloudflare transport fallback and retry diagnostics
 

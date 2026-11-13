@@ -1,0 +1,263 @@
+{
+  "status": "passed",
+  "workflow": {
+    "id": 43452936803,
+    "name": "Verify Mac app installation and quarantine removal",
+    "source": "cc301094068dd23d9e07333788efef584f5d6a9b",
+    "path": ".github/workflows/install-macos.yml",
+    "event": "push",
+    "branch": "main",
+    "attempt": 1,
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43452936803",
+    "createdAtUTC": "2026-11-13T15:28:22Z",
+    "updatedAtUTC": "2026-11-13T15:33:56Z"
+  },
+  "checkedAtUTC": "2026-11-13T15:34:28.885325+00:00",
+  "requiredGateCount": 2,
+  "passedRequiredGates": 2,
+  "allRequiredGatesPassed": true,
+  "jobs": [
+    {
+      "id": 131979581788,
+      "name": "install (macos-15-intel, amd64)",
+      "target": "darwin/amd64",
+      "runnerLabel": "macos-15-intel",
+      "runnerAssigned": true,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43452936803/job/131979581788",
+      "startedAtUTC": "2026-11-13T15:28:26Z",
+      "completedAtUTC": "2026-11-13T15:29:19Z",
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:28:26Z",
+          "completedAtUTC": "2026-11-13T15:28:28Z"
+        },
+        {
+          "number": 2,
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:28:28Z",
+          "completedAtUTC": "2026-11-13T15:28:32Z"
+        },
+        {
+          "number": 3,
+          "name": "Install the published app, clear only its quarantine, and launch Admin",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:28:32Z",
+          "completedAtUTC": "2026-11-13T15:29:12Z"
+        },
+        {
+          "number": 4,
+          "name": "Retain installation evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:29:12Z",
+          "completedAtUTC": "2026-11-13T15:29:14Z"
+        },
+        {
+          "number": 8,
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:29:14Z",
+          "completedAtUTC": "2026-11-13T15:29:14Z"
+        },
+        {
+          "number": 9,
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:29:14Z",
+          "completedAtUTC": "2026-11-13T15:29:15Z"
+        }
+      ],
+      "failedSteps": [],
+      "currentStep": null
+    },
+    {
+      "id": 131979582360,
+      "name": "install (macos-15, arm64)",
+      "target": "darwin/arm64",
+      "runnerLabel": "macos-15",
+      "runnerAssigned": true,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43452936803/job/131979582360",
+      "startedAtUTC": "2026-11-13T15:33:26Z",
+      "completedAtUTC": "2026-11-13T15:33:55Z",
+      "steps": [
+        {
+          "number": 1,
+          "name": "Set up job",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:33:26Z",
+          "completedAtUTC": "2026-11-13T15:33:27Z"
+        },
+        {
+          "number": 2,
+          "name": "Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:33:27Z",
+          "completedAtUTC": "2026-11-13T15:33:29Z"
+        },
+        {
+          "number": 3,
+          "name": "Install the published app, clear only its quarantine, and launch Admin",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:33:29Z",
+          "completedAtUTC": "2026-11-13T15:33:49Z"
+        },
+        {
+          "number": 4,
+          "name": "Retain installation evidence",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:33:49Z",
+          "completedAtUTC": "2026-11-13T15:33:51Z"
+        },
+        {
+          "number": 8,
+          "name": "Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:33:51Z",
+          "completedAtUTC": "2026-11-13T15:33:52Z"
+        },
+        {
+          "number": 9,
+          "name": "Complete job",
+          "status": "completed",
+          "conclusion": "success",
+          "startedAtUTC": "2026-11-13T15:33:52Z",
+          "completedAtUTC": "2026-11-13T15:33:53Z"
+        }
+      ],
+      "failedSteps": [],
+      "currentStep": null
+    }
+  ],
+  "reports": [
+    {
+      "target": "darwin/arm64",
+      "status": "passed",
+      "release": "v1.8.0",
+      "jobID": 131979582360,
+      "artifactID": 14052926821,
+      "artifactArchiveSHA256": "ed52576e7abefeacffd3f08be5504ac89cb7f4c5949c2e194a9a24187ba7c107",
+      "artifactDigestAndSizeVerified": true,
+      "rawReportSHA256": "20b39b502d4a9f896b67db605f55d000f9fa07ddfd0666251d12d90acd90ff7e",
+      "defaultReleaseSelectionVerified": true,
+      "explicitReleaseOverrideUsed": false,
+      "bootstrapSource": "cc301094068dd23d9e07333788efef584f5d6a9b",
+      "bootstrapSHA256": "3a2ddfbc3171923d6421c50c19bc067f1019f129083c0fe10f3092f155b42da0",
+      "bootstrapBytesIdenticalToDefaultPinSource": true,
+      "bootstrapURLMatchesExactRecoverySource": true,
+      "installedArchiveSHA256": "055d734a3712a5c87561191e5d0b6fd6db0eb157ca137797926427e2a8a8dcfd",
+      "installedExecutableSHA256": "f4525152f35743a39c9c8a4dff6cabfb9aeac3c3577c93df3ba8dea0dedce8f6",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "requiredChecks": {
+        "publishedBootstrapMatchesCheckout": true,
+        "pipedShellEntryPoint": true,
+        "archiveChecksumVerified": true,
+        "defaultGatewayInstallNeedsNoFirewallAuthorization": true,
+        "defaultInstallFirewallRulesUnchanged": true,
+        "installationCheckFirewallRulesUnchanged": true,
+        "installedReleaseBytesMatch": true,
+        "firewallGlobalSettingsUnchanged": true,
+        "unrelatedFirewallRulesUnchanged": true,
+        "firewallTestRulesRemoved": true,
+        "realBlockedFirewallRulesUnblocked": true,
+        "actualListeningExecutableAllowed": true,
+        "existingBlockedBundleRuleUnblocked": true,
+        "nativeAdminPageLoaded": true,
+        "nativeAdminWindowVisible": true,
+        "nativeAdminSingleWindow": true,
+        "nativeAdminDidNotDispatchExternalBrowser": true,
+        "quitAppleEventStoppedCore": true,
+        "defaultPortsClosedAfterQuit": true,
+        "adminServedOnLoopback": true,
+        "adminListenerOnly127001": true,
+        "existingConfigurationUntouched": true,
+        "gatewayModeDefault": true,
+        "lanListenerClosedByDefault": true
+      },
+      "bundleAndCoreFinalFirewallReadbacksAllowed": true
+    },
+    {
+      "target": "darwin/amd64",
+      "status": "passed",
+      "release": "v1.8.0",
+      "jobID": 131979581788,
+      "artifactID": 14053695558,
+      "artifactArchiveSHA256": "fe0bc9fba51914785e79232ffcec69079f9f71db04db9d8d51a5f28a8d9bfc90",
+      "artifactDigestAndSizeVerified": true,
+      "rawReportSHA256": "62bb58464d2a1c2e7eb8cd5751d14f4650de2fd8beae11b4e0df070c7e2b97d2",
+      "defaultReleaseSelectionVerified": true,
+      "explicitReleaseOverrideUsed": false,
+      "bootstrapSource": "cc301094068dd23d9e07333788efef584f5d6a9b",
+      "bootstrapSHA256": "3a2ddfbc3171923d6421c50c19bc067f1019f129083c0fe10f3092f155b42da0",
+      "bootstrapBytesIdenticalToDefaultPinSource": true,
+      "bootstrapURLMatchesExactRecoverySource": true,
+      "installedArchiveSHA256": "873cc5bea67b0e047a8f443c122024baaf21e0fd02a46b9a5dfc54161d8cf26c",
+      "installedExecutableSHA256": "bf786be98bb84386683d1ef70e1f1a2dc8c59c52d698f4a7a855cce0533d912f",
+      "installedBytesMatchIndependentPublicAudit": true,
+      "requiredChecks": {
+        "publishedBootstrapMatchesCheckout": true,
+        "pipedShellEntryPoint": true,
+        "archiveChecksumVerified": true,
+        "defaultGatewayInstallNeedsNoFirewallAuthorization": true,
+        "defaultInstallFirewallRulesUnchanged": true,
+        "installationCheckFirewallRulesUnchanged": true,
+        "installedReleaseBytesMatch": true,
+        "firewallGlobalSettingsUnchanged": true,
+        "unrelatedFirewallRulesUnchanged": true,
+        "firewallTestRulesRemoved": true,
+        "realBlockedFirewallRulesUnblocked": true,
+        "actualListeningExecutableAllowed": true,
+        "existingBlockedBundleRuleUnblocked": true,
+        "nativeAdminPageLoaded": true,
+        "nativeAdminWindowVisible": true,
+        "nativeAdminSingleWindow": true,
+        "nativeAdminDidNotDispatchExternalBrowser": true,
+        "quitAppleEventStoppedCore": true,
+        "defaultPortsClosedAfterQuit": true,
+        "adminServedOnLoopback": true,
+        "adminListenerOnly127001": true,
+        "existingConfigurationUntouched": true,
+        "gatewayModeDefault": true,
+        "lanListenerClosedByDefault": true
+      },
+      "bundleAndCoreFinalFirewallReadbacksAllowed": true
+    }
+  ],
+  "defaultPinSource": "948e0ba6b0a2345d4860407a51424fa2b2a4101a",
+  "commentOnlyParentSource": "78ef44417afab750e360c0ebae50a23f1d28b7b1",
+  "retryChangedPaths": [
+    ".github/workflows/install-macos.yml"
+  ],
+  "changedPathsFromDefaultPin": [
+    ".github/workflows/install-macos.yml",
+    "scripts/browser-native-smoke.cjs"
+  ],
+  "workflowBehaviorUnchangedAfterRemovingComments": true,
+  "applicationAndBootstrapPathsUnchangedFromDefaultPin": true,
+  "bootstrapSHA256": {
+    "install.sh": "3a2ddfbc3171923d6421c50c19bc067f1019f129083c0fe10f3092f155b42da0",
+    "install.ps1": "3acb349c2c68a8b4c51ff487bb82184723340fe3ce348ef1ab6b11c60b7733b3",
+    "install-gateway.sh": "4ed7a2798547513e28ab4ea59df88d746bca5305a2c5cfe2b89c75a4aacb6091"
+  },
+  "independentPublicAuditSHA256": "5a0799bb7b105c1faad168344aad0c5cc5e1b0ab17b3f11fc94c525556314de8",
+  "scope": "Comment-only Mac installer retry. Default selection must resolve to audited v1.8.0 bytes; original cancelled attempt is separate. Raw logs, paths, session URLs and firewall rule lists are excluded."
+}

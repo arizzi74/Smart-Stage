@@ -1,0 +1,152 @@
+{
+  "status": "failed",
+  "run": 43449236752,
+  "source": "948e0ba6b0a2345d4860407a51424fa2b2a4101a",
+  "jobID": 131966727994,
+  "step": "Verify track dragging with WebKit on Mac",
+  "artifact": {
+    "id": 14050081442,
+    "sha256": "875c869720cf47c935f2d2f88c16021e45fa66722e0023549a221c6440fc0545",
+    "digestVerified": true,
+    "reportMember": "browser-native/darwin-amd64-webkit/result.json",
+    "reportSHA256": "25e01cd3f0632864cdc8c30671f061692af186fd2c1eda52bdadace5ab738e34"
+  },
+  "assertion": "assert.deepEqual(errors, [])",
+  "sourceLine": 349,
+  "engine": "WebKit 26.6",
+  "pageErrors": [
+    {
+      "endpoint": "/api/gateway",
+      "category": "access_control"
+    },
+    {
+      "endpoint": "/api/update",
+      "category": "access_control"
+    }
+  ],
+  "reachedAssertions": [
+    "inside-release single write and revision",
+    "outside-release single write and revision",
+    "stationary held drag no writes",
+    "hover after release does not change value",
+    "cancelled drag restores saved level without write",
+    "released track level persists through Admin reload"
+  ],
+  "dragObservations": [
+    {
+      "releaseOutside": false,
+      "heldPreviewRaw": 72,
+      "heldWrites": 0,
+      "heldRevisionDelta": 0,
+      "releasedRaw": 72,
+      "releasedWrites": 1,
+      "releasedRevisionDelta": 1,
+      "releasedCapture": false,
+      "hoverChangedValue": false
+    },
+    {
+      "releaseOutside": true,
+      "heldPreviewRaw": 27,
+      "heldWrites": 0,
+      "heldRevisionDelta": 0,
+      "releasedRaw": 27,
+      "releasedWrites": 1,
+      "releasedRevisionDelta": 1,
+      "releasedCapture": false,
+      "hoverChangedValue": false
+    }
+  ],
+  "reloadedAdmin": {
+    "online": true,
+    "playlistBusy": false,
+    "playlistFileBusy": false,
+    "validationRefresh": false,
+    "statePlaylistRevision": 4,
+    "playlistRevision": 4
+  },
+  "cause": "unresolved; original report has no pageerror phase, document identity or request-failure timing",
+  "controlledProbe": {
+    "engine": "26.6",
+    "method": "Controlled local same-origin HTTP fetches with catch handlers; reload with pending versus completed requests; not the failed native CI run.",
+    "results": [
+      {
+        "pending": true,
+        "events": [
+          {
+            "phase": "reload",
+            "type": "requestfailed",
+            "path": "/api/gateway",
+            "error": "Load request cancelled"
+          },
+          {
+            "phase": "reload",
+            "type": "requestfailed",
+            "path": "/api/update",
+            "error": "Load request cancelled"
+          }
+        ],
+        "reloadedResults": [
+          {
+            "path": "/api/gateway",
+            "ok": true
+          },
+          {
+            "path": "/api/update",
+            "ok": true
+          }
+        ]
+      },
+      {
+        "pending": false,
+        "events": [],
+        "reloadedResults": [
+          {
+            "path": "/api/gateway",
+            "ok": true
+          },
+          {
+            "path": "/api/update",
+            "ok": true
+          }
+        ]
+      }
+    ]
+  },
+  "diagnosticObserverCheck": {
+    "status": "passed",
+    "engine": "26.6",
+    "observerSHA256": "932d87aff8d7d40d78f9ec9f762de7f32e1c651e29bbad24614128d5cb26f496",
+    "scope": "Actual diagnostic observer extracted from repository verifier. Real local same-origin HTTP reload cancellation; deliberate pageerror injections test storage bounds/privacy only. Does not reproduce or explain the original Mac failure.",
+    "cases": [
+      {
+        "pending": true,
+        "realCancelledRequests": 2,
+        "realAccessControlPageErrorReproduced": false,
+        "responseStatusRecorded": true,
+        "phaseAndDocumentProvenanceRecorded": true,
+        "boundedEvents": 256,
+        "privateURLQueryHeadersAndErrorTextExcluded": true,
+        "listenersRemoved": true
+      },
+      {
+        "pending": false,
+        "realCancelledRequests": 0,
+        "realAccessControlPageErrorReproduced": false,
+        "responseStatusRecorded": true,
+        "phaseAndDocumentProvenanceRecorded": true,
+        "boundedEvents": 256,
+        "privateURLQueryHeadersAndErrorTextExcluded": true,
+        "listenersRemoved": true
+      }
+    ]
+  },
+  "applicationChangedSinceRelease": false,
+  "changedPathsSinceRelease": [
+    ".github/workflows/update.yml",
+    "IMPLEMENTATION_STATUS.md",
+    "install-gateway.sh",
+    "install.ps1",
+    "install.sh"
+  ],
+  "scope": "Original failure remains a failure. Controlled Linux WebKit probe reproduced cancellation only, not the Mac access-control pageerror. Diagnostic verifier changes do not alter assertions, timing or production behavior."
+}

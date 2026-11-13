@@ -1,0 +1,33 @@
+{
+  "source": "368c7ad42d37130d0da2f5ad033d5664818c2e3b",
+  "workflow": {
+    "id": 43438531916,
+    "status": "completed",
+    "conclusion": "success",
+    "attempt": 1,
+    "event": "push",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531916"
+  },
+  "checkedAtUTC": "2026-11-13T14:24:08.873427Z",
+  "jobs": [
+    {
+      "id": 131929821338,
+      "name": "profile (macos-15-intel, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531916/job/131929821338",
+      "currentStep": null,
+      "failedSteps": []
+    },
+    {
+      "id": 131929822174,
+      "name": "profile (macos-15, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531916/job/131929822174",
+      "currentStep": null,
+      "failedSteps": []
+    }
+  ],
+  "scope": "Auxiliary hosted Mac memory profile, separate from the seven candidate gates. No physical display or audio routing claim."
+}

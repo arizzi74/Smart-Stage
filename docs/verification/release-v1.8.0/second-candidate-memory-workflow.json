@@ -1,0 +1,31 @@
+{
+  "source": "624a8cebc629346542599df00d7261226b08e518",
+  "workflow": {
+    "id": 43433095613,
+    "status": "completed",
+    "conclusion": "success",
+    "attempt": 1,
+    "event": "push",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43433095613"
+  },
+  "checkedAtUTC": "2026-11-13T14:21:16.399639Z",
+  "jobs": [
+    {
+      "id": 131911495766,
+      "name": "profile (macos-15-intel, amd64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43433095613/job/131911495766",
+      "failedSteps": []
+    },
+    {
+      "id": 131911496300,
+      "name": "profile (macos-15, arm64)",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43433095613/job/131911496300",
+      "failedSteps": []
+    }
+  ],
+  "scope": "Source-specific auxiliary hosted Mac memory workflow. Kept separate from candidate gates; cancellation does not establish a memory regression. No physical display/audio routing claim."
+}

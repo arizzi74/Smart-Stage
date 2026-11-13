@@ -1,0 +1,55 @@
+{
+  "source": "59d329fa5066b2d1b82ca0efddd2f1fbbb6913eb",
+  "macMemoryProfileSource": "368c7ad42d37130d0da2f5ad033d5664818c2e3b",
+  "macMemoryProfileApplicationInputsIdentical": true,
+  "checkedObjectIDs": {
+    "internal/platform/bridge_darwin.m": "fa8636b6088150560a41efbde9b5d0b72a289208",
+    "internal/platform/bridge.h": "7c6f4a5b1fc26ffa4141c67d08be46838a317ba2",
+    "internal/playback": "f0194c7c0d8ffb3a7a8978e0c1a612d3872ea7eb",
+    "internal/app": "44b3c345e6252c729b6bc59a20d5d16e83354465",
+    "internal/model": "ef24cdb537bf62e07f68e2c85f5884ff35c537ff",
+    "internal/store": "0657b4eb1b0f455037b73ebaf4a46c41a2594202",
+    "internal/web": "5dd751032e0c5bd4e88c9ced4e4a3fcfc1ad9e31",
+    "go.mod": "62ffb84ff5e28f8aacae2d514ed6fd64a6ff3bf7",
+    "go.sum": "2f12e8df2d74ca2bcc415f14e0c3b633ca48efb3"
+  },
+  "completeChangedPathsSinceMemoryProfile": [
+    "internal/platform/bridge_windows.cpp",
+    "scripts/browser-sections.cjs",
+    "scripts/native-layers-darwin.m",
+    "scripts/native-source-windows.cpp",
+    "scripts/windows-source-checks.py"
+  ],
+  "fourthCandidateSource": "15fa574fcd4874afb240818d3768a4919b23bdf6",
+  "changedPathsSinceFourthCandidate": [
+    "scripts/browser-sections.cjs"
+  ],
+  "productionApplicationUnchangedSinceFourthCandidate": true,
+  "scope": "Exact Git object identity and complete changed-path comparison. Windows source inspection changed after memory profiling; Mac native application and shared Go/UI inputs did not. Verifier-only changes are not classified as application changes.",
+  "defaultPinSource": "948e0ba6b0a2345d4860407a51424fa2b2a4101a",
+  "verificationRecoverySource": "78ef44417afab750e360c0ebae50a23f1d28b7b1",
+  "changedPathsSinceDefaults": [
+    "scripts/browser-native-smoke.cjs"
+  ],
+  "productionApplicationIdenticalToTagForRecovery": true,
+  "installerBootstrapsIdenticalToDefaultPinSourceForRecovery": true,
+  "recoveryProductionObjectIDs": {
+    "internal": "237d610e348505c79dc966a7bf495b4a36d22fa4",
+    "cmd": "27d75dbcd720037ce52d492e5e3715b8783c4124",
+    "vendor": "e05e8d8278d55467467c6273c949ba102cd9eb0c",
+    "assets": "2ce120a17a26a6840c82d42a77469d8df423e162",
+    "go.mod": "62ffb84ff5e28f8aacae2d514ed6fd64a6ff3bf7",
+    "go.sum": "2f12e8df2d74ca2bcc415f14e0c3b633ca48efb3"
+  },
+  "recoveryBootstrapObjectIDs": {
+    "install.sh": "723bacfba019ca84887a8328d28d2316a5f55a8b",
+    "install.ps1": "111b547534b59b2931a6559032d5f146e4c7961d",
+    "install-gateway.sh": "3f339a8ec779d84a60ecb525503f7ed59db45337"
+  },
+  "macInstallerRecoverySource": "cc301094068dd23d9e07333788efef584f5d6a9b",
+  "changedPathsSinceVerifierRecovery": [
+    ".github/workflows/install-macos.yml"
+  ],
+  "macInstallerWorkflowBehaviorUnchangedAfterCommentsRemoved": true,
+  "macInstallerRetryBootstrapsIdentical": true
+}

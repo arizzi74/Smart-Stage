@@ -214,6 +214,20 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.8.0
 
 ## Built and automatically tested
 
+Version 1.8.0 is source `59d329fa5066b2d1b82ca0efddd2f1fbbb6913eb`. Seven
+candidate gates and all 25 tagged release jobs passed. All 50 public asset
+digests, eight checksum pairs and website update discovery passed. Saved playlist
+sections and touch tabs were checked in real browsers; both Macs passed 20 native
+audio-layer observations and native clock continuity during section edits.
+Windows section and decoding checks passed, but hosted runners had no audio
+endpoint, so Windows mixing still needs a real-device check. Published startup
+updates and installers passed on all four targets. Ten current-default
+installer/updater reports and the seven-gate diagnostic recovery build passed
+with source-specific receipts. The earlier WebKit API errors and Mac runner
+capacity cancellation remain recorded; recovery changed verifier diagnostics
+and a workflow comment only. See the
+[v1.8.0 verification record](docs/verification/release-v1.8.0/README.md).
+
 Version 1.7.2 is source `8d2680a6ba788f17020510259c5f627ea8ab8b27`. All 25 tagged
 release jobs passed, including native builds/security, public downloads, browser
 controls, installers and actual startup updates on all four desktop targets. All

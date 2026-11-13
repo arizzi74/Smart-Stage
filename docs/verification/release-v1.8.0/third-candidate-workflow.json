@@ -1,0 +1,263 @@
+{
+  "workflow": {
+    "id": 43438531964,
+    "name": "Build and test native targets",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964",
+    "source": "368c7ad42d37130d0da2f5ad033d5664818c2e3b",
+    "branch": "main",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "failure",
+    "attempt": 1,
+    "createdAtUTC": "2026-11-13T13:59:38Z",
+    "updatedAtUTC": "2026-11-13T14:08:28Z"
+  },
+  "checkedAtUTC": "2026-11-13T14:08:49.487886Z",
+  "requiredGateCount": 7,
+  "passedRequiredGates": 2,
+  "allRequiredGatesPassed": false,
+  "jobs": [
+    {
+      "id": 131929821768,
+      "gate": "gateway",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131929821768",
+      "startedAtUTC": "2026-11-13T13:59:40Z",
+      "completedAtUTC": "2026-11-13T14:03:35Z",
+      "currentStep": null,
+      "nativeStartupStep": null,
+      "nativeBrowserStep": null,
+      "failedSteps": [
+        {
+          "number": 9,
+          "name": "Verify bilingual Admin, preserved edits and independent remote language",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "id": 131929822133,
+      "gate": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131929822133",
+      "startedAtUTC": "2026-11-13T13:59:41Z",
+      "completedAtUTC": "2026-11-13T14:00:57Z",
+      "currentStep": null,
+      "nativeStartupStep": null,
+      "nativeBrowserStep": null,
+      "failedSteps": []
+    },
+    {
+      "id": 131929822227,
+      "gate": "windows/amd64",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131929822227",
+      "startedAtUTC": "2026-11-13T13:59:40Z",
+      "completedAtUTC": "2026-11-13T14:05:54Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "failedSteps": []
+    },
+    {
+      "id": 131929822283,
+      "gate": "windows/arm64",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131929822283",
+      "startedAtUTC": "2026-11-13T13:59:41Z",
+      "completedAtUTC": "2026-11-13T14:08:27Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "failedSteps": [
+        {
+          "number": 16,
+          "name": "Exercise Admin and remote controls through the built native host",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "id": 131929822337,
+      "gate": "darwin/arm64",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131929822337",
+      "startedAtUTC": "2026-11-13T13:59:54Z",
+      "completedAtUTC": "2026-11-13T14:03:03Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      "failedSteps": [
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "id": 131929823002,
+      "gate": "darwin/amd64",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131929823002",
+      "startedAtUTC": "2026-11-13T13:59:43Z",
+      "completedAtUTC": "2026-11-13T14:04:17Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      "failedSteps": [
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "id": 131934498229,
+      "gate": "binary-security",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131934498229",
+      "startedAtUTC": "2026-11-13T14:08:27Z",
+      "completedAtUTC": "2026-11-13T14:08:27Z",
+      "currentStep": null,
+      "nativeStartupStep": null,
+      "nativeBrowserStep": null,
+      "failedSteps": []
+    }
+  ],
+  "conditionalReleaseJobs": [
+    {
+      "id": 131934499316,
+      "name": "verify-macos-install",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131934499316"
+    },
+    {
+      "id": 131934499412,
+      "name": "verify-windows-install",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131934499412"
+    },
+    {
+      "id": 131934499732,
+      "name": "publish-site",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131934499732"
+    },
+    {
+      "id": 131934499867,
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131934499867"
+    },
+    {
+      "id": 131934500389,
+      "name": "verify-browser",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131934500389"
+    },
+    {
+      "id": 131934500583,
+      "name": "verify-download",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131934500583"
+    },
+    {
+      "id": 131934501985,
+      "name": "verify-update",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43438531964/job/131934501985"
+    }
+  ],
+  "privacyScope": "Public workflow/job metadata and step results only; no raw logs, pairing keys, transient tunnel URLs, machine paths or firewall rules.",
+  "scope": "Combined audio-layer and playlist-section candidate. Native startup and browser step success is recorded; observation-level artifact receipts are collected separately.",
+  "failureEvidence": [
+    {
+      "gate": "darwin/arm64",
+      "jobID": 131929822337,
+      "category": "native-audio-layer-probe",
+      "assertion": "Layer resume replaced or interrupted a decoder"
+    },
+    {
+      "gate": "darwin/amd64",
+      "jobID": 131929823002,
+      "category": "native-audio-layer-probe",
+      "assertion": "Layer resume replaced or interrupted a decoder"
+    },
+    {
+      "gate": "gateway",
+      "jobID": 131929821768,
+      "category": "synthetic-browser-section-touch-observer",
+      "assertion": "gestures exercise real browser touch pointer events",
+      "precedingChecks": "Navigation, partial-swipe no-PLAY and vertical-scroll assertions passed; original event count/types/coordinates were not logged."
+    },
+    {
+      "gate": "windows/arm64",
+      "jobID": 131929822283,
+      "category": "native-media-revalidation",
+      "assertion": "Rewind native inspection track (0xc00d3e85): The request is invalid because Shutdown() has been called.",
+      "fixture": "video-aac-1080p.mp4",
+      "scope": "Native startup probe passed; browser stage-settings readiness failed."
+    }
+  ],
+  "failureEvidenceScope": "Assertions identify the failing checks; they do not by themselves establish a product defect or its cause. Raw logs are stored privately and omitted."
+}

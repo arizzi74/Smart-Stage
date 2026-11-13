@@ -1,0 +1,233 @@
+{
+  "workflow": {
+    "id": 43431297071,
+    "name": "Build and test native targets",
+    "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071",
+    "source": "594acb8553af46bc9a0678814f04ba4f7d6b93ac",
+    "branch": "main",
+    "event": "push",
+    "status": "completed",
+    "conclusion": "failure",
+    "attempt": 1,
+    "createdAtUTC": "2026-11-13T13:10:01Z",
+    "updatedAtUTC": "2026-11-13T13:27:12Z"
+  },
+  "checkedAtUTC": "2026-11-13T13:28:42.216393Z",
+  "requiredGateCount": 7,
+  "passedRequiredGates": 4,
+  "allRequiredGatesPassed": false,
+  "jobs": [
+    {
+      "id": 131905177240,
+      "gate": "shared",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131905177240",
+      "startedAtUTC": "2026-11-13T13:10:04Z",
+      "completedAtUTC": "2026-11-13T13:11:37Z",
+      "currentStep": null,
+      "nativeStartupStep": null,
+      "nativeBrowserStep": null,
+      "failedSteps": []
+    },
+    {
+      "id": 131905177458,
+      "gate": "darwin/amd64",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131905177458",
+      "startedAtUTC": "2026-11-13T13:10:05Z",
+      "completedAtUTC": "2026-11-13T13:15:05Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      "failedSteps": [
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "id": 131905177562,
+      "gate": "windows/arm64",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131905177562",
+      "startedAtUTC": "2026-11-13T13:10:04Z",
+      "completedAtUTC": "2026-11-13T13:27:11Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "failedSteps": []
+    },
+    {
+      "id": 131905177628,
+      "gate": "gateway",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131905177628",
+      "startedAtUTC": "2026-11-13T13:10:04Z",
+      "completedAtUTC": "2026-11-13T13:15:14Z",
+      "currentStep": null,
+      "nativeStartupStep": null,
+      "nativeBrowserStep": null,
+      "failedSteps": []
+    },
+    {
+      "id": 131905177720,
+      "gate": "darwin/arm64",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131905177720",
+      "startedAtUTC": "2026-11-13T13:10:04Z",
+      "completedAtUTC": "2026-11-13T13:13:14Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "failure"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "skipped"
+      },
+      "failedSteps": [
+        {
+          "number": 11,
+          "name": "Native executable startup",
+          "status": "completed",
+          "conclusion": "failure"
+        }
+      ]
+    },
+    {
+      "id": 131905177730,
+      "gate": "windows/amd64",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131905177730",
+      "startedAtUTC": "2026-11-13T13:10:04Z",
+      "completedAtUTC": "2026-11-13T13:16:18Z",
+      "currentStep": null,
+      "nativeStartupStep": {
+        "number": 11,
+        "name": "Native executable startup",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "nativeBrowserStep": {
+        "number": 16,
+        "name": "Exercise Admin and remote controls through the built native host",
+        "status": "completed",
+        "conclusion": "success"
+      },
+      "failedSteps": []
+    },
+    {
+      "id": 131913503488,
+      "gate": "binary-security",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131913503488",
+      "startedAtUTC": "2026-11-13T13:27:12Z",
+      "completedAtUTC": "2026-11-13T13:27:11Z",
+      "currentStep": null,
+      "nativeStartupStep": null,
+      "nativeBrowserStep": null,
+      "failedSteps": []
+    }
+  ],
+  "conditionalReleaseJobs": [
+    {
+      "id": 131913503148,
+      "name": "publish",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131913503148"
+    },
+    {
+      "id": 131913504028,
+      "name": "verify-macos-install",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131913504028"
+    },
+    {
+      "id": 131913504725,
+      "name": "verify-download",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131913504725"
+    },
+    {
+      "id": 131913504808,
+      "name": "verify-windows-install",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131913504808"
+    },
+    {
+      "id": 131913505035,
+      "name": "publish-site",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131913505035"
+    },
+    {
+      "id": 131913505389,
+      "name": "verify-browser",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131913505389"
+    },
+    {
+      "id": 131913505854,
+      "name": "verify-update",
+      "status": "completed",
+      "conclusion": "skipped",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43431297071/job/131913505854"
+    }
+  ],
+  "privacyScope": "Public workflow/job metadata and step results only; no raw logs, pairing keys, transient tunnel URLs, machine paths or firewall rules.",
+  "scope": "Initial candidate includes the Mac audio-layer native fixture; no dedicated Windows audio-layer fixture is claimed.",
+  "failureEvidence": [
+    {
+      "gate": "darwin/arm64",
+      "jobID": 131905177720,
+      "assertion": "Background video soundtrack did not use the independent audio fade",
+      "scope": "Existing scene probe failed before the new audio-layer fixture ran."
+    },
+    {
+      "gate": "darwin/amd64",
+      "jobID": 131905177458,
+      "assertion": "Background video soundtrack did not use the independent audio fade",
+      "scope": "Existing scene probe failed before the new audio-layer fixture ran."
+    }
+  ]
+}

@@ -1,0 +1,455 @@
+{
+  "status": "complete",
+  "verifiedAt": "2026-11-13T14:45:59+00:00",
+  "runID": 43442811770,
+  "runAttempt": 1,
+  "sourceRevision": "59d329fa5066b2d1b82ca0efddd2f1fbbb6913eb",
+  "workflowStatus": "completed",
+  "workflowConclusion": "success",
+  "goToolchain": "go1.26.11",
+  "targets": [
+    {
+      "target": "darwin-arm64",
+      "status": "verified",
+      "jobID": 131944491242,
+      "jobStatus": "completed",
+      "jobConclusion": "success",
+      "artifact": {
+        "id": 14046117397,
+        "name": "native-darwin-arm64",
+        "sha256": "66aade5519f156635923e555dda3da17469f6e780d42170e7d1048a24c2948c0",
+        "sizeBytes": 20160169,
+        "githubDigestAndSizeVerified": true
+      },
+      "nativeAudioLayers": {
+        "status": "passed",
+        "observations": {
+          "mixAudioRetainsVideoPlayerFrameTimelineAndSoundtrack": true,
+          "keepVideoRetainsExactPlayerFrameAndPlayheadWhileReplacingSound": true,
+          "audioLayerReplacementCrossfadesAndReleasesRetiredDecoder": true,
+          "mixAdditionPreservesExistingAudioFadeEnvelopes": true,
+          "audioLayerPauseFreezesOnlyItsOwnDecoderAndClock": true,
+          "pausedReplacementCannotRestoreVideoOrBackgroundSound": true,
+          "audioLayerResumeRetainsPlayerAndUsesItsOwnTransportRevision": true,
+          "masterAndTrackVolumeScaleEveryAudioLayerWithoutRestart": true,
+          "stageChangesPreserveAllAudioLayersAndKeptVideo": true,
+          "audioLayerEndReportsOwnIdentityWithoutStoppingOtherSources": true,
+          "lateSceneCannotResurrectEndedAudioLayer": true,
+          "stopFadesAndReleasesAllAudioLayers": true,
+          "mixAudioRetainsOriginalAudioAndIndependentPauseControls": true,
+          "audioLayerErrorReportsOwnIdentityAndPreservesOtherSources": true,
+          "mixAudioPreservesEligibleBackgroundSoundtrack": true,
+          "hardStopDuringLayerSeekDisposesAllSourcesAndRejectsLateEvents": true,
+          "failedAudioLayerReacknowledgesLatestTransportWithoutRestart": true,
+          "failedForegroundReacknowledgesLatestTransportWithoutRestart": true,
+          "newForegroundIdentityCanRetryPreviouslyFailedPath": true,
+          "zeroFadeReplacementWaitsForNativeAudioPreparation": true
+        },
+        "verifiedObservationCount": 20,
+        "resumeClockObservation": {
+          "firstEligibleClockAdvanceSeconds": 0.09720382700000008,
+          "firstEligibleElapsedSeconds": 0.1591361250000034,
+          "completedClockAdvanceSeconds": 0.09720382700000008,
+          "completedElapsedSeconds": 0.1591361250000034,
+          "requiredClockAdvanceSeconds": 0.07,
+          "waitedForClock": false
+        },
+        "reportSHA256": "f01cb36981988b669f194b7aa8d77a00333274577544385d2547cb3ed18c7c78",
+        "physicalAudioVerified": false
+      },
+      "browserReport": {
+        "sha256": "05d5d3706b11f67892c7a9aff75cd871000d4dcfdb5cf154d7476b4fd1ff0ede",
+        "passed": true,
+        "applicationSourceAndToolchainVerified": true,
+        "audioEndpointCount": 2,
+        "displayCount": 1
+      },
+      "browserAudioLayers": {
+        "status": "passed",
+        "checks": {
+          "adminFlagsSavedAndReloaded": true,
+          "twoIndependentNativeAudioSourcesAcknowledged": true,
+          "keepVideoPreservedNativeSourceIdentity": true,
+          "retainedVideoClockAdvancedWithBothAudioLayers": true,
+          "remotePauseResumeUsesEachSourceIdentityAndTransport": true,
+          "pausingEitherLayerPreservesTheOtherNativeClock": true,
+          "globalStopClearsAllNativeSelections": true,
+          "playlistFlagsAndSettingsRestored": true
+        },
+        "nativeAudioGainsMeasuredHere": false,
+        "physicalRoutingVerified": false
+      },
+      "browserSections": {
+        "status": "passed",
+        "checks": {
+          "adminCreatedAndRenamedSection": true,
+          "adminMovedExistingCueWithoutPlaybackCommand": true,
+          "collapseSavePreservesSummaryFocus": true,
+          "sectionNameMembershipAndCollapseSurviveAdminReload": true,
+          "portableExportIncludesSectionsCollapseAndCueMembership": true,
+          "remoteTapAndKeyboardSelectOnlyRequestedSection": true,
+          "sectionEditsAndNavigationSendNoPlaybackCommands": true,
+          "originalCueAndSectionSettingsRestoredTogether": true,
+          "nativeSourceGenerationTransportAndAdvancingClockPreserved": true
+        },
+        "audioContinuityVerified": true,
+        "physicalRoutingVerified": false
+      }
+    },
+    {
+      "target": "darwin-amd64",
+      "status": "verified",
+      "jobID": 131944491039,
+      "jobStatus": "completed",
+      "jobConclusion": "success",
+      "artifact": {
+        "id": 14046887562,
+        "name": "native-darwin-amd64",
+        "sha256": "59b8dbf6240974ddab59612258c223e913240562083834295ac173cc0df32faa",
+        "sizeBytes": 22134895,
+        "githubDigestAndSizeVerified": true
+      },
+      "nativeAudioLayers": {
+        "status": "passed",
+        "observations": {
+          "mixAudioRetainsVideoPlayerFrameTimelineAndSoundtrack": true,
+          "keepVideoRetainsExactPlayerFrameAndPlayheadWhileReplacingSound": true,
+          "audioLayerReplacementCrossfadesAndReleasesRetiredDecoder": true,
+          "mixAdditionPreservesExistingAudioFadeEnvelopes": true,
+          "audioLayerPauseFreezesOnlyItsOwnDecoderAndClock": true,
+          "pausedReplacementCannotRestoreVideoOrBackgroundSound": true,
+          "audioLayerResumeRetainsPlayerAndUsesItsOwnTransportRevision": true,
+          "masterAndTrackVolumeScaleEveryAudioLayerWithoutRestart": true,
+          "stageChangesPreserveAllAudioLayersAndKeptVideo": true,
+          "audioLayerEndReportsOwnIdentityWithoutStoppingOtherSources": true,
+          "lateSceneCannotResurrectEndedAudioLayer": true,
+          "stopFadesAndReleasesAllAudioLayers": true,
+          "mixAudioRetainsOriginalAudioAndIndependentPauseControls": true,
+          "audioLayerErrorReportsOwnIdentityAndPreservesOtherSources": true,
+          "mixAudioPreservesEligibleBackgroundSoundtrack": true,
+          "hardStopDuringLayerSeekDisposesAllSourcesAndRejectsLateEvents": true,
+          "failedAudioLayerReacknowledgesLatestTransportWithoutRestart": true,
+          "failedForegroundReacknowledgesLatestTransportWithoutRestart": true,
+          "newForegroundIdentityCanRetryPreviouslyFailedPath": true,
+          "zeroFadeReplacementWaitsForNativeAudioPreparation": true
+        },
+        "verifiedObservationCount": 20,
+        "resumeClockObservation": {
+          "firstEligibleClockAdvanceSeconds": 0.058678261999999926,
+          "firstEligibleElapsedSeconds": 0.312277068999947,
+          "completedClockAdvanceSeconds": 0.07618908800000002,
+          "completedElapsedSeconds": 0.3297401599999148,
+          "requiredClockAdvanceSeconds": 0.07,
+          "waitedForClock": true
+        },
+        "reportSHA256": "3d6999f7515018b68800535efd37f64bb02bc6ac5394dcee3a7663f7b3a8e401",
+        "physicalAudioVerified": false
+      },
+      "browserReport": {
+        "sha256": "4608ce1a0760211a244f0b88c4cd393e824e5e2738f7913f579681dbf40d21f4",
+        "passed": true,
+        "applicationSourceAndToolchainVerified": true,
+        "audioEndpointCount": 1,
+        "displayCount": 1
+      },
+      "browserAudioLayers": {
+        "status": "passed",
+        "checks": {
+          "adminFlagsSavedAndReloaded": true,
+          "twoIndependentNativeAudioSourcesAcknowledged": true,
+          "keepVideoPreservedNativeSourceIdentity": true,
+          "retainedVideoClockAdvancedWithBothAudioLayers": true,
+          "remotePauseResumeUsesEachSourceIdentityAndTransport": true,
+          "pausingEitherLayerPreservesTheOtherNativeClock": true,
+          "globalStopClearsAllNativeSelections": true,
+          "playlistFlagsAndSettingsRestored": true
+        },
+        "nativeAudioGainsMeasuredHere": false,
+        "physicalRoutingVerified": false
+      },
+      "browserSections": {
+        "status": "passed",
+        "checks": {
+          "adminCreatedAndRenamedSection": true,
+          "adminMovedExistingCueWithoutPlaybackCommand": true,
+          "collapseSavePreservesSummaryFocus": true,
+          "sectionNameMembershipAndCollapseSurviveAdminReload": true,
+          "portableExportIncludesSectionsCollapseAndCueMembership": true,
+          "remoteTapAndKeyboardSelectOnlyRequestedSection": true,
+          "sectionEditsAndNavigationSendNoPlaybackCommands": true,
+          "originalCueAndSectionSettingsRestoredTogether": true,
+          "nativeSourceGenerationTransportAndAdvancingClockPreserved": true
+        },
+        "audioContinuityVerified": true,
+        "physicalRoutingVerified": false
+      }
+    },
+    {
+      "target": "windows-arm64",
+      "status": "verified",
+      "jobID": 131944491014,
+      "jobStatus": "completed",
+      "jobConclusion": "success",
+      "artifact": {
+        "id": 14047996985,
+        "name": "native-windows-arm64",
+        "sha256": "bb284df2cb0d305e6fe493992f6b1a024f3b7ef96ed2de68ed6eba24d3da5f49",
+        "sizeBytes": 14123925,
+        "githubDigestAndSizeVerified": true
+      },
+      "nativeSourceOpening": {
+        "status": "passed",
+        "reportSHA256": "26722ed1f4745cf5bed634eb145bcb0dc6d48651def6a69aed742dec1c050bdc",
+        "cases": {
+          "mp3": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": false,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true
+          },
+          "wav-unicode-path": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": false,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true
+          },
+          "wav-renamed-mp3": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": false,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true,
+            "strictUnsupportedByteStreamObserved": true
+          },
+          "m4a": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": false,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true
+          },
+          "m4a-renamed-mp3": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": false,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true,
+            "strictUnsupportedByteStreamObserved": true
+          },
+          "mp4-audio-video": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": true,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true
+          },
+          "damaged": {
+            "productionOpenRejected": true,
+            "inspectionRejected": true
+          },
+          "missing": {
+            "productionOpenRejected": true,
+            "inspectionRejected": true
+          }
+        },
+        "repeatedInspection": {
+          "status": "passed",
+          "iterations": 16,
+          "resultCount": 16,
+          "mixedAudioVideoInspectionsPassed": true,
+          "audioOnlyInspectionsPassed": true,
+          "allKindsAndTrackFlagsMatched": true,
+          "allDurationsWithinFixtureBounds": true
+        },
+        "requiresAudioEndpoint": false,
+        "physicalPlaybackVerified": false
+      },
+      "nativeAudioLayers": {
+        "status": "skipped",
+        "reason": "no_native_audio_endpoint",
+        "observations": {},
+        "verifiedObservationCount": 0,
+        "reportSHA256": "26722ed1f4745cf5bed634eb145bcb0dc6d48651def6a69aed742dec1c050bdc",
+        "physicalAudioVerified": false
+      },
+      "browserReport": {
+        "sha256": "289cffa0e511af79ee4a05e64370a62badf3dd85dac163d34a5da7f65a11dc45",
+        "passed": true,
+        "applicationSourceAndToolchainVerified": true,
+        "audioEndpointCount": 0,
+        "displayCount": 1
+      },
+      "browserAudioLayers": {
+        "status": "unavailable",
+        "reason": "no_native_audio_endpoint",
+        "checks": {},
+        "nativeAudioGainsMeasuredHere": false,
+        "physicalRoutingVerified": false
+      },
+      "browserSections": {
+        "status": "passed",
+        "checks": {
+          "adminCreatedAndRenamedSection": true,
+          "adminMovedExistingCueWithoutPlaybackCommand": true,
+          "collapseSavePreservesSummaryFocus": true,
+          "sectionNameMembershipAndCollapseSurviveAdminReload": true,
+          "portableExportIncludesSectionsCollapseAndCueMembership": true,
+          "remoteTapAndKeyboardSelectOnlyRequestedSection": true,
+          "sectionEditsAndNavigationSendNoPlaybackCommands": true,
+          "originalCueAndSectionSettingsRestoredTogether": true
+        },
+        "audioContinuityVerified": false,
+        "physicalRoutingVerified": false,
+        "audioUnavailableReason": "no_native_audio_endpoint"
+      }
+    },
+    {
+      "target": "windows-amd64",
+      "status": "verified",
+      "jobID": 131944491123,
+      "jobStatus": "completed",
+      "jobConclusion": "success",
+      "artifact": {
+        "id": 14047735466,
+        "name": "native-windows-amd64",
+        "sha256": "60faacbe2a8a15aa154587403f8c0b752055820ec45a301aa67b4a5fa6c04f6d",
+        "sizeBytes": 15724635,
+        "githubDigestAndSizeVerified": true
+      },
+      "nativeSourceOpening": {
+        "status": "passed",
+        "reportSHA256": "4a762af5e570f111226026704d977c4adccce50fe428371c6ee29d3a25b943c1",
+        "cases": {
+          "mp3": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": false,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true
+          },
+          "wav-unicode-path": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": false,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true
+          },
+          "wav-renamed-mp3": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": false,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true,
+            "strictUnsupportedByteStreamObserved": true
+          },
+          "m4a": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": false,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true
+          },
+          "m4a-renamed-mp3": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": false,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true,
+            "strictUnsupportedByteStreamObserved": true
+          },
+          "mp4-audio-video": {
+            "productionOpenSucceeded": true,
+            "sourceHasAudio": true,
+            "sourceHasVideo": true,
+            "sourceDurationWithinFixtureBounds": true,
+            "productionFirstSampleInspectionPassed": true,
+            "inspectionKindAndTrackFlagsMatched": true,
+            "inspectionDurationWithinFixtureBounds": true
+          },
+          "damaged": {
+            "productionOpenRejected": true,
+            "inspectionRejected": true
+          },
+          "missing": {
+            "productionOpenRejected": true,
+            "inspectionRejected": true
+          }
+        },
+        "repeatedInspection": {
+          "status": "passed",
+          "iterations": 16,
+          "resultCount": 16,
+          "mixedAudioVideoInspectionsPassed": true,
+          "audioOnlyInspectionsPassed": true,
+          "allKindsAndTrackFlagsMatched": true,
+          "allDurationsWithinFixtureBounds": true
+        },
+        "requiresAudioEndpoint": false,
+        "physicalPlaybackVerified": false
+      },
+      "nativeAudioLayers": {
+        "status": "skipped",
+        "reason": "no_native_audio_endpoint",
+        "observations": {},
+        "verifiedObservationCount": 0,
+        "reportSHA256": "4a762af5e570f111226026704d977c4adccce50fe428371c6ee29d3a25b943c1",
+        "physicalAudioVerified": false
+      },
+      "browserReport": {
+        "sha256": "78f6f117b3e8a4219793a630a8c68ac67c35ab07ab3837e375211bc18da432a3",
+        "passed": true,
+        "applicationSourceAndToolchainVerified": true,
+        "audioEndpointCount": 0,
+        "displayCount": 1
+      },
+      "browserAudioLayers": {
+        "status": "unavailable",
+        "reason": "no_native_audio_endpoint",
+        "checks": {},
+        "nativeAudioGainsMeasuredHere": false,
+        "physicalRoutingVerified": false
+      },
+      "browserSections": {
+        "status": "passed",
+        "checks": {
+          "adminCreatedAndRenamedSection": true,
+          "adminMovedExistingCueWithoutPlaybackCommand": true,
+          "collapseSavePreservesSummaryFocus": true,
+          "sectionNameMembershipAndCollapseSurviveAdminReload": true,
+          "portableExportIncludesSectionsCollapseAndCueMembership": true,
+          "remoteTapAndKeyboardSelectOnlyRequestedSection": true,
+          "sectionEditsAndNavigationSendNoPlaybackCommands": true,
+          "originalCueAndSectionSettingsRestoredTogether": true
+        },
+        "audioContinuityVerified": false,
+        "physicalRoutingVerified": false,
+        "audioUnavailableReason": "no_native_audio_endpoint"
+      }
+    }
+  ],
+  "scope": "Fixed native playback observations and actual application browser/API acknowledgments only; no physical output verification."
+}

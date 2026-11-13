@@ -1,0 +1,239 @@
+{
+  "checkedAtUTC": "2026-11-13T15:24:13.158624+00:00",
+  "workflows": [
+    {
+      "run": 43449238384,
+      "name": "Verify Windows single-command app installation",
+      "source": "948e0ba6b0a2345d4860407a51424fa2b2a4101a",
+      "event": "push",
+      "branch": "main",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449238384",
+      "path": ".github/workflows/install-windows.yml",
+      "updatedAt": "2026-11-13T15:18:35Z",
+      "jobs": [
+        {
+          "id": 131966733264,
+          "name": "install (windows-11-arm, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449238384/job/131966733264",
+          "failedSteps": []
+        },
+        {
+          "id": 131966733898,
+          "name": "install (windows-2025, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449238384/job/131966733898",
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "run": 43449236750,
+      "name": "Verify automatic updates against published native releases",
+      "source": "948e0ba6b0a2345d4860407a51424fa2b2a4101a",
+      "event": "push",
+      "branch": "main",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236750",
+      "path": ".github/workflows/update.yml",
+      "updatedAt": "2026-11-13T15:14:38Z",
+      "jobs": [
+        {
+          "id": 131966727268,
+          "name": "update (macos-15, darwin, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236750/job/131966727268",
+          "failedSteps": []
+        },
+        {
+          "id": 131966727915,
+          "name": "update (windows-11-arm, windows, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236750/job/131966727915",
+          "failedSteps": []
+        },
+        {
+          "id": 131966727967,
+          "name": "update (macos-15-intel, darwin, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236750/job/131966727967",
+          "failedSteps": []
+        },
+        {
+          "id": 131966728370,
+          "name": "update (windows-2025, windows, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236750/job/131966728370",
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "run": 43449236730,
+      "name": "Verify Mac app installation and quarantine removal",
+      "source": "948e0ba6b0a2345d4860407a51424fa2b2a4101a",
+      "event": "push",
+      "branch": "main",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236730",
+      "path": ".github/workflows/install-macos.yml",
+      "updatedAt": "2026-11-13T15:23:53Z",
+      "jobs": [
+        {
+          "id": 131966728161,
+          "name": "install (macos-15-intel, amd64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236730/job/131966728161",
+          "failedSteps": []
+        },
+        {
+          "id": 131966728631,
+          "name": "install (macos-15, arm64)",
+          "status": "completed",
+          "conclusion": "cancelled",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236730/job/131966728631",
+          "failedSteps": []
+        }
+      ]
+    },
+    {
+      "run": 43449236752,
+      "name": "Build and test native targets",
+      "source": "948e0ba6b0a2345d4860407a51424fa2b2a4101a",
+      "event": "push",
+      "branch": "main",
+      "status": "completed",
+      "conclusion": "failure",
+      "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752",
+      "path": ".github/workflows/build.yml",
+      "updatedAt": "2026-11-13T15:24:04Z",
+      "jobs": [
+        {
+          "id": 131966727710,
+          "name": "shared",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131966727710",
+          "failedSteps": []
+        },
+        {
+          "id": 131966727947,
+          "name": "gateway",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131966727947",
+          "failedSteps": []
+        },
+        {
+          "id": 131966727994,
+          "name": "native (macos-15-intel, darwin, amd64)",
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131966727994",
+          "failedSteps": [
+            "Verify track dragging with WebKit on Mac"
+          ]
+        },
+        {
+          "id": 131966728037,
+          "name": "native (windows-2025, windows, amd64, x86_64, 1bcf74d06b724aeecaa6412ca85f5b26fb1da770e7cdcefa926...",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131966728037",
+          "failedSteps": []
+        },
+        {
+          "id": 131966728163,
+          "name": "native (windows-11-arm, windows, arm64, aarch64, 7fe35f60407473c420ac72b25137f54385b0affd2c42efd5...",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131966728163",
+          "failedSteps": []
+        },
+        {
+          "id": 131966728246,
+          "name": "native (macos-15, darwin, arm64)",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131966728246",
+          "failedSteps": []
+        },
+        {
+          "id": 131977067190,
+          "name": "binary-security",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131977067190",
+          "failedSteps": []
+        },
+        {
+          "id": 131977068201,
+          "name": "verify-macos-install",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131977068201",
+          "failedSteps": []
+        },
+        {
+          "id": 131977068491,
+          "name": "verify-download",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131977068491",
+          "failedSteps": []
+        },
+        {
+          "id": 131977068907,
+          "name": "publish",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131977068907",
+          "failedSteps": []
+        },
+        {
+          "id": 131977068987,
+          "name": "verify-update",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131977068987",
+          "failedSteps": []
+        },
+        {
+          "id": 131977069129,
+          "name": "verify-browser",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131977069129",
+          "failedSteps": []
+        },
+        {
+          "id": 131977069150,
+          "name": "verify-windows-install",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131977069150",
+          "failedSteps": []
+        },
+        {
+          "id": 131977069976,
+          "name": "publish-site",
+          "status": "completed",
+          "conclusion": "skipped",
+          "url": "https://github.com/arizzi74/Smart-Stage/actions/runs/43449236752/job/131977069976",
+          "failedSteps": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "status": "infrastructure_cancellation",
+  "sourceRevision": "948e0ba6b0a2345d4860407a51424fa2b2a4101a",
+  "workflowRunID": 43449236730,
+  "workflowConclusion": "failure",
+  "runAttempt": 1,
+  "jobID": 131966728631,
+  "checkRunID": 131966728631,
+  "jobConclusion": "cancelled",
+  "target": "darwin/arm64",
+  "runnerLabel": "macos-15",
+  "runnerAssigned": false,
+  "executedStepCount": 0,
+  "installerTestExecuted": false,
+  "installerDefaultVerifiedByThisJob": false,
+  "jobStartedAt": "2026-11-13T15:06:34Z",
+  "jobCompletedAt": "2026-11-13T15:23:52Z",
+  "annotationCount": 4,
+  "annotationCategories": {
+    "hosted_runner_not_acquired": 1,
+    "macos_arm64_capacity_constraints": 3
+  },
+  "failureAnnotation": "The job was not acquired by Runner of type hosted even after multiple attempts",
+  "annotationsCanonicalSHA256": "7c1408bebda5df1b07f01874df39226df6dd5cd4fb5ba34ed275604a4add0836",
+  "installerBootstrapSHA256": "3a2ddfbc3171923d6421c50c19bc067f1019f129083c0fe10f3092f155b42da0",
+  "retrievedAtUTC": "2026-11-13T15:27:44.491306+00:00",
+  "recoveryPlan": "Push a comment-only change to the existing Mac installer workflow path to rerun the unchanged default-selection checks.",
+  "privacy": {
+    "rawMachinePathsIncluded": false,
+    "sessionSecretsIncluded": false,
+    "rawLogsIncluded": false
+  }
+}
