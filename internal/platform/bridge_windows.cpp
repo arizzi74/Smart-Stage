@@ -512,6 +512,8 @@ bool sceneMode = false;
 uint64_t nextSceneToken = 0, stoppedGeneration = 0;
 uint64_t failedImageToken = 0, failedBackgroundToken = 0, completedForegroundToken = 0;
 uint64_t failedForegroundToken = 0;
+uint64_t failedForegroundID = 0, failedForegroundTransport = 0;
+std::string failedForegroundMessage;
 std::string sceneFatalError;
 std::string foregroundFailure;
 uint64_t foregroundFailureID = 0, foregroundFailureTransport = 0;
@@ -520,6 +522,7 @@ struct LayerPlayback {
     AudioLayer desired;
     uint64_t token = 0;
     bool completed = false, failed = false;
+    std::string errorMessage;
     std::unique_ptr<Playback> player;
 };
 std::map<uint64_t, LayerPlayback> sceneAudioLayers;
@@ -724,6 +727,9 @@ bool pendingAudioHandoff() {
 }
 void retireAudioLayer(std::unique_ptr<Playback> &p) {
     if (!p) return;
+    // Primary audio may carry an unused candidate video HWND. It owns no EVR
+    // target and must never hide a later video when this audio tail retires.
+    if (!p->video) p->target = nullptr;
     bool hold = pendingAudioHandoff();
     if (audible(p.get()) && (scene.audioFade > 0 || hold)) {
         // Bound independent fade tails even during repeated clear/add commands.
@@ -977,12 +983,16 @@ void cancelAudioLayer(uint64_t id) {
         return r.sceneRole == audioLayerRole && r.gen == id;
     }), pending.end());
 }
+void failAudioLayer(LayerPlayback &layer, const std::string &message) {
+    layer.failed = true; layer.errorMessage = message;
+    cancelAudioLayer(layer.desired.id);
+    emitScene(layer.desired.id, "error", message, 0, 0, layer.desired.transportRevision);
+}
 void queueAudioLayer(LayerPlayback &layer) {
     const auto &source = layer.desired;
     { std::lock_guard<std::mutex> lock(cleanupMutex);
       if (retired.size() >= 8) {
-          layer.failed = true;
-          emitScene(source.id, "error", "Native cleanup is busy; stop and retry this audio cue", 0, 0, source.transportRevision);
+          failAudioLayer(layer, "Native cleanup is busy; stop and retry this audio cue");
           return;
       } }
     Request r{Request::Play, source.id, source.path, source.audio, ""};
@@ -1005,7 +1015,7 @@ void reconcileAudioLayers() {
         bool changedSource = !inserted && (wanted.path != layer.desired.path || wanted.audio != layer.desired.audio);
         if (changedSource) {
             cancelAudioLayer(wanted.id); retireAudioLayer(layer.player);
-            layer.completed = layer.failed = false;
+            layer.completed = layer.failed = false; layer.errorMessage.clear();
         }
         bool changedTransport = wanted.transportRevision != layer.desired.transportRevision;
         layer.desired = wanted;
@@ -1015,17 +1025,21 @@ void reconcileAudioLayers() {
             p.trackVolume = wanted.volume;
             if (p.transportRevision != wanted.transportRevision) p.transportMuted = true;
             if (!volume(p, p.gain)) {
-                emitScene(wanted.id, "error", "Cannot update audio layer volume", 0, 0, wanted.transportRevision);
-                cancelAudioLayer(wanted.id); halt(layer.player); layer.failed = true;
+                failAudioLayer(layer, "Cannot update audio layer volume"); halt(layer.player);
             }
         } else if (layer.completed && changedTransport) {
             emitScene(wanted.id, "ended", "", 0, 0, wanted.transportRevision);
+        } else if (layer.failed && changedTransport) {
+            // Go may have superseded the original failing operation before
+            // polling its error. Acknowledge terminal state at the new intent.
+            emitScene(wanted.id, "error", layer.errorMessage, 0, 0, wanted.transportRevision);
         }
     }
 }
 void failForeground(uint64_t id, const std::string &message, uint64_t transport) {
     if (id != scene.foregroundID) return;
     failedForegroundToken = ++nextSceneToken;
+    failedForegroundID = id; failedForegroundTransport = transport; failedForegroundMessage = message;
     sceneTokens[1].store(failedForegroundToken);
     { std::lock_guard<std::mutex> lock(workerMutex);
       pending.erase(std::remove_if(pending.begin(), pending.end(), [](const Request &r) { return r.sceneRole == 1; }), pending.end()); }
@@ -1088,7 +1102,9 @@ void processSceneCommand() {
     if (scene.foregroundID != previous.foregroundID || scene.foregroundPath != previous.foregroundPath || (scene.foregroundAudio && scene.audio != previous.audio)) {
         halt(sceneIncoming); sceneTokens[1].store(++nextSceneToken);
         if (scene.foregroundPath.empty()) {
-            retireWithFade(sceneForeground, scene.audioFade); if (scene.audioLayers.empty()) stoppedGeneration = scene.gen;
+            if (sceneForeground && !sceneForeground->video && pendingAudioHandoff()) retireAudioLayer(sceneForeground);
+            else retireWithFade(sceneForeground, scene.audioFade);
+            if (scene.audioLayers.empty()) stoppedGeneration = scene.gen;
         } else {
             HWND target = availableSceneWindow(sceneVideoWindows);
             if ((!target && scene.foregroundKind == "video") ||
@@ -1103,6 +1119,11 @@ void processSceneCommand() {
         // next pause request reaches this thread. Confirm terminal ownership
         // at that request's revision rather than leaving a paused empty cue.
         emitScene(scene.foregroundID, "ended", "", 0, 0, scene.transportRevision);
+    }
+    if (!scene.foregroundPath.empty() && failedForegroundToken == sceneTokens[1].load() &&
+        failedForegroundID == scene.foregroundID && failedForegroundTransport != scene.transportRevision) {
+        failedForegroundTransport = scene.transportRevision;
+        emitScene(scene.foregroundID, "error", failedForegroundMessage, 0, 0, scene.transportRevision);
     }
     reconcileAudioLayers();
     if (scene.imagePath != previous.imagePath) {
@@ -1160,9 +1181,7 @@ void sceneReady(std::unique_ptr<Playback> p) {
     if (p->sceneRole == audioLayerRole) {
         auto &layer = sceneAudioLayers.at(p->gen);
         if (!p->error.empty()) {
-            layer.failed = true;
-            emitScene(p->gen, "error", p->error, 0, 0, layer.desired.transportRevision);
-            cancelAudioLayer(p->gen); retire(std::move(p)); return;
+            failAudioLayer(layer, p->error); retire(std::move(p)); return;
         }
         p->trackVolume = layer.desired.volume;
         halt(layer.player); layer.player = std::move(p); return;
@@ -1371,8 +1390,7 @@ bool pumpScene(Playback &p, bool incoming) {
     } catch (const std::string &error) {
         if (p.sceneRole == audioLayerRole) {
             if (foregroundCurrent(p)) {
-                emitScene(p.gen, "error", error, 0, 0, desiredTransport(p).revision);
-                sceneAudioLayers.at(p.gen).failed = true;
+                failAudioLayer(sceneAudioLayers.at(p.gen), error);
             }
         } else if (p.sceneRole == 1) {
             if (foregroundCurrent(p)) {
@@ -1443,15 +1461,13 @@ void tickScene() {
         auto &layer = entry.second;
         if (!layer.player) continue;
         if (!layer.player->error.empty()) {
-            emitScene(entry.first, "error", layer.player->error, 0, 0, layer.desired.transportRevision);
-            layer.failed = true;
+            failAudioLayer(layer, layer.player->error);
         }
         if (layer.failed || pumpScene(*layer.player, false)) {
             layer.completed = layer.player->nativeEnded && !layer.failed;
             cancelAudioLayer(entry.first); halt(layer.player);
         } else if (!advanceRamp(*layer.player)) {
-            emitScene(entry.first, "error", "Cannot update native audio fade", 0, 0, layer.desired.transportRevision);
-            layer.failed = true; cancelAudioLayer(entry.first); halt(layer.player);
+            failAudioLayer(layer, "Cannot update native audio fade"); halt(layer.player);
         }
     }
     settleAudioHandoffs(); backgroundGain();

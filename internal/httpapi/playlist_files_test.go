@@ -193,6 +193,24 @@ func TestNativePlaylistFileSnapshotCancellationAndRevisionConflict(t *testing.T)
 		t.Fatal(err)
 	}
 	loaded.Cues[0].ID = saved.Cues[0].ID
+	if len(loaded.Sections) != len(saved.Sections) {
+		t.Fatal("Native load changed the section count")
+	}
+	sectionIDs := make(map[string]string, len(loaded.Sections))
+	for i := range loaded.Sections {
+		if loaded.Sections[i].ID == saved.Sections[i].ID {
+			t.Fatal("Native load reused saved section identity")
+		}
+		sectionIDs[loaded.Sections[i].ID] = saved.Sections[i].ID
+		loaded.Sections[i].ID = saved.Sections[i].ID
+	}
+	for i := range loaded.Cues {
+		sectionID, ok := sectionIDs[loaded.Cues[i].SectionID]
+		if !ok {
+			t.Fatal("Native load produced a dangling cue section")
+		}
+		loaded.Cues[i].SectionID = sectionID
+	}
 	// macOS's temporary directory can use /var while the canonical source
 	// resolves to /private/var. Loading intentionally canonicalizes media paths.
 	saved.Cues[0].Path, err = filepath.EvalSymlinks(saved.Cues[0].Path)

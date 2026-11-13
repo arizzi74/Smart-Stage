@@ -43,6 +43,8 @@ let gateway = null, gatewayDirty = false, gatewayFieldsDirty = false, gatewayBus
 let updateStatus = null, updateBusy = false, updatePreparing = false, updatePollAt = 0;
 let updateRestartInstance = '', updateRestartComplete = false, updateRestartStarted = 0;
 const cueButtons = new Map(), playlistRows = new Map();
+const playlistSectionRows = new Map(), pendingSectionCollapses = new Map();
+let sectionCollapseSending = false, remoteSectionId = '', remoteSectionsSignature = '', sectionSwipe = null, suppressCueClick = false;
 const i18n = window.smartStageI18n;
 const t = (key, values) => i18n.t(key, values);
 const localizedText = (node, read) => i18n.text(node, read);
@@ -903,7 +905,8 @@ function renderStatusDetails(next) {
     ]) { details.append(element('dt', label), element('dd', String(value))); }
 }
 function renderCues() {
-  const visible = state.cues.filter(cue => !cue.hidden);
+  renderSectionTabs();
+  const visible = state.cues.filter(cue => !cue.hidden && sectionForCue(cue, state) === remoteSectionId);
   const order = visible.map(c => c.id).join('|');
   for (const [id, node] of cueButtons) if (!visible.some(c => c.id === id)) { node.remove(); cueButtons.delete(id); }
   for (const cue of visible) {
@@ -933,8 +936,87 @@ function renderCues() {
     if (renderedOrder !== order) $('cue-grid').append(node);
   }
   renderedOrder = order; $('empty-cues').hidden = visible.length > 0;
-  localizedText($('empty-cues'), () => state.cues.length ? t("No visible buttons. Show cue buttons in Admin on the host computer.") : t("Your show is empty. Add cues on the host computer to get started."));
+  localizedText($('empty-cues'), () => sectionsFor(state).length > 1 ? t("No visible buttons in this section.") : state.cues.length ? t("No visible buttons. Show cue buttons in Admin on the host computer.") : t("Your show is empty. Add cues on the host computer to get started."));
 }
+function sectionsFor(value) {
+  return value?.sections?.length ? value.sections : [{ id: 'main', title: t('Main'), collapsed: false }];
+}
+function playlistSections() { return sectionsFor(playlist); }
+function sectionForCue(cue, value = playlist) { return cue.sectionId || sectionsFor(value)[0].id; }
+function selectRemoteSection(id, focus = false) {
+  if (!sectionsFor(state).some(section => section.id === id)) return;
+  remoteSectionId = id;
+  try { sessionStorage.setItem(`smartstage-section:${location.pathname}`, id); } catch {}
+  renderCues();
+  const tab = [...$('remote-section-tabs').children].find(node => node.dataset.sectionId === id);
+  tab?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  if (focus) tab?.focus();
+}
+function renderSectionTabs() {
+  const sections = sectionsFor(state), tabs = $('remote-section-tabs');
+  if (!remoteSectionId) {
+    try { remoteSectionId = sessionStorage.getItem(`smartstage-section:${location.pathname}`) || ''; } catch {}
+  }
+  if (!sections.some(section => section.id === remoteSectionId)) remoteSectionId = sections[0].id;
+  tabs.hidden = adminPage || sections.length < 2 || appClosed;
+  const signature = JSON.stringify(sections.map(section => [section.id, section.title]));
+  if (signature !== remoteSectionsSignature) {
+    remoteSectionsSignature = signature;
+    tabs.replaceChildren();
+    for (const section of sections) {
+      const tab = button(section.title, () => selectRemoteSection(section.id), 'section-tab');
+      tab.id = `section-tab-${section.id}`; tab.title = section.title;
+      tab.dataset.sectionId = section.id; tab.setAttribute('role', 'tab'); tab.setAttribute('aria-controls', 'command-view');
+      tab.addEventListener('keydown', event => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        const index = sections.findIndex(item => item.id === section.id);
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? sections.length - 1 : Math.max(0, Math.min(sections.length - 1, index + (event.key === 'ArrowRight' ? 1 : -1)));
+        selectRemoteSection(sections[next].id, true);
+      });
+      tabs.append(tab);
+    }
+  }
+  for (const tab of tabs.children) {
+    const selected = tab.dataset.sectionId === remoteSectionId;
+    tab.setAttribute('aria-selected', String(selected)); tab.tabIndex = selected ? 0 : -1;
+    if (selected && !tabs.hidden) {
+      $('command-view').setAttribute('role', 'tabpanel'); $('command-view').setAttribute('aria-labelledby', tab.id);
+    }
+  }
+  if (tabs.hidden) { $('command-view').removeAttribute('role'); $('command-view').removeAttribute('aria-labelledby'); }
+}
+$('command-view').addEventListener('pointerdown', event => {
+  suppressCueClick = false;
+  if (adminPage || sectionsFor(state).length < 2 || !event.isPrimary || !['touch', 'pen'].includes(event.pointerType)) return;
+  sectionSwipe = { id: event.pointerId, x: event.clientX, y: event.clientY, section: remoteSectionId };
+});
+$('command-view').addEventListener('pointermove', event => {
+  if (!sectionSwipe || event.pointerId !== sectionSwipe.id) return;
+  const dx = event.clientX - sectionSwipe.x, dy = event.clientY - sectionSwipe.y;
+  if (Math.abs(dx) > 24 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+    sectionSwipe.dragged = true;
+    if (event.cancelable) event.preventDefault();
+  }
+}, { passive: false });
+document.addEventListener('pointerup', event => {
+  const gesture = sectionSwipe;
+  if (!gesture || event.pointerId !== gesture.id) return;
+  sectionSwipe = null;
+  const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
+  const horizontal = Math.abs(dx) > 24 && Math.abs(dx) > Math.abs(dy) * 1.4;
+  if (!gesture.dragged && !horizontal) return;
+  suppressCueClick = true;
+  if (Math.abs(dx) < 60 || !horizontal || gesture.section !== remoteSectionId) return;
+  const sections = sectionsFor(state), index = sections.findIndex(section => section.id === remoteSectionId);
+  const next = Math.max(0, Math.min(sections.length - 1, index + (dx < 0 ? 1 : -1)));
+  selectRemoteSection(sections[next].id);
+});
+document.addEventListener('pointercancel', () => { sectionSwipe = null; });
+window.addEventListener('blur', () => { sectionSwipe = null; });
+$('cue-grid').addEventListener('click', event => {
+  if (suppressCueClick && event.detail !== 0) { suppressCueClick = false; event.preventDefault(); event.stopImmediatePropagation(); }
+}, true);
 function validCueColor(value) { return /^#[0-9a-f]{6}$/i.test(value || '') ? value : ''; }
 function cueTextColor(color) {
   const channels = [1, 3, 5].map(offset => parseInt(color.slice(offset, offset + 2), 16) / 255).map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
@@ -1217,6 +1299,14 @@ function renderEditAvailability() {
   $('media-path-settings').hidden = desktopAdmin || adminCapabilities.chooseFiles === true;
   for (const id of ['media-paths', 'add-media-paths']) $(id).disabled = !online || role !== 'admin' || !playlist || playlistBusy || playlistFileBusy || quitBusy || appClosed || updatePending();
   const pending = updatePending() || playlistFileBusy;
+  $('section-name').disabled = pending || playlistBusy || !online;
+  $('add-section').disabled = pending || playlistBusy || !online || playlistSections().length >= 50;
+  for (const section of playlistSectionRows.values()) {
+    section.input.disabled = pending || playlistBusy || !online;
+    section.up.disabled = pending || playlistBusy || !online || section.first;
+    section.down.disabled = pending || playlistBusy || !online || section.last;
+    section.remove.disabled = pending || playlistBusy || !online || section.only;
+  }
   $('save-outputs').disabled = pending || !['stopped', 'error'].includes(state.state);
   $('enable-stage').disabled = !online || pending || state.outputFault;
   $('disable-stage').disabled = !online;
@@ -1236,6 +1326,7 @@ function renderEditAvailability() {
     row.color.disabled = pending;
     row.resetColor.disabled = pending || !row.customColor;
     row.hidden.disabled = pending || playlistBusy;
+    row.sectionSelect.disabled = pending || playlistBusy || !online;
     const cue = playlist?.cues.find(c => c.id === id);
     row.volumeControls.hidden = !['audio', 'video'].includes(cue?.cache.media.kind);
     const volumeDisabled = !trackAvailable || !trackVolumeCue(id, row.volumePath) || playlistBusy && !trackVolumeSending;
@@ -1266,6 +1357,7 @@ function renderEditAvailability() {
     else void loadPlaylist();
   }
   if (!trackVolumeSending && !playlistBusy && pendingTrackVolumes.size) scheduleTrackVolumes();
+  if (!playlistBusy && pendingSectionCollapses.size && !sectionCollapseSending) queueMicrotask(() => { void saveSectionCollapse(); });
 }
 function releaseLink(value) {
   try {
@@ -1459,14 +1551,89 @@ async function refreshValidationDetails() {
     } while (validationRefreshPending && !quitBusy && !appClosed && !reloadingAdmin);
   } finally { validationRefresh = false; renderStageSettings(); renderEditAvailability(); }
 }
-function cueEdits() { return playlist.cues.map(({ id, label, path, color, hidden, background, keepVideo, mixAudio, volume }) => ({ id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background), keepVideo: Boolean(keepVideo), mixAudio: Boolean(mixAudio), volume: Number.isFinite(volume) ? volume : .5 })); }
-async function savePlaylist(cues) {
+function sectionEdits() {
+  return playlistSections().map(section => ({ ...section, collapsed: pendingSectionCollapses.get(section.id) ?? section.collapsed }));
+}
+function groupCueEdits(cues, sections = playlistSections()) {
+  return sections.flatMap(section => cues.filter(cue => (cue.sectionId || sections[0].id) === section.id));
+}
+async function saveSectionCollapse() {
+  if (sectionCollapseSending || playlistBusy || playlistFileBusy || !playlist || !online || updatePending() || !pendingSectionCollapses.size) return;
+  const sent = new Map(pendingSectionCollapses);
+  sectionCollapseSending = true;
+  const saved = await savePlaylist(cueEdits(), sectionEdits(), { preserveRows: true });
+  for (const [id, collapsed] of sent) if (pendingSectionCollapses.get(id) === collapsed) pendingSectionCollapses.delete(id);
+  sectionCollapseSending = false;
+  if (!saved) for (const [id, row] of playlistSectionRows) {
+    const section = playlistSections().find(item => item.id === id);
+    if (section) row.details.open = !(pendingSectionCollapses.get(id) ?? section.collapsed);
+  }
+  if (pendingSectionCollapses.size) void saveSectionCollapse();
+}
+function renderPlaylistSections() {
+  playlistSectionRows.clear();
+  const sections = playlistSections();
+  sections.forEach((section, index) => {
+    const details = element('details', undefined, 'playlist-section');
+    details.dataset.sectionId = section.id; details.open = !(pendingSectionCollapses.get(section.id) ?? section.collapsed);
+    const summary = element('summary'), title = element('strong', section.title), count = playlist.cues.filter(cue => sectionForCue(cue) === section.id).length;
+    summary.append(title, element('span', () => t(count === 1 ? '{0} cue' : '{0} cues', {0: count}), 'section-cue-count'));
+    const tools = element('div', undefined, 'playlist-section-tools'), label = element('label', () => t('Section name')), input = element('input');
+    input.value = section.title; input.maxLength = 128;
+    localizedAttribute(input, 'aria-label', () => t('Name for section {0}', {0: index + 1})); label.append(input);
+    input.addEventListener('change', () => {
+      const next = sectionEdits(); next[index].title = input.value.trim();
+      if (!next[index].title) { input.value = section.title; notify(() => t('Enter a section name.'), true); return; }
+      void savePlaylist(cueEdits(), next);
+    });
+    const moveSection = delta => {
+      const next = sectionEdits(); [next[index], next[index + delta]] = [next[index + delta], next[index]];
+      void savePlaylist(groupCueEdits(cueEdits(), next), next);
+    };
+    const up = button(() => t('↑ Up'), () => moveSection(-1));
+    const down = button(() => t('↓ Down'), () => moveSection(1));
+    localizedAttribute(up, 'aria-label', () => t('Move section {0} up', {0: index + 1}));
+    localizedAttribute(down, 'aria-label', () => t('Move section {0} down', {0: index + 1}));
+    const remove = button(() => t('Remove section'), () => {
+      const next = sectionEdits().filter(item => item.id !== section.id);
+      if (!next.length) return;
+      const cues = cueEdits().map(cue => cue.sectionId === section.id ? { ...cue, sectionId: next[0].id } : cue);
+      pendingSectionCollapses.delete(section.id);
+      void savePlaylist(groupCueEdits(cues, next), next);
+    });
+    localizedAttribute(remove, 'aria-label', () => t('Remove section {0}', {0: index + 1}));
+    localizedAttribute(remove, 'title', () => t('Move this section’s cues to the first remaining section. Media files are kept.'));
+    tools.append(label, up, down, remove);
+    const content = element('div', undefined, 'playlist-section-cues');
+    if (!count) content.append(element('p', () => t('Move cues into this section using their Section selector.'), 'hint'));
+    details.append(summary, tools, content);
+    details.addEventListener('toggle', () => {
+      if (!details.isConnected || !playlistSections().some(item => item.id === section.id)) return;
+      const collapsed = !details.open, current = playlistSections().find(item => item.id === section.id);
+      if (collapsed === (pendingSectionCollapses.get(section.id) ?? current.collapsed)) return;
+      pendingSectionCollapses.set(section.id, collapsed); void saveSectionCollapse();
+    });
+    $('playlist').append(details);
+    playlistSectionRows.set(section.id, { details, content, input, up, down, remove, first: index === 0, last: index === sections.length - 1, only: sections.length === 1 });
+  });
+}
+$('section-create-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!playlist || playlistBusy || playlistFileBusy || updatePending()) return;
+  const title = $('section-name').value.trim();
+  if (!title) { $('section-name').focus(); notify(() => t('Enter a section name.'), true); return; }
+  const sections = [...sectionEdits(), { id: requestID(), title, collapsed: false }];
+  if (await savePlaylist(cueEdits(), sections)) $('section-name').value = '';
+});
+function cueEdits() { return playlist.cues.map(({ id, label, path, color, hidden, background, keepVideo, mixAudio, sectionId, volume }) => ({ id, label, path, sectionId: sectionId || playlistSections()[0].id, color: color || '', hidden: Boolean(hidden), background: Boolean(background), keepVideo: Boolean(keepVideo), mixAudio: Boolean(mixAudio), volume: Number.isFinite(volume) ? volume : .5 })); }
+async function savePlaylist(cues, sections, { preserveRows = false } = {}) {
   if (updatePending()) { notify(() => t("Smart Stage is preparing an update. Wait before editing the show.")); return false; }
   if (playlistBusy || playlistFileBusy) { notify(() => t("An edit is being saved. Wait before making another edit."), true); return false; }
   playlistBusy = true; renderEditAvailability();
   try {
-    acceptPlaylist(await api('PUT', '/api/playlist', { expectedRevision: playlist.playlistRevision, cues }));
-    renderPlaylist(); notify(() => t("Playlist saved.")); await refreshState(); return true;
+    acceptPlaylist(await api('PUT', '/api/playlist', { expectedRevision: playlist.playlistRevision, cues, ...(sections ? { sections } : {}) }));
+    if (!preserveRows) renderPlaylist();
+    notify(() => t("Playlist saved.")); await refreshState(); return true;
   } catch (error) { notify(() => t("{0} Your edit was not saved. Reload to use the host version.", {0: errorText(error)}), true); return false; }
   finally { playlistBusy = false; renderEditAvailability(); }
 }
@@ -1479,6 +1646,7 @@ function playlistFileMessage(message, error = false) {
   $('playlist-file-message').classList.toggle('error', error);
 }
 function playlistLoaded() {
+  pendingSectionCollapses.clear();
   stageSettingsDirty = false; stageSettingsConflict = ''; stageSettingsBase = ''; stageBackgroundDraft = null;
   localizedText($('stage-settings-message'), () => '');
   $('stage-settings-message').classList.remove('error');
@@ -1604,6 +1772,7 @@ function renderPlaylist() {
   playlistRows.clear();
   for (const [, row] of rows) row.volume.disabled = true;
   $('playlist').replaceChildren();
+  renderPlaylistSections();
   localizedText($('playlist-revision'), () => t(playlist.cues.length === 1 ? '{0} cue · saved revision {1}' : '{0} cues · saved revision {1}', {0: playlist.cues.length, 1: playlist.playlistRevision}));
   if (!playlist.cues.length) $('playlist').append(element('p', () => t("Add audio, videos, or images to build your show."), 'empty'));
   const counts = new Map(); for (const c of playlist.cues) counts.set(c.label, (counts.get(c.label) || 0) + 1);
@@ -1658,16 +1827,27 @@ function renderPlaylist() {
     localizedAttribute(mixAudioLabel, 'title', () => t("Play this audio together with the current music and video soundtrack. Press its button again to pause or resume only this cue."));
     options.append(hiddenLabel, backgroundLabel, keepVideoLabel, mixAudioLabel); info.append(options);
     if (counts.get(cue.label) > 1) info.append(element('p', () => t("Duplicate label — use cue position to distinguish."), 'hint'));
+    const sectionLabel = element('label', () => t('Section'), 'cue-section-select'), sectionSelect = element('select');
+    for (const section of playlistSections()) { const option = element('option', section.title); option.value = section.id; sectionSelect.append(option); }
+    sectionSelect.value = sectionForCue(cue);
+    localizedAttribute(sectionSelect, 'aria-label', () => t('Section for cue {0}', {0: index + 1}));
+    sectionSelect.addEventListener('change', () => {
+      const edited = cueEdits(), [moved] = edited.splice(index, 1); moved.sectionId = sectionSelect.value;
+      edited.push(moved); void savePlaylist(groupCueEdits(edited));
+    });
+    sectionLabel.append(sectionSelect); info.append(sectionLabel);
+    const siblings = playlist.cues.map((item, itemIndex) => ({ item, itemIndex })).filter(({item}) => sectionForCue(item) === sectionForCue(cue));
+    const siblingIndex = siblings.findIndex(({item}) => item.id === cue.id);
     const tools = element('div', undefined, 'cue-tools');
-    const move = delta => { const edited = cueEdits(); [edited[index], edited[index + delta]] = [edited[index + delta], edited[index]]; void savePlaylist(edited); };
-    const up = button(() => t("↑ Up"), () => move(-1)); up.disabled = index === 0; localizedAttribute(up, 'aria-label', () => t("Move cue {0} up", {0: index + 1}));
-    const down = button(() => t("↓ Down"), () => move(1)); down.disabled = index === playlist.cues.length - 1; localizedAttribute(down, 'aria-label', () => t("Move cue {0} down", {0: index + 1}));
+    const move = delta => { const edited = cueEdits(), other = siblings[siblingIndex + delta]?.itemIndex; if (other === undefined) return; [edited[index], edited[other]] = [edited[other], edited[index]]; void savePlaylist(edited); };
+    const up = button(() => t("↑ Up"), () => move(-1)); up.disabled = siblingIndex === 0; localizedAttribute(up, 'aria-label', () => t("Move cue {0} up", {0: index + 1}));
+    const down = button(() => t("↓ Down"), () => move(1)); down.disabled = siblingIndex === siblings.length - 1; localizedAttribute(down, 'aria-label', () => t("Move cue {0} down", {0: index + 1}));
     const remove = button(() => t("Remove"), () => { const edited = cueEdits(); edited.splice(index, 1); void savePlaylist(edited); });
     remove.disabled = state?.activeCueId === cue.id; localizedAttribute(remove, 'aria-label', () => t("Remove cue {0} from playlist", {0: index + 1}));
     const play = button(() => t("Play"), () => trigger(cue.id));
     tools.append(play, up, down, remove);
     row.append(element('span', String(index + 1).padStart(2, '0'), 'position'), info, tools);
-    $('playlist').append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, hidden, background, backgroundLabel, keepVideo, keepVideoLabel, mixAudio, mixAudioLabel, volume, volumeValue, volumeControls, volumeGesture, volumePath: cue.path, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: index === 0, last: index === playlist.cues.length - 1 });
+    playlistSectionRows.get(sectionForCue(cue)).content.append(row); playlistRows.set(cue.id, { validation, remove, input, color, resetColor, hidden, sectionSelect, background, backgroundLabel, keepVideo, keepVideoLabel, mixAudio, mixAudioLabel, volume, volumeValue, volumeControls, volumeGesture, volumePath: cue.path, customColor: Boolean(validCueColor(cue.color)), play, up, down, first: siblingIndex === 0, last: siblingIndex === siblings.length - 1 });
   });
   renderStageSettings(); renderEditAvailability();
 }

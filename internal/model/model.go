@@ -7,10 +7,51 @@ import (
 	"io"
 	"math"
 	"smartstage/internal/playback"
+	"strings"
+	"unicode/utf8"
 )
 
 const SchemaVersion = 1
 const MaxCues = 500
+const MaxSections = 50
+const DefaultSectionID = "main"
+
+type Section struct {
+	ID        string `json:"id"`
+	Title     string `json:"title"`
+	Collapsed bool   `json:"collapsed"`
+}
+
+func DefaultSections() []Section { return []Section{{ID: DefaultSectionID, Title: "Main"}} }
+
+func ValidateSections(sections []Section) error {
+	if len(sections) == 0 || len(sections) > MaxSections {
+		return errors.New("A show must contain between 1 and 50 sections")
+	}
+	ids, titles := map[string]bool{}, map[string]bool{}
+	for _, section := range sections {
+		if len(section.ID) == 0 || len(section.ID) > 128 {
+			return errors.New("Section IDs must contain 1–128 letters, digits, underscores or hyphens")
+		}
+		for _, c := range section.ID {
+			if !(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z' || c >= '0' && c <= '9' || c == '_' || c == '-') {
+				return errors.New("Section IDs must contain 1–128 letters, digits, underscores or hyphens")
+			}
+		}
+		if ids[section.ID] {
+			return errors.New("Section IDs must be unique")
+		}
+		title := strings.ToLower(strings.TrimSpace(section.Title))
+		if title == "" || len(section.Title) > 128 || !utf8.ValidString(section.Title) || strings.ContainsAny(section.Title, "\x00\r\n") {
+			return errors.New("Section titles must contain 1–128 UTF-8 bytes without line breaks")
+		}
+		if titles[title] {
+			return errors.New("Section titles must be unique")
+		}
+		ids[section.ID], titles[title] = true, true
+	}
+	return nil
+}
 
 type Validation struct {
 	Status   string         `json:"status"`
@@ -22,6 +63,7 @@ type Validation struct {
 
 type Cue struct {
 	ID         string     `json:"id"`
+	SectionID  string     `json:"sectionId"`
 	Label      string     `json:"label"`
 	Path       string     `json:"path"`
 	Color      string     `json:"color,omitempty"`
@@ -161,13 +203,17 @@ type Config struct {
 	Outputs          Outputs       `json:"outputs"`
 	Stage            StageSettings `json:"stage"`
 	Cues             []Cue         `json:"cues"`
+	Sections         []Section     `json:"sections"`
 }
 
 func DefaultConfig() Config {
-	return Config{Schema: SchemaVersion, PlaylistRevision: 1, Outputs: Outputs{AudioID: "default"}, Stage: StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1}, Cues: []Cue{}}
+	return Config{Schema: SchemaVersion, PlaylistRevision: 1, Outputs: Outputs{AudioID: "default"}, Stage: StageSettings{AudioFadeSeconds: 1, VisualFadeSeconds: 1}, Cues: []Cue{}, Sections: DefaultSections()}
 }
 
 func (c Config) Clone() Config {
+	if c.Sections != nil {
+		c.Sections = append([]Section{}, c.Sections...)
+	}
 	c.Cues = append([]Cue{}, c.Cues...)
 	for i := range c.Cues {
 		if c.Cues[i].Volume != nil {
@@ -176,4 +222,36 @@ func (c Config) Clone() Config {
 		}
 	}
 	return c
+}
+
+// NormalizeSections migrates pre-section shows without changing explicit
+// section metadata. Empty arrays remain invalid; omitted metadata gains Main.
+func (c *Config) NormalizeSections() {
+	if c.Sections == nil {
+		c.Sections = DefaultSections()
+	}
+	if len(c.Sections) == 0 {
+		return
+	}
+	for i := range c.Cues {
+		if c.Cues[i].SectionID == "" {
+			c.Cues[i].SectionID = c.Sections[0].ID
+		}
+	}
+}
+
+func (c Config) ValidateSectionReferences() error {
+	if err := ValidateSections(c.Sections); err != nil {
+		return err
+	}
+	ids := make(map[string]bool, len(c.Sections))
+	for _, section := range c.Sections {
+		ids[section.ID] = true
+	}
+	for _, cue := range c.Cues {
+		if !ids[cue.SectionID] {
+			return errors.New("Each cue must refer to a section in the playlist")
+		}
+	}
+	return nil
 }

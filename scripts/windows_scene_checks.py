@@ -87,6 +87,8 @@ def scene_checks(audio, display):
                 "foregroundErrorPreservesIndependentMixedLayers",
                 "mixAudioPreservesEligibleBackgroundSoundtrack",
                 "hardStopDuringLayerSeekDisposesAllSourcesAndRejectsLateEvents",
+                "terminalErrorsAcknowledgeLatestSourceTransport",
+                "primaryAudioToLayerWaitsForNativeReadiness",
             }
             assert required <= observations, f"Native audio layer checks were skipped: {sorted(required - observations)}"
         else:

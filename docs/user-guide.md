@@ -314,6 +314,26 @@ acceptance testing.
    stops all sound and closes the stage, cancelling any transition. Stage off
    also hides the visuals immediately. **Disconnect** is in the top bar.
 
+## Playlist sections
+
+Use **Admin → Playlist → New section name → Add section** to organize the show.
+Existing playlists start in **Main**, which you can rename. Each section has a
+name field and Up/Down controls. Use the **Section** selector on a cue to move it
+to another section; its media path, volume and audio options stay with it. Cue
+Up/Down controls change its order within its section.
+
+Click a section heading to collapse or expand it. This choice is saved with the
+show, survives relaunch, and is included in exported `.smartstage.json` files.
+Removing a section moves its cues into the first remaining section and keeps the
+media files. The last section cannot be removed. Moving or collapsing a section
+does not interrupt playback.
+
+When there is more than one section, the remote shows their named tabs below the
+top control ribbon. Tap a tab, or swipe left/right across the cue area to change
+sections. Vertical swipes still scroll. Switching sections does not start or
+stop playback; cues in other sections can continue playing, and **STOP** always
+controls the whole show. Empty sections still have a tab.
+
 ## Audio cue options
 
 Each audio file in **Admin → Playlist** has two saved options, both off by default:

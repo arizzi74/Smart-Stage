@@ -60,6 +60,7 @@ func Open(dir string) (*Store, model.Config, error) {
 		}
 	}
 	if err == nil {
+		config.NormalizeSections()
 		err = validate(config)
 	}
 	if err != nil {
@@ -71,6 +72,11 @@ func Open(dir string) (*Store, model.Config, error) {
 }
 
 func validate(c model.Config) error {
+	c = c.Clone()
+	c.NormalizeSections()
+	if err := c.ValidateSectionReferences(); err != nil {
+		return err
+	}
 	if c.Schema != model.SchemaVersion {
 		return fmt.Errorf("unsupported schema %d", c.Schema)
 	}
@@ -105,6 +111,8 @@ func (s *Store) Save(config model.Config) error {
 	if s.lock == nil {
 		return errors.New("configuration store is closed")
 	}
+	config = config.Clone()
+	config.NormalizeSections()
 	if err := validate(config); err != nil {
 		return err
 	}

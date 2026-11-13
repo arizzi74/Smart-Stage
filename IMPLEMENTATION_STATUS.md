@@ -9,6 +9,13 @@ Release: https://github.com/arizzi74/Smart-Stage/releases/tag/v1.7.2
 
 ## Implemented
 
+- Playlist sections have saved names, order and collapsed state. Admin can create,
+  rename, reorder or remove sections and move cues between them without changing
+  native source identities. Removing a section moves its cues to another section;
+  media stays in place. The remote has named tabs below the transport ribbon,
+  keyboard navigation and horizontal touch swipes with cue-click suppression.
+  Legacy shows migrate to Main; playlist files retain and remap section metadata.
+
 - Audio cues have saved **Do not stop video** and **Mix audio** options. The first
   preserves the exact video decoder/timeline and keeps its soundtrack muted for
   that video's lifetime. Mixing retains existing audio/video sources and sound.

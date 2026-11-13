@@ -28,9 +28,11 @@ const assert = require('node:assert/strict');
   let gatewayDelay = 0, gatewayFailSave = false;
   let update = { currentVersion: 'v0.1.0-preview.8', latestVersion: 'v0.1.0-preview.9', phase: 'available', available: true, canInstall: true, message: 'A new version is available.', releaseURL: 'https://github.com/arizzi74/Smart-Stage/releases/tag/v0.1.0-preview.9', checkedAt: new Date().toISOString() };
   const labels = ['Opening music', 'Welcome video with a deliberately long label that must wrap clearly', "Café's interlude", '<img src=x onerror="window.__xss=true">'];
+  const sectionDefaults = () => [{ id: 'main', title: 'Main', collapsed: false }];
+  let sectionChecks = {};
   const stageDefaults = { backgroundCueId: '', backgroundAudio: false, audioFadeEnabled: false, audioFadeSeconds: 1, visualFadeEnabled: false, visualFadeSeconds: 1, toggleAudio: false };
-  const state = { stage: { ...stageDefaults }, backgroundCueId: '', backgroundOverrideCueId: '', imageCueId: '', instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, transportRevision: 1, paused: false, seekPending: false, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
-  const config = { stage: { ...stageDefaults }, schema: 1, playlistRevision: 1, outputs: state.outputs, cues: state.cues.map(c => ({ id: c.id, label: c.label, path: `/Host/Show/${c.id}.mp4`, cache: { status: 'ready', media: { kind: c.kind, duration: 3 } } })) };
+  const state = { sections: sectionDefaults(), stage: { ...stageDefaults }, backgroundCueId: '', backgroundOverrideCueId: '', imageCueId: '', instanceId: 'browser-fixture', revision: 1, playlistRevision: 1, state: 'stopped', activeCueId: '', activePosition: 0, elapsed: 0, duration: 0, lastError: '', outputs: { audioId: 'default', displayId: 'screen', allowPrimary: true }, resolvedAudioId: '', stageEnabled: false, outputFault: false, generation: 1, transportRevision: 1, paused: false, seekPending: false, stopEpoch: 1, validationJob: { running: false, completed: 4, total: 4 }, cues: labels.map((label, i) => ({ id: `cue-${i}`, sectionId: 'main', label, position: i + 1, kind: i % 2 ? 'video' : 'audio', duration: 3, validation: 'ready' })) };
+  const config = { sections: sectionDefaults(), stage: { ...stageDefaults }, schema: 1, playlistRevision: 1, outputs: state.outputs, cues: state.cues.map(c => ({ id: c.id, sectionId: c.sectionId, label: c.label, path: `/Host/Show/${c.id}.mp4`, cache: { status: 'ready', media: { kind: c.kind, duration: 3 } } })) };
   const broadcast = (snapshot = state) => { for (const c of clients) c.write(`event: state\ndata: ${JSON.stringify(snapshot)}\n\n`); };
   // Delays capture the accepted host state before waiting, so releasing an old
   // HTTP response or SSE snapshot cannot silently substitute a newer state.
@@ -41,14 +43,40 @@ const assert = require('node:assert/strict');
     gate.entered = entered; gate.release = () => { responseGates.delete(gate); release(); };
     responseGates.add(gate); return gate;
   };
-  const exportedPlaylist = () => ({ format: 'smartstage-playlist', version: 1,
-    cues: config.cues.map(({ id, label, path, color, hidden, background, keepVideo, mixAudio, volume }) => ({ id, label, path, keepVideo: Boolean(keepVideo), mixAudio: Boolean(mixAudio), color: color || '', hidden: Boolean(hidden), background: Boolean(background), volume: volume ?? .5 })), stage: { ...config.stage } });
+  const fixtureSections = value => value.sections ?? sectionDefaults();
+  const sectionProblem = (sections, cues) => {
+    if (!Array.isArray(sections) || !sections.length || sections.length > 50) return 'A show must contain between 1 and 50 sections';
+    const ids = new Set(), titles = new Set();
+    for (const section of sections) {
+      if (typeof section.id !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(section.id)) return 'Section IDs must contain 1–128 letters, digits, underscores or hyphens';
+      if (ids.has(section.id)) return 'Section IDs must be unique';
+      if (typeof section.title !== 'string' || !section.title.trim() || Buffer.byteLength(section.title, 'utf8') > 128 || /[\0\r\n]/.test(section.title)) return 'Section titles must contain 1–128 UTF-8 bytes without line breaks';
+      const title = section.title.trim().toLowerCase();
+      if (titles.has(title)) return 'Section titles must be unique';
+      if (section.collapsed !== undefined && typeof section.collapsed !== 'boolean') return 'Invalid section collapse value';
+      ids.add(section.id); titles.add(title);
+    }
+    if (cues.some(cue => !ids.has(cue.sectionId || sections[0].id))) return 'Each cue must refer to a section in the playlist';
+    return '';
+  };
+  const fixtureCueView = (cue, index, preserve = true) => ({
+    ...(preserve ? state.cues.find(item => item.id === cue.id) : {}), id: cue.id, sectionId: cue.sectionId || fixtureSections(config)[0].id,
+    label: cue.label, color: cue.color, hidden: cue.hidden, background: cue.background, keepVideo: cue.keepVideo, mixAudio: cue.mixAudio,
+    volume: cue.volume ?? .5, position: index + 1, kind: cue.cache.media.kind, duration: 3, validation: 'ready'
+  });
+  const exportedPlaylist = () => ({ format: 'smartstage-playlist', version: 1, sections: structuredClone(fixtureSections(config)),
+    cues: config.cues.map(({ id, sectionId, label, path, color, hidden, background, keepVideo, mixAudio, volume }) => ({ id, sectionId: sectionId || fixtureSections(config)[0].id, label, path, keepVideo: Boolean(keepVideo), mixAudio: Boolean(mixAudio), color: color || '', hidden: Boolean(hidden), background: Boolean(background), volume: volume ?? .5 })), stage: { ...config.stage } });
   const importPlaylist = document => {
-    const oldCues = config.cues, ids = new Map(document.cues.map((cue, index) => [cue.id, `loaded-${config.playlistRevision}-${index}`]));
-    config.cues = document.cues.map(cue => ({ ...cue, id: ids.get(cue.id), cache: oldCues.find(old => old.path === cue.path)?.cache || { status: 'ready', media: { kind: 'audio', duration: 3 } } }));
+    const oldCues = config.cues, sections = fixtureSections(document);
+    assert.equal(sectionProblem(sections, document.cues), '', 'Synthetic playlist import validates section metadata and references');
+    const ids = new Map(document.cues.map((cue, index) => [cue.id, `loaded-${config.playlistRevision}-${index}`]));
+    const sectionIDs = new Map(sections.map((section, index) => [section.id, `loaded-section-${config.playlistRevision}-${index}`]));
+    config.sections = sections.map(section => ({ ...section, id: sectionIDs.get(section.id), collapsed: Boolean(section.collapsed) }));
+    state.sections = structuredClone(config.sections);
+    config.cues = document.cues.map(cue => ({ ...cue, id: ids.get(cue.id), sectionId: sectionIDs.get(cue.sectionId || sections[0].id), cache: oldCues.find(old => old.path === cue.path)?.cache || { status: 'ready', media: { kind: 'audio', duration: 3 } } }));
     config.stage = { ...document.stage, backgroundCueId: ids.get(document.stage.backgroundCueId) || '' }; state.stage = { ...config.stage }; state.backgroundOverrideCueId = ''; state.backgroundCueId = config.stage.backgroundCueId;
     config.playlistRevision++; state.playlistRevision = config.playlistRevision;
-    state.cues = config.cues.map((cue, index) => ({ id: cue.id, label: cue.label, color: cue.color, hidden: cue.hidden, background: cue.background, keepVideo: cue.keepVideo, mixAudio: cue.mixAudio, position: index + 1, kind: cue.cache.media.kind, duration: 3, validation: 'ready' }));
+    state.cues = config.cues.map((cue, index) => fixtureCueView(cue, index, false));
     state.revision++; broadcast();
   };
   const createServer = (listenerRole, prefix = '') => http.createServer(async (req, res) => {
@@ -114,9 +142,9 @@ const assert = require('node:assert/strict');
         assert(adminCapabilities.chooseFiles); reply({ choosing: true }, 202);
         const imported = nativeChooserImports; nativeChooserImports = [];
         if (imported.length) setTimeout(() => {
-          for (const item of imported) config.cues.push({ id: `chooser-${config.cues.length}`, label: path.basename(item.path), path: item.path, cache: { status: 'ready', media: { kind: item.kind, duration: 3 } } });
+          for (const item of imported) config.cues.push({ id: `chooser-${config.cues.length}`, sectionId: fixtureSections(config)[0].id, label: path.basename(item.path), path: item.path, cache: { status: 'ready', media: { kind: item.kind, duration: 3 } } });
           config.playlistRevision++; state.playlistRevision = config.playlistRevision;
-          state.cues = config.cues.map((cue, index) => ({ id: cue.id, label: cue.label, color: cue.color, hidden: cue.hidden, background: cue.background, keepVideo: cue.keepVideo, mixAudio: cue.mixAudio, position: index + 1, kind: cue.cache.media.kind, duration: 3, validation: 'ready' }));
+          state.cues = config.cues.map((cue, index) => fixtureCueView(cue, index));
           state.revision++; broadcast();
         }, 50);
         return;
@@ -163,6 +191,8 @@ const assert = require('node:assert/strict');
       if (body.playlist?.format !== 'smartstage-playlist' || body.playlist.version !== 1 || !Array.isArray(body.playlist.cues) || !body.playlist.stage) {
         reply({ error: { message: 'This is not a supported Smart Stage playlist file' } }, 400); return;
       }
+      const sectionsError = sectionProblem(fixtureSections(body.playlist), body.playlist.cues);
+      if (sectionsError) { reply({ error: { message: sectionsError } }, 400); return; }
       importPlaylist(body.playlist); reply(config); return;
     }
     if (url.pathname === '/api/playlist/file') {
@@ -231,16 +261,23 @@ const assert = require('node:assert/strict');
       if (req.method === 'PUT') {
         if (playlistFailSave) { reply({ error: { message: 'The original path is unavailable on the host.' } }, 400); return; }
         assert.equal(req.headers['x-csrf-token'], 'test-csrf'); assert.equal(body.expectedRevision, config.playlistRevision);
-        config.cues = body.cues.map((cue, index) => {
+        const sections = structuredClone(body.sections ?? fixtureSections(config));
+        const cues = body.cues.map((cue, index) => {
           const previous = config.cues.find(item => item.id === cue.id);
-          return { ...cue, id: cue.id || `added-${config.playlistRevision}-${index}`, label: cue.label || path.basename(cue.path), color: cue.color ?? previous?.color ?? '', hidden: cue.hidden ?? previous?.hidden ?? false, background: cue.background ?? previous?.background ?? false, keepVideo: cue.keepVideo ?? previous?.keepVideo ?? false, mixAudio: cue.mixAudio ?? previous?.mixAudio ?? false, cache: previous?.cache || { status: 'ready', media: { kind: 'audio', duration: 3 } } };
+          return { ...cue, sectionId: (cue.sectionId ?? previous?.sectionId) || sections[0]?.id, id: cue.id || `added-${config.playlistRevision}-${index}`, label: cue.label || path.basename(cue.path), color: cue.color ?? previous?.color ?? '', hidden: cue.hidden ?? previous?.hidden ?? false, background: cue.background ?? previous?.background ?? false, keepVideo: cue.keepVideo ?? previous?.keepVideo ?? false, mixAudio: cue.mixAudio ?? previous?.mixAudio ?? false, volume: cue.volume ?? previous?.volume ?? .5, cache: previous?.cache || { status: 'ready', media: { kind: 'audio', duration: 3 } } };
         });
+        const sectionsError = sectionProblem(sections, cues);
+        if (sectionsError) { reply({ error: { message: sectionsError } }, 400); return; }
+        config.sections = sections.map(section => ({ ...section, collapsed: Boolean(section.collapsed) }));
+        state.sections = structuredClone(config.sections);
+        config.cues = cues;
         config.playlistRevision++; state.playlistRevision = config.playlistRevision;
-        state.cues = config.cues.map((cue, index) => ({ id: cue.id, label: cue.label, color: cue.color, hidden: cue.hidden, background: cue.background, keepVideo: cue.keepVideo, mixAudio: cue.mixAudio, position: index + 1, kind: cue.cache.media.kind, duration: 3, validation: 'ready' }));
+        state.cues = config.cues.map((cue, index) => fixtureCueView(cue, index));
         state.revision++; broadcast();
         if (playlistWriteGate) {
           const gate = playlistWriteGate; playlistWriteGate = null;
           const snapshot = structuredClone(config);
+          gate.snapshot = snapshot;
           gate.entered(); await gate.released;
           reply(snapshot); return;
         }
@@ -274,7 +311,9 @@ const assert = require('node:assert/strict');
     }
     if (['/api/stop', '/api/emergency-stop'].includes(url.pathname)) {
       assert.equal(req.headers['x-csrf-token'], 'test-csrf');
-      state.state = 'stopped'; state.paused = false; state.activeCueId = ''; state.stopEpoch++; state.revision++;
+      state.state = 'stopped'; state.paused = false; state.activeCueId = '';
+      for (const cue of state.cues) if (cue.selected) Object.assign(cue, {selected:false, state:'', paused:false, generation:0, transportRevision:0, elapsed:0, seekPending:false});
+      state.stopEpoch++; state.revision++;
       if (url.pathname === '/api/emergency-stop') { state.imageCueId = ''; state.stageEnabled = false; }
       const snapshot = structuredClone(state), gate = stopPostGate; stopPostGate = null;
       if (!gate || gate.broadcast !== false) broadcast(snapshot);
@@ -1036,6 +1075,7 @@ const assert = require('node:assert/strict');
     await admin.getByRole('checkbox', { name: 'Hide remote button for cue 1', exact: true }).uncheck();
     await page.locator('[data-cue-id="cue-0"]').waitFor();
     await require('./browser-audio-layers.cjs')({ admin, page, state, config, broadcast });
+    sectionChecks = await require('./browser-sections.cjs')({ admin, page, state, config, broadcast, commands, requests, responseGate, setPlaylistWriteGate: gate => { playlistWriteGate = gate; }, exportedPlaylist });
     await admin.getByRole('checkbox', { name: 'Use cue 2 as a background button', exact: true }).check();
     await page.waitForFunction(() => document.querySelector('[data-cue-id="cue-1"] .cue-meta').textContent.includes('background video'));
     await admin.locator('#background-cue').selectOption('cue-1');
@@ -1492,6 +1532,7 @@ const assert = require('node:assert/strict');
       assert.equal(await desktop.locator('#remote-connection-settings').evaluate(node => node.open), false, 'native polling preserves collapsed settings');
       assert.equal(await desktop.locator('#files-section').count(), 0);
       const writesBeforeDesktopDrop = requests.filter(r => r.path === '/api/playlist' && r.body.cues).length;
+      const importsBeforeDesktopDrop = requests.filter(r => r.path === '/api/playlist/import').length;
       await desktop.evaluate(() => {
         const files = new DataTransfer(); files.items.add(new File(['example'], 'spoofed native file.wav', { type: 'audio/wav' }));
         const drop = new DragEvent('drop', { dataTransfer: files, bubbles: true, cancelable: true });
@@ -1502,7 +1543,7 @@ const assert = require('node:assert/strict');
       assert.equal(await desktop.evaluate(() => window.__desktopDropPrevented), true);
       assert.match(await desktop.locator('#file-drop-message').textContent(), new RegExp(platform.manager));
       assert.equal(requests.filter(r => r.path === '/api/playlist' && r.body.cues).length, writesBeforeDesktopDrop, 'a spoofed desktop marker cannot turn File objects or forged drag paths into imports');
-      assert.equal(requests.some(r => r.path === '/api/playlist/import'), false);
+      assert.equal(requests.filter(r => r.path === '/api/playlist/import').length, importsBeforeDesktopDrop, 'a spoofed desktop drop cannot import a playlist');
       adminCapabilities = { chooseFiles: true };
       await desktop.evaluate(() => sendAdminPresence(true));
       await desktop.locator('#choose-files').waitFor({ state: 'visible' });
@@ -1605,7 +1646,7 @@ const assert = require('node:assert/strict');
     assert.equal(playlistDownload.suggestedFilename(), 'Playlist.smartstage.json');
     const savedDocument = JSON.parse(fs.readFileSync(await playlistDownload.path(), 'utf8'));
     assert.deepEqual(savedDocument, savedShow);
-    assert.deepEqual(Object.keys(savedDocument).sort(), ['cues', 'format', 'stage', 'version']);
+    assert.deepEqual(Object.keys(savedDocument).sort(), ['cues', 'format', 'sections', 'stage', 'version']);
     assert(savedDocument.cues.every(cue => !('cache' in cue)), 'validation cache is absent from the downloaded playlist');
     const importsBeforeFile = () => requests.filter(r => r.path === '/api/playlist/import').length;
     const beginBrowserPlaylistLoad = async () => {
@@ -1651,7 +1692,12 @@ const assert = require('node:assert/strict');
     await admin.evaluate(() => loadPlaylist());
     chooser = await beginBrowserPlaylistLoad(); await chooser.setFiles(filePayload(savedDocument));
     await admin.waitForFunction(() => document.getElementById('playlist-file-message').textContent.startsWith('Playlist loaded.'));
-    assert.deepEqual(config.cues.map(({id, cache, ...cue}) => cue), savedDocument.cues.map(({id, ...cue}) => cue), 'file roundtrip restores labels, original paths, order, colors, hidden flags and background buttons');
+    const savedSectionIDs = new Map(config.sections.map((section, index) => {
+      assert.notEqual(section.id, savedDocument.sections[index].id, 'loaded sections get fresh identities');
+      return [section.id, savedDocument.sections[index].id];
+    }));
+    assert.deepEqual(config.sections.map(section => ({ ...section, id: savedSectionIDs.get(section.id) })), savedDocument.sections, 'file roundtrip preserves section order, names and collapse metadata');
+    assert.deepEqual(config.cues.map(({id, cache, ...cue}) => ({ ...cue, sectionId: savedSectionIDs.get(cue.sectionId) })), savedDocument.cues.map(({id, ...cue}) => cue), 'file roundtrip restores labels, original paths, order, sections, colors, hidden flags and background buttons');
     const savedBackgroundIndex = savedDocument.cues.findIndex(cue => cue.id === savedDocument.stage.backgroundCueId);
     assert.deepEqual(config.stage, {...savedDocument.stage, backgroundCueId: savedBackgroundIndex >= 0 ? config.cues[savedBackgroundIndex].id : ''}, 'file roundtrip restores stage settings with fresh cue identities');
     assert.equal(await admin.locator('#save-playlist-file').isDisabled(), false, 'a successful replacement clears discarded stage drafts');
@@ -2415,7 +2461,7 @@ const assert = require('node:assert/strict');
     await italianRemoteContext.close();
     await verifyCloudflareBrowser();
     assert.deepEqual(errors, []);
-    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, cloudflareModeOnlySavesPreserveGatewayDraftsAndStoredCredentials:true, cloudflareEnglishItalianCapabilitiesAndTemporaryQR:true, cloudflareWebSocketLiveStatusAndHTTPCommands:true, cloudflareWebSocketBackoffHeartbeatAndSessionRecovery:true, cloudflareWebSocketWireScripted:true, cloudflarePublicTunnelVerified:false, trackVolumeLiveAndPlaylistPersistence: true, trackVolumeHeldMouseTouchKeyboardSaveOnlyOnRelease: true, trackVolumeHoverAfterReleaseAndPointerCaptureCleared: true, trackVolumeStateRefreshPreservesActiveDOMAndFocus: true, trackVolumeUntrackedInputTrailing200msFallback: true, trackVolumeUnchangedValueDeduplicationAndExactRevisions: true, trackVolumeDelayedLatestPendingAndIndependentCueDeadlines: true, trackVolumeReadyTargetsDrainWithoutStateRefresh: true, trackVolumeStructuralRefreshPreservesDeadlineAndCueIdentity: true, trackVolumeSignedLabelsAndNormalizedEndpoints: true, trackVolumeSignedFailureRollbackAndReload: true, masterVolumeDefaultMuteAndGatewayControl: true, masterVolumeTrailing200msAndImmediateRelease: true, masterVolumeSingleFlightLatestPendingWithoutStateGet: true, masterVolumeSameValueDeduplicationAndCompetingControllerIntent: true, masterVolumeDelayedStateSSEAndAcknowledgementProtection: true, masterVolumeStopEpochAndInstanceCancellation: true, masterVolumeGlobalEscapeCancellationAndStopConfirmation: true, volumeControlsEnglishItalianAndResponsive: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, audioFlagsPersistAndOnlyAudioCues: true, audioLayersIndependentRemotePauseResume: true, audioFlagsEnglishItalian: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayFallbackAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
+    fs.writeFileSync(path.join(output, 'result.json'), JSON.stringify({ passed: true, ...sectionChecks, cloudflareModeOnlySavesPreserveGatewayDraftsAndStoredCredentials:true, cloudflareEnglishItalianCapabilitiesAndTemporaryQR:true, cloudflareWebSocketLiveStatusAndHTTPCommands:true, cloudflareWebSocketBackoffHeartbeatAndSessionRecovery:true, cloudflareWebSocketWireScripted:true, cloudflarePublicTunnelVerified:false, trackVolumeLiveAndPlaylistPersistence: true, trackVolumeHeldMouseTouchKeyboardSaveOnlyOnRelease: true, trackVolumeHoverAfterReleaseAndPointerCaptureCleared: true, trackVolumeStateRefreshPreservesActiveDOMAndFocus: true, trackVolumeUntrackedInputTrailing200msFallback: true, trackVolumeUnchangedValueDeduplicationAndExactRevisions: true, trackVolumeDelayedLatestPendingAndIndependentCueDeadlines: true, trackVolumeReadyTargetsDrainWithoutStateRefresh: true, trackVolumeStructuralRefreshPreservesDeadlineAndCueIdentity: true, trackVolumeSignedLabelsAndNormalizedEndpoints: true, trackVolumeSignedFailureRollbackAndReload: true, masterVolumeDefaultMuteAndGatewayControl: true, masterVolumeTrailing200msAndImmediateRelease: true, masterVolumeSingleFlightLatestPendingWithoutStateGet: true, masterVolumeSameValueDeduplicationAndCompetingControllerIntent: true, masterVolumeDelayedStateSSEAndAcknowledgementProtection: true, masterVolumeStopEpochAndInstanceCancellation: true, masterVolumeGlobalEscapeCancellationAndStopConfirmation: true, volumeControlsEnglishItalianAndResponsive: true, validationRefreshDrainsFinalStateAndPreservesDrafts: true, audioFlagsPersistAndOnlyAudioCues: true, audioLayersIndependentRemotePauseResume: true, audioFlagsEnglishItalian: true, visualCueToggleControls: true, audioAndVisualFadeSettings: true, playlistFilesBrowserRoundtrip: true, playlistFilesNativeCapabilityAndStatus: true, playlistFilesCancelInvalidAndRevisionProtection: true, playlistFilesDraftAndPlaybackGuards: true, playlistFilesEnglishItalian: true, playlistFilesNativeDialogExecutionVerified: false, adminHostSystemLanguage: true, englishItalianInPlacePreference: true, localizationPreservesUnsavedDraftsAndFocus: true, localizationNeverTranslatesMediaData: true, localeSelectionSendsNoPlaybackOrShowEdits: true, adminPreferencePersistedByHost: true, remoteLocaleIndependentAndLocalOnly: true, translatedWakeLockStatus: true, localizedBindingsBoundedAcrossStateUpdates: true, browser: await browser.version(), viewportWidths: [320, 390, 768, 844, 1280], remoteCuesDirectlyBelowHeader: true, remoteErrorsRemainVisible: true, adminQuitClosedState: true, adminAuthenticatedPresence: true, existingAdminTabReloadsOnceAfterRelaunch: true, nativeFilePickerCapabilityAndRequest: true, nativeFilePickerExecutionVerified: false, desktopFinderDropGuidance: true, desktopExplorerDropGuidance: true, windowsDesktopChooserAndImportFeedback: true, desktopCapabilitiesGateNativePicker: true, windowsBrowserChooserAndPathFallback: true, desktopSettingsCollapseAndQRPreserved: true, desktopMarkerGrantsNoFileAccess: true, desktopPlaylistAdditionFeedback: true, nativeWindowExecutionVerified: false, hostFilesPanelAndBackgroundBrowsingRemoved: true, nativeChooserImportUpdatesPlaylist: true, fallbackOriginalPathImportAndRetry: true, connectionSettingsCollapsedByDefault: true, connectionSettingsDisclosurePreservedDuringPolling: true, connectionQRAvailableWhileCollapsed: true, savedLANFirewallGuidanceVisibleWhileCollapsed: true, externalFileDropGuidance: true, remoteStageOutputControl: true, stageIndependentOfMusic: true, imageCueRetainsSelectedMusic: true, backgroundButtonsAndSelection: true, hiddenRemoteButtonsEditableInAdmin: true, stageSettingsSaveReloadAndRevisionConflict: true, stageDraftSurvivesOwnHiddenCueEditAndLanguage: true, stageDraftIgnoresOlderGetAndDrainsNewerSSE: true, stageRevisionConflictRebasesOnlyUnchangedSettings: true, stageConflictRecoveryPreservesDraftOnReadFailure: true, backgroundOverrideToggleRestoresDefaultOrBlack: true, backgroundDefaultDoesNotSelectOverrideButton: true, audioVideoRepeatPauseResume: true, seekMouseTouchKeyboardAndHUD: true, seekStaleGestureAndStopPriority: true, seekFailureAndPublicGatewayPath: true, seekEnglishItalianResponsiveLayout: true, emergencyEscapeCommand: true, nativeBackgroundAndFadeExecutionVerified: false, compactHeaderDisconnect: true, cueColorSaveResetAndStateUpdates: true, cueColorContrastUnderCSP: true, adminAutomaticSession: true, remoteFragmentPairing: true, cookieResume: true, manualReconnect: true, remoteLinkRefresh: true, publicEndpointRelativeAssetsAndAPIs: true, publicFragmentPairingAndScopedCookieResume: true, publicRemoteAdminIsolation: true, gatewayFallbackAndLANRestartAcknowledgement: true, gatewaySettingsSecretClearingAndDraftPreservation: true, gatewayURLOnlySaveWithStoredToken: true, gatewayTokenReplacement: true, gatewayFirstSetupRequiresToken: true, gatewayPollingReconnectAndQRRefresh: true, gatewayNativeConnectionVerified: false, clipboardHTTPFallback: true, updatesAdminOnly: true, updateCheckRetry: true, automaticUpdateStartupReservation: true, automaticUpdateBannerLifecycle: true, automaticUpdateBannerEnglishItalian: true, automaticUpdateBannerStickyAndStopAccessible: true, automaticUpdateBannerErrorAndNoUpdateClearing: true, updateStageAndPlaybackGuard: true, updateMutationGuard: true, updateRestartSessionAndQRRefresh: true, updateExecutionVerified: false, physicalPlaybackVerified: false, qrContentVerified: false }, null, 2));
     console.log('Browser checks passed: compact remote cues/errors, authenticated Admin presence/Quit/relaunch reload, Choose Media capability/import feedback, collapsed connection settings and visible QR, cue colors, stage controls, and update/authentication regressions.');
     await context.close();
   } catch (error) {

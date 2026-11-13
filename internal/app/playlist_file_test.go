@@ -58,7 +58,7 @@ func TestPlaylistFileRoundTripKeepsShowAndLocalOutputs(t *testing.T) {
 	file.Stage = model.StageSettings{BackgroundCueID: file.Cues[4].ID, BackgroundAudio: true, AudioFadeEnabled: false, VisualFadeEnabled: true, AudioFadeSeconds: 2.5, VisualFadeSeconds: 7.25, ToggleAudio: true}
 	// Order is part of the file, even when the same source appears repeatedly.
 	file.Cues[0], file.Cues[1] = file.Cues[1], file.Cues[0]
-	file.Cues = append(file.Cues, PlaylistFileCue{ID: "repeat-music", Label: "Music again", Path: file.Cues[1].Path})
+	file.Cues = append(file.Cues, PlaylistFileCue{ID: "repeat-music", SectionID: file.Sections[0].ID, Label: "Music again", Path: file.Cues[1].Path})
 	data, err := json.Marshal(file)
 	if err != nil {
 		t.Fatal(err)

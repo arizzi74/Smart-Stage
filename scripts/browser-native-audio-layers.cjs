@@ -25,8 +25,8 @@ module.exports = async function nativeAudioLayers({admin, command, adminBase, sn
     return response.json();
   };
   const original = await readPlaylist();
-  const editCues = cues => cues.map(({id, label, path, color, hidden, background, keepVideo, mixAudio, volume}) =>
-    ({id, label, path, color: color || '', hidden: Boolean(hidden), background: Boolean(background),
+  const editCues = cues => cues.map(({id, label, path, sectionId, color, hidden, background, keepVideo, mixAudio, volume}) =>
+    ({id, label, path, sectionId, color: color || '', hidden: Boolean(hidden), background: Boolean(background),
       keepVideo: Boolean(keepVideo), mixAudio: Boolean(mixAudio), ...(volume === undefined ? {} : {volume})}));
   const replaceCues = async cues => {
     const saved = await admin.evaluate(async cues => {
@@ -194,6 +194,7 @@ module.exports = async function nativeAudioLayers({admin, command, adminBase, sn
       await stopAll();
       restored = await replaceCues(editCues(original.cues));
       assert.deepEqual(restored.stage, original.stage, 'Layer checks must preserve saved stage settings');
+      assert.deepEqual(restored.sections, original.sections, 'Layer checks must preserve saved playlist sections');
       assert.deepEqual(editCues(restored.cues), editCues(original.cues), 'Layer checks must restore every original cue setting');
       await until(async () => {
         const current = await snapshot();

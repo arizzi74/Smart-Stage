@@ -113,6 +113,10 @@ def scene_checks(devices):
             "pausedReplacementCannotRestoreVideoOrBackgroundSound",
             "mixAdditionPreservesExistingAudioFadeEnvelopes",
             "stageChangesPreserveAllAudioLayersAndKeptVideo",
+            "failedAudioLayerReacknowledgesLatestTransportWithoutRestart",
+            "failedForegroundReacknowledgesLatestTransportWithoutRestart",
+            "newForegroundIdentityCanRetryPreviouslyFailedPath",
+            "zeroFadeReplacementWaitsForNativeAudioPreparation",
         }
         assert layer_required <= layer_observations, f"Native audio layer checks were skipped: {sorted(layer_required - layer_observations)}"
         reports[0]["audioLayers"] = layer_reports[0]

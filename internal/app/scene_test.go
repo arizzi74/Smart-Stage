@@ -19,9 +19,10 @@ import (
 // completions; they do not establish image rendering, mixing, or audible fades.
 type sceneNative struct {
 	fakeNative
-	sceneMu sync.Mutex
-	scenes  []playback.Scene
-	gate    *sceneInspectGate
+	sceneMu         sync.Mutex
+	scenes          []playback.Scene
+	inspectionCount int
+	gate            *sceneInspectGate
 }
 
 type sceneInspectGate struct {
@@ -40,6 +41,7 @@ func (f *sceneNative) ApplyScene(scene playback.Scene) error {
 
 func (f *sceneNative) Inspect(_ context.Context, path string) (playback.Media, error) {
 	f.sceneMu.Lock()
+	f.inspectionCount++
 	gate := f.gate
 	f.sceneMu.Unlock()
 	if gate != nil && gate.path == path {

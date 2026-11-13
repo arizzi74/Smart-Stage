@@ -80,7 +80,7 @@ int main(void) {
         probeLayers = [NSMutableArray array];
         probeForeground = voice(10, probeVideo, 1);
         __block NSUInteger phase = 0;
-        __block BOOL passed = NO, replacementOverlap = NO, stopFade = NO, stopSeekPending = NO, mixedDuringFade = NO;
+        __block BOOL passed = NO, replacementOverlap = NO, stopFade = NO, stopSeekPending = NO, mixedDuringFade = NO, zeroFadePreparationHeld = NO;
         __block double preservedFadeStart = 0, preservedFadeDuration = 0;
         __block uint64_t hardStopRevision = 0;
         __block double began = NSProcessInfo.processInfo.systemUptime, phaseBegan = began;
@@ -90,6 +90,7 @@ int main(void) {
         __block AVPlayerItem *videoItem;
         NSMutableArray *observations = [NSMutableArray array];
         NSMutableSet<NSString *> *transportEvents = [NSMutableSet set];
+        NSMutableDictionary<NSString *, NSString *> *failureMessages = [NSMutableDictionary dictionary];
         dispatch_source_t timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
         dispatch_source_set_timer(timer, dispatch_time(DISPATCH_TIME_NOW, 20 * NSEC_PER_MSEC), 20 * NSEC_PER_MSEC, NSEC_PER_MSEC);
         dispatch_source_set_event_handler(timer, ^{
@@ -109,7 +110,8 @@ int main(void) {
                     uint64_t identifier = [event[@"generation"] unsignedLongLongValue];
                     NSString *kind = event[@"kind"];
                     [transportEvents addObject:[NSString stringWithFormat:@"%@:%@:%@", event[@"generation"], event[@"transportRevision"] ?: @0, kind]];
-                    if (([kind isEqual:@"error"] && identifier != 53) || [kind isEqual:@"background-error"] || [kind isEqual:@"device-lost"] ||
+                    if ([kind isEqual:@"error"]) failureMessages[[NSString stringWithFormat:@"%@:%@", event[@"generation"], event[@"transportRevision"]]] = event[@"message"] ?: @"";
+                    if (([kind isEqual:@"error"] && identifier != 53 && identifier != 54) || [kind isEqual:@"background-error"] || [kind isEqual:@"device-lost"] ||
                         (hardStopRevision && [event[@"sceneRevision"] unsignedLongLongValue] >= hardStopRevision && ([kind isEqual:@"playing"] || [kind isEqual:@"paused"] || [kind isEqual:@"progress"] || [kind isEqual:@"ended"]))) {
                         fprintf(stderr, "Unexpected layer event: %s\n", event.description.UTF8String); ss_quit(); return;
                     }
@@ -237,13 +239,52 @@ int main(void) {
                         fprintf(stderr, "Pausing original audio silenced its independent mixed layers\n"); ss_quit(); return;
                     }
                     [observations addObject:@{@"mixAudioRetainsOriginalAudioAndIndependentPauseControls": @YES}];
-                    [probeLayers addObject:voice(53, [probeFirst stringByAppendingString:@".missing"], 74)]; apply(NO);
+                    [probeLayers addObject:voice(53, [probeFirst stringByAppendingString:@".missing.wav"], 74)]; apply(NO);
                     phase = 12; phaseBegan = now;
                 } else if (phase == 12 && [transportEvents containsObject:@"53:74:error"]) {
                     if (layer(53) || layer(51) != first || layer(52) != second || !playing(first) || !playing(second) || !quietBackground()) {
                         fprintf(stderr, "Layer error stopped or unmuted an unrelated source\n"); ss_quit(); return;
                     }
                     [observations addObject:@{@"audioLayerErrorReportsOwnIdentityAndPreservesOtherSources": @YES}];
+                    // Repair the real file after the native error, before a newer
+                    // transport arrives. Reopening the failed identity would now
+                    // succeed, so this proves terminal caching rather than a
+                    // second decoder failure that happens to produce the error.
+                    if (![NSFileManager.defaultManager copyItemAtPath:probeFirst toPath:probeLayers[2][@"path"] error:NULL]) {
+                        fprintf(stderr, "Could not repair failed layer fixture\n"); ss_quit(); return;
+                    }
+                    probeLayers[2][@"paused"] = @YES; probeLayers[2][@"transport"] = @75; apply(NO);
+                    phase = 19; phaseBegan = now;
+                } else if (phase == 19 && [transportEvents containsObject:@"53:75:error"]) {
+                    if (layer(53) || layer(51) != first || layer(52) != second || !playing(first) || !playing(second) ||
+                        ![failureMessages[@"53:74"] isEqual:failureMessages[@"53:75"]]) {
+                        fprintf(stderr, "Failed layer restarted or lost its terminal error after a new transport\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"failedAudioLayerReacknowledgesLatestTransportWithoutRestart": @YES}];
+                    [probeLayers removeObjectAtIndex:2];
+                    probeForeground = voice(54, [probeSecond stringByAppendingString:@".missing.wav"], 76); apply(NO);
+                    phase = 20; phaseBegan = now;
+                } else if (phase == 20 && [transportEvents containsObject:@"54:76:error"]) {
+                    if (sceneForeground || !playing(first) || !playing(second) ||
+                        ![NSFileManager.defaultManager copyItemAtPath:probeSecond toPath:probeForeground[@"path"] error:NULL]) {
+                        fprintf(stderr, "Foreground failure disrupted a mixed source or fixture repair failed\n"); ss_quit(); return;
+                    }
+                    probeForeground[@"paused"] = @YES; probeForeground[@"transport"] = @77;
+                    probeForeground[@"seek"] = @1; probeForeground[@"position"] = @0.5; apply(NO);
+                    phase = 21; phaseBegan = now;
+                } else if (phase == 21 && [transportEvents containsObject:@"54:77:error"]) {
+                    if (sceneForeground || sceneFailedForegroundID != 54 || layer(51) != first || layer(52) != second ||
+                        !playing(first) || !playing(second) || ![failureMessages[@"54:76"] isEqual:failureMessages[@"54:77"]]) {
+                        fprintf(stderr, "Failed foreground restarted or lost the latest transport error\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"failedForegroundReacknowledgesLatestTransportWithoutRestart": @YES}];
+                    probeForeground = voice(55, probeForeground[@"path"], 78); apply(NO);
+                    phase = 25; phaseBegan = now;
+                } else if (phase == 25 && playing(sceneForeground) && sceneForeground.identifier == 55 && !sceneFadeTimer) {
+                    if (sceneFailedForegroundID || !playing(first) || !playing(second) || ![transportEvents containsObject:@"55:78:playing"]) {
+                        fprintf(stderr, "A new foreground identity could not retry the repaired file\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"newForegroundIdentityCanRetryPreviouslyFailedPath": @YES}];
                     probeForeground = nil; [probeLayers removeAllObjects]; probeBackgroundSound = YES;
                     [probeLayers addObject:voice(70, probeFirst, 81)]; [probeLayers addObject:voice(71, probeSecond, 82)]; apply(NO);
                     phase = 13; phaseBegan = now;
@@ -273,6 +314,30 @@ int main(void) {
                         fprintf(stderr, "Hard STOP left a native audio layer or late seek alive\n"); ss_quit(); return;
                     }
                     [observations addObject:@{@"hardStopDuringLayerSeekDisposesAllSourcesAndRejectsLateEvents": @YES}];
+                    hardStopRevision = 0; probeBackgroundSound = NO; probeFade = 0;
+                    probeForeground = voice(90, probeFirst, 90); apply(NO);
+                    phase = 22; phaseBegan = now;
+                } else if (phase == 22 && playing(sceneForeground)) {
+                    retiring = sceneForeground;
+                    probeForeground = nil; [probeLayers addObject:voice(91, probeSecond, 91)]; apply(NO);
+                    onMain(^{
+                        zeroFadePreparationHeld = layer(91) && !layer(91).started && sceneRetiring == retiring &&
+                            !retiring.disposed && retiring.player.currentItem && retiring.player.rate > 0 &&
+                            !retiring.player.muted && retiring.player.volume > .99;
+                    });
+                    phase = 23; phaseBegan = now;
+                } else if (phase == 23 && playing(layer(91)) && !sceneRetiring) {
+                    if (!zeroFadePreparationHeld || !retiring.disposed || retiring.player || sceneFadeTimer) {
+                        fprintf(stderr, "Zero-fade KeepVideo replacement cut its outgoing primary before layer readiness\n"); ss_quit(); return;
+                    }
+                    [observations addObject:@{@"zeroFadeReplacementWaitsForNativeAudioPreparation": @YES}];
+                    [probeLayers removeAllObjects]; apply(YES); hardStopRevision = probeRevision;
+                    phase = 24; phaseBegan = now;
+                } else if (phase == 24 && now - phaseBegan > .15) {
+                    if (scenePlayers().count || sceneForeground || sceneBackground || sceneRetiring || sceneAudioLayers.count ||
+                        sceneRetiringAudioLayers.count || sceneFadeTimer || sceneVisualTimer || stageEnabled || stageWindow.isVisible) {
+                        fprintf(stderr, "Final layer probe STOP did not dispose all native sources\n"); ss_quit(); return;
+                    }
                     passed = YES; dispatch_source_cancel(timer);
                     NSData *report = [NSJSONSerialization dataWithJSONObject:@{@"status": @"passed", @"observations": observations,
                         @"method": @"Production Cocoa bridge; actual AVPlayer identity, native clocks, gain, state and event observations. No physical audio measurement."} options:0 error:NULL];

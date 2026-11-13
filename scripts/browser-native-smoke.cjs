@@ -818,6 +818,8 @@ function dedicatedWindowsAdmin(platform, release) {
 
     saved = await require('./browser-native-audio-layers.cjs')({admin, command, adminBase, snapshot, until, sleep,
       apiPath, record, audio, display, mediaRoot, musicCue, videoCue: backgroundCue}) || saved;
+    saved = await require('./browser-native-sections.cjs')({admin, command, adminBase, snapshot, until,
+      apiPath, record, audio, musicCue}) || saved;
 
     await command.evaluate(() => scrollTo(0, document.body.scrollHeight));
     const bounds = await command.locator('#stop').boundingBox();

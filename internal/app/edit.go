@@ -13,6 +13,7 @@ import (
 
 type CueEdit struct {
 	ID         string   `json:"id"`
+	SectionID  *string  `json:"sectionId,omitempty"`
 	Label      string   `json:"label"`
 	Path       string   `json:"path"`
 	Color      *string  `json:"color,omitempty"`
@@ -23,8 +24,9 @@ type CueEdit struct {
 	Volume     *float64 `json:"volume,omitempty"`
 }
 type PlaylistEdit struct {
-	ExpectedRevision uint64    `json:"expectedRevision"`
-	Cues             []CueEdit `json:"cues"`
+	ExpectedRevision uint64           `json:"expectedRevision"`
+	Cues             []CueEdit        `json:"cues"`
+	Sections         *[]model.Section `json:"sections,omitempty"`
 }
 
 func (s *Service) EditPlaylist(edit PlaylistEdit) (model.Config, error) {
@@ -61,6 +63,17 @@ func (s *Service) editPlaylistTransactionLocked(edit PlaylistEdit, validate bool
 	seen := map[string]bool{}
 	next := base.Clone()
 	next.Cues = []model.Cue{}
+	if edit.Sections != nil {
+		next.Sections = append([]model.Section{}, (*edit.Sections)...)
+	}
+	if err := model.ValidateSections(next.Sections); err != nil {
+		return model.Config{}, problem("invalid_sections", err.Error())
+	}
+	sectionIDs := make(map[string]bool, len(next.Sections))
+	for _, section := range next.Sections {
+		sectionIDs[section.ID] = true
+	}
+	needsValidation := false
 	for _, item := range edit.Cues {
 		id := item.ID
 		if id == "" {
@@ -75,7 +88,18 @@ func (s *Service) editPlaylistTransactionLocked(edit PlaylistEdit, validate bool
 		path := item.Path
 		previous, exists := old[id]
 		cache := previous.Cache
+		sectionID := previous.SectionID
+		if item.SectionID != nil {
+			sectionID = *item.SectionID
+		}
+		if sectionID == "" {
+			sectionID = next.Sections[0].ID
+		}
+		if !sectionIDs[sectionID] {
+			return model.Config{}, problem("invalid_section", "Each cue must refer to a section in the playlist")
+		}
 		if !exists || path != previous.Path {
+			needsValidation = true
 			resolved, _, err := s.files.File(path)
 			if err != nil {
 				return model.Config{}, problem("invalid_path", err.Error())
@@ -117,12 +141,15 @@ func (s *Service) editPlaylistTransactionLocked(edit PlaylistEdit, validate bool
 			hidden = *item.Hidden
 		}
 		if item.Background != nil {
+			if *item.Background != background {
+				needsValidation = true
+			}
 			background = *item.Background
 		}
 		if background && cache.Status == "ready" && cache.Media.Kind != "image" && cache.Media.Kind != "video" {
 			return model.Config{}, problem("invalid_background", "Only image and video cues can act as background buttons")
 		}
-		next.Cues = append(next.Cues, model.Cue{ID: id, Label: label, Path: path, Color: color, Hidden: hidden, Background: background, KeepVideo: keepVideo, MixAudio: mixAudio, Volume: volume, Cache: cache})
+		next.Cues = append(next.Cues, model.Cue{ID: id, SectionID: sectionID, Label: label, Path: path, Color: color, Hidden: hidden, Background: background, KeepVideo: keepVideo, MixAudio: mixAudio, Volume: volume, Cache: cache})
 	}
 	removing := map[string]bool{}
 	for id, c := range old {
@@ -157,9 +184,11 @@ func (s *Service) editPlaylistTransactionLocked(edit PlaylistEdit, validate bool
 		next.Stage.BackgroundCueID = ""
 	}
 	next.PlaylistRevision++
+	s.configBusy = true
 	s.mu.Unlock()
 	err := s.store.Save(next)
 	s.mu.Lock()
+	s.configBusy = false
 	s.removing = map[string]bool{}
 	if err != nil {
 		s.mu.Unlock()
@@ -199,7 +228,7 @@ func (s *Service) editPlaylistTransactionLocked(edit PlaylistEdit, validate bool
 	s.changedLocked()
 	result := s.config.Clone()
 	s.mu.Unlock()
-	if validate {
+	if validate && needsValidation {
 		s.queueValidation()
 	}
 	return result, nil

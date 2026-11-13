@@ -1103,7 +1103,8 @@ static void beginPlayback(uint64_t gen, NSString *path, NSString *audio, NSStrin
 // Scene revisions order commands; foreground identity survives stage changes.
 static _Atomic(uint64_t) requestedSceneRevision;
 static _Atomic(bool) sceneEmergencyPending;
-static uint64_t appliedSceneRevision, sceneGeneration, sceneEndedForegroundID, sceneTransportRevision;
+static uint64_t appliedSceneRevision, sceneGeneration, sceneEndedForegroundID, sceneFailedForegroundID, sceneTransportRevision;
+static NSString *sceneForegroundFailure;
 static BOOL sceneBackgroundAudio, sceneForegroundMuted, sceneStoppedPending, sceneApplying;
 static double sceneAudioFadeSeconds, sceneVisualFadeSeconds, sceneFadeStarted, sceneFadeDuration;
 static float sceneMasterVolume = 1;
@@ -1252,15 +1253,17 @@ static BOOL audibleScenePlayer(SSScenePlayer *player) {
 }
 static void retireScenePlayer(SSScenePlayer *player) {
     if (!player) return;
-    if (audibleScenePlayer(player) && sceneAudioFadeSeconds > 0) {
-        // A burst of PLAY commands cannot accumulate decoder/audio tails.
+    if (audibleScenePlayer(player)) {
+        // Keep audible output until the replacement is prepared, including
+        // when fading is disabled. The mixer releases zero-fade tails at once
+        // after readiness (or STOP). Bursts still keep only one primary tail.
         SSScenePlayer *old = sceneRetiring; sceneRetiring = player;
         if (old != player) releaseSceneOwner(old);
     } else releaseSceneOwner(player);
 }
 static void retireSceneAudioLayer(SSScenePlayer *player) {
     if (!player) return;
-    if (audibleScenePlayer(player) && sceneAudioFadeSeconds > 0) {
+    if (audibleScenePlayer(player)) {
         if (!sceneRetiringAudioLayers) sceneRetiringAudioLayers = [NSMutableArray array];
         // At most one complete previous layer set may fade out. Repeated rapid
         // commands cannot retain an unbounded number of AVPlayer decoders.
@@ -1418,11 +1421,14 @@ static void scenePlayerFailed(SSScenePlayer *player, NSString *message) {
         emitScene(sceneGeneration, @"background-error", message, 0, 0);
         renderScene(); mixScene();
     } else if (player == sceneForeground) {
-        uint64_t identifier = player.identifier;
+        sceneFailedForegroundID = player.identifier;
+        sceneForegroundFailure = [message copy] ?: @"Native playback failed";
         [player teardown]; sceneForeground = nil;
-        // Invalid foreground media must not leave an older cue playing.
+        // Keep the terminal identity until the coordinator removes it. A pause
+        // already in flight must receive this error under its latest transport,
+        // without preparing the failed source a second time.
         retireScenePlayer(sceneRetiring);
-        emitScene(identifier, @"error", message, 0, 0);
+        emitScenePlayer(player, @"error", sceneForegroundFailure, 0, 0);
         renderScene(); mixScene();
     } else if ([sceneAudioLayers containsObject:player]) {
         if (!sceneCompletedAudioLayers) sceneCompletedAudioLayers = [NSMutableDictionary dictionary];
@@ -1743,6 +1749,7 @@ static void stopScene(void) {
     for (SSScenePlayer *player in sceneAudioLayers) [player teardown];
     for (SSScenePlayer *player in sceneRetiringAudioLayers) [player teardown];
     sceneAudioLayers = nil; sceneRetiringAudioLayers = nil; sceneCompletedAudioLayers = nil;
+    sceneFailedForegroundID = 0; sceneForegroundFailure = nil;
     [sceneImage teardown]; sceneImage = nil;
     [sceneBackgroundImage teardown]; sceneBackgroundImage = nil;
     [sceneImageQueue cancelAllOperations];
@@ -1806,12 +1813,13 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
     // Synchronous ready callbacks must see the complete new scene, not an old
     // image paired with its replacement foreground/background.
     sceneApplying = YES;
+    if (foregroundID != sceneFailedForegroundID) { sceneFailedForegroundID = 0; sceneForegroundFailure = nil; }
     BOOL sameForeground = sceneForeground && foregroundID == sceneForeground.identifier &&
         [foregroundPath isEqual:sceneForeground.path] && (!foregroundAudio || [audio isEqual:sceneForeground.audioID]);
     if (!sameForeground) {
         SSScenePlayer *old = sceneForeground; sceneForeground = nil;
         retireScenePlayer(old);
-        if (foregroundID && foregroundPath.length && foregroundID != sceneEndedForegroundID) {
+        if (foregroundID && foregroundPath.length && foregroundID != sceneEndedForegroundID && foregroundID != sceneFailedForegroundID) {
             sceneForeground = newScenePlayer(foregroundID, foregroundPath, foregroundKind, audio, foregroundAudio, NO, foregroundVolume);
             [sceneForeground prepare];
         }
@@ -1894,7 +1902,9 @@ static void applyScene(uint64_t revision, uint64_t generation, uint64_t foregrou
     for (SSScenePlayer *layer in [sceneAudioLayers copy]) [layer ready];
     mixScene();
     emitScene(generation, @"stage", nil, 0, 0);
-    if (foregroundID && foregroundID == sceneEndedForegroundID) emitScene(foregroundID, @"ended", nil, 0, 0);
+    if (foregroundID && foregroundID == sceneFailedForegroundID)
+        emitSceneTransport(foregroundID, transportRevision, @"error", sceneForegroundFailure, 0, 0);
+    else if (foregroundID && foregroundID == sceneEndedForegroundID) emitScene(foregroundID, @"ended", nil, 0, 0);
     for (NSDictionary *entry in audioLayers) {
         NSDictionary *completion = sceneCompletedAudioLayers[entry[@"id"]];
         if (completion) emitSceneTransport([entry[@"id"] unsignedLongLongValue], [entry[@"transport"] unsignedLongLongValue],

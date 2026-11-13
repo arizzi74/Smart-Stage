@@ -1,7 +1,9 @@
-Smart Stage 1.8.0 adds two saved options for audio cues.
+Smart Stage 1.8.0 adds playlist sections and independent audio mixing.
 
 - **Do not stop video** keeps the current video playing while the audio cue replaces its soundtrack. The video stays silent after the audio finishes or is paused, until that video ends or is restarted.
 - **Mix audio** plays the cue alongside existing music and video audio. It keeps the video running even when Do not stop video is unchecked. Several audio cues can play together.
+- **Playlist sections** organize cues into named, collapsible groups in Admin. Move cues between sections with their Section selector. Names, order and collapsed state are saved with the show and exported playlist files.
+- The remote displays section tabs below its top controls. Tap a tab or swipe left/right across the cue area; navigation keeps playback running.
 - Each selected audio/video button pauses or resumes its own source. STOP clears every playing cue and returns to the selected background. Per-track volume, master volume and audio fades apply to the mix.
 - Both options appear only on audio cues in Admin, in English or Italian, and are included in saved `.smartstage.json` playlists. Existing playlists keep their previous playback behavior by default.
 

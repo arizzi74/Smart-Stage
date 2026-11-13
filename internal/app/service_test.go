@@ -186,10 +186,10 @@ func TestPlaylistRevisionActiveProtectionAndSaveFailure(t *testing.T) {
 	}
 	eventually(t, func() bool { return f.count() == 1 })
 	base := s.Playlist()
-	if _, err := s.EditPlaylist(PlaylistEdit{base.PlaylistRevision, []CueEdit{{ID: "b", Label: "B", Path: base.Cues[1].Path}}}); err == nil {
+	if _, err := s.EditPlaylist(PlaylistEdit{ExpectedRevision: base.PlaylistRevision, Cues: []CueEdit{{ID: "b", Label: "B", Path: base.Cues[1].Path}}}); err == nil {
 		t.Fatal("active cue removed")
 	}
-	edit := PlaylistEdit{base.PlaylistRevision, []CueEdit{{ID: "b", Label: "<script>alert(1)</script>", Path: base.Cues[1].Path}, {ID: "a", Label: "Renamed active", Path: base.Cues[0].Path}}}
+	edit := PlaylistEdit{ExpectedRevision: base.PlaylistRevision, Cues: []CueEdit{{ID: "b", Label: "<script>alert(1)</script>", Path: base.Cues[1].Path}, {ID: "a", Label: "Renamed active", Path: base.Cues[0].Path}}}
 	updated, err := s.EditPlaylist(edit)
 	if err != nil {
 		t.Fatal(err)
@@ -223,7 +223,7 @@ func TestStopDoesNotWaitForPersistenceOrSubscribers(t *testing.T) {
 	base := s.Playlist()
 	done := make(chan error, 1)
 	go func() {
-		_, err := s.EditPlaylist(PlaylistEdit{base.PlaylistRevision, []CueEdit{{ID: "a", Label: "A", Path: base.Cues[0].Path}}})
+		_, err := s.EditPlaylist(PlaylistEdit{ExpectedRevision: base.PlaylistRevision, Cues: []CueEdit{{ID: "a", Label: "A", Path: base.Cues[0].Path}}})
 		done <- err
 	}()
 	<-store.entered

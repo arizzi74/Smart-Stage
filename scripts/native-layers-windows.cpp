@@ -283,6 +283,13 @@ void CALLBACK probe(HWND, UINT, UINT_PTR timer, DWORD) {
                 require(!layer(53) && layer(51)->session.p == firstSession && layer(52)->session.p == secondSession &&
                         playing(layer(51)) && playing(layer(52)) && quietBackground(), "Layer error interrupted unrelated sources");
                 observed("audioLayerErrorReportsOwnIdentityAndPreservesOtherSources");
+                layers.back().paused = 1; layers.back().transport_revision = 76;
+                apply(); next(24);
+            }
+            break;
+        case 24:
+            if (event(53,76,"error")) {
+                require(!layer(53) && playing(layer(51)) && playing(layer(52)), "Failed layer transport acknowledgement disturbed other sources");
                 layers.pop_back(); foreground(54,missingPath,false,75); apply(); next(16);
             }
             break;
@@ -291,7 +298,31 @@ void CALLBACK probe(HWND, UINT, UINT_PTR timer, DWORD) {
                 require(!sceneForeground && !sceneIncoming && layer(51)->session.p == firstSession && layer(52)->session.p == secondSession &&
                         playing(layer(51)) && playing(layer(52)), "Primary source error tore down mixed audio layers");
                 observed("foregroundErrorPreservesIndependentMixedLayers");
-                clearForeground(); wanted.background_audio = 1;
+                wanted.foreground_paused = 1; wanted.transport_revision = 77; apply(); next(25);
+            }
+            break;
+        case 25:
+            if (event(54,77,"error")) {
+                require(!sceneForeground && playing(layer(51)) && playing(layer(52)), "Failed primary transport acknowledgement disturbed other sources");
+                observed("terminalErrorsAcknowledgeLatestSourceTransport");
+                layers.clear(); foreground(60,firstPath,false,90); apply(); next(22);
+            }
+            break;
+        case 22:
+            if (playing(sceneForeground.get()) && sceneLayerRetiring.empty()) {
+                retiredToken = sceneForeground->token;
+                require(SUCCEEDED(sceneForeground->session->QueryInterface(__uuidof(IMFMediaSession),(void**)retiredSession.out())), "Cannot observe primary-audio handoff");
+                wanted.audio_fade_seconds = 0; clearForeground(); layers = {voice(61,secondPath,91)};
+                apply(); processSceneCommand();
+                require(tail(retiredToken) && tail(retiredToken)->awaitingAudioHandoff && nativeGain(tail(retiredToken)) > .99f,
+                        "Primary audio was cut before its replacement layer became native-ready with fading disabled");
+                next(23);
+            }
+            break;
+        case 23:
+            if (playing(layer(61)) && sceneLayerRetiring.empty() && shutdown(retiredSession.p)) {
+                observed("primaryAudioToLayerWaitsForNativeReadiness");
+                wanted.audio_fade_seconds = .15; clearForeground(); wanted.background_audio = 1;
                 layers = {voice(70,firstPath,81),voice(71,secondPath,82)}; apply(); next(17);
             }
             break;

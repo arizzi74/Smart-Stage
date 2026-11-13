@@ -21,14 +21,16 @@ const playlistFileVersion = 1
 // configuration. Media stays at its original host path; output devices, cached
 // validation, credentials and live playback state never belong in this file.
 type PlaylistFile struct {
-	Format  string              `json:"format"`
-	Version int                 `json:"version"`
-	Cues    []PlaylistFileCue   `json:"cues"`
-	Stage   model.StageSettings `json:"stage"`
+	Format   string              `json:"format"`
+	Version  int                 `json:"version"`
+	Cues     []PlaylistFileCue   `json:"cues"`
+	Stage    model.StageSettings `json:"stage"`
+	Sections []model.Section     `json:"sections"`
 }
 
 type PlaylistFileCue struct {
 	ID         string   `json:"id"`
+	SectionID  string   `json:"sectionId"`
 	Label      string   `json:"label"`
 	Path       string   `json:"path"`
 	Color      string   `json:"color,omitempty"`
@@ -65,6 +67,7 @@ func DecodePlaylist(reader io.Reader) (PlaylistFile, error) {
 	if decoder.Decode(&extra) != io.EOF {
 		return PlaylistFile{}, problem("invalid_playlist", "The playlist file contains trailing data")
 	}
+	playlist.normalizeSections()
 	if err := validatePlaylistFile(playlist); err != nil {
 		return PlaylistFile{}, err
 	}
@@ -84,8 +87,18 @@ func validatePlaylistFile(playlist PlaylistFile) error {
 	if !playlist.Stage.Valid() {
 		return problem("invalid_stage", "Audio and visual fade durations must each be between 0.1 and 30 seconds")
 	}
+	if err := model.ValidateSections(playlist.Sections); err != nil {
+		return problem("invalid_sections", err.Error())
+	}
+	sectionIDs := make(map[string]bool, len(playlist.Sections))
+	for _, section := range playlist.Sections {
+		sectionIDs[section.ID] = true
+	}
 	ids := make(map[string]bool, len(playlist.Cues))
 	for _, cue := range playlist.Cues {
+		if !sectionIDs[cue.SectionID] {
+			return problem("invalid_section", "Each cue must refer to a section in the playlist")
+		}
 		if cue.ID == "" || len(cue.ID) > 128 || strings.ContainsAny(cue.ID, "\x00\r\n") || ids[cue.ID] {
 			return problem("invalid_cue_id", "Playlist cue IDs must be nonempty and unique")
 		}
@@ -117,10 +130,10 @@ func (s *Service) ExportPlaylist() (PlaylistFile, error) {
 	if s.closed || s.state.UpdatePending {
 		return PlaylistFile{}, problem("updating", "Wait for the application update before saving a playlist file")
 	}
-	file := PlaylistFile{Format: playlistFileFormat, Version: playlistFileVersion, Stage: s.config.Stage, Cues: make([]PlaylistFileCue, 0, len(s.config.Cues))}
+	file := PlaylistFile{Format: playlistFileFormat, Version: playlistFileVersion, Stage: s.config.Stage, Sections: append([]model.Section{}, s.config.Sections...), Cues: make([]PlaylistFileCue, 0, len(s.config.Cues))}
 	for _, cue := range s.config.Cues {
 		volume := cue.PlaybackVolume()
-		file.Cues = append(file.Cues, PlaylistFileCue{ID: cue.ID, Label: cue.Label, Path: cue.Path, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background, KeepVideo: cue.KeepVideo, MixAudio: cue.MixAudio, Volume: &volume})
+		file.Cues = append(file.Cues, PlaylistFileCue{ID: cue.ID, SectionID: cue.SectionID, Label: cue.Label, Path: cue.Path, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background, KeepVideo: cue.KeepVideo, MixAudio: cue.MixAudio, Volume: &volume})
 	}
 	return file, nil
 }
@@ -143,6 +156,8 @@ func (s *Service) canLoadPlaylistLocked(expectedRevision uint64) error {
 // queued controller requests from the newly loaded show. Media must still exist
 // inside the host's configured roots; one invalid source rejects the whole load.
 func (s *Service) LoadPlaylist(load PlaylistLoad) (model.Config, error) {
+	load.Playlist = load.Playlist.clone()
+	load.Playlist.normalizeSections()
 	if err := validatePlaylistFile(load.Playlist); err != nil {
 		return model.Config{}, err
 	}
@@ -156,6 +171,13 @@ func (s *Service) LoadPlaylist(load PlaylistLoad) (model.Config, error) {
 	next := s.config.Clone()
 	s.mu.Unlock()
 
+	next.Sections = make([]model.Section, 0, len(load.Playlist.Sections))
+	sectionIDs := make(map[string]string, len(load.Playlist.Sections))
+	for _, section := range load.Playlist.Sections {
+		id := identity.New()
+		sectionIDs[section.ID] = id
+		next.Sections = append(next.Sections, model.Section{ID: id, Title: section.Title, Collapsed: section.Collapsed})
+	}
 	next.Cues = make([]model.Cue, 0, len(load.Playlist.Cues))
 	ids := make(map[string]string, len(load.Playlist.Cues))
 	for _, cue := range load.Playlist.Cues {
@@ -170,7 +192,7 @@ func (s *Service) LoadPlaylist(load PlaylistLoad) (model.Config, error) {
 			value := *volume
 			volume = &value
 		}
-		next.Cues = append(next.Cues, model.Cue{ID: id, Label: cue.Label, Path: resolved, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background, KeepVideo: cue.KeepVideo, MixAudio: cue.MixAudio, Volume: volume, Cache: model.Validation{Status: "unchecked"}})
+		next.Cues = append(next.Cues, model.Cue{ID: id, SectionID: sectionIDs[cue.SectionID], Label: cue.Label, Path: resolved, Color: cue.Color, Hidden: cue.Hidden, Background: cue.Background, KeepVideo: cue.KeepVideo, MixAudio: cue.MixAudio, Volume: volume, Cache: model.Validation{Status: "unchecked"}})
 	}
 	next.Stage = load.Playlist.Stage
 	next.Stage.BackgroundCueID = ids[load.Playlist.Stage.BackgroundCueID]
@@ -213,4 +235,28 @@ func (s *Service) LoadPlaylist(load PlaylistLoad) (model.Config, error) {
 	s.mu.Unlock()
 	s.queueValidation()
 	return result, nil
+}
+
+func (p *PlaylistFile) normalizeSections() {
+	if p.Sections == nil {
+		p.Sections = model.DefaultSections()
+	}
+	if len(p.Sections) == 0 {
+		return
+	}
+	for i := range p.Cues {
+		if p.Cues[i].SectionID == "" {
+			p.Cues[i].SectionID = p.Sections[0].ID
+		}
+	}
+}
+
+func (p PlaylistFile) clone() PlaylistFile {
+	if p.Sections != nil {
+		p.Sections = append([]model.Section{}, p.Sections...)
+	}
+	if p.Cues != nil {
+		p.Cues = append([]PlaylistFileCue{}, p.Cues...)
+	}
+	return p
 }

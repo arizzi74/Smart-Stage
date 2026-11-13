@@ -53,6 +53,7 @@ type Ack struct {
 }
 type CueView struct {
 	ID                string  `json:"id"`
+	SectionID         string  `json:"sectionId"`
 	Label             string  `json:"label"`
 	Color             string  `json:"color,omitempty"`
 	Hidden            bool    `json:"hidden,omitempty"`
@@ -102,6 +103,7 @@ type State struct {
 	Paused                  bool                `json:"paused"`
 	SeekPending             bool                `json:"seekPending"`
 	Cues                    []CueView           `json:"cues"`
+	Sections                []model.Section     `json:"sections"`
 	ValidationJob           ValidationJob       `json:"validationJob"`
 	UpdatePending           bool                `json:"updatePending"`
 	MasterVolume            float64             `json:"masterVolume"`
@@ -166,6 +168,8 @@ type Service struct {
 
 func New(backend playback.Backend, browser *files.Browser, store Persistence, config model.Config) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
+	config = config.Clone()
+	config.NormalizeSections()
 	if config.Stage.AudioFadeSeconds == 0 {
 		config.Stage.AudioFadeSeconds = 1
 	}
@@ -199,9 +203,10 @@ func (s *Service) Snapshot(admin bool) State {
 	out.PlaylistRevision = s.config.PlaylistRevision
 	out.Outputs = s.config.Outputs
 	out.Stage = s.config.Stage
+	out.Sections = append([]model.Section{}, s.config.Sections...)
 	out.Cues = make([]CueView, 0, len(s.config.Cues))
 	for i, c := range s.config.Cues {
-		out.Cues = append(out.Cues, CueView{ID: c.ID, Label: c.Label, Color: c.Color, Hidden: c.Hidden, Background: c.Background, Position: i + 1, Kind: c.Cache.Media.Kind, Duration: c.Cache.Media.Duration, Validation: c.Cache.Status, Volume: c.PlaybackVolume(), KeepVideo: c.KeepVideo, MixAudio: c.MixAudio})
+		out.Cues = append(out.Cues, CueView{ID: c.ID, SectionID: c.SectionID, Label: c.Label, Color: c.Color, Hidden: c.Hidden, Background: c.Background, Position: i + 1, Kind: c.Cache.Media.Kind, Duration: c.Cache.Media.Duration, Validation: c.Cache.Status, Volume: c.PlaybackVolume(), KeepVideo: c.KeepVideo, MixAudio: c.MixAudio})
 		s.cuePlaybackViewLocked(&out.Cues[len(out.Cues)-1])
 		if c.ID == out.ActiveCueID {
 			out.ActivePosition = i + 1
