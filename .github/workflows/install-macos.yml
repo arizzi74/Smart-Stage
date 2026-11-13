@@ -1,5 +1,6 @@
 name: Verify Mac app installation and quarantine removal
 on:
+  # Push checks use install.sh's default release; tagged calls set version explicitly.
   push:
     branches: [main]
     paths: ['install.sh', 'scripts/verify-macos-install.py', 'scripts/macos_app_checks.py', 'scripts/inspect-macos-app.m', '.github/workflows/install-macos.yml']
